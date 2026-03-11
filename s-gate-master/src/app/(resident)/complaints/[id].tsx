@@ -1,0 +1,245 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, RefreshControl, ScrollView, Share, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ImageCarousel } from '../../../components/ui/ImageCarousel';
+import { Complaint, fetchComplaintDetails } from '../../../services/complaints';
+
+const IMAGE_BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
+
+export default function ComplaintDetailScreen() {
+    const { id } = useLocalSearchParams<{ id: string }>();
+    const router = useRouter();
+    const insets = useSafeAreaInsets();
+    
+    const [complaint, setComplaint] = useState<Complaint | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [error, setError] = useState('');
+
+    const loadComplaint = async () => {
+        if (!id) return;
+        try {
+            setError('');
+            const data = await fetchComplaintDetails(id);
+            setComplaint(data);
+        } catch (err: any) {
+            console.error('Failed to load complaint details:', err);
+            setError(err.message || 'Failed to load complaint details');
+        } finally {
+            setIsLoading(false);
+            setIsRefreshing(false);
+        }
+    };
+
+    useEffect(() => {
+        loadComplaint();
+    }, [id]);
+
+    const handleRefresh = () => {
+        setIsRefreshing(true);
+        loadComplaint();
+    };
+
+    const handleShare = async () => {
+        if (!complaint) return;
+        try {
+            await Share.share({
+                message: [
+                    `Complaint: ${complaint.title}`,
+                    `Category: ${complaint.category}`,
+                    `Priority: ${complaint.priority}`,
+                    `Status: ${complaint.status}`,
+                    `Flat: ${complaint.flat?.flatNumber || 'N/A'}`,
+                    `Created on: ${new Date(complaint.createdAt).toLocaleDateString()}`
+                ].join('\n'),
+            });
+        } catch (error: any) {
+            console.error(error.message);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <SafeAreaView className="flex-1 bg-white dark:bg-black items-center justify-center">
+                <ActivityIndicator size="large" color="#4f46e5" />
+                <Text className="text-gray-500 dark:text-gray-400 mt-4">Loading details...</Text>
+            </SafeAreaView>
+        );
+    }
+
+    if (error || !complaint) {
+        return (
+            <SafeAreaView className="flex-1 bg-white dark:bg-black items-center justify-center">
+                <Text className="text-red-500 dark:text-red-400 mb-4">{error || 'Complaint not found'}</Text>
+                <TouchableOpacity onPress={() => router.back()} className="bg-indigo-600 px-6 py-3 rounded-lg">
+                     <Text className="text-white font-bold">Go Back</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        );
+    }
+
+    // Logic for "Reported By"
+    const getReportedByText = () => {
+        if (complaint.isAnonymous) {
+             const c = complaint as any;
+             if (c.isOwn) return 'You';
+             return 'Anonymous';
+        }
+        return complaint.reportedBy?.name || 'Unknown';
+    };
+
+    // Helper for Status Badge with specific colors
+    const renderStatusBadge = () => {
+        let bgClass = 'bg-gray-100 dark:bg-zinc-800';
+        let textClass = 'text-gray-700 dark:text-gray-400';
+
+        switch (complaint.status) {
+            case 'OPEN':
+                bgClass = 'bg-blue-100 dark:bg-blue-900/30';
+                textClass = 'text-blue-700 dark:text-blue-400';
+                break;
+            case 'IN_PROGRESS':
+                bgClass = 'bg-orange-100 dark:bg-orange-900/30'; // Specific requirement: Orange
+                textClass = 'text-orange-700 dark:text-orange-400';
+                break;
+            case 'RESOLVED':
+                bgClass = 'bg-green-100 dark:bg-green-900/30';
+                textClass = 'text-green-700 dark:text-green-400';
+                break;
+            case 'CLOSED':
+                bgClass = 'bg-gray-100 dark:bg-gray-900/30';
+                textClass = 'text-gray-700 dark:text-gray-400';
+                break;
+        }
+
+        return (
+            <View className={`self-start px-3 py-1.5 rounded-full mb-4 ${bgClass}`}>
+                <Text className={`font-bold text-xs uppercase ${textClass}`}>
+                    Status: {complaint.status ? complaint.status.replace('_', ' ') : 'UNKNOWN'}
+                </Text>
+            </View>
+        );
+    };
+
+    return (
+        <SafeAreaView className="flex-1 bg-white dark:bg-black" edges={['top']}>
+            {/* 1. Header with Title + X close button */}
+            <View className="px-5 py-3 flex-row items-center justify-between border-b border-gray-100 dark:border-zinc-800">
+                 <Text className="font-bold text-lg text-gray-900 dark:text-white">Complaint Details</Text>
+                 <View className="flex-row items-center gap-3">
+                    <TouchableOpacity onPress={handleShare} className="h-10 w-10 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-900/30">
+                        <Ionicons name="share-social-outline" size={20} className="text-indigo-600 dark:text-indigo-400" />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        onPress={() => router.back()} 
+                        className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800"
+                    >
+                        <Ionicons name="close" size={24} className="text-gray-700 dark:text-gray-300" />
+                    </TouchableOpacity>
+                 </View>
+            </View>
+
+            <ScrollView 
+                className="flex-1"
+                contentContainerStyle={{ paddingBottom: 40 }}
+                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
+            >
+                <View className="py-6">
+                    {/* 2. Images section (if exists) */}
+                    {/* 2. Images section (if exists) */}
+                    {(() => {
+                        const imageSources = (complaint.imageUrls && complaint.imageUrls.length > 0)
+                            ? complaint.imageUrls.map(img => img.viewUrl)
+                            : (complaint.images || []).map(path => `${IMAGE_BASE_URL}/${path}`);
+
+                        return imageSources.length > 0 ? (
+                            <View className="mb-6">
+                                <ImageCarousel images={imageSources as string[]} height={300} resizeMode="contain" />
+                            </View>
+                        ) : null;
+                    })()}
+
+                    <View className="px-5">
+                        {/* 3. Title */}
+                        <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight mb-3">
+                            {complaint.title}
+                        </Text>
+
+                        {/* 4. Status badge */}
+                        {renderStatusBadge()}
+
+                        {/* 5. Description */}
+                        <View className="bg-gray-50 dark:bg-zinc-900 p-4 rounded-xl mb-6">
+                            <Text className="text-gray-800 dark:text-gray-200 text-base leading-relaxed">
+                                {complaint.description}
+                            </Text>
+                        </View>
+
+                        {/* 6. Metadata section */}
+                        <View className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl p-4 shadow-sm">
+                            <Text className="text-base font-bold text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-100 dark:border-zinc-800 pb-2">
+                                Details
+                            </Text>
+                            
+                            <View className="space-y-4">
+                                {/* Category */}
+                                <View className="flex-row justify-between border-b border-gray-50 dark:border-zinc-800 pb-2">
+                                    <Text className="text-gray-500 dark:text-gray-400 text-sm">Category</Text>
+                                    <Text className="text-gray-900 dark:text-gray-100 font-medium">{complaint.category}</Text>
+                                </View>
+                                
+                                {/* Priority */}
+                                <View className="flex-row justify-between border-b border-gray-50 dark:border-zinc-800 pb-2">
+                                    <Text className="text-gray-500 dark:text-gray-400 text-sm">Priority</Text>
+                                    <Text className={`font-medium ${
+                                        complaint.priority === 'HIGH' || complaint.priority === 'CRITICAL' 
+                                            ? 'text-red-600' 
+                                            : 'text-gray-900 dark:text-gray-100'
+                                    }`}>
+                                        {complaint.priority}
+                                    </Text>
+                                </View>
+
+                                {/* Location */}
+                                <View className="flex-row justify-between border-b border-gray-50 dark:border-zinc-800 pb-2">
+                                    <Text className="text-gray-500 dark:text-gray-400 text-sm">Location</Text>
+                                    <Text className="text-gray-900 dark:text-gray-100 font-medium">
+                                        {complaint.location || 'None'}
+                                    </Text>
+                                </View>
+
+                                {/* Assigned To */}
+                                <View className="flex-row justify-between border-b border-gray-50 dark:border-zinc-800 pb-2">
+                                    <Text className="text-gray-500 dark:text-gray-400 text-sm">Assigned To</Text>
+                                    <Text className="text-gray-900 dark:text-gray-100 font-medium">
+                                        {complaint.assignedTo?.name || 'None'}
+                                    </Text>
+                                </View>
+
+                                {/* Reported By */}
+                                <View className="flex-row justify-between border-b border-gray-50 dark:border-zinc-800 pb-2">
+                                    <Text className="text-gray-500 dark:text-gray-400 text-sm">Reported By</Text>
+                                    <Text className="text-gray-900 dark:text-gray-100 font-medium">
+                                        {getReportedByText()}
+                                    </Text>
+                                </View>
+
+                                {/* Created At */}
+                                <View className="flex-row justify-between">
+                                    <Text className="text-gray-500 dark:text-gray-400 text-sm">Created At</Text>
+                                    <Text className="text-gray-900 dark:text-gray-100 font-medium">
+                                        {new Date(complaint.createdAt).toLocaleString()}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+            </ScrollView>
+            
+             <View style={{ height: insets.bottom, backgroundColor: 'white' }} className="dark:bg-zinc-900" />
+        </SafeAreaView>
+    );
+}
