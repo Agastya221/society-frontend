@@ -53,32 +53,19 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     logout: async () => {
         try {
-            // Clear secure storage
+            // Import here to avoid circular dep
+            const { authService } = await import('../services/authService');
+            const state = useAuthStore.getState();
+            await authService.logout(state.token ?? undefined);
+        } catch {
+            // best-effort
+        }
+        try {
             await SecureStore.deleteItemAsync(TOKEN_KEY);
             await SecureStore.deleteItemAsync(USER_KEY);
             await SecureStore.deleteItemAsync(APP_TYPE_KEY);
-
-            // Clear state
-            set({
-                token: null,
-                user: null,
-                role: null,
-                appType: null,
-                isAuthenticated: false,
-                isLoading: false,
-            });
-        } catch (error) {
-            console.error('Failed to clear auth data:', error);
-            // Still clear state even if secure storage fails
-            set({
-                token: null,
-                user: null,
-                role: null,
-                appType: null,
-                isAuthenticated: false,
-                isLoading: false,
-            });
-        }
+        } catch {}
+        set({ token: null, user: null, role: null, appType: null, isAuthenticated: false, isLoading: false });
     },
 
     loadToken: async () => {

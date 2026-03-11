@@ -47,28 +47,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     },
 
     logout: async () => {
+        // Best-effort backend call to blacklist tokens
         try {
-            // Clear secure storage
+            const { authService } = await import('../services/authService');
+            await authService.logout();
+        } catch {}
+        // Clear secure storage
+        try {
             await SecureStore.deleteItemAsync(TOKEN_KEY);
             await SecureStore.deleteItemAsync(USER_KEY);
-
-            // Clear state
-            set({
-                token: null,
-                user: null,
-                isAuthenticated: false,
-                isLoading: false,
-            });
-        } catch (error) {
-            console.error('Failed to clear auth data:', error);
-            // Still clear state even if secure storage fails
-            set({
-                token: null,
-                user: null,
-                isAuthenticated: false,
-                isLoading: false,
-            });
-        }
+        } catch {}
+        // Always clear state
+        set({ token: null, user: null, isAuthenticated: false, isLoading: false });
     },
 
     loadToken: async () => {
