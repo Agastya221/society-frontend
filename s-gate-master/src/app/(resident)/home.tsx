@@ -3,16 +3,17 @@ import clsx from 'clsx';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeInDown, FadeInRight, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInRight, useAnimatedStyle, useSharedValue, withSpring, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PriorityBadge } from '../../components/ui/PriorityBadge';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { MOCK_APPROVALS } from '../../mocks/approvals';
 import { MOCK_NOTICES } from '../../mocks/notices';
 import { useAuthStore } from '../../store/useAuthStore';
+import api from '../../services/api';
 
 // --- Reusable Components (Copied from Admin Dashboard for consistency) ---
 
@@ -66,7 +67,7 @@ function QuickAction({ icon, label, route, badge, color, delay }: any) {
                     />
                 </View>
                 <Text className="font-bold text-slate-700 text-sm text-center">{label}</Text>
-                {badge ? (
+                {badge > 0 ? (
                     <View className="absolute top-3 right-3 bg-rose-500 min-w-[20px] h-5 rounded-full items-center justify-center px-1.5 shadow-sm">
                         <Text className="text-white text-[10px] font-bold">{badge}</Text>
                     </View>
@@ -83,8 +84,41 @@ export default function ResidentHomeScreen() {
     const insets = useSafeAreaInsets();
     const { user } = useAuthStore();
     
-    // Mock Data Logic
-    const pendingApprovals = MOCK_APPROVALS.filter(a => a.status === 'PENDING').length;
+    // API State
+    const [pendingApprovals, setPendingApprovals] = useState(0);
+
+    const pulseValue = useSharedValue(1);
+
+    React.useEffect(() => {
+        if (pendingApprovals > 0) {
+            pulseValue.value = withRepeat(
+                withTiming(1.05, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
+                -1,
+                true
+            );
+        } else {
+            pulseValue.value = withTiming(1);
+        }
+    }, [pendingApprovals]);
+
+    const pulseStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: pulseValue.value }],
+    }));
+
+    useFocusEffect(
+        useCallback(() => {
+            const fetchPendingCount = async () => {
+                try {
+                    const res = await api.get('/gate/requests/pending-count');
+                    setPendingApprovals(res.data?.data?.pendingCount || 0);
+                } catch (err: any) {
+                    console.error('Failed to fetch pending count:', err);
+                }
+            };
+            fetchPendingCount();
+        }, [])
+    );
+
     const recentNotices = MOCK_NOTICES.slice(0, 2);
 
     const quickActions = [
@@ -92,7 +126,7 @@ export default function ResidentHomeScreen() {
             icon: 'checkmark-circle-outline', 
             label: 'Approvals', 
             route: '/(resident)/approvals',
-            badge: pendingApprovals > 0 ? pendingApprovals : undefined 
+            badge: pendingApprovals 
         },
         { 
             icon: 'alert-circle-outline', 
@@ -158,18 +192,20 @@ export default function ResidentHomeScreen() {
                     onPress={() => router.push('/(resident)/approvals')} 
                     className="mb-8"
                 >
-                    <GlassCard className="flex-row items-center justify-between p-5 border-l-4 border-l-orange-500 bg-orange-50/50">
-                        <View className="flex-row items-center gap-4">
-                            <View className="bg-orange-100 p-3 rounded-full">
-                                <Ionicons name="notifications" size={24} className="text-orange-600" />
+                    <Animated.View style={pulseStyle}>
+                        <GlassCard className="flex-row items-center justify-between p-5 border-l-4 border-l-red-500 bg-red-50/80 shadow-md">
+                            <View className="flex-row items-center gap-4">
+                                <View className="bg-red-100 p-3 rounded-full">
+                                    <Ionicons name="notifications" size={24} className="text-red-600" />
+                                </View>
+                                <View>
+                                    <Text className="text-slate-900 font-bold text-xl">{pendingApprovals} Pending</Text>
+                                    <Text className="text-slate-500 text-xs font-medium uppercase tracking-wide">Visitor approvals waiting</Text>
+                                </View>
                             </View>
-                            <View>
-                                <Text className="text-slate-900 font-bold text-xl">{pendingApprovals} Pending</Text>
-                                <Text className="text-slate-500 text-xs font-medium uppercase tracking-wide">Visitor approvals waiting</Text>
-                            </View>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} className="text-orange-400" />
-                    </GlassCard>
+                            <Ionicons name="chevron-forward" size={20} className="text-red-400" />
+                        </GlassCard>
+                    </Animated.View>
                 </AnimatedPressable>
             )}
 

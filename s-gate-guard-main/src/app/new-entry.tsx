@@ -22,7 +22,7 @@ const VISITOR_TYPES = ['Guest', 'Delivery', 'Worker', 'Cab'] as const;
 type VType = typeof VISITOR_TYPES[number];
 
 const VISITOR_TYPE_MAP: Record<VType, string> = {
-    Guest: 'GUEST', Delivery: 'DELIVERY', Worker: 'WORKER', Cab: 'CAB',
+    Guest: 'GUEST', Delivery: 'DELIVERY_PERSON', Worker: 'SERVICE_PROVIDER', Cab: 'CAB_DRIVER',
 };
 const TYPE_COLORS: Record<VType, string> = { Guest: '#3B82F6', Delivery: '#F59E0B', Worker: '#8B5CF6', Cab: '#10B981' };
 const TYPE_ICONS: Record<VType, any> = { Guest: 'person', Delivery: 'cube', Worker: 'construct', Cab: 'car' };

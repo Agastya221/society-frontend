@@ -33,18 +33,18 @@ interface Entry {
 
 const TYPE_COLORS: Record<string, string> = {
     GUEST: '#3B82F6',
-    DELIVERY: '#F59E0B',
-    WORKER: '#8B5CF6',
-    CAB: '#10B981',
+    DELIVERY_PERSON: '#F59E0B',
+    SERVICE_PROVIDER: '#8B5CF6',
+    CAB_DRIVER: '#10B981',
 };
 
-type FilterType = 'ALL' | 'GUEST' | 'DELIVERY' | 'WORKER' | 'CAB';
+type FilterType = 'ALL' | 'GUEST' | 'DELIVERY_PERSON' | 'SERVICE_PROVIDER' | 'CAB_DRIVER';
 const FILTERS: { label: string; value: FilterType }[] = [
     { label: 'All', value: 'ALL' },
     { label: 'Guests', value: 'GUEST' },
-    { label: 'Deliveries', value: 'DELIVERY' },
-    { label: 'Workers', value: 'WORKER' },
-    { label: 'Cabs', value: 'CAB' },
+    { label: 'Deliveries', value: 'DELIVERY_PERSON' },
+    { label: 'Workers', value: 'SERVICE_PROVIDER' },
+    { label: 'Cabs', value: 'CAB_DRIVER' },
 ];
 
 const formatTime = (iso: string) =>
@@ -244,9 +244,9 @@ function EntryCard({
 
     // Infer Icon
     let iconName: any = 'person';
-    if (entry.visitorType === 'DELIVERY') iconName = 'cube';
-    else if (entry.visitorType === 'WORKER') iconName = 'construct';
-    else if (entry.visitorType === 'CAB') iconName = 'car';
+    if (entry.visitorType === 'DELIVERY_PERSON') iconName = 'cube';
+    else if (entry.visitorType === 'SERVICE_PROVIDER') iconName = 'construct';
+    else if (entry.visitorType === 'CAB_DRIVER') iconName = 'car';
 
     return (
         <Animated.View style={[styles.card, { borderLeftColor: color, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
