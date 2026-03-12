@@ -1,88 +1,89 @@
-import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
+import axios, { AxiosInstance } from 'axios';
+import { useAuthStore } from '../store/useAuthStore';
 
-const TOKEN_KEY = 'auth_token';
+const BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
 
-const api = axios.create({
-    baseURL: 'https://society-gate-backend-gsrq.onrender.com',
-    headers: {
-        'Content-Type': 'application/json',
-    },
+const api: AxiosInstance = axios.create({
+    baseURL: BASE_URL,
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 15000,
 });
 
-// Request interceptor to inject token and log requests
+// ── Request: attach access token ─────────────────────────────────────────────
 api.interceptors.request.use(
-    async (config) => {
-        try {
-            const token = await SecureStore.getItemAsync(TOKEN_KEY);
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
-
-            // Log outgoing request
-            console.log('🔵 API Request:', {
-                method: config.method?.toUpperCase(),
-                url: config.url,
-                baseURL: config.baseURL,
-                fullURL: `${config.baseURL}${config.url}`,
-                headers: config.headers,
-                data: config.data,
-            });
-        } catch (error) {
-            console.error('❌ Failed to get token:', error);
-        }
+    (config) => {
+        const token = useAuthStore.getState().token;
+        if (token) config.headers.Authorization = `Bearer ${token}`;
+        console.log('🚀 Guard API Request:', config.method?.toUpperCase(), `${BASE_URL}${config.url}`);
         return config;
     },
-    (error) => {
-        console.error('❌ Request Error:', error);
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
-// Response interceptor for error handling and logging
+// ── Response: silent token refresh on 401 ────────────────────────────────────
+let isRefreshing = false;
+let pendingQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
+
+const drainQueue = (token: string | null, error?: any) => {
+    pendingQueue.forEach((p) => (token ? p.resolve(token) : p.reject(error)));
+    pendingQueue = [];
+};
+
 api.interceptors.response.use(
     (response) => {
-        // Log successful response
-        console.log('✅ API Response:', {
-            status: response.status,
-            statusText: response.statusText,
-            url: response.config.url,
-            data: response.data,
-        });
+        console.log('✅ Guard API Response:', response.status, response.config.url);
         return response;
     },
     async (error) => {
-        // Log error response
-        if (error.response) {
-            console.error('❌ API Error Response:', {
-                status: error.response.status,
-                statusText: error.response.statusText,
-                url: error.config?.url,
-                data: error.response.data,
-                headers: error.response.headers,
-            });
-        } else if (error.request) {
-            console.error('❌ Network Error - No Response:', {
-                url: error.config?.url,
-                message: error.message,
-            });
-        } else {
-            console.error('❌ Error:', error.message);
-        }
+        const originalRequest = error.config;
 
-        if (error.response?.status === 401) {
-            // Token expired or invalid - clear it
-            console.warn('⚠️ 401 Unauthorized - Clearing token');
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    pendingQueue.push({
+                        resolve: (token) => {
+                            originalRequest.headers.Authorization = `Bearer ${token}`;
+                            resolve(api(originalRequest));
+                        },
+                        reject,
+                    });
+                });
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            const { refreshToken, setToken, logout } = useAuthStore.getState();
+
+            if (!refreshToken) {
+                isRefreshing = false;
+                await logout();
+                return Promise.reject(error);
+            }
+
             try {
-                await SecureStore.deleteItemAsync(TOKEN_KEY);
-            } catch (e) {
-                console.error('Failed to clear token:', e);
+                const res = await axios.post(`${BASE_URL}/api/v1/auth/refresh-token`, { refreshToken });
+                const { accessToken, refreshToken: newRefreshToken } = res.data?.data ?? {};
+
+                if (!accessToken) throw new Error('No access token in refresh response');
+
+                await setToken(accessToken, newRefreshToken);
+                drainQueue(accessToken);
+
+                originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+                return api(originalRequest);
+            } catch (refreshError) {
+                drainQueue(null, refreshError);
+                await logout();
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
             }
         }
+
+        console.error('❌ Guard API Error:', error.response?.status, error.config?.url, error.response?.data?.message);
         return Promise.reject(error);
     }
 );
 
 export default api;
-
-

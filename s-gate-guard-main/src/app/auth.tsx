@@ -128,8 +128,8 @@ export default function AuthScreen() {
                 return;
             }
 
-            // 4. Save to store (guard store only takes token + user)
-            await login(data.accessToken, data.user);
+            // 4. Save to store — include refreshToken so silent refresh works
+            await login(data.accessToken, data.user, data.refreshToken);
 
         } catch (err: any) {
             const msg = err?.response?.data?.message || err?.message || 'Verification failed.';

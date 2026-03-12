@@ -1,64 +1,90 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
-const api = axios.create({
-    baseURL: 'https://society-gate-backend-gsrq.onrender.com',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    timeout: 10000,
+const BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
+
+const api: AxiosInstance = axios.create({
+    baseURL: BASE_URL,
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 15000,
 });
 
-// Request interceptor to attach JWT token
+// ── Request: attach access token ─────────────────────────────────────────────
 api.interceptors.request.use(
-    async (config) => {
+    (config) => {
         const token = useAuthStore.getState().token;
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-
-        // Console log API request details
-        console.log('🚀 API Request:', {
-            url: `${config.baseURL}${config.url}`,
-            method: config.method?.toUpperCase(),
-            headers: config.headers,
-            data: config.data,
-        });
-
+        if (token) config.headers.Authorization = `Bearer ${token}`;
+        console.log('🚀 API Request:', config.method?.toUpperCase(), `${BASE_URL}${config.url}`);
         return config;
     },
-    (error) => {
-        console.error('❌ API Request Error:', error);
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle token expiration
+// ── Response: silent token refresh on 401 ────────────────────────────────────
+let isRefreshing = false;
+let pendingQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
+
+const drainQueue = (token: string | null, error?: any) => {
+    pendingQueue.forEach((p) => (token ? p.resolve(token) : p.reject(error)));
+    pendingQueue = [];
+};
+
 api.interceptors.response.use(
     (response) => {
-        // Console log API response
-        console.log('✅ API Response:', {
-            url: response.config.url,
-            status: response.status,
-            data: response.data,
-        });
+        console.log('✅ API Response:', response.status, response.config.url);
         return response;
     },
     async (error) => {
-        // Console log API error
-        console.error('❌ API Error:', {
-            url: error.config?.url,
-            status: error.response?.status,
-            message: error.message,
-            data: error.response?.data,
-        });
+        const originalRequest = error.config;
 
-        if (error.response?.status === 401) {
-            // Token expired or invalid - logout user
-            console.log('🔒 401 Unauthorized - Logging out user');
-            const logout = useAuthStore.getState().logout;
-            await logout();
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            // If already refreshing, queue this request until we get a new token
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    pendingQueue.push({
+                        resolve: (token) => {
+                            originalRequest.headers.Authorization = `Bearer ${token}`;
+                            resolve(api(originalRequest));
+                        },
+                        reject,
+                    });
+                });
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            const { refreshToken, setToken, logout } = useAuthStore.getState();
+
+            if (!refreshToken) {
+                isRefreshing = false;
+                await logout();
+                return Promise.reject(error);
+            }
+
+            try {
+                // Call refresh endpoint
+                const res = await axios.post(`${BASE_URL}/api/v1/auth/refresh-token`, { refreshToken });
+                const { accessToken, refreshToken: newRefreshToken } = res.data?.data ?? {};
+
+                if (!accessToken) throw new Error('No access token in refresh response');
+
+                await setToken(accessToken, newRefreshToken);
+                drainQueue(accessToken);
+
+                // Retry original request with new token
+                originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+                return api(originalRequest);
+            } catch (refreshError) {
+                drainQueue(null, refreshError);
+                await logout();
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
         }
+
+        console.error('❌ API Error:', error.response?.status, error.config?.url, error.response?.data?.message);
         return Promise.reject(error);
     }
 );

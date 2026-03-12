@@ -1,8 +1,9 @@
+import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Alert,
     Animated,
@@ -14,30 +15,59 @@ import {
     View
 } from 'react-native';
 
+interface GuardProfile {
+    name: string;
+    id: string;
+    phone: string;
+    email: string;
+    gate: string;
+    shift: string;
+    status: string;
+    joinDate: string;
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const { user, logout } = useAuthStore();
+  const [profile, setProfile] = useState<GuardProfile>({
+    name: user?.name ?? 'Guard',
+    id: user?.id ?? '—',
+    phone: user?.phone ?? '—',
+    email: user?.email ?? '—',
+    gate: 'Not Assigned',
+    shift: 'Not Assigned',
+    status: 'ACTIVE',
+    joinDate: '—',
+  });
 
   React.useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
+    Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
   }, []);
 
-  // Guard Data from Auth Store
-  const guard = {
-    name: user?.name || 'Guard User',
-    id: user?.guardId || 'GRD-XXXX',
-    gate: user?.gate || 'Not Assigned',
-    shift: user?.shift || 'Not Assigned',
-    status: 'ACTIVE',
-    phone: user?.phone || 'Not Available',
-    email: user?.email || 'Not Available',
-    joinDate: 'Jan 15, 2024',
-  };
+  // Fetch latest profile from API
+  useEffect(() => {
+    api.get('/api/v1/auth/guard-app/profile')
+      .then((res) => {
+        const u = res.data?.data?.user ?? res.data?.data;
+        if (!u) return;
+        setProfile({
+          name: u.name ?? profile.name,
+          id: u.id ?? profile.id,
+          phone: u.phone ?? profile.phone,
+          email: u.email ?? profile.email,
+          gate: u.gate ?? u.assignedGate ?? 'Not Assigned',
+          shift: u.shift ?? u.shiftTiming ?? 'Not Assigned',
+          status: u.isActive ? 'ACTIVE' : 'INACTIVE',
+          joinDate: u.createdAt
+            ? new Date(u.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+            : '—',
+        });
+      })
+      .catch(() => {}); // Falls back to store data silently
+  }, []);
+
+  const guard = profile;
 
   const handleLogout = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

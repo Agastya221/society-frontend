@@ -2,15 +2,18 @@ import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { User } from '../types/auth';
 
-const TOKEN_KEY = 'auth_token';
-const USER_KEY = 'auth_user';
+const TOKEN_KEY         = 'auth_token';
+const REFRESH_TOKEN_KEY = 'auth_refresh_token';
+const USER_KEY          = 'auth_user';
 
 export interface AuthState {
     token: string | null;
+    refreshToken: string | null;
     isAuthenticated: boolean;
     user: User | null;
     isLoading: boolean;
-    login: (token: string, user: User) => Promise<void>;
+    login: (token: string, user: User, refreshToken?: string) => Promise<void>;
+    setToken: (token: string, refreshToken?: string) => Promise<void>;
     logout: () => Promise<void>;
     loadToken: () => Promise<void>;
     setLoading: (loading: boolean) => void;
@@ -18,66 +21,61 @@ export interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
     token: null,
+    refreshToken: null,
     isAuthenticated: false,
     user: null,
     isLoading: true,
 
-    login: async (token: string, user: User) => {
+    login: async (token: string, user: User, refreshToken?: string) => {
         try {
-            // Save to secure storage
             await SecureStore.setItemAsync(TOKEN_KEY, token);
             await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
-
-            console.log('💾 Saved to secure storage:', {
-                token: token.substring(0, 20) + '...',
-                user: { name: user.name, role: user.role }
-            });
-
-            // Update state
-            set({
-                token,
-                user,
-                isAuthenticated: true,
-                isLoading: false,
-            });
+            if (refreshToken) {
+                await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
+            }
+            set({ token, refreshToken: refreshToken ?? null, user, isAuthenticated: true, isLoading: false });
         } catch (error) {
             console.error('Failed to save auth data:', error);
             throw new Error('Failed to save authentication data');
         }
     },
 
+    // Called by the API interceptor when it refreshes silently
+    setToken: async (token: string, refreshToken?: string) => {
+        try {
+            await SecureStore.setItemAsync(TOKEN_KEY, token);
+            if (refreshToken) await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
+        } catch {}
+        set((state) => ({
+            token,
+            refreshToken: refreshToken ?? state.refreshToken,
+        }));
+    },
+
     logout: async () => {
-        // Best-effort backend call to blacklist tokens
         try {
             const { authService } = await import('../services/authService');
             await authService.logout();
         } catch {}
-        // Clear secure storage
         try {
             await SecureStore.deleteItemAsync(TOKEN_KEY);
+            await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
             await SecureStore.deleteItemAsync(USER_KEY);
         } catch {}
-        // Always clear state
-        set({ token: null, user: null, isAuthenticated: false, isLoading: false });
+        set({ token: null, refreshToken: null, user: null, isAuthenticated: false, isLoading: false });
     },
 
     loadToken: async () => {
         try {
             set({ isLoading: true });
-
-            const [token, userJson] = await Promise.all([
+            const [token, refreshToken, userJson] = await Promise.all([
                 SecureStore.getItemAsync(TOKEN_KEY),
+                SecureStore.getItemAsync(REFRESH_TOKEN_KEY),
                 SecureStore.getItemAsync(USER_KEY),
             ]);
-
             if (token && userJson) {
                 const user = JSON.parse(userJson) as User;
-                set({
-                    token,
-                    user,
-                    isAuthenticated: true,
-                    isLoading: false,
-                });
+                set({ token, refreshToken: refreshToken ?? null, user, isAuthenticated: true, isLoading: false });
             } else {
                 set({ isLoading: false });
             }
