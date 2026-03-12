@@ -40,7 +40,7 @@ export default function ApprovalsScreen() {
 
     const fetchPending = useCallback(async () => {
         try {
-            const res = await api.get('/api/v1/gate/entries?status=WAITING_APPROVAL&limit=50');
+            const res = await api.get('/api/v1/gate/requests');
             setEntries(res.data?.data?.entries ?? res.data?.data ?? []);
         } catch (err: any) {
             console.error('Failed to fetch pending approvals:', err);
@@ -56,7 +56,7 @@ export default function ApprovalsScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setActioning(id + '_approve');
         try {
-            await api.patch(`/api/v1/gate/entries/${id}/approve`);
+            await api.patch(`/api/v1/gate/requests/${id}/approve`);
             setEntries((prev) => prev.filter((e) => e.id !== id));
         } catch (err: any) {
             Alert.alert('Error', err?.response?.data?.message ?? 'Failed to approve.');
@@ -73,7 +73,7 @@ export default function ApprovalsScreen() {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                     setActioning(id + '_reject');
                     try {
-                        await api.patch(`/api/v1/gate/entries/${id}/reject`);
+                        await api.patch(`/api/v1/gate/requests/${id}/reject`);
                         setEntries((prev) => prev.filter((e) => e.id !== id));
                     } catch (err: any) {
                         Alert.alert('Error', err?.response?.data?.message ?? 'Failed to reject.');

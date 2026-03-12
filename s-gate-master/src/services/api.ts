@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
+import { router } from 'expo-router';
 
 const BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
 
@@ -12,8 +13,8 @@ const api: AxiosInstance = axios.create({
 // ── Request: attach access token ─────────────────────────────────────────────
 api.interceptors.request.use(
     (config) => {
-        const token = useAuthStore.getState().token;
-        if (token) config.headers.Authorization = `Bearer ${token}`;
+        const accessToken = useAuthStore.getState().accessToken;
+        if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
         console.log('🚀 API Request:', config.method?.toUpperCase(), `${BASE_URL}${config.url}`);
         return config;
     },
@@ -54,30 +55,27 @@ api.interceptors.response.use(
             originalRequest._retry = true;
             isRefreshing = true;
 
-            const { refreshToken, setToken, logout } = useAuthStore.getState();
+            const { refreshToken, refreshAccessToken, logout } = useAuthStore.getState();
 
             if (!refreshToken) {
                 isRefreshing = false;
                 await logout();
+                router.replace('/login');
                 return Promise.reject(error);
             }
 
             try {
-                // Call refresh endpoint
-                const res = await axios.post(`${BASE_URL}/api/v1/auth/refresh-token`, { refreshToken });
-                const { accessToken, refreshToken: newRefreshToken } = res.data?.data ?? {};
-
-                if (!accessToken) throw new Error('No access token in refresh response');
-
-                await setToken(accessToken, newRefreshToken);
-                drainQueue(accessToken);
+                // Call refresh endpoint stored in zustand
+                const newAccessToken = await refreshAccessToken();
+                drainQueue(newAccessToken);
 
                 // Retry original request with new token
-                originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
                 return api(originalRequest);
             } catch (refreshError) {
                 drainQueue(null, refreshError);
                 await logout();
+                router.replace('/login');
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;

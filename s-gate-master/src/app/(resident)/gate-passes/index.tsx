@@ -11,7 +11,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 
 export default function GatePassesScreen() {
     const router = useRouter();
-    const token = useAuthStore(state => state.token);
+    const token = useAuthStore(state => state.accessToken);
     const [passes, setPasses] = useState<GatePass[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);

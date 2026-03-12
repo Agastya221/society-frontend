@@ -30,13 +30,14 @@ export interface LoginResponse {
 }
 
 export interface AuthState {
-    token: string | null;
+    accessToken: string | null;
     user: User | null;
     role: string | null;
     appType: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: (token: string, user: User, appType?: string) => Promise<void>;
+    login: (accessToken: string, refreshToken: string, user: User, appType?: string) => Promise<void>;
+    refreshAccessToken: () => Promise<string>;
     logout: () => Promise<void>;
     loadToken: () => Promise<void>;
     setLoading: (loading: boolean) => void;

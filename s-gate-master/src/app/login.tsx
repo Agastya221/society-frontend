@@ -149,7 +149,7 @@ export default function Login() {
             }
 
             // 4. Persist login state
-            await login(data.accessToken, data.user, data.appType);
+            await login(data.accessToken, data.refreshToken, data.user, data.appType);
 
         } catch (err: any) {
             console.error('Verify error:', err);

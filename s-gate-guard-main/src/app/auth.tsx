@@ -129,7 +129,7 @@ export default function AuthScreen() {
             }
 
             // 4. Save to store — include refreshToken so silent refresh works
-            await login(data.accessToken, data.user, data.refreshToken);
+            await login(data.accessToken, data.refreshToken, data.user);
 
         } catch (err: any) {
             const msg = err?.response?.data?.message || err?.message || 'Verification failed.';

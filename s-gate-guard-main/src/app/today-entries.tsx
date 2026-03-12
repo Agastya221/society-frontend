@@ -11,6 +11,7 @@ import {
     Platform,
     Pressable,
     RefreshControl,
+    ScrollView,
     StyleSheet,
     Text,
     View,
@@ -26,7 +27,7 @@ interface Entry {
     purpose?: string;
     checkInTime: string;
     checkOutTime: string | null;
-    status: 'INSIDE' | 'EXITED' | 'WAITING';
+    status: 'INSIDE' | 'EXITED' | 'WAITING_APPROVAL' | 'WAITING' | 'DENIED' | 'APPROVED';
     approvedBy?: string;
 }
 
@@ -36,6 +37,15 @@ const TYPE_COLORS: Record<string, string> = {
     WORKER: '#8B5CF6',
     CAB: '#10B981',
 };
+
+type FilterType = 'ALL' | 'GUEST' | 'DELIVERY' | 'WORKER' | 'CAB';
+const FILTERS: { label: string; value: FilterType }[] = [
+    { label: 'All', value: 'ALL' },
+    { label: 'Guests', value: 'GUEST' },
+    { label: 'Deliveries', value: 'DELIVERY' },
+    { label: 'Workers', value: 'WORKER' },
+    { label: 'Cabs', value: 'CAB' },
+];
 
 const formatTime = (iso: string) =>
     new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -51,22 +61,53 @@ export default function TodayEntriesScreen() {
     const [entries, setEntries] = useState<Entry[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [fetchingMore, setFetchingMore] = useState(false);
     const [checkingOut, setCheckingOut] = useState<string | null>(null);
+    
+    // Pagination & Filters
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [filter, setFilter] = useState<FilterType>('ALL');
 
-    const fetchEntries = useCallback(async () => {
+    const fetchEntries = useCallback(async (isLoadMore = false, currentFilter = filter) => {
         try {
-            const res = await api.get('/api/v1/gate/entries?limit=50');
-            setEntries(res.data?.data?.entries ?? res.data?.data ?? []);
+            const fetchPage = isLoadMore ? page + 1 : 1;
+            const typeQuery = currentFilter !== 'ALL' ? `&type=${currentFilter}` : '';
+            const res = await api.get(`/api/v1/gate/entries?limit=10&page=${fetchPage}${typeQuery}`);
+            
+            const newEntries = res.data?.data?.entries ?? [];
+            const pagination = res.data?.data?.pagination;
+
+            if (isLoadMore) {
+                setEntries(prev => [...prev, ...newEntries]);
+            } else {
+                setEntries(newEntries);
+            }
+
+            setPage(fetchPage);
+            setHasMore(pagination?.page < pagination?.pages);
         } catch (err: any) {
             console.error('Failed to fetch entries:', err);
         } finally {
             setLoading(false);
             setRefreshing(false);
+            setFetchingMore(false);
         }
-    }, []);
+    }, [page, filter]);
 
-    // Refresh every time screen is focused
-    useFocusEffect(useCallback(() => { fetchEntries(); }, [fetchEntries]));
+    // Refresh every time screen is focused (resets everything)
+    useFocusEffect(useCallback(() => {
+        setLoading(true);
+        fetchEntries(false, filter);
+    }, [filter]));
+
+    const handleFilterChange = (f: FilterType) => {
+        if (f === filter) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setFilter(f);
+        setLoading(true);
+        fetchEntries(false, f);
+    };
 
     const handleCheckOut = async (id: string) => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -86,25 +127,48 @@ export default function TodayEntriesScreen() {
         }
     };
 
-    const onRefresh = () => { setRefreshing(true); fetchEntries(); };
+    const onRefresh = () => { 
+        setRefreshing(true); 
+        fetchEntries(false, filter); 
+    };
 
-    if (loading) {
-        return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#3B82F6" />
-                <Text style={styles.loadingText}>Loading entries...</Text>
-            </View>
-        );
-    }
+    const onLoadMore = () => {
+        if (!hasMore || fetchingMore || loading) return;
+        setFetchingMore(true);
+        fetchEntries(true, filter);
+    };
 
     return (
         <View style={styles.container}>
-            {entries.length === 0 ? (
+            {/* Filter Tabs */}
+            <View style={styles.filterContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+                    {FILTERS.map((f) => {
+                        const isActive = filter === f.value;
+                        return (
+                            <Pressable
+                                key={f.value}
+                                onPress={() => handleFilterChange(f.value)}
+                                style={[styles.filterTab, isActive && styles.filterTabActive]}
+                            >
+                                <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{f.label}</Text>
+                            </Pressable>
+                        );
+                    })}
+                </ScrollView>
+            </View>
+
+            {loading ? (
+                <View style={styles.centered}>
+                    <ActivityIndicator size="large" color="#3B82F6" />
+                    <Text style={styles.loadingText}>Loading entries...</Text>
+                </View>
+            ) : entries.length === 0 ? (
                 <View style={styles.emptyState}>
                     <View style={styles.emptyIcon}>
                         <Ionicons name="calendar-outline" size={48} color="#9CA3AF" />
                     </View>
-                    <Text style={styles.emptyTitle}>No Entries Today</Text>
+                    <Text style={styles.emptyTitle}>No Entries Found</Text>
                     <Text style={styles.emptySubtitle}>Approved visitors will appear here</Text>
                 </View>
             ) : (
@@ -122,6 +186,9 @@ export default function TodayEntriesScreen() {
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />}
+                    onEndReached={onLoadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={fetchingMore ? <ActivityIndicator size="small" color="#3B82F6" style={{ marginVertical: 20 }} /> : null}
                 />
             )}
         </View>
@@ -137,17 +204,49 @@ function EntryCard({
     const color = TYPE_COLORS[entry.visitorType] ?? '#6B7280';
     const fadeAnim = React.useRef(new Animated.Value(0)).current;
     const slideAnim = React.useRef(new Animated.Value(30)).current;
+    
+    // Status Logic
     const isInside = entry.status === 'INSIDE';
+    const isExited = entry.status === 'EXITED';
+    const isWaiting = ['WAITING_APPROVAL', 'WAITING'].includes(entry.status);
+
+    let statusText: string = entry.status;
+    let statusColor = '#374151'; // default text
+    let statusBg = '#F3F4F6'; // default bg
+    let statusDot = '#6B7280'; // default dot
+
+    if (isInside) {
+        statusText = 'INSIDE';
+        statusBg = '#D1FAE5';
+        statusColor = '#047857';
+        statusDot = '#10B981';
+    } else if (isExited) {
+        statusText = 'EXITED';
+        statusBg = '#F3F4F6';
+        statusColor = '#374151';
+        statusDot = '#6B7280';
+    } else if (isWaiting) {
+        statusText = 'WAITING';
+        statusBg = '#FEF3C7';
+        statusColor = '#D97706';
+        statusDot = '#F59E0B';
+    }
 
     const flatLabel = entry.flat?.flatNumber ?? entry.flatNumber ?? '—';
     const residentName = entry.flat?.resident?.name;
 
     React.useEffect(() => {
         Animated.parallel([
-            Animated.timing(fadeAnim, { toValue: 1, delay: index * 80, duration: 400, useNativeDriver: true }),
-            Animated.spring(slideAnim, { toValue: 0, delay: index * 80, tension: 50, friction: 8, useNativeDriver: true }),
+            Animated.timing(fadeAnim, { toValue: 1, delay: Math.min(index * 50, 500), duration: 400, useNativeDriver: true }),
+            Animated.spring(slideAnim, { toValue: 0, delay: Math.min(index * 50, 500), tension: 50, friction: 8, useNativeDriver: true }),
         ]).start();
     }, []);
+
+    // Infer Icon
+    let iconName: any = 'person';
+    if (entry.visitorType === 'DELIVERY') iconName = 'cube';
+    else if (entry.visitorType === 'WORKER') iconName = 'construct';
+    else if (entry.visitorType === 'CAB') iconName = 'car';
 
     return (
         <Animated.View style={[styles.card, { borderLeftColor: color, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
@@ -155,10 +254,7 @@ function EntryCard({
             <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderLeft}>
                     <View style={[styles.typeIcon, { backgroundColor: color + '18' }]}>
-                        <Ionicons
-                            name={entry.visitorType === 'GUEST' ? 'person' : entry.visitorType === 'DELIVERY' ? 'cube' : entry.visitorType === 'WORKER' ? 'construct' : 'car'}
-                            size={20} color={color}
-                        />
+                        <Ionicons name={iconName} size={20} color={color} />
                     </View>
                     <View style={styles.cardHeaderText}>
                         <Text style={styles.visitorName}>{entry.visitorName}</Text>
@@ -168,10 +264,10 @@ function EntryCard({
                         </Text>
                     </View>
                 </View>
-                <View style={[styles.statusBadge, isInside ? { backgroundColor: '#D1FAE5', borderColor: '#A7F3D0' } : { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' }]}>
-                    <View style={[styles.statusDot, { backgroundColor: isInside ? '#10B981' : '#6B7280' }]} />
-                    <Text style={[styles.statusText, { color: isInside ? '#047857' : '#374151' }]}>
-                        {isInside ? 'INSIDE' : 'EXITED'}
+                <View style={[styles.statusBadge, { backgroundColor: statusBg, borderColor: statusBg }]}>
+                    <View style={[styles.statusDot, { backgroundColor: statusDot }]} />
+                    <Text style={[styles.statusText, { color: statusColor }]}>
+                        {isInside ? 'INSIDE' : isExited ? 'EXITED' : 'WAITING'}
                     </Text>
                 </View>
             </View>
@@ -181,14 +277,14 @@ function EntryCard({
                 <View style={styles.timeRow}>
                     <Ionicons name="enter-outline" size={16} color="#10B981" />
                     <Text style={styles.timeLabel}>Check-In:</Text>
-                    <Text style={styles.timeValue}>{formatTime(entry.checkInTime)}</Text>
+                    <Text style={styles.timeValue}>{entry.checkInTime ? formatTime(entry.checkInTime) : '—'}</Text>
                 </View>
                 <View style={styles.timeRow}>
                     <Ionicons name="exit-outline" size={16} color="#6B7280" />
                     <Text style={styles.timeLabel}>Check-Out:</Text>
                     <Text style={styles.timeValue}>{entry.checkOutTime ? formatTime(entry.checkOutTime) : '—'}</Text>
                 </View>
-                {entry.checkOutTime && (
+                {entry.checkInTime && entry.checkOutTime && (
                     <View style={styles.durationBanner}>
                         <Ionicons name="time-outline" size={16} color="#3B82F6" />
                         <Text style={styles.durationText}>
@@ -223,6 +319,12 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FAFBFC' },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
     loadingText: { fontSize: 15, fontWeight: '600', color: '#6B7280' },
+    filterContainer: { backgroundColor: '#FFFFFF', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+    filterScroll: { paddingHorizontal: 20, gap: 10 },
+    filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6' },
+    filterTabActive: { backgroundColor: '#3B82F6' },
+    filterText: { fontSize: 13, fontWeight: '700', color: '#4B5563' },
+    filterTextActive: { color: '#FFFFFF' },
     listContent: { padding: 20, paddingBottom: 40 },
     card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, marginBottom: 16, borderLeftWidth: 4, borderWidth: 1, borderColor: '#F3F4F6', ...Platform.select({ ios: { shadowColor: '#1F2937', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.06, shadowRadius: 16 }, android: { elevation: 3 } }) },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
