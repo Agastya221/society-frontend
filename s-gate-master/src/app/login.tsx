@@ -16,8 +16,7 @@ import {
 } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from "react-native-safe-area-context";
-// @ts-ignore — package ships without types
-import { OTPWidget } from '@msg91comm/sendotp-react-native';
+import { sendOtp, verifyOtp, retryOtp } from '@/services/msg91';
 import api from "@/services/api";
 import { MSG91_WIDGET_ID, MSG91_TOKEN_AUTH } from '@/constants/msg91';
 
@@ -37,12 +36,7 @@ export default function Login() {
     const [countdown, setCountdown] = useState(0);        // Resend cooldown in seconds
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    // ── Initialise MSG91 widget once ──────────────────────────────────────────
-    useEffect(() => {
-        OTPWidget.initializeWidget(MSG91_WIDGET_ID, MSG91_TOKEN_AUTH);
-    }, []);
-
-    // ── Countdown for resend button ───────────────────────────────────────────
+    // ── Timer countdown ────────────────────────────────────────────────────────
     useEffect(() => {
         if (countdown <= 0) {
             if (timerRef.current) clearInterval(timerRef.current);
@@ -72,14 +66,13 @@ export default function Login() {
         setError('');
 
         try {
-            // MSG91 expects country code prefix without +
-            const response = await OTPWidget.sendOTP({ identifier: `91${cleaned}` });
+            const response = await sendOtp(`91${cleaned}`);
             console.log('📤 MSG91 sendOTP response:', response);
 
             if (response?.message === 'success' || response?.reqId) {
                 setReqId(response.reqId ?? '');
                 setScreen('otp');
-                setCountdown(30); // 30s cooldown before resend
+                setCountdown(30);
             } else {
                 setError(response?.message || 'Failed to send OTP. Please try again.');
             }
@@ -97,7 +90,7 @@ export default function Login() {
         setIsLoading(true);
         setError('');
         try {
-            const response = await OTPWidget.retryOTP({ reqId });
+            const response = await retryOtp(reqId);
             console.log('🔄 MSG91 retryOTP response:', response);
             setCountdown(30);
         } catch (err: any) {
@@ -118,8 +111,7 @@ export default function Login() {
         setError('');
 
         try {
-            // 1. Verify OTP with MSG91 — this gives us the widgetToken JWT
-            const verifyResponse = await OTPWidget.verifyOTP({ reqId, otp: otp.trim() });
+            const verifyResponse = await verifyOtp(reqId, otp.trim());
             console.log('✅ MSG91 verifyOTP response:', verifyResponse);
 
             // MSG91 verifyOTP response: { message: "SUCCESS", reqId: string }
