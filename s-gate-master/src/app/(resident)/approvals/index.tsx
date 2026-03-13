@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../../components/ui/Card';
-import { ConfirmationModal } from '../../../components/ui/ConfirmationModal';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import api from '../../../services/api';
@@ -53,6 +52,8 @@ export default function ApprovalsScreen() {
     useFocusEffect(
         useCallback(() => {
             fetchRequests();
+            const interval = setInterval(fetchRequests, 60000);
+            return () => clearInterval(interval);
         }, [])
     );
 
@@ -64,20 +65,7 @@ export default function ApprovalsScreen() {
     const handleAction = (request: EntryRequest, type: 'APPROVE' | 'REJECT') => {
         setSelectedRequest(request);
         setRejectReason('');
-        if (type === 'REJECT') {
-            Alert.prompt(
-                'Reject Entry',
-                'Please provide a reason for rejection (optional):',
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Reject', style: 'destructive', onPress: (reason) => confirmReject(request.id, reason || 'Not expecting anyone') },
-                ],
-                'plain-text',
-                'Not expecting anyone'
-            );
-        } else {
-            setModalConfig({ visible: true, type });
-        }
+        setModalConfig({ visible: true, type });
     };
 
     const confirmApprove = async () => {
@@ -100,17 +88,22 @@ export default function ApprovalsScreen() {
         }
     };
 
-    const confirmReject = async (requestId: string, reason: string) => {
-        // Optimistic UI update
+    const confirmReject = async () => {
+        if (!selectedRequest) return;
+        const requestId = selectedRequest.id;
+        const reason = rejectReason.trim() || 'Not expecting anyone';
+
         const previousRequests = [...requests];
         setRequests(prev => prev.filter(req => req.id !== requestId));
+        setModalConfig({ ...modalConfig, visible: false });
+        setSelectedRequest(null);
+        setRejectReason('');
 
         try {
             await api.patch(`/gate/requests/${requestId}/reject`, { reason });
-            // Toast could be added here if there was a toast library
         } catch (err: any) {
             console.error(err);
-            setRequests(previousRequests); // Revert on failure
+            setRequests(previousRequests);
             Alert.alert('Error', err?.response?.data?.message || 'Failed to reject request');
         }
     };
@@ -212,15 +205,69 @@ export default function ApprovalsScreen() {
                 }
             />
 
-            <ConfirmationModal
+            <Modal
                 visible={modalConfig.visible}
-                title="Approve Entry?"
-                message={`Are you sure you want to allow ${selectedRequest?.visitorName} to enter?`}
-                variant="primary"
-                confirmText="Yes, Approve"
-                onConfirm={confirmApprove}
-                onCancel={() => setModalConfig({ ...modalConfig, visible: false })}
-            />
+                transparent
+                animationType="fade"
+                onRequestClose={() => setModalConfig({ ...modalConfig, visible: false })}
+            >
+                <View className="flex-1 bg-black/50 items-center justify-center p-6">
+                    <View className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-3xl p-6 shadow-2xl">
+                        {modalConfig.type === 'APPROVE' ? (
+                            <>
+                                <Text className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Approve Entry?</Text>
+                                <Text className="text-gray-500 dark:text-gray-400 mb-6">
+                                    Allow {selectedRequest?.visitorName} to enter?
+                                </Text>
+                                <View className="flex-row gap-3">
+                                    <TouchableOpacity
+                                        onPress={() => setModalConfig({ ...modalConfig, visible: false })}
+                                        className="flex-1 py-3.5 rounded-xl bg-gray-100 dark:bg-zinc-800 items-center"
+                                    >
+                                        <Text className="font-semibold text-gray-600 dark:text-gray-300">Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={confirmApprove}
+                                        className="flex-1 py-3.5 rounded-xl bg-green-600 items-center"
+                                    >
+                                        <Text className="font-bold text-white">Approve</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </>
+                        ) : (
+                            <>
+                                <Text className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Reject Entry?</Text>
+                                <Text className="text-gray-500 dark:text-gray-400 mb-4">
+                                    Provide a reason for rejecting {selectedRequest?.visitorName}.
+                                </Text>
+                                <TextInput
+                                    className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 text-gray-900 dark:text-white mb-4 h-24"
+                                    multiline
+                                    textAlignVertical="top"
+                                    placeholder="e.g. Not expecting anyone"
+                                    placeholderTextColor="#9ca3af"
+                                    value={rejectReason}
+                                    onChangeText={setRejectReason}
+                                />
+                                <View className="flex-row gap-3">
+                                    <TouchableOpacity
+                                        onPress={() => setModalConfig({ ...modalConfig, visible: false })}
+                                        className="flex-1 py-3.5 rounded-xl bg-gray-100 dark:bg-zinc-800 items-center"
+                                    >
+                                        <Text className="font-semibold text-gray-600 dark:text-gray-300">Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={confirmReject}
+                                        className="flex-1 py-3.5 rounded-xl bg-red-600 items-center"
+                                    >
+                                        <Text className="font-bold text-white">Reject</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }

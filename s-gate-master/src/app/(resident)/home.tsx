@@ -109,8 +109,10 @@ export default function ResidentHomeScreen() {
         useCallback(() => {
             const fetchPendingCount = async () => {
                 try {
-                    const res = await api.get('/gate/requests/pending-count');
-                    setPendingApprovals(res.data?.data?.pendingCount || 0);
+                    const res = await api.get('/gate/requests?status=PENDING');
+                    const data = res.data?.data;
+                    const count = Array.isArray(data) ? data.length : (data?.entries?.length ?? 0);
+                    setPendingApprovals(count);
                 } catch (err: any) {
                     console.error('Failed to fetch pending count:', err);
                 }

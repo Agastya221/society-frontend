@@ -1,9 +1,11 @@
-import { ActivityIndicator, Text, TouchableOpacity, TouchableOpacityProps } from 'react-native';
+import React, { ReactNode } from 'react';
+import { ActivityIndicator, Text, TouchableOpacity, TouchableOpacityProps, View } from 'react-native';
 
 interface PrimaryButtonProps extends TouchableOpacityProps {
   title: string;
   variant?: 'primary' | 'outline' | 'danger';
   isLoading?: boolean;
+  leftIcon?: ReactNode;
 }
 
 export function PrimaryButton({ 
@@ -12,6 +14,7 @@ export function PrimaryButton({
   isLoading, 
   className = '',
   disabled,
+  leftIcon,
   ...props 
 }: PrimaryButtonProps) {
   let baseClass = 'py-3.5 px-4 rounded-xl items-center justify-center flex-row';
@@ -40,6 +43,8 @@ export function PrimaryButton({
     >
       {isLoading ? (
         <ActivityIndicator color={variant === 'outline' ? '#000' : '#fff'} className="mr-2" />
+      ) : leftIcon ? (
+        <View className="mr-2 flex-row items-center justify-center">{leftIcon}</View>
       ) : null}
       <Text className={textClass}>{title}</Text>
     </TouchableOpacity>
