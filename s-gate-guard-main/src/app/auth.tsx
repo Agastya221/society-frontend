@@ -62,7 +62,7 @@ export default function AuthScreen() {
         try {
             const response = await OTPWidget.sendOTP({ identifier: `91${cleaned}` });
             console.log('📤 MSG91 sendOTP (guard):', response);
-            if (response?.message === 'success' || response?.reqId) {
+            if (response?.reqId) {
                 setReqId(response.reqId ?? '');
                 setScreen('otp');
                 setCountdown(30);
@@ -82,8 +82,12 @@ export default function AuthScreen() {
         setIsLoading(true);
         setError('');
         try {
-            await OTPWidget.retryOTP({ reqId });
-            setCountdown(30);
+            const retryResponse = await OTPWidget.retryOTP({ reqId });
+            if (retryResponse?.reqId || retryResponse?.message?.toUpperCase() === 'SUCCESS') {
+                setCountdown(30);
+            } else {
+                setError('Failed to resend OTP. Please try again.');
+            }
         } catch {
             setError('Failed to resend OTP. Please try again.');
         } finally {

@@ -37,7 +37,7 @@ export default function Login() {
     const [countdown, setCountdown] = useState(0);        // Resend cooldown in seconds
     // ── Initialise MSG91 widget once ──────────────────────────────────────────
     useEffect(() => {
-        OTPWidget.initializeWidget('36616d6c644f393633343730', '486792TSKV5jSbverR69674835P1');
+        OTPWidget.initializeWidget(MSG91_WIDGET_ID, MSG91_TOKEN_AUTH);
     }, []);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -75,7 +75,7 @@ export default function Login() {
             const response = await OTPWidget.sendOTP({ identifier: `91${cleaned}` });
             console.log('📤 MSG91 sendOTP response:', response);
 
-            if (response?.message === 'success' || response?.reqId) {
+            if (response?.reqId) {
                 setReqId(response.reqId ?? '');
                 setScreen('otp');
                 setCountdown(30);
@@ -96,9 +96,13 @@ export default function Login() {
         setIsLoading(true);
         setError('');
         try {
-            const response = await OTPWidget.retryOTP({ reqId });
-            console.log('🔄 MSG91 retryOTP response:', response);
-            setCountdown(30);
+            const retryResponse = await OTPWidget.retryOTP({ reqId });
+            console.log('🔄 MSG91 retryOTP response:', retryResponse);
+            if (retryResponse?.reqId || retryResponse?.message?.toUpperCase() === 'SUCCESS') {
+                setCountdown(30);
+            } else {
+                setError('Failed to resend OTP. Please try again.');
+            }
         } catch (err: any) {
             setError('Failed to resend OTP. Please try again.');
         } finally {

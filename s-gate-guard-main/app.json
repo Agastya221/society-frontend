@@ -7,11 +7,12 @@
     "icon": "./src/assets/images/icon.png",
     "scheme": "sgateguard",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.sgate.guard",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.sgate.guard",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./src/assets/images/android-icon-foreground.png",
