@@ -61,13 +61,23 @@ export default function AuthScreen() {
         setError('');
         try {
             const response = await OTPWidget.sendOTP({ identifier: `91${cleaned}` });
-            console.log('📤 MSG91 sendOTP (guard):', response);
-            if (response?.reqId) {
-                setReqId(response.reqId ?? '');
+            console.log('📤 MSG91 sendOTP response:', JSON.stringify(response));
+
+            // MSG91 invisible flow returns { message: widgetId, reqId: undefined } on success.
+            // reqId is only present AFTER silent verification completes or on standard OTP flow.
+            // The ONLY way to detect a real failure is an explicit error type or http exception.
+            // If we got a response object at all without throwing, treat it as success.
+            const isHardError =
+                response?.type === 'error' ||
+                response?.success === false;
+
+            if (isHardError) {
+                setError('Failed to send OTP. Please try again.');
+            } else {
+                // Store reqId if present (standard flow), empty string if invisible flow
+                setReqId(response?.reqId ?? '');
                 setScreen('otp');
                 setCountdown(30);
-            } else {
-                setError(response?.message || 'Failed to send OTP. Please try again.');
             }
         } catch (err: any) {
             setError('Failed to send OTP. Please check your connection.');
