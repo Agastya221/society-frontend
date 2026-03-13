@@ -66,7 +66,7 @@ export default function PreApprovalsScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await api.patch(`/gate/preapprovals/${id}/cancel`);
+                            await api.delete(`/gate/preapprovals/${id}`);
                             // Optimistic UI update
                             setPreApprovals(prev => prev.map(p => p.id === id ? { ...p, status: 'CANCELLED' } : p));
                         } catch (err: any) {
