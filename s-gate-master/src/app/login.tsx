@@ -1,11 +1,9 @@
 import { useAuthStore } from "@/store/useAuthStore";
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -25,12 +23,10 @@ import { MSG91_WIDGET_ID, MSG91_TOKEN_AUTH } from '@/constants/msg91';
 type Screen = 'phone' | 'otp';
 
 export default function Login() {
-    const router = useRouter();
     const login  = useAuthStore((s) => s.login);
 
     const [screen, setScreen]     = useState<Screen>('phone');
     const [phone, setPhone]        = useState('');
-    const [name, setName]          = useState('');
     const [otp, setOtp]            = useState('');
     const [reqId, setReqId]        = useState('');        // MSG91 request ID for retry/verify
     const [isLoading, setIsLoading] = useState(false);
@@ -154,10 +150,7 @@ export default function Login() {
                 (verifyResponse?.type === 'success' && verifyResponse?.message ? verifyResponse.message : reqId);
 
             // 3. Send widgetToken to our backend → get our own accessToken + user
-            const backendRes = await api.post('/auth/otp/verify', {
-                widgetToken,
-                name: name.trim() || undefined,  // only sent for new users
-            });
+            const backendRes = await api.post('/api/v1/auth/otp/verify', { widgetToken });
             const data = backendRes.data?.data;
 
             if (!data?.accessToken || !data?.user) {
@@ -177,14 +170,15 @@ export default function Login() {
 
         } catch (err: any) {
             console.error('Verify error:', err);
+            const status = err?.response?.status;
             const msg = err?.response?.data?.message || err?.message || 'Verification failed.';
-            setError(msg);
-            if (msg.toLowerCase().includes('no account') || msg.includes('404')) {
-                Alert.alert(
-                    'No Account Found',
-                    'This number is not registered. Please contact your society admin.',
-                    [{ text: 'OK', onPress: () => setScreen('phone') }]
-                );
+
+            if (status === 429) {
+                setError('Too many attempts. Please try again later.');
+            } else if (status >= 500) {
+                setError('Something went wrong. Please try again.');
+            } else {
+                setError(msg || 'Verification failed. Please try again.');
             }
         } finally {
             setIsLoading(false);
@@ -268,22 +262,6 @@ export default function Login() {
                                                     onChangeText={(t) => { setPhone(t.replace(/\D/g, '').slice(0, 10)); setError(''); }}
                                                     keyboardType="number-pad"
                                                     maxLength={10}
-                                                    editable={!isLoading}
-                                                />
-                                            </View>
-                                        </View>
-
-                                        {/* Name Input */}
-                                        <View className="mb-6">
-                                            <Text className="text-slate-700 font-semibold mb-2 text-sm">Name</Text>
-                                            <View className="bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-1 flex-row items-center gap-3">
-                                                <Feather name="user" size={20} color="#64748b" />
-                                                <TextInput
-                                                    className="flex-1 text-slate-900 text-base"
-                                                    placeholder="Your name (required for new users)"
-                                                    placeholderTextColor="#94a3b8"
-                                                    value={name}
-                                                    onChangeText={setName}
                                                     editable={!isLoading}
                                                 />
                                             </View>

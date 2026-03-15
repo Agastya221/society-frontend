@@ -6,7 +6,7 @@ export const authService = {
      * Called after OTPWidget.verifyOTP() succeeds on the client.
      */
     verifyAdminOtp: async (widgetToken: string) => {
-        const response = await api.post('/api/v1/auth/admin-app/otp/verify', { widgetToken });
+        const response = await api.post('/api/v1/auth/otp/verify', { widgetToken });
         return response.data;
     },
 

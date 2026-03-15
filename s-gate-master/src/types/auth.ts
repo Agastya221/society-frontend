@@ -6,15 +6,24 @@ export interface LoginRequest {
 export interface User {
     id: string;
     name: string;
-    email: string;
+    email?: string;
     phone?: string;
-    role: 'ADMIN' | 'RESIDENT' | 'GUARD' | string;
-    society?: string;
-    flat?: string;
-    societyId?: string;
-    flatId?: string;
-    avatar?: string;
+    role: 'ADMIN' | 'RESIDENT' | 'GUARD' | 'SUPER_ADMIN' | string;
+    societyId?: string | null;
+    flatId?: string | null;
+    photoUrl?: string | null;
     isActive?: boolean;
+    flat?: {
+        number: string;
+        block?: { name: string };
+    } | null;
+    society?: {
+        name: string;
+        address?: string;
+        city?: string;
+    } | null;
+    /** @deprecated use photoUrl */
+    avatar?: string;
 }
 
 export interface LoginResponse {
@@ -31,12 +40,22 @@ export interface LoginResponse {
 
 export interface AuthState {
     accessToken: string | null;
+    refreshToken: string | null;
     user: User | null;
     role: string | null;
     appType: string | null;
+    requiresOnboarding: boolean;
+    onboardingStatus: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-    login: (accessToken: string, refreshToken: string, user: User, appType?: string) => Promise<void>;
+    login: (
+        accessToken: string,
+        refreshToken: string,
+        user: User,
+        appType?: string,
+        requiresOnboarding?: boolean,
+        onboardingStatus?: string | null,
+    ) => Promise<void>;
     refreshAccessToken: () => Promise<string>;
     logout: () => Promise<void>;
     loadToken: () => Promise<void>;
