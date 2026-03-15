@@ -125,9 +125,15 @@ export default function AuthScreen() {
                 return;
             }
 
+            // MSG91 SDK returns { message: "eyJ...(JWT)", type: "success" }
+            // The JWT in `message` is what our backend needs for verifyAccessToken.
+            // reqId is just the hex request identifier — NOT the access token.
             const widgetToken =
-                verifyResponse?.reqId ??
-                (verifyResponse?.type === 'success' && verifyResponse?.message ? verifyResponse.message : reqId);
+                (typeof verifyResponse?.message === 'string' && verifyResponse.message.startsWith('eyJ'))
+                    ? verifyResponse.message
+                    : verifyResponse?.reqId ?? reqId;
+
+            console.log('🔑 widgetToken being sent to backend:', widgetToken.substring(0, 20) + '...');
 
             // 2. Call guard-specific backend endpoint
             const backendRes = await api.post('/api/v1/auth/guard-app/otp/verify', { widgetToken });

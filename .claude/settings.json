@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -X POST https://control.msg91.com/api/v5/widget/verifyAccessToken -H \"Content-Type: application/json\" -d '{\"\"authkey\"\": \"\"486792AgrjSO2SwJGd69674744P1\"\", \"\"access-token\"\": \"\"test\"\"}')",
+      "Bash(curl -s \"https://control.msg91.com/api/balance.php?authkey=486792AgrjSO2SwJGd69674744P1&type=4\")",
+      "Bash(curl -s https://society-gate-backend-gsrq.onrender.com/api/v1/auth/otp/verify -H \"Content-Type: application/json\" -d '{\"\"widgetToken\"\": \"\"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyZXF1ZXN0SWQiOiIzNjYzNmY3MjcyNDkzNTM0MzQzODM0MzciLCJjb21wYW55SWQiOjQ4Njc5Mn0.QyewFcpqRypbiIJlKR1kV_0k7q2sLlhheMh0WQAxa-c\"\"}')"
+    ]
+  }
+}

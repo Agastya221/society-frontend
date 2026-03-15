@@ -144,10 +144,15 @@ export default function Login() {
                 return;
             }
 
-            // The access-token our backend needs is the reqId from a verified session
+            // MSG91 SDK returns { message: "eyJ...(JWT)", type: "success" }
+            // The JWT in `message` is what our backend needs for verifyAccessToken.
+            // reqId is just the hex request identifier — NOT the access token.
             const widgetToken =
-                verifyResponse?.reqId ??
-                (verifyResponse?.type === 'success' && verifyResponse?.message ? verifyResponse.message : reqId);
+                (typeof verifyResponse?.message === 'string' && verifyResponse.message.startsWith('eyJ'))
+                    ? verifyResponse.message
+                    : verifyResponse?.reqId ?? reqId;
+
+            console.log('🔑 widgetToken being sent to backend:', widgetToken.substring(0, 20) + '...');
 
             // 3. Send widgetToken to our backend → get our own accessToken + user
             const backendRes = await api.post('/api/v1/auth/otp/verify', { widgetToken });
