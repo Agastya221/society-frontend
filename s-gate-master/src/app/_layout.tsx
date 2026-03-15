@@ -10,7 +10,7 @@ import { useAuthStore } from "../store/useAuthStore";
 
 export default function RootLayout() {
   const { colorScheme, setColorScheme } = useColorScheme();
-  const { isAuthenticated, isLoading, role, loadToken } = useAuthStore();
+  const { isAuthenticated, isLoading, role, requiresOnboarding, loadToken } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
 
@@ -27,49 +27,44 @@ export default function RootLayout() {
 
   // Role-based navigation logic
   useEffect(() => {
-    console.log('🔍 Navigation Debug:', { 
-      isLoading, 
-      isAuthenticated, 
-      role, 
-      segments,
-      currentSegment: segments[0]
-    });
+    if (isLoading) return;
 
-    if (isLoading) return; // Wait for token to load
-
-    const inAuthGroup = segments[0] === undefined || segments[0] === "login";
-    const inAdminGroup = segments[0] === "(admin)";
-    const inResidentGroup = segments[0] === "(resident)";
-
-    console.log('🔍 Navigation Conditions:', {
-      inAuthGroup,
-      inAdminGroup,
-      inResidentGroup
-    });
+    const inAuthGroup     = segments[0] === undefined || segments[0] === 'login';
+    const inAdminGroup    = segments[0] === '(admin)';
+    const inResidentGroup = segments[0] === '(resident)';
+    const inOnboarding    = segments[0] === '(onboarding)';
+    const inSuperAdmin    = segments[0] === '(superadmin)';
 
     if (!isAuthenticated && !inAuthGroup) {
-      // User is not authenticated, redirect to login
-      console.log('➡️ Redirecting to login (not authenticated)');
-      router.replace("/login");
-    } else if (isAuthenticated && role) {
-      // User is authenticated, route based on role
-      console.log('✅ User authenticated with role:', role);
-      
-      if (role === "ADMIN" && !inAdminGroup) {
-        console.log('➡️ Redirecting to /(admin)');
-        router.replace("/(admin)");
-      } else if (role === "RESIDENT" && !inResidentGroup) {
-        console.log('➡️ Redirecting to /(resident)/home');
-        router.replace("/(resident)/home");
-      } else if (role !== "ADMIN" && role !== "RESIDENT" && inAuthGroup) {
-        // Handle other roles - for now redirect to resident
-        console.log('➡️ Redirecting unknown role to /(resident)/home');
-        router.replace("/(resident)/home");
-      } else {
-        console.log('✋ Already in correct location');
-      }
+      router.replace('/login');
+      return;
     }
-  }, [isAuthenticated, isLoading, segments, role]);
+
+    if (isAuthenticated && role) {
+
+      if (role === 'SUPER_ADMIN') {
+        if (!inSuperAdmin) router.replace('/(superadmin)');
+        return;
+      }
+
+      if (role === 'ADMIN') {
+        if (!inAdminGroup) router.replace('/(admin)');
+        return;
+      }
+
+      if (role === 'RESIDENT') {
+        if (requiresOnboarding) {
+          if (!inOnboarding) router.replace('/(onboarding)');
+        } else {
+          if (!inResidentGroup) router.replace('/(resident)/home');
+        }
+        return;
+      }
+
+      // Fallback for any other role
+      if (inAuthGroup) router.replace('/(resident)/home');
+    }
+  }, [isAuthenticated, isLoading, role, requiresOnboarding, segments]);
 
   // Android system navigation bar setup (CORRECT)
   useEffect(() => {

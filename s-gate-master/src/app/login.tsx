@@ -30,6 +30,7 @@ export default function Login() {
 
     const [screen, setScreen]     = useState<Screen>('phone');
     const [phone, setPhone]        = useState('');
+    const [name, setName]          = useState('');
     const [otp, setOtp]            = useState('');
     const [reqId, setReqId]        = useState('');        // MSG91 request ID for retry/verify
     const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +88,7 @@ export default function Login() {
                 setError('Failed to send OTP. Please try again.');
             } else {
                 // Store reqId if present (standard flow), empty string if invisible flow
-                setReqId(response?.reqId ?? '');
+                setReqId(response?.reqId ?? (response?.type === 'success' ? response?.message ?? '' : ''));
                 setScreen('otp');
                 setCountdown(30);
             }
@@ -148,10 +149,15 @@ export default function Login() {
             }
 
             // The access-token our backend needs is the reqId from a verified session
-            const widgetToken = verifyResponse?.reqId ?? reqId;
+            const widgetToken =
+                verifyResponse?.reqId ??
+                (verifyResponse?.type === 'success' && verifyResponse?.message ? verifyResponse.message : reqId);
 
             // 3. Send widgetToken to our backend → get our own accessToken + user
-            const backendRes = await api.post('/api/v1/auth/admin-app/otp/verify', { widgetToken });
+            const backendRes = await api.post('/auth/otp/verify', {
+                widgetToken,
+                name: name.trim() || undefined,  // only sent for new users
+            });
             const data = backendRes.data?.data;
 
             if (!data?.accessToken || !data?.user) {
@@ -160,7 +166,14 @@ export default function Login() {
             }
 
             // 4. Persist login state
-            await login(data.accessToken, data.refreshToken, data.user, data.appType);
+            await login(
+                data.accessToken,
+                data.refreshToken,
+                data.user,
+                data.appType,
+                data.requiresOnboarding ?? false,
+                data.onboardingStatus ?? null,
+            );
 
         } catch (err: any) {
             console.error('Verify error:', err);
@@ -255,6 +268,22 @@ export default function Login() {
                                                     onChangeText={(t) => { setPhone(t.replace(/\D/g, '').slice(0, 10)); setError(''); }}
                                                     keyboardType="number-pad"
                                                     maxLength={10}
+                                                    editable={!isLoading}
+                                                />
+                                            </View>
+                                        </View>
+
+                                        {/* Name Input */}
+                                        <View className="mb-6">
+                                            <Text className="text-slate-700 font-semibold mb-2 text-sm">Name</Text>
+                                            <View className="bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-1 flex-row items-center gap-3">
+                                                <Feather name="user" size={20} color="#64748b" />
+                                                <TextInput
+                                                    className="flex-1 text-slate-900 text-base"
+                                                    placeholder="Your name (required for new users)"
+                                                    placeholderTextColor="#94a3b8"
+                                                    value={name}
+                                                    onChangeText={setName}
                                                     editable={!isLoading}
                                                 />
                                             </View>

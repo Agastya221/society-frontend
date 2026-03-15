@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la e:/society-frontend/s-gate-master/src/app/'\\(onboarding\\)'/)",
+      "Bash(find \"e:/society-frontend/s-gate-master/src/app/\\(superadmin\\)\" -type f -name \"*.tsx\")"
+    ]
+  }
+}

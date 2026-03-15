@@ -7,7 +7,7 @@ const BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
 const api: AxiosInstance = axios.create({
     baseURL: BASE_URL,
     headers: { 'Content-Type': 'application/json' },
-    timeout: 15000,
+    timeout: 60000,
 });
 
 // ── Request: attach access token ─────────────────────────────────────────────

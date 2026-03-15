@@ -25,6 +25,7 @@ export default function AdminLayout() {
             <Stack.Screen name="residents" options={{ title: 'Resident Management' }} />
             <Stack.Screen name="settings" options={{ title: 'Settings' }} />
             <Stack.Screen name="profile" options={{ headerShown: false }} />
+            <Stack.Screen name="onboarding-requests" options={{ headerShown: false }} />
         </Stack>
     );
 }

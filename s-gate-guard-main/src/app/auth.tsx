@@ -75,7 +75,7 @@ export default function AuthScreen() {
                 setError('Failed to send OTP. Please try again.');
             } else {
                 // Store reqId if present (standard flow), empty string if invisible flow
-                setReqId(response?.reqId ?? '');
+                setReqId(response?.reqId ?? (response?.type === 'success' ? response?.message ?? '' : ''));
                 setScreen('otp');
                 setCountdown(30);
             }
@@ -125,7 +125,9 @@ export default function AuthScreen() {
                 return;
             }
 
-            const widgetToken = verifyResponse?.reqId ?? reqId;
+            const widgetToken =
+                verifyResponse?.reqId ??
+                (verifyResponse?.type === 'success' && verifyResponse?.message ? verifyResponse.message : reqId);
 
             // 2. Call guard-specific backend endpoint
             const backendRes = await api.post('/api/v1/auth/guard-app/otp/verify', { widgetToken });

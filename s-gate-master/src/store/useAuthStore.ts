@@ -14,8 +14,17 @@ export interface AuthState {
     user: User | null;
     role: string | null;
     appType: string | null;
+    requiresOnboarding: boolean;
+    onboardingStatus: string | null;
     isLoading: boolean;
-    login: (accessToken: string, refreshToken: string, user: User, appType?: string) => Promise<void>;
+    login: (
+        accessToken: string,
+        refreshToken: string,
+        user: User,
+        appType?: string,
+        requiresOnboarding?: boolean,
+        onboardingStatus?: string | null,
+    ) => Promise<void>;
     refreshAccessToken: () => Promise<string>;
     logout: () => Promise<void>;
     loadToken: () => Promise<void>;
@@ -29,14 +38,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     user: null,
     role: null,
     appType: null,
+    requiresOnboarding: false,
+    onboardingStatus: null,
     isLoading: true,
 
-    login: async (accessToken: string, refreshToken: string, user: User, appType?: string) => {
+    login: async (
+        accessToken: string,
+        refreshToken: string,
+        user: User,
+        appType?: string,
+        requiresOnboarding?: boolean,
+        onboardingStatus?: string | null,
+    ) => {
         try {
             await SecureStore.setItemAsync(TOKEN_KEY, accessToken);
             await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
             await SecureStore.setItemAsync(USER_KEY, JSON.stringify(user));
             if (appType) await SecureStore.setItemAsync(APP_TYPE_KEY, appType);
+            await SecureStore.setItemAsync('requiresOnboarding', String(requiresOnboarding ?? false));
+            await SecureStore.setItemAsync('onboardingStatus', onboardingStatus ?? '');
 
             set({
                 accessToken,
@@ -44,6 +64,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 user,
                 role: user.role,
                 appType: appType ?? null,
+                requiresOnboarding: requiresOnboarding ?? false,
+                onboardingStatus: onboardingStatus ?? null,
                 isAuthenticated: true,
                 isLoading: false,
             });
@@ -119,6 +141,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
             await SecureStore.deleteItemAsync(USER_KEY);
             await SecureStore.deleteItemAsync(APP_TYPE_KEY);
+            await SecureStore.deleteItemAsync('requiresOnboarding');
+            await SecureStore.deleteItemAsync('onboardingStatus');
         } catch {}
 
         set({
@@ -127,19 +151,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             user: null,
             role: null,
             appType: null,
+            requiresOnboarding: false,
+            onboardingStatus: null,
             isAuthenticated: false,
-            isLoading: false
+            isLoading: false,
         });
     },
 
     loadToken: async () => {
         try {
             set({ isLoading: true });
-            const [accessToken, refreshToken, userJson, appType] = await Promise.all([
+            const [accessToken, refreshToken, userJson, appType, requiresOnboarding, onboardingStatus] = await Promise.all([
                 SecureStore.getItemAsync(TOKEN_KEY),
                 SecureStore.getItemAsync(REFRESH_TOKEN_KEY),
                 SecureStore.getItemAsync(USER_KEY),
                 SecureStore.getItemAsync(APP_TYPE_KEY),
+                SecureStore.getItemAsync('requiresOnboarding'),
+                SecureStore.getItemAsync('onboardingStatus'),
             ]);
 
             if (accessToken && userJson) {
@@ -150,8 +178,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     user,
                     role: user.role,
                     appType: appType ?? null,
+                    requiresOnboarding: requiresOnboarding === 'true',
+                    onboardingStatus: onboardingStatus || null,
                     isAuthenticated: true,
-                    isLoading: false
+                    isLoading: false,
                 });
             } else {
                 set({ isLoading: false });
