@@ -1,4 +1,5 @@
 import * as NavigationBar from "expo-navigation-bar";
+import * as SplashScreen from "expo-splash-screen";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme } from "nativewind";
@@ -6,11 +7,15 @@ import { useEffect } from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
+import { useSoraFonts } from "../hooks/useFonts";
 import { useAuthStore } from "../store/useAuthStore";
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { colorScheme, setColorScheme } = useColorScheme();
   const { isAuthenticated, isLoading, role, requiresOnboarding, loadToken } = useAuthStore();
+  const [fontsLoaded, fontError] = useSoraFonts();
   const segments = useSegments();
   const router = useRouter();
 
@@ -66,6 +71,13 @@ export default function RootLayout() {
     }
   }, [isAuthenticated, isLoading, role, requiresOnboarding, segments]);
 
+  // Hide splash screen once fonts are loaded and auth is resolved
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && !isLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError, isLoading]);
+
   // Android system navigation bar setup (CORRECT)
   useEffect(() => {
     if (Platform.OS === "android") {
@@ -85,6 +97,9 @@ export default function RootLayout() {
       setupNavigationBar();
     }
   }, []); // Run once
+
+  // Wait for fonts and auth before rendering
+  if (!fontsLoaded && !fontError) return null;
 
   // Show loading screen while checking auth
   if (isLoading) {

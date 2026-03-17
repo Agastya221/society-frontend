@@ -3,7 +3,37 @@
     "allow": [
       "Bash(curl -s -X POST https://control.msg91.com/api/v5/widget/verifyAccessToken -H \"Content-Type: application/json\" -d '{\"\"authkey\"\": \"\"486792AgrjSO2SwJGd69674744P1\"\", \"\"access-token\"\": \"\"test\"\"}')",
       "Bash(curl -s \"https://control.msg91.com/api/balance.php?authkey=486792AgrjSO2SwJGd69674744P1&type=4\")",
-      "Bash(curl -s https://society-gate-backend-gsrq.onrender.com/api/v1/auth/otp/verify -H \"Content-Type: application/json\" -d '{\"\"widgetToken\"\": \"\"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyZXF1ZXN0SWQiOiIzNjYzNmY3MjcyNDkzNTM0MzQzODM0MzciLCJjb21wYW55SWQiOjQ4Njc5Mn0.QyewFcpqRypbiIJlKR1kV_0k7q2sLlhheMh0WQAxa-c\"\"}')"
+      "Bash(curl -s https://society-gate-backend-gsrq.onrender.com/api/v1/auth/otp/verify -H \"Content-Type: application/json\" -d '{\"\"widgetToken\"\": \"\"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyZXF1ZXN0SWQiOiIzNjYzNmY3MjcyNDkzNTM0MzQzODM0MzciLCJjb21wYW55SWQiOjQ4Njc5Mn0.QyewFcpqRypbiIJlKR1kV_0k7q2sLlhheMh0WQAxa-c\"\"}')",
+      "Bash(ls -la \"/e/society-frontend/s-gate-master/src/app/\\(tabs\\)/\")",
+      "Bash(ls -la \"/e/society-frontend/s-gate-master/src/app/\\(superadmin\\)/\")",
+      "Bash(ls -la \"/e/society-frontend/s-gate-master/src/app/\\(resident\\)/\")",
+      "Bash(curl -fsSL \"https://raw.githubusercontent.com/google/fonts/main/ofl/sora/static/Sora-Regular.ttf\" -o Sora-Regular.ttf)",
+      "Bash(curl -fsSL \"https://raw.githubusercontent.com/google/fonts/main/ofl/sora/static/Sora-Medium.ttf\" -o Sora-Medium.ttf)",
+      "Bash(curl -fsSL \"https://raw.githubusercontent.com/google/fonts/main/ofl/sora/static/Sora-SemiBold.ttf\" -o Sora-SemiBold.ttf)",
+      "Bash(curl -fsSL \"https://raw.githubusercontent.com/google/fonts/main/ofl/sora/static/Sora-Bold.ttf\" -o Sora-Bold.ttf)",
+      "Bash(curl -fsSL \"https://raw.githubusercontent.com/google/fonts/main/ofl/sora/static/Sora-ExtraBold.ttf\" -o Sora-ExtraBold.ttf)",
+      "Bash(curl -fsSL \"https://api.github.com/repos/google/fonts/contents/ofl/sora\")",
+      "Bash(curl -fsSL \"https://fonts.google.com/download?family=Sora\" -o sora.zip)",
+      "Bash(unzip -l sora.zip)",
+      "Bash(xxd)",
+      "Bash(npm info:*)",
+      "Read(//e/tmp/**)",
+      "Bash(curl -fsSL \"https://registry.npmjs.org/@expo-google-fonts/sora/-/sora-0.4.2.tgz\" -o sora-fonts.tgz)",
+      "Bash(tar -tzf sora-fonts.tgz)",
+      "Bash(tar -xzf sora-fonts.tgz \"package/400Regular/Sora_400Regular.ttf\" \"package/500Medium/Sora_500Medium.ttf\" \"package/600SemiBold/Sora_600SemiBold.ttf\" \"package/700Bold/Sora_700Bold.ttf\" \"package/800ExtraBold/Sora_800ExtraBold.ttf\")",
+      "Bash(cp package/400Regular/Sora_400Regular.ttf \"e:/society-frontend/s-gate-master/src/assets/fonts/Sora-Regular.ttf\")",
+      "Bash(cp package/500Medium/Sora_500Medium.ttf \"e:/society-frontend/s-gate-master/src/assets/fonts/Sora-Medium.ttf\")",
+      "Bash(cp package/600SemiBold/Sora_600SemiBold.ttf \"e:/society-frontend/s-gate-master/src/assets/fonts/Sora-SemiBold.ttf\")",
+      "Bash(cp package/700Bold/Sora_700Bold.ttf \"e:/society-frontend/s-gate-master/src/assets/fonts/Sora-Bold.ttf\")",
+      "Bash(cp package/800ExtraBold/Sora_800ExtraBold.ttf \"e:/society-frontend/s-gate-master/src/assets/fonts/Sora-ExtraBold.ttf\")",
+      "Bash(npx tsc:*)",
+      "Bash(find \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)\" -type f)",
+      "Bash(cat \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/approvals/index.tsx\")",
+      "Bash(cat e:/society-frontend/s-gate-master/src/types/*.ts)",
+      "Bash(grep -v \"^$\")"
+    ],
+    "additionalDirectories": [
+      "e:\\society-frontend\\s-gate-master\\src\\assets"
     ]
   }
 }
