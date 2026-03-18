@@ -6,6 +6,7 @@ export { SgateCard } from './SgateCard';
 export { SgateHeader } from './SgateHeader';
 export { SgateInput } from './SgateInput';
 export { SgateListItem } from './SgateListItem';
+export { SgateMascot } from './SgateMascot';
 export { SgateQuickAction } from './SgateQuickAction';
 export { SgateSecurityBanner } from './SgateSecurityBanner';
 export { SgateSectionHeader } from './SgateSectionHeader';

@@ -147,6 +147,10 @@ export default function ResidentLayout() {
         <Tabs.Screen name="notices"     options={{ href: null }} />
         <Tabs.Screen name="pre-approvals" options={{ href: null }} />
         <Tabs.Screen name="staff"       options={{ href: null }} />
+        <Tabs.Screen name="pre-approve" options={{ href: null }} />
+        <Tabs.Screen name="gate-pass"   options={{ href: null }} />
+        <Tabs.Screen name="notifications" options={{ href: null }} />
+        <Tabs.Screen name="expect-delivery" options={{ href: null }} />
       </Tabs>
     </View>
   );

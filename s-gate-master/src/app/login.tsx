@@ -26,6 +26,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MSG91_TOKEN_AUTH, MSG91_WIDGET_ID } from '@/constants/msg91';
+import { SgateMascot } from '@/components/Sgate/SgateMascot';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -151,7 +152,7 @@ export default function Login() {
                     ? verifyResponse.message
                     : verifyResponse?.reqId ?? reqId;
             console.log('🔑 widgetToken being sent to backend:', widgetToken.substring(0, 20) + '...');
-            const backendRes = await api.post('/api/v1/auth/otp/verify', { widgetToken });
+            const backendRes = await api.post('/auth/otp/verify', { widgetToken });
             const data = backendRes.data?.data;
             if (!data?.accessToken || !data?.user) {
                 setError('Authentication failed. Please contact support.');
@@ -259,9 +260,9 @@ function PhoneScreen({ phone, setPhone, error, setError, isLoading, onSend }: Ph
         <View style={styles.screenWrap}>
             {/* ── Black hero section ────────────────────────────────────────── */}
             <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.hero}>
-                {/* Mascot placeholder */}
-                <View style={styles.mascotCircle}>
-                    <Feather name="shield" size={36} color={SgateColors.black} />
+                {/* Mascot */}
+                <View style={{ marginBottom: 20 }}>
+                    <SgateMascot size={80} pose="happy" />
                 </View>
                 <Text style={styles.heroTitle}>Welcome back!</Text>
                 <Text style={styles.heroSub}>Sign in to your society</Text>
@@ -532,15 +533,6 @@ const styles = StyleSheet.create({
     heroCompact: {
         paddingTop: 56,
         paddingBottom: 32,
-    },
-    mascotCircle: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: SgateColors.gold,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
     },
     heroTitle: {
         ...SgateTypography.screenTitle,
