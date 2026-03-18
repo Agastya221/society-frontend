@@ -6,7 +6,7 @@ export const authService = {
      * Called after OTPWidget.verifyOTP() succeeds on the client.
      */
     verifyAdminOtp: async (widgetToken: string) => {
-        const response = await api.post('/api/v1/auth/otp/verify', { widgetToken });
+        const response = await api.post('/auth/otp/verify', { widgetToken });
         return response.data;
     },
 
@@ -15,7 +15,7 @@ export const authService = {
      * Called after OTPWidget.verifyOTP() succeeds on the client.
      */
     verifyGuardOtp: async (widgetToken: string) => {
-        const response = await api.post('/api/v1/auth/guard-app/otp/verify', { widgetToken });
+        const response = await api.post('/auth/guard-app/otp/verify', { widgetToken });
         return response.data;
     },
 
@@ -25,7 +25,7 @@ export const authService = {
     logout: async (accessToken?: string, refreshToken?: string): Promise<void> => {
         try {
             if (accessToken) {
-                await api.post('/api/v1/auth/logout', { refreshToken });
+                await api.post('/auth/logout', { refreshToken });
             }
         } catch {
             // Best-effort — local state will still be cleared

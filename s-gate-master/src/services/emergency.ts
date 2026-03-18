@@ -46,7 +46,7 @@ export const createEmergency = async (payload: CreateEmergencyPayload): Promise<
     try {
         console.log('🚨 Raising Emergency:', payload);
         const response = await api.post<{ success: boolean; data: EmergencyResponse }>(
-            '/api/v1/community/emergencies',
+            '/community/emergencies',
             payload
         );
         return response.data.data;
@@ -63,7 +63,7 @@ export const createEmergency = async (payload: CreateEmergencyPayload): Promise<
 export const getMyEmergencies = async (): Promise<EmergencyResponse[]> => {
     try {
         const response = await api.get<{ success: boolean; data: { emergencies: EmergencyResponse[] } }>(
-            '/api/v1/community/emergencies/my'
+            '/community/emergencies/my'
         );
         return response.data.data.emergencies;
     } catch (error: any) {
@@ -79,7 +79,7 @@ export const getMyEmergencies = async (): Promise<EmergencyResponse[]> => {
 export const getEmergencyById = async (id: string): Promise<EmergencyResponse> => {
     try {
         const response = await api.get<{ success: boolean; data: EmergencyResponse }>(
-            `/api/v1/community/emergencies/${id}`
+            `/community/emergencies/${id}`
         );
         return response.data.data;
     } catch (error: any) {

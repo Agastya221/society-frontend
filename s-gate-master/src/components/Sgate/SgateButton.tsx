@@ -14,10 +14,13 @@ type Size = 'sm' | 'md' | 'lg';
 
 interface SgateButtonProps {
   variant?: Variant;
-  title: string;
+  /** Primary text prop — use `label` or `title` (both accepted) */
+  label?: string;
+  title?: string;
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
+  fullWidth?: boolean;
   icon?: keyof typeof Feather.glyphMap;
   size?: Size;
   style?: ViewStyle;
@@ -38,14 +41,17 @@ const SIZE_STYLES: Record<Size, { paddingVertical: number; fontSize: number; rad
 
 export function SgateButton({
   variant = 'primary',
+  label,
   title,
   onPress,
   loading = false,
   disabled = false,
+  fullWidth = false,
   icon,
   size = 'md',
   style,
 }: SgateButtonProps) {
+  const text = label ?? title ?? '';
   const scale = useSharedValue(1);
 
   const animStyle = useAnimatedStyle(() => ({
@@ -85,6 +91,7 @@ export function SgateButton({
             paddingVertical: s.paddingVertical,
             borderRadius: s.radius,
             opacity: isDisabled ? 0.55 : 1,
+            alignSelf: fullWidth ? 'stretch' : 'auto',
           },
           animStyle,
           style,
@@ -115,7 +122,7 @@ export function SgateButton({
                 },
               ]}
             >
-              {title}
+              {text}
             </Text>
           </View>
         )}

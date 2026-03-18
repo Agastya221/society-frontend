@@ -85,7 +85,7 @@ export const createComplaint = async (payload: CreateComplaintPayload): Promise<
         console.log('📦 Request payload:', JSON.stringify(requestPayload, null, 2));
 
         const response = await api.post<{ data: ComplaintResponse }>(
-            '/api/v1/community/complaints',
+            '/community/complaints',
             requestPayload
         );
 
@@ -150,7 +150,7 @@ export const createComplaintV2 = async ({
         console.log('Is Anonymous:', isAnonymous);
 
         const response = await api.post<{ data: ComplaintResponse }>(
-            '/api/v1/community/complaints',
+            '/community/complaints',
             {
                 category,
                 title,
@@ -209,7 +209,7 @@ export const fetchComplaints = async (): Promise<Complaint[]> => {
         console.log('👤 User ID:', userId);
         console.log('👔 User Role:', userRole);
         console.log('🏢 Society ID:', societyId);
-        console.log('🔗 GET Request URL:', '/api/v1/community/complaints');
+        console.log('🔗 GET Request URL:', '/community/complaints');
         console.log('📋 Note: Authorization header with Bearer token is automatically added by interceptor');
 
         const response = await api.get<{
@@ -218,7 +218,7 @@ export const fetchComplaints = async (): Promise<Complaint[]> => {
                 pagination: any;
             }
         }>(
-            '/api/v1/community/complaints'
+            '/community/complaints'
         );
 
         // Extract complaints from nested structure
@@ -249,7 +249,7 @@ export const fetchComplaintDetails = async (complaintId: string): Promise<Compla
         console.log('📥 Fetching complaint details:', complaintId);
 
         const response = await api.get<{ data: Complaint }>(
-            `/api/v1/community/complaints/${complaintId}`
+            `/community/complaints/${complaintId}`
         );
 
         console.log('✅ Fetched complaint details successfully');
@@ -274,7 +274,7 @@ export const deleteComplaint = async (complaintId: string): Promise<string> => {
         console.log('🗑️  Deleting complaint:', complaintId);
 
         const response = await api.delete<{ success: boolean; message: string }>(
-            `/api/v1/community/complaints/${complaintId}`
+            `/community/complaints/${complaintId}`
         );
 
         if (!response.data.success) {
@@ -311,7 +311,7 @@ export const fetchGuards = async (): Promise<Guard[]> => {
     try {
         console.log('📥 Fetching guards list...');
         // Endpoint from docs: 8. Get All Guards (Admin Only) -> GET /resident-app/guards
-        const response = await api.get<{ data: Guard[] }>('/api/v1/auth/resident-app/guards');
+        const response = await api.get<{ data: Guard[] }>('/auth/resident-app/guards');
         console.log('✅ Fetched guards count:', response.data.data.length);
         return response.data.data;
     } catch (error: any) {
@@ -339,7 +339,7 @@ export const updateComplaint = async (
         console.log(`📤 Updating complaint ${complaintId}:`, updates);
 
         const response = await api.patch<{ data: Complaint }>(
-            `/api/v1/community/complaints/${complaintId}`,
+            `/community/complaints/${complaintId}`,
             updates
         );
 

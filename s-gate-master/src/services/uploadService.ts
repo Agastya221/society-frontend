@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import api from './api';
 
-const API_BASE_URL = 'https://society-gate-backend-gsrq.onrender.com/api/v1';
+const API_BASE_URL = 'https://society-gate-backend-gsrq.onrender.com/api/v1'; // kept for legacy direct-fetch usage
 
 interface PresignedUrlResponse {
     success: boolean;
@@ -66,7 +66,7 @@ const getPresignedUrl = async (
     }
 
     const response = await api.post<PresignedUrlResponse>(
-        '/api/v1/upload/presigned-url',
+        '/upload/presigned-url',
         payload
     );
 
@@ -177,7 +177,7 @@ export const confirmDocumentUpload = async (
     documentType: string,
     onboardingRequestId: string
 ): Promise<any> => {
-    const response = await api.post('/api/v1/upload/confirm', {
+    const response = await api.post('/upload/confirm', {
         s3Key,
         fileName,
         mimeType,
@@ -197,7 +197,7 @@ export const confirmDocumentUpload = async (
  * Get view URL for a document/image
  */
 export const getImageViewUrl = async (documentId: string): Promise<string> => {
-    const response = await api.get(`/api/v1/upload/${documentId}/view-url`);
+    const response = await api.get(`/upload/${documentId}/view-url`);
 
     if (!response.data.success) {
         throw new Error('Failed to get view URL');
@@ -210,7 +210,7 @@ export const getImageViewUrl = async (documentId: string): Promise<string> => {
  * Get view URL for an entry photo
  */
 export const getEntryPhotoViewUrl = async (entryRequestId: string): Promise<string> => {
-    const response = await api.get(`/api/v1/upload/entry-photo/${entryRequestId}`);
+    const response = await api.get(`/upload/entry-photo/${entryRequestId}`);
 
     if (!response.data.success) {
         throw new Error('Failed to get entry photo URL');

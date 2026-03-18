@@ -3,9 +3,27 @@ import { Image, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
+type AvatarSize = number | 'sm' | 'md' | 'lg';
+
+const SIZE_MAP: Record<string, number> = { sm: 36, md: 44, lg: 72 };
+
+function resolveSize(size: AvatarSize): number {
+  if (typeof size === 'string') return SIZE_MAP[size] ?? 40;
+  return size;
+}
+
+/** Convert a hex color to rgba with the given opacity (0–1). */
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 interface SgateAvatarProps {
   name: string;
-  size?: number;
+  size?: AvatarSize;
   photoUrl?: string;
   color?: string;
 }
@@ -44,9 +62,14 @@ function textColorForBg(bg: string): string {
 }
 
 export function SgateAvatar({ name, size = 40, photoUrl, color }: SgateAvatarProps) {
-  const bg = color ?? pickColor(name);
+  const px = resolveSize(size);
+  // When a color is explicitly provided: tinted bg at 12% opacity, full-color text.
+  // When auto-picked from palette: solid bg with contrast text.
+  const paletteColor = color ?? pickColor(name);
+  const bg = color ? hexToRgba(color, 0.12) : paletteColor;
+  const textColor = color ? color : textColorForBg(paletteColor);
   const initials = getInitials(name);
-  const fontSize = Math.round(size * 0.38);
+  const fontSize = Math.round(px * 0.38);
 
   return (
     <Animated.View
@@ -54,9 +77,9 @@ export function SgateAvatar({ name, size = 40, photoUrl, color }: SgateAvatarPro
       style={[
         styles.container,
         {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
+          width: px,
+          height: px,
+          borderRadius: px / 2,
           backgroundColor: photoUrl ? 'transparent' : bg,
         },
       ]}
@@ -64,7 +87,7 @@ export function SgateAvatar({ name, size = 40, photoUrl, color }: SgateAvatarPro
       {photoUrl ? (
         <Image
           source={{ uri: photoUrl }}
-          style={{ width: size, height: size, borderRadius: size / 2 }}
+          style={{ width: px, height: px, borderRadius: px / 2 }}
         />
       ) : (
         <Text
@@ -72,7 +95,7 @@ export function SgateAvatar({ name, size = 40, photoUrl, color }: SgateAvatarPro
             styles.initials,
             {
               fontSize,
-              color: textColorForBg(bg),
+              color: textColor,
               fontFamily: SgateFonts.bold,
             },
           ]}

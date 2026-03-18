@@ -69,7 +69,7 @@ export const createGatePass = async (payload: CreateGatePassPayload): Promise<Ga
         console.log('📤 Creating Gate Pass:', payload);
 
         const response = await api.post<{ success: boolean; data: GatePassResponse }>(
-            '/api/v1/gate/passes',
+            '/gate/passes',
             payload
         );
 
@@ -92,7 +92,7 @@ export const createGatePass = async (payload: CreateGatePassPayload): Promise<Ga
  */
 export const getAllGatePasses = async (societyId?: string): Promise<GatePass[]> => {
     try {
-        const response = await api.get<{ success: boolean; data: GatePass[] }>('/api/v1/gate/passes', {
+        const response = await api.get<{ success: boolean; data: GatePass[] }>('/gate/passes', {
             params: societyId ? { societyId } : {}
         });
         return response.data.data;
@@ -109,7 +109,7 @@ export const getAllGatePasses = async (societyId?: string): Promise<GatePass[]> 
  */
 export const getGatePassById = async (id: string): Promise<GatePass> => {
     try {
-        const response = await api.get<{ success: boolean; data: GatePass }>(`/api/v1/gate/passes/${id}`);
+        const response = await api.get<{ success: boolean; data: GatePass }>(`/gate/passes/${id}`);
         return response.data.data;
     } catch (error: any) {
         handleApiError(error, 'fetch gate pass');
@@ -124,7 +124,7 @@ export const getGatePassById = async (id: string): Promise<GatePass> => {
  */
 export const scanGatePass = async (payload: ScanGatePassDTO): Promise<any> => {
     try {
-        const response = await api.post<{ success: boolean; data: any }>('/api/v1/gate/passes/scan', payload);
+        const response = await api.post<{ success: boolean; data: any }>('/gate/passes/scan', payload);
         return response.data.data;
     } catch (error: any) {
         handleApiError(error, 'scan gate pass');
@@ -139,7 +139,7 @@ export const scanGatePass = async (payload: ScanGatePassDTO): Promise<any> => {
  */
 export const getGatePassQr = async (id: string): Promise<any> => {
     try {
-        const response = await api.get<{ success: boolean; data: any }>(`/api/v1/gate/passes/${id}/qr`);
+        const response = await api.get<{ success: boolean; data: any }>(`/gate/passes/${id}/qr`);
         return response.data.data;
     } catch (error: any) {
         handleApiError(error, 'fetch gate pass QR');
@@ -154,7 +154,7 @@ export const getGatePassQr = async (id: string): Promise<any> => {
  */
 export const approveGatePass = async (id: string): Promise<GatePass> => {
     try {
-        const response = await api.patch<{ success: boolean; data: GatePass }>(`/api/v1/gate/passes/${id}/approve`);
+        const response = await api.patch<{ success: boolean; data: GatePass }>(`/gate/passes/${id}/approve`);
         return response.data.data;
     } catch (error: any) {
         handleApiError(error, 'approve gate pass');
@@ -170,7 +170,7 @@ export const approveGatePass = async (id: string): Promise<GatePass> => {
  */
 export const rejectGatePass = async (id: string, reason?: string): Promise<GatePass> => {
     try {
-        const response = await api.patch<{ success: boolean; data: GatePass }>(`/api/v1/gate/passes/${id}/reject`, { reason });
+        const response = await api.patch<{ success: boolean; data: GatePass }>(`/gate/passes/${id}/reject`, { reason });
         return response.data.data;
     } catch (error: any) {
         handleApiError(error, 'reject gate pass');
@@ -184,7 +184,7 @@ export const rejectGatePass = async (id: string, reason?: string): Promise<GateP
  */
 export const deleteGatePass = async (id: string): Promise<void> => {
     try {
-        await api.delete<{ success: boolean }>(`/api/v1/gate/passes/${id}`);
+        await api.delete<{ success: boolean }>(`/gate/passes/${id}`);
     } catch (error: any) {
         handleApiError(error, 'delete gate pass');
         throw error;

@@ -30,7 +30,16 @@
       "Bash(find \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)\" -type f)",
       "Bash(cat \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/approvals/index.tsx\")",
       "Bash(cat e:/society-frontend/s-gate-master/src/types/*.ts)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/\")",
+      "Bash(head -5 \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/visitors.tsx\")",
+      "Bash(head -5 \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/deliveries.tsx\")",
+      "Bash(head -5 \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/society.tsx\")",
+      "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/profile/\")",
+      "Bash(sed -i \"s|''/api/v1/|''/|g\" \"e:/society-frontend/s-gate-master/src/services/gatePass.ts\" \"e:/society-frontend/s-gate-master/src/services/uploadService.ts\" \"e:/society-frontend/s-gate-master/src/services/authService.ts\" \"e:/society-frontend/s-gate-master/src/services/complaints.ts\" \"e:/society-frontend/s-gate-master/src/services/emergency.ts\")",
+      "Bash(sed -i 's|`/api/v1/|`/|g' \"e:/society-frontend/s-gate-master/src/services/gatePass.ts\" \"e:/society-frontend/s-gate-master/src/services/uploadService.ts\" \"e:/society-frontend/s-gate-master/src/services/complaints.ts\" \"e:/society-frontend/s-gate-master/src/services/emergency.ts\")",
+      "Bash(cat \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/_layout.tsx\")",
+      "Bash(cat \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/visitors.tsx\")"
     ],
     "additionalDirectories": [
       "e:\\society-frontend\\s-gate-master\\src\\assets"

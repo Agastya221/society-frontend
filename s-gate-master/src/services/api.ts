@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 import { router } from 'expo-router';
 
-const BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
+const BASE_URL = 'https://society-gate-backend-gsrq.onrender.com/api/v1';
 
 const api: AxiosInstance = axios.create({
     baseURL: BASE_URL,

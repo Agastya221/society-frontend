@@ -113,7 +113,7 @@ export default function ResidentLayout() {
           name="visitors"
           options={{
             title: 'Visitors',
-            tabBarIcon: ({ color }) => <Feather name="users" size={22} color={color} />,
+            tabBarIcon: ({ color }) => <Feather name="user-check" size={22} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -127,7 +127,7 @@ export default function ResidentLayout() {
           name="society"
           options={{
             title: 'Society',
-            tabBarIcon: ({ color }) => <Feather name="grid" size={22} color={color} />,
+            tabBarIcon: ({ color }) => <Feather name="users" size={22} color={color} />,
           }}
         />
         <Tabs.Screen
