@@ -1,11 +1,9 @@
 import { Feather } from '@expo/vector-icons';
-import { cacheDirectory, EncodingType, writeAsStringAsync } from 'expo-file-system/build/legacy';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Platform,
     ScrollView,
     Share,
     StyleSheet,
@@ -76,27 +74,10 @@ export default function GatePassScreen() {
         setSharing(true);
 
         try {
-            if (qrData.qrCodeImage.startsWith('data:image')) {
-                const base64 = qrData.qrCodeImage.split(',')[1];
-                const fileUri = `${cacheDirectory}sgate-pass-${id}.png`;
-                await writeAsStringAsync(fileUri, base64, {
-                    encoding: EncodingType.Base64,
-                });
-
-                if (Platform.OS === 'ios') {
-                    await Share.share({ url: fileUri });
-                } else {
-                    await Share.share({
-                        message: `Your sgate gate pass OTP: ${qrData.qrToken}\nShow this at the society gate.`,
-                        title: 'sgate Gate Pass',
-                    });
-                }
-            } else {
-                await Share.share({
-                    message: `Your sgate gate pass OTP: ${qrData.qrToken}\nShow this at the society gate.`,
-                    title: 'sgate Gate Pass',
-                });
-            }
+            await Share.share({
+                message: `Your sgate gate pass OTP: ${qrData.qrToken}\nShow this at the society gate.`,
+                title: 'sgate Gate Pass',
+            });
         } catch {
             // User cancelled — no-op
         } finally {
