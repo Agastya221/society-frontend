@@ -1,6 +1,5 @@
 import { Feather } from '@expo/vector-icons';
 import clsx from 'clsx';
-import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -14,6 +13,7 @@ import Animated, {
     withSpring
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassCard } from '../../components/ui/GlassCard';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -30,19 +30,6 @@ interface DashboardStats {
 // --- Reusable Components ---
 
 const AnimatedPressable = Animated.createAnimatedComponent(TouchableOpacity);
-
-function GlassCard({ children, className, intensity = 80 }: { children: React.ReactNode, className?: string, intensity?: number }) {
-    return (
-        <View className={clsx("overflow-hidden rounded-3xl border border-white/60 bg-white/40 shadow-sm", className)}>
-            <BlurView intensity={intensity} tint="light" className="absolute inset-0" />
-            <LinearGradient
-                colors={['rgba(255,255,255,0.8)', 'rgba(255,255,255,0.4)']}
-                className="absolute inset-0"
-            />
-            {children}
-        </View>
-    );
-}
 
 function ActionButton({ title, icon, route, color, delay, badge }: any) {
     const scale = useSharedValue(1);
