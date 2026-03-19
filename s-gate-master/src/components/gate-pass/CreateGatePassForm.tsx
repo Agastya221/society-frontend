@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { MOCK_FLATS } from '../../data/flats';
+import api from '../../services/api';
+import { useAuthStore } from '../../store/useAuthStore';
 import { createGatePass, CreateGatePassPayload, GatePassResponse, GatePassType } from '../../services/gatePass';
 
 type GatePassTypeOption = {
@@ -35,7 +36,7 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
     const [validFrom, setValidFrom] = useState(new Date());
     const [validUntil, setValidUntil] = useState(new Date(new Date().setHours(new Date().getHours() + 4))); // Default +4 hours
     const [companyName, setCompanyName] = useState('');
-    const [selectedFlatId, setSelectedFlatId] = useState(MOCK_FLATS[0]?.id || '');
+    const [selectedFlatId, setSelectedFlatId] = useState('');
 
     // Picker State
     const [showFromPicker, setShowFromPicker] = useState(false);
@@ -110,7 +111,66 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
         }
     };
 
-    const selectedFlat = MOCK_FLATS.find(f => f.id === selectedFlatId);
+    interface FlatOption {
+        id: string;
+        number: string;
+        block: string;
+        ownerName: string;
+    }
+
+    const user = useAuthStore(s => s.user);
+    const [flatOptions, setFlatOptions] = useState<FlatOption[]>([]);
+
+    useEffect(() => {
+        if (role !== 'ADMIN') return;
+        const societyId = user?.societyId;
+        if (!societyId) return;
+
+        const loadFlats = async () => {
+            try {
+                const blocksRes = await api.get(
+                    `/resident/onboarding/societies/${societyId}/blocks`
+                );
+                const blocks: { id: string; name: string }[] =
+                    blocksRes.data?.data ?? [];
+
+                const all: FlatOption[] = [];
+                await Promise.all(
+                    blocks.map(async block => {
+                        try {
+                            const flatsRes = await api.get(
+                                `/resident/onboarding/societies/${societyId}/blocks/${block.id}/flats`
+                            );
+                            const blockFlats = (flatsRes.data?.data ?? []).map(
+                                (f: { id: string; number: string }) => ({
+                                    id: f.id,
+                                    number: f.number,
+                                    block: block.name,
+                                    ownerName: '',
+                                })
+                            );
+                            all.push(...blockFlats);
+                        } catch {
+                            // skip
+                        }
+                    })
+                );
+
+                all.sort((a, b) =>
+                    a.block.localeCompare(b.block) ||
+                    a.number.localeCompare(b.number)
+                );
+                setFlatOptions(all);
+                if (all.length > 0) setSelectedFlatId(all[0].id);
+            } catch (err) {
+                console.error('Failed to load flats:', err);
+            }
+        };
+
+        loadFlats();
+    }, [role, user?.societyId]);
+
+    const selectedFlat = flatOptions.find(f => f.id === selectedFlatId);
 
     return (
         <View className="flex-1 bg-white dark:bg-zinc-900">
@@ -126,7 +186,7 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
                                 {selectedFlat ? `${selectedFlat.block}-${selectedFlat.number}` : 'Select Flat'}
                             </Text>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
-                                {MOCK_FLATS.map((flat) => (
+                                {flatOptions.map((flat) => (
                                     <TouchableOpacity
                                         key={flat.id}
                                         onPress={() => setSelectedFlatId(flat.id)}

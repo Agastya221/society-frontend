@@ -1,17 +1,37 @@
 import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { Card } from '../../../components/Card';
 import { ListItem } from '../../../components/ListItem';
 import { PrimaryButton } from '../../../components/PrimaryButton';
-import { MOCK_FLATS, MOCK_PAYMENTS, MOCK_RESIDENTS } from '../../../data';
+import api from '../../../services/api';
+
+interface ResidentRecord {
+    id: string;
+    flatId: string;
+    user: { name: string; phone: string };
+    residentType: string;
+}
 
 export default function FlatDetailsScreen() {
-    const { id } = useLocalSearchParams();
-    const flat = MOCK_FLATS.find(f => f.id === id);
-    const residents = MOCK_RESIDENTS.filter(r => r.flatId === id);
-    const payment = MOCK_PAYMENTS.find(p => p.flatNumber === flat?.number);
+    const { id } = useLocalSearchParams<{ id: string }>();
+    const [residents, setResidents] = useState<ResidentRecord[]>([]);
 
-    if (!flat) return <View className="flex-1 items-center justify-center"><Text>Flat not found</Text></View>;
+    useEffect(() => {
+        if (!id) return;
+        api.get('/resident/onboarding/admin/pending', {
+            params: { status: 'APPROVED', page: 1, limit: 50 },
+        })
+            .then(res => {
+                const all: ResidentRecord[] = res.data?.data ?? [];
+                setResidents(all.filter(r => r.flatId === id));
+            })
+            .catch(console.error);
+    }, [id]);
+
+    // Keep flat as minimal object so JSX does not crash
+    const flat = { number: String(id ?? ''), block: '', ownerName: '' };
+    const payment = null;
 
     return (
         <ScrollView className="flex-1 bg-zinc-50 dark:bg-zinc-950 p-4">
@@ -30,17 +50,15 @@ export default function FlatDetailsScreen() {
                 <View className="flex-row gap-4 border-t border-zinc-100 dark:border-zinc-800 pt-4">
                     <View className="flex-1">
                         <Text className="text-zinc-500 text-xs uppercase mb-1">Payment Status</Text>
-                        <Text className={`font-bold ${payment?.status === 'Paid' ? 'text-green-600' : 'text-red-600'}`}>
-                            {payment?.status || 'N/A'}
-                        </Text>
+                        <Text className="font-bold text-zinc-400">N/A</Text>
                     </View>
                     <View className="flex-1">
                         <Text className="text-zinc-500 text-xs uppercase mb-1">Vehicles</Text>
-                        <Text className="font-bold text-zinc-900 dark:text-white">{flat.vehiclesCount}</Text>
+                        <Text className="font-bold text-zinc-900 dark:text-white">0</Text>
                     </View>
                     <View className="flex-1">
                         <Text className="text-zinc-500 text-xs uppercase mb-1">Residents</Text>
-                        <Text className="font-bold text-zinc-900 dark:text-white">{flat.residentsCount}</Text>
+                        <Text className="font-bold text-zinc-900 dark:text-white">{residents.length}</Text>
                     </View>
                 </View>
             </Card>
@@ -50,18 +68,19 @@ export default function FlatDetailsScreen() {
                 {residents.map((resident, index) => (
                     <ListItem
                         key={resident.id}
-                        title={resident.name}
-                        subtitle={`${resident.type} • ${resident.mobile}`}
+                        title={resident.user.name}
+                        subtitle={`${resident.residentType} · ${resident.user.phone}`}
                         showChevron={false}
                         className={index === residents.length - 1 ? 'border-b-0' : ''}
                     />
                 ))}
-                {residents.length === 0 && <Text className="p-4 text-zinc-500 italic">No residents listed</Text>}
+                {residents.length === 0 && (
+                    <Text className="p-4 text-zinc-500 italic">No residents listed</Text>
+                )}
             </View>
 
-            <PrimaryButton title="Invite New Resident" onPress={() => { }} className="mb-4" />
-            <PrimaryButton title="View Entry History" variant="secondary" onPress={() => { }} />
-
+            <PrimaryButton title="Invite New Resident" onPress={() => {}} className="mb-4" />
+            <PrimaryButton title="View Entry History" variant="secondary" onPress={() => {}} />
         </ScrollView>
     );
 }

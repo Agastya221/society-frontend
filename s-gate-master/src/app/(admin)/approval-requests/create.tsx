@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MOCK_GATE_PASSES, type GatePass } from '../../../data';
+import { createGatePass } from '../../../services/gatePass';
 
 // Mocking FLATS locally if not exported from data/index.tsx
 const FLATS = [
@@ -25,39 +25,33 @@ export default function CreateApprovalRequestScreen() {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         // ... validation ...
 
         // Create new request
-        const newRequest: GatePass = {
-            id: `gp${Date.now()}`,
-            source: 'ADMIN',
-            type: type as any, // Type casting to match union if needed, or ensure 'ENTRY' | 'GATE_PASS' matches matches
-            requestedBy: 'Admin User',
-            flatNumber,
-            title: title.trim(),
-            description: description.trim(),
-            status: 'Pending',
-            validity: 'Today', // Default
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+        try {
+            await createGatePass({
+                type: type as any,
+                title: title.trim(),
+                description: description.trim(),
+                validFrom: new Date().toISOString(),
+                validUntil: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                flatId: flatNumber,
+            });
 
-        // In real app, this would call API 
-        // For now, just add to mock data
-        MOCK_GATE_PASSES.unshift(newRequest);
-
-        Alert.alert(
-            'Request Submitted',
-            'Your approval request has been submitted and is now pending review.',
-            [
-                {
-                    text: 'OK',
-                    onPress: () => router.back()
-                }
-            ]
-        );
+            Alert.alert(
+                'Request Submitted',
+                'Your approval request has been submitted and is now pending review.',
+                [
+                    {
+                        text: 'OK',
+                        onPress: () => router.back()
+                    }
+                ]
+            );
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to submit request');
+        }
     };
 
     return (

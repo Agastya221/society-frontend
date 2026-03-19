@@ -4,10 +4,15 @@ import { Alert, FlatList, Modal, ScrollView, Switch, Text, TextInput, TouchableO
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../../components/Card';
 import { PrimaryButton } from '../../components/PrimaryButton';
-import { Gate, MOCK_GATES, MOCK_GUARDS } from '../../data';
+interface Gate {
+    id: string;
+    name: string;
+    active: boolean;
+    guardsAssigned: number;
+}
 
 export default function GatePointsScreen() {
-    const [gates, setGates] = useState<Gate[]>(MOCK_GATES);
+    const [gates, setGates] = useState<Gate[]>([]);
     const [isModalVisible, setModalVisible] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [gateName, setGateName] = useState('');
@@ -20,10 +25,7 @@ export default function GatePointsScreen() {
     // Derived state for guards count per gate
     // We recalculate this to support "Delete only if no guards assigned" check
     const getGuardCount = (gateId: string) => {
-        // Mock logic: simply use the mocked count in data OR count from MOCK_GUARDS
-        // Let's count from MOCK_GUARDS to be smarter
-        return MOCK_GUARDS.filter(g => g.gateId === gateId).length; 
-        // Note: MOCK_GATES in data has 'guardsAssigned', but dynamic is better.
+        return gates.find(g => g.id === gateId)?.guardsAssigned ?? 0;
     };
 
     const resetForm = () => {

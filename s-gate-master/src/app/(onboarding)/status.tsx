@@ -244,7 +244,7 @@ export default function StatusScreen() {
 
                 {status === 'REJECTED' && (
                     <TouchableOpacity
-                        onPress={() => router.replace('/(onboarding)/')}
+                        onPress={() => router.replace('/(onboarding)/index' as any)}
                         className="bg-indigo-600 w-full py-4 rounded-2xl items-center"
                         activeOpacity={0.8}
                     >

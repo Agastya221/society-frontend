@@ -1,21 +1,25 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../../../components/Card';
 import { SourceBadge } from '../../../components/SourceBadge';
 import { StatusBadge } from '../../../components/StatusBadge';
-import { MOCK_GATE_PASSES, type GatePass } from '../../../data';
+import { getAllGatePasses, type GatePass } from '../../../services/gatePass';
 
 export default function ApprovalRequestsListScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     // Filter for admin-raised requests only
-    const [requests, setRequests] = useState<GatePass[]>(
-        MOCK_GATE_PASSES.filter(gp => gp.source === 'ADMIN')
-    );
-    const [filter, setFilter] = useState<'ALL' | 'Pending' | 'Approved' | 'Rejected'>('ALL');
+    const [requests, setRequests] = useState<GatePass[]>([]);
+
+    useEffect(() => {
+        getAllGatePasses()
+            .then(data => setRequests(data))
+            .catch(console.error);
+    }, []);
+    const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
 
     const filteredRequests = requests.filter(req => 
         filter === 'ALL' ? true : req.status === filter
@@ -56,7 +60,7 @@ export default function ApprovalRequestsListScreen() {
 
                 {/* Filter Tabs */}
                 <View className="flex-row gap-2">
-                    {(['ALL', 'Pending', 'Approved', 'Rejected'] as const).map(status => (
+                    {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(status => (
                         <TouchableOpacity
                             key={status}
                             onPress={() => setFilter(status)}
@@ -100,7 +104,7 @@ export default function ApprovalRequestsListScreen() {
                                             {item.type.replace('_', ' ')}
                                         </Text>
                                     </View>
-                                    <SourceBadge source={item.source || 'ADMIN'} />
+                                    <SourceBadge source="ADMIN" />
                                 </View>
                                 <StatusBadge status={item.status} />
                             </View>
@@ -117,20 +121,20 @@ export default function ApprovalRequestsListScreen() {
                             <View className="flex-row items-center gap-3">
                                 <View className="flex-row items-center gap-1">
                                     <Feather name="home" size={12} className="text-zinc-400" />
-                                    <Text className="text-xs text-zinc-500">Flat {item.flatNumber}</Text>
+                                    <Text className="text-xs text-zinc-500">Flat {item.flat?.flatNumber ?? 'N/A'}</Text>
                                 </View>
                                 <View className="flex-row items-center gap-1">
                                     <Feather name="user" size={12} className="text-zinc-400" />
-                                    <Text className="text-xs text-zinc-500">{item.requestedBy}</Text>
+                                    <Text className="text-xs text-zinc-500">{item.requestedBy?.name ?? 'N/A'}</Text>
                                 </View>
                                 <View className="flex-row items-center gap-1">
                                     <Feather name="clock" size={12} className="text-zinc-400" />
-                                    <Text className="text-xs text-zinc-500">{formatDate(item.createdAt || item.timestamp)}</Text>
+                                    <Text className="text-xs text-zinc-500">{formatDate(item.createdAt)}</Text>
                                 </View>
                             </View>
 
                             {/* Actions for PENDING requests */}
-                            {item.status === 'Pending' && (
+                            {item.status === 'PENDING' && (
                                 <View className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800 flex-row gap-2">
                                     <TouchableOpacity 
                                         className="flex-1 bg-zinc-100 dark:bg-zinc-800 py-2 rounded-lg items-center"

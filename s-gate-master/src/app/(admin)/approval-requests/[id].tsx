@@ -4,19 +4,27 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SourceBadge } from '../../../components/SourceBadge';
 import { StatusBadge } from '../../../components/StatusBadge';
-import { MOCK_APPROVAL_REQUESTS } from '../../../data';
+import { useEffect, useState } from 'react';
+import { getGatePassById, GatePass } from '../../../services/gatePass';
 
 export default function ApprovalRequestDetailScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     
-    const request = MOCK_APPROVAL_REQUESTS.find(r => r.id === id);
+    const [request, setRequest] = useState<GatePass | null>(null);
+
+    useEffect(() => {
+        if (!id) return;
+        getGatePassById(id as string)
+            .then(data => setRequest(data))
+            .catch(console.error);
+    }, [id]);
 
     if (!request) {
         return (
             <View className="flex-1 items-center justify-center bg-zinc-50 dark:bg-[#0f0f11]">
-                <Text className="text-zinc-500">Request not found</Text>
+                <Text className="text-zinc-500">Loading...</Text>
             </View>
         );
     }
@@ -66,7 +74,7 @@ export default function ApprovalRequestDetailScreen() {
                                     {request.type.replace('_', ' ')}
                                 </Text>
                             </View>
-                            <SourceBadge source={request.source} />
+                            <SourceBadge source="ADMIN" />
                         </View>
                         <StatusBadge status={request.status} />
                     </View>
@@ -85,8 +93,8 @@ export default function ApprovalRequestDetailScreen() {
                         Request Information
                     </Text>
 
-                    <InfoRow icon="home" label="Flat Number" value={request.flatNumber} />
-                    <InfoRow icon="user" label="Requested By" value={request.requestedBy} />
+                    <InfoRow icon="home" label="Flat Number" value={request.flat?.flatNumber ?? 'N/A'} />
+                    <InfoRow icon="user" label="Requested By" value={request.requestedBy?.name ?? 'N/A'} />
                     <InfoRow icon="clock" label="Created At" value={formatDate(request.createdAt)} />
                     <InfoRow icon="refresh-cw" label="Updated At" value={formatDate(request.updatedAt)} />
                 </View>
@@ -98,37 +106,16 @@ export default function ApprovalRequestDetailScreen() {
                             Decision Information
                         </Text>
 
-                        {request.approvedBy && (
-                            <InfoRow 
-                                icon={request.status === 'APPROVED' ? 'check-circle' : 'x-circle'} 
-                                label={request.status === 'APPROVED' ? 'Approved By' : 'Rejected By'} 
-                                value={request.approvedBy} 
-                            />
-                        )}
-                        
-                        {request.decisionAt && (
-                            <InfoRow 
-                                icon="calendar" 
-                                label="Decision Date" 
-                                value={formatDate(request.decisionAt)} 
-                            />
-                        )}
-
-                        {request.rejectionReason && (
-                            <View className="mt-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg">
-                                <Text className="text-xs font-semibold text-red-700 dark:text-red-400 mb-1">
-                                    REJECTION REASON
-                                </Text>
-                                <Text className="text-sm text-red-900 dark:text-red-100">
-                                    {request.rejectionReason}
-                                </Text>
-                            </View>
-                        )}
+                        <InfoRow 
+                            icon="calendar" 
+                            label="Created At" 
+                            value={formatDate(request.createdAt)} 
+                        />
                     </View>
                 )}
 
                 {/* Action Buttons for PENDING requests */}
-                {request.status === 'PENDING' && request.source === 'ADMIN' && (
+                {request.status === 'PENDING' && (
                     <View className="gap-3">
                         <TouchableOpacity
                             className="bg-indigo-600 py-4 rounded-xl items-center shadow-sm"

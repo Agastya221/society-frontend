@@ -1,18 +1,30 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, ScrollView, SectionList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ListItem } from '../../../components/ListItem';
 import { PrimaryButton } from '../../../components/PrimaryButton';
-import { Flat, MOCK_FLATS } from '../../../data';
+import api from '../../../services/api';
+import { useAuthStore } from '../../../store/useAuthStore';
+
+interface Flat {
+    id: string;
+    number: string;
+    block: string;
+    floor: string;
+    ownerName: string;
+    residentsCount: number;
+    vehiclesCount: number;
+}
 
 export default function FlatsScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const [flats, setFlats] = useState<Flat[]>(MOCK_FLATS);
+    const user = useAuthStore(s => s.user);
+    const [flats, setFlats] = useState<Flat[]>([]);
     const [search, setSearch] = useState('');
-    
+
     // Modal State
     const [isModalVisible, setModalVisible] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -20,10 +32,56 @@ export default function FlatsScreen() {
     const [block, setBlock] = useState('');
     const [floor, setFloor] = useState('');
 
+    // Fetch flats from API using society blocks
+    useEffect(() => {
+        const societyId = user?.societyId;
+        if (!societyId) return;
+
+        const loadFlats = async () => {
+            try {
+                const blocksRes = await api.get(
+                    `/resident/onboarding/societies/${societyId}/blocks`
+                );
+                const blocks: { id: string; name: string }[] =
+                    blocksRes.data?.data ?? [];
+
+                const allFlats: Flat[] = [];
+                await Promise.all(
+                    blocks.map(async block => {
+                        try {
+                            const flatsRes = await api.get(
+                                `/resident/onboarding/societies/${societyId}/blocks/${block.id}/flats`
+                            );
+                            const blockFlats = (flatsRes.data?.data ?? []).map(
+                                (f: { id: string; number: string; floor?: number }) => ({
+                                    id: f.id,
+                                    number: f.number,
+                                    block: block.name,
+                                    floor: String(f.floor ?? ''),
+                                    ownerName: '',
+                                    residentsCount: 0,
+                                    vehiclesCount: 0,
+                                })
+                            );
+                            allFlats.push(...blockFlats);
+                        } catch {
+                            // skip failed block
+                        }
+                    })
+                );
+                setFlats(allFlats);
+            } catch (err) {
+                console.error('Failed to fetch flats:', err);
+            }
+        };
+
+        loadFlats();
+    }, [user?.societyId]);
+
     const filteredFlats = useMemo(() => {
-        return flats.filter(f => 
-            f.number.includes(search) || 
-            f.ownerName.toLowerCase().includes(search.toLowerCase()) || 
+        return flats.filter(f =>
+            f.number.includes(search) ||
+            f.ownerName.toLowerCase().includes(search.toLowerCase()) ||
             f.block.toLowerCase().includes(search.toLowerCase())
         );
     }, [flats, search]);
@@ -31,7 +89,7 @@ export default function FlatsScreen() {
     const sections = useMemo(() => {
         const groups: Record<string, Flat[]> = {};
         filteredFlats.forEach(f => {
-            const b = f.block.toUpperCase(); // Normalize
+            const b = f.block.toUpperCase();
             if (!groups[b]) groups[b] = [];
             groups[b].push(f);
         });
@@ -60,10 +118,10 @@ export default function FlatsScreen() {
     const handleDelete = (id: string) => {
         Alert.alert('Delete Flat', 'Are you sure?', [
             { text: 'Cancel', style: 'cancel' },
-            { 
-                text: 'Delete', 
-                style: 'destructive', 
-                onPress: () => setFlats(prev => prev.filter(f => f.id !== id)) 
+            {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: () => setFlats(prev => prev.filter(f => f.id !== id))
             }
         ]);
     };
@@ -107,8 +165,8 @@ export default function FlatsScreen() {
                         placeholderTextColor="#a1a1aa"
                     />
                 </View>
-                <PrimaryButton 
-                    title="+ Add Flat" 
+                <PrimaryButton
+                    title="+ Add Flat"
                     onPress={() => { resetForm(); setModalVisible(true); }}
                     className="mt-4"
                 />
@@ -147,7 +205,7 @@ export default function FlatsScreen() {
             />
 
             <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet">
-                <View 
+                <View
                     style={{ paddingBottom: insets.bottom }}
                     className="flex-1 bg-zinc-50 dark:bg-zinc-950 p-6"
                 >
@@ -168,7 +226,7 @@ export default function FlatsScreen() {
                             value={flatNumber}
                             onChangeText={setFlatNumber}
                             placeholderTextColor="#a1a1aa"
-                            keyboardType="default" 
+                            keyboardType="default"
                         />
 
                         <Text className="font-medium mb-2 text-zinc-700 dark:text-zinc-300">Block *</Text>
@@ -190,9 +248,9 @@ export default function FlatsScreen() {
                             keyboardType="numeric"
                         />
 
-                        <PrimaryButton 
-                            title={editingId ? "Update Flat" : "Add Flat"} 
-                            onPress={handleSave} 
+                        <PrimaryButton
+                            title={editingId ? "Update Flat" : "Add Flat"}
+                            onPress={handleSave}
                         />
                     </ScrollView>
                 </View>

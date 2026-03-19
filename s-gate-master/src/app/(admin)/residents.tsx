@@ -1,15 +1,101 @@
 import { Feather } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../../components/Card';
 import { PrimaryButton } from '../../components/PrimaryButton';
-import { MOCK_FLATS, MOCK_RESIDENTS, Resident } from '../../data';
+import api from '../../services/api';
+import { useAuthStore } from '../../store/useAuthStore';
+
+interface Resident {
+    id: string;
+    name: string;
+    mobile: string;
+    flatId: string;
+    type: 'OWNER' | 'RENTER' | 'FAMILY';
+    agreementUrl?: string | null;
+}
+
+interface FlatOption {
+    id: string;
+    number: string;
+    block: string;
+}
 
 const RESIDENT_TYPES: Resident['type'][] = ['OWNER', 'RENTER', 'FAMILY'];
 
 export default function ResidentsScreen() {
-    const [residents, setResidents] = useState<Resident[]>(MOCK_RESIDENTS);
+    const user = useAuthStore(s => s.user);
+    const [residents, setResidents] = useState<Resident[]>([]);
+    const [flatOptions, setFlatOptions] = useState<FlatOption[]>([]);
+
+    // Fetch approved residents
+    useEffect(() => {
+        api.get('/resident/onboarding/admin/pending', {
+            params: { status: 'APPROVED', page: 1, limit: 100 },
+        })
+            .then(res => {
+                const raw = res.data?.data ?? [];
+                const mapped: Resident[] = raw.map((r: any) => ({
+                    id: r.id,
+                    name: r.user?.name ?? '',
+                    mobile: r.user?.phone ?? '',
+                    flatId: r.flatId,
+                    type: r.residentType === 'TENANT' ? 'RENTER' : 'OWNER',
+                    agreementUrl: null,
+                }));
+                setResidents(mapped);
+            })
+            .catch(console.error);
+    }, []);
+
+    // Fetch flats for the modal flat selector
+    useEffect(() => {
+        const societyId = user?.societyId;
+        if (!societyId) return;
+
+        const loadFlats = async () => {
+            try {
+                const blocksRes = await api.get(
+                    `/resident/onboarding/societies/${societyId}/blocks`
+                );
+                const blocks: { id: string; name: string }[] =
+                    blocksRes.data?.data ?? [];
+
+                const all: FlatOption[] = [];
+                await Promise.all(
+                    blocks.map(async block => {
+                        try {
+                            const flatsRes = await api.get(
+                                `/resident/onboarding/societies/${societyId}/blocks/${block.id}/flats`
+                            );
+                            const blockFlats = (flatsRes.data?.data ?? []).map(
+                                (f: { id: string; number: string }) => ({
+                                    id: f.id,
+                                    number: f.number,
+                                    block: block.name,
+                                })
+                            );
+                            all.push(...blockFlats);
+                        } catch {
+                            // skip
+                        }
+                    })
+                );
+
+                all.sort((a, b) =>
+                    a.block.localeCompare(b.block) ||
+                    a.number.localeCompare(b.number)
+                );
+                setFlatOptions(all);
+                if (all.length > 0) setFlatId(all[0].id);
+            } catch (err) {
+                console.error('Failed to load flats:', err);
+            }
+        };
+
+        loadFlats();
+    }, [user?.societyId]);
     const insets = useSafeAreaInsets();
     
     // Modal State
@@ -19,14 +105,14 @@ export default function ResidentsScreen() {
     // Form Fields
     const [name, setName] = useState('');
     const [mobile, setMobile] = useState('');
-    const [flatId, setFlatId] = useState(MOCK_FLATS[0]?.id || '');
+    const [flatId, setFlatId] = useState('');
     const [type, setType] = useState<Resident['type']>('OWNER');
     const [agreementUrl, setAgreementUrl] = useState<string | null>(null);
 
     const resetForm = () => {
         setName('');
         setMobile('');
-        setFlatId(MOCK_FLATS[0]?.id || '');
+        setFlatId(flatOptions[0]?.id || '');
         setType('OWNER');
         setAgreementUrl(null);
         setEditingId(null);
@@ -97,7 +183,7 @@ export default function ResidentsScreen() {
                     />
                 }
                 renderItem={({ item }) => {
-                    const flat = MOCK_FLATS.find(f => f.id === item.flatId);
+                    const flat = flatOptions.find(f => f.id === item.flatId);
                     return (
                         <Card className="mb-3">
                             <View className="flex-row justify-between items-start mb-2">
@@ -184,14 +270,14 @@ export default function ResidentsScreen() {
                         <Text className="font-medium mb-2 text-zinc-700 dark:text-zinc-300">Assigned Flat *</Text>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
                             <View className="flex-row gap-2">
-                                {MOCK_FLATS.map(f => (
+                                {flatOptions.map(f => (
                                     <TouchableOpacity
                                         key={f.id}
                                         onPress={() => setFlatId(f.id)}
                                         className={`px-3 py-2 rounded-lg border ${flatId === f.id ? 'bg-zinc-900 border-zinc-900 dark:bg-white' : 'border-zinc-300'}`}
                                     >
                                         <Text className={flatId === f.id ? 'text-white dark:text-black font-bold' : 'text-zinc-600'}>
-                                            {f.number} ({f.block})
+                                            {f.block}-{f.number}
                                         </Text>
                                     </TouchableOpacity>
                                 ))}

@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { ListItem } from '../../components/ListItem';
-import { MOCK_PAYMENTS } from '../../data/mockData';
+interface Payment {
+    id: string;
+    flatNumber: string;
+    amount: number;
+    status: string;
+    dueDate: string;
+}
 
 export default function PaymentsScreen() {
-    const [payments, setPayments] = useState(MOCK_PAYMENTS);
+    const [payments, setPayments] = useState<Payment[]>([]);
 
     const stats = {
         collected: payments.filter(p => p.status === 'Paid').reduce((acc, curr) => acc + curr.amount, 0),

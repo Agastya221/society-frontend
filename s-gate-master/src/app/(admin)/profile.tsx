@@ -87,9 +87,15 @@ export default function AdminProfile() {
     const displayRole = profile?.role ?? authUser?.role ?? '';
     const displayEmail = profile?.email ?? authUser?.email ?? '';
     const displayPhone = profile?.phone ?? authUser?.phone ?? '';
-    const displaySociety = profile?.society?.name ?? authUser?.society ?? 'N/A';
-    const displaySocietyAddress = profile?.society ? `${profile.society.address}, ${profile.society.city}` : '';
-    const displayFlat = profile?.flat ? `${profile.flat.block.name} - ${profile.flat.number}` : authUser?.flat ?? '';
+    const displaySociety = profile?.society?.name ?? authUser?.society?.name ?? 'N/A';
+    const displaySocietyAddress = profile?.society
+        ? `${profile.society.address}, ${profile.society.city}`
+        : '';
+    const displayFlat = profile?.flat
+        ? `${profile.flat.block.name} - ${profile.flat.number}`
+        : authUser?.flat
+            ? `${authUser.flat.block?.name ?? ''} - ${authUser.flat.number}`
+            : '';
 
     const handleLogout = () => {
         Alert.alert('Logout', 'Are you sure you want to logout?', [
