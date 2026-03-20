@@ -1,4 +1,5 @@
 import * as NavigationBar from "expo-navigation-bar";
+import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import * as SplashScreen from "expo-splash-screen";
 import { Slot, useRouter, useSegments } from "expo-router";
@@ -10,6 +11,7 @@ import "../global.css";
 import { useSoraFonts } from "../hooks/useFonts";
 import { useAuthStore } from "../store/useAuthStore";
 import { SgateColors } from "../constants/Sgate-theme";
+import api from "../services/api";
 
 const ONBOARDING_SEEN_KEY = "onboarding_seen";
 
@@ -27,6 +29,32 @@ export default function RootLayout() {
   useEffect(() => {
     loadToken();
   }, []);
+
+  // Register FCM push token right after authentication
+  useEffect(() => {
+    if (!isAuthenticated || !role) return;
+    if (role !== 'RESIDENT' && role !== 'ADMIN' && role !== 'SUPER_ADMIN') return;
+    (async () => {
+      try {
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status !== 'granted') return;
+        const tokenData = await Notifications.getExpoPushTokenAsync();
+        const fcmToken = tokenData.data;
+        const endpoint =
+          role === 'RESIDENT'
+            ? '/users/resident-app/fcm-token'
+            : '/users/resident-app/fcm-token'; // admin uses same endpoint
+        await api.patch(endpoint, {
+          fcmToken,
+          deviceType: Platform.OS,
+        });
+        console.log('📲 FCM token registered');
+      } catch (err) {
+        // Silent — never block the user for push token issues
+        console.log('FCM token registration skipped:', err);
+      }
+    })();
+  }, [isAuthenticated, role]);
 
   // Check if user has seen the onboarding splash
   useEffect(() => {

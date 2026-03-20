@@ -1,76 +1,75 @@
 import { useEffect, useRef, useState } from 'react';
-import { EmergencyResponse, getMyEmergencies } from '../services/emergency';
+import { getMyEmergencies } from '../services/emergency';
+
+// Module-level dismissed set — persists for the entire JS session so that
+// dismissing an emergency keeps it silent even if the hook re-mounts.
+const dismissedIds = new Set<string>();
+
+export interface ActiveEmergency {
+  id: string;
+  type: string;
+  status: string;
+}
 
 export function useActiveEmergency() {
-    const [activeEmergency, setActiveEmergency] = useState<EmergencyResponse | null>(null);
-    const [hasActiveEmergency, setHasActiveEmergency] = useState(false);
-    const dismissedIdRef = useRef<string | null>(null);
+  const [activeEmergency, setActiveEmergency] = useState<ActiveEmergency | null>(null);
+  const [hasActiveEmergency, setHasActiveEmergency] = useState(false);
+  const dismissedRef = useRef<Set<string>>(dismissedIds);
 
-    const dismissAlert = () => {
-        if (activeEmergency) {
-            console.log('🛑 Dismissing emergency:', activeEmergency.id);
-            dismissedIdRef.current = activeEmergency.id;
-            setHasActiveEmergency(false);
-            setActiveEmergency(null);
+  // dismissAlert — pass an optional id, or omit to dismiss whatever is currently active
+  const dismissAlert = (id?: string) => {
+    const targetId = id ?? activeEmergency?.id;
+    if (targetId) {
+      console.log('🛑 Dismissing emergency:', targetId);
+      dismissedIds.add(targetId);
+      dismissedRef.current = dismissedIds;
+    }
+    setHasActiveEmergency(false);
+    setActiveEmergency(null);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const checkEmergencies = async () => {
+      try {
+        const emergencies = await getMyEmergencies();
+
+        if (!isMounted) return;
+
+        const active = emergencies.find(
+          (e) =>
+            (e.status === 'TRIGGERED' ||
+              e.status === 'ACKNOWLEDGED' ||
+              e.status === 'ACTIVE') &&
+            !dismissedRef.current.has(e.id)
+        );
+
+        if (active) {
+          setActiveEmergency({ id: active.id, type: active.type, status: active.status });
+          setHasActiveEmergency(true);
+        } else {
+          setActiveEmergency(null);
+          setHasActiveEmergency(false);
         }
+
+        timeoutId = setTimeout(checkEmergencies, 15000);
+      } catch (error: any) {
+        if (!isMounted) return;
+        const isNetworkError = !error.response;
+        const delay = isNetworkError ? 30000 : 15000;
+        timeoutId = setTimeout(checkEmergencies, delay);
+      }
     };
 
-    // Poll for active emergencies
-    useEffect(() => {
-        let isMounted = true;
-        let timeoutId: any;
+    checkEmergencies();
 
-        const checkEmergencies = async () => {
-            try {
-                const emergencies = await getMyEmergencies();
-                console.log('🚑 Polling Check:', emergencies.length, 'total');
-                if (emergencies.length > 0) {
-                    console.log('🚑 Statuses:', emergencies.map(e => e.status));
-                }
+    return () => {
+      isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, []);
 
-                // Filter for ACTIVE (TRIGGERED, ACKNOWLEDGED, or ACTIVE) emergencies
-                // Ignore dismissed emergencies
-                const active = emergencies.find(e =>
-                    (e.status === 'TRIGGERED' || e.status === 'ACKNOWLEDGED' || e.status === 'ACTIVE') &&
-                    e.id !== dismissedIdRef.current
-                );
-
-                if (isMounted) {
-                    if (active) {
-                        setActiveEmergency(active);
-                        setHasActiveEmergency(true);
-                    } else {
-                        setActiveEmergency(null);
-                        setHasActiveEmergency(false);
-                    }
-                    // Success: Poll again in 10s
-                    timeoutId = setTimeout(checkEmergencies, 10000);
-                }
-            } catch (error: any) {
-                // If it's a network error, back off to avoid spam
-                const isNetworkError = error.message === 'Network Error' || error.message?.includes('Network Error');
-                const delay = isNetworkError ? 30000 : 10000;
-
-                if (!isNetworkError) {
-                    console.log('Emergency poll failed:', error);
-                } else {
-                    console.log('Emergency poll paused (Network Error). Retrying in 30s...');
-                }
-
-                if (isMounted) {
-                    timeoutId = setTimeout(checkEmergencies, delay);
-                }
-            }
-        };
-
-        // Initial check
-        checkEmergencies();
-
-        return () => {
-            isMounted = false;
-            if (timeoutId) clearTimeout(timeoutId);
-        };
-    }, []);
-
-    return { hasActiveEmergency, activeEmergency, dismissAlert };
+  return { hasActiveEmergency, activeEmergency, dismissAlert };
 }

@@ -27,7 +27,7 @@ import {
 } from '../../components/Sgate';
 import { SgateAvatar } from '../../components/Sgate/SgateAvatar';
 import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
-import { createEmergency } from '../../services/community.service';
+
 import { useAuthStore } from '../../store/useAuthStore';
 import { useGateStore } from '../../store/useGateStore';
 import { useNotificationStore } from '../../store/useNotificationStore';
@@ -130,34 +130,7 @@ export default function ResidentHomeScreen() {
         }
     };
 
-    // ── SOS ──────────────────────────────────────────────────────────────────
-    const handleSOS = () => {
-        Alert.alert(
-            'SOS Alert',
-            'Send an emergency alert to all guards?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Send SOS',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await createEmergency({
-                                type: 'OTHER',
-                                description: 'SOS raised by resident',
-                                location: user?.flat
-                                    ? `Flat ${user.flat.number}`
-                                    : undefined,
-                            });
-                            Alert.alert('SOS Sent', 'Guards have been alerted.');
-                        } catch {
-                            Alert.alert('Error', 'Failed to send SOS. Please try again.');
-                        }
-                    },
-                },
-            ]
-        );
-    };
+
 
     // ── Derived ───────────────────────────────────────────────────────────────
     const firstName    = user?.name?.split(' ')[0] ?? 'Resident';
@@ -255,7 +228,7 @@ export default function ResidentHomeScreen() {
                             label={'SOS\nAlert'}
                             bgColor={SgateColors.redBg}
                             iconColor={SgateColors.red}
-                            onPress={handleSOS}
+                            onPress={() => router.push('/(resident)/emergency/create' as any)}
                         />
                     </Animated.View>
 

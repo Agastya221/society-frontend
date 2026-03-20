@@ -8,7 +8,7 @@ import { SgateTabBar } from '../../components/Sgate';
 import { useActiveEmergency } from '../../hooks/useActiveEmergency';
 
 export default function ResidentLayout() {
-  const { hasActiveEmergency, dismissAlert } = useActiveEmergency();
+  const { hasActiveEmergency, activeEmergency, dismissAlert } = useActiveEmergency();
   const soundRef            = useRef<Audio.Sound | null>(null);
   const vibrationInterval   = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -92,7 +92,12 @@ export default function ResidentLayout() {
 
   return (
     <View style={{ flex: 1 }}>
-      {hasActiveEmergency && <EmergencyOverlay onDismiss={dismissAlert} />}
+      {hasActiveEmergency && (
+        <EmergencyOverlay
+          emergencyId={activeEmergency?.id}
+          onDismiss={() => dismissAlert(activeEmergency?.id)}
+        />
+      )}
 
       <Tabs
         tabBar={(props) => <SgateTabBar {...props} />}
