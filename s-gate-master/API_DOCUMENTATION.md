@@ -1,6 +1,6 @@
 # Society Gate Backend - API Documentation
 
-**Base URL:** `https://society-gate-backend-gsrq.onrender.com/api/v1`
+**Base URL:** `http://localhost:4000/api/v1`
 
 ---
 

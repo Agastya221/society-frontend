@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -11,44 +11,34 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
-interface TabItem {
-  name: string;
-  icon: keyof typeof Feather.glyphMap;
-  label: string;
-}
+// ─── Only show these 5 tabs ─────────────────────────────────────────────────
+const VISIBLE_TABS = new Set(['home', 'visitors', 'deliveries', 'society', 'profile']);
 
-interface SgateTabBarProps extends BottomTabBarProps {
-  tabs?: TabItem[];
-}
-
-export function SgateTabBar({ state, descriptors, navigation, tabs }: SgateTabBarProps) {
+// ─── SgateTabBar ─────────────────────────────────────────────────────────────
+export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
-  // Track indicator position for sliding gold pill
-  const indicatorX = useSharedValue(0);
-  const TAB_WIDTH = 70; // approximate, recalculated on layout
+  // Filter: only render routes that are in VISIBLE_TABS
+  const visibleRoutes = state.routes.filter(r => VISIBLE_TABS.has(r.name));
 
-  useEffect(() => {
-    indicatorX.value = withSpring(state.index * TAB_WIDTH, {
-      damping: 20,
-      stiffness: 200,
-    });
-  }, [state.index]);
+  // Map the focused index: find the position of the currently-focused route
+  // in the filtered list (-1 if it's a hidden screen)
+  const focusedRouteName = state.routes[state.index]?.name;
+  const focusedVisibleIndex = visibleRoutes.findIndex(r => r.name === focusedRouteName);
 
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 10) }]}>
       <View style={styles.tabRow}>
-        {state.routes.map((route, index) => {
+        {visibleRoutes.map((route, idx) => {
           const { options } = descriptors[route.key];
-          const isFocused = state.index === index;
+          const isFocused = focusedVisibleIndex === idx;
 
-          // Try to get icon from options tabBarIcon or fall back to tabs prop
           const label =
             typeof options.tabBarLabel === 'string'
               ? options.tabBarLabel
               : typeof options.title === 'string'
-              ? options.title
-              : route.name;
+                ? options.title
+                : route.name.charAt(0).toUpperCase() + route.name.slice(1);
 
           const onPress = () => {
             const event = navigation.emit({
@@ -62,13 +52,21 @@ export function SgateTabBar({ state, descriptors, navigation, tabs }: SgateTabBa
             }
           };
 
+          const onLongPress = () => {
+            navigation.emit({
+              type: 'tabLongPress',
+              target: route.key,
+            });
+          };
+
           return (
-            <TabItem
+            <SgateTab
               key={route.key}
               label={label}
               isFocused={isFocused}
               options={options}
               onPress={onPress}
+              onLongPress={onLongPress}
             />
           );
         })}
@@ -77,28 +75,33 @@ export function SgateTabBar({ state, descriptors, navigation, tabs }: SgateTabBa
   );
 }
 
-// ─── Individual Tab Item ──────────────────────────────────────────────────────
+// ─── Individual Tab ──────────────────────────────────────────────────────────
 
-interface TabItemProps {
-  label: string;
-  isFocused: boolean;
-  options: ReturnType<BottomTabBarProps['descriptors'][string]['options']['tabBarIcon'] extends undefined ? any : any>;
-  onPress: () => void;
-}
-
-function TabItem({ label, isFocused, options, onPress }: {
+function SgateTab({ label, isFocused, options, onPress, onLongPress }: {
   label: string;
   isFocused: boolean;
   options: any;
   onPress: () => void;
+  onLongPress: () => void;
 }) {
   const iconColor = isFocused ? SgateColors.gold : SgateColors.t3;
+
+  // Animated gold pill indicator
   const pillOpacity = useSharedValue(isFocused ? 1 : 0);
-  const pillScaleX = useSharedValue(isFocused ? 1 : 0);
+  const pillScaleX  = useSharedValue(isFocused ? 1 : 0);
+
+  // Icon scale pop on focus
+  const iconScale = useSharedValue(1);
 
   useEffect(() => {
     pillOpacity.value = withSpring(isFocused ? 1 : 0, { damping: 18, stiffness: 220 });
-    pillScaleX.value = withSpring(isFocused ? 1 : 0, { damping: 18, stiffness: 220 });
+    pillScaleX.value  = withSpring(isFocused ? 1 : 0, { damping: 18, stiffness: 220 });
+
+    if (isFocused) {
+      iconScale.value = withSpring(1.1, { damping: 12, stiffness: 300 });
+    } else {
+      iconScale.value = withSpring(1, { damping: 18, stiffness: 220 });
+    }
   }, [isFocused]);
 
   const pillStyle = useAnimatedStyle(() => ({
@@ -106,14 +109,18 @@ function TabItem({ label, isFocused, options, onPress }: {
     transform: [{ scaleX: pillScaleX.value }],
   }));
 
+  const iconAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScale.value }],
+  }));
+
   return (
-    <TouchableWithoutFeedback onPress={onPress}>
+    <TouchableWithoutFeedback onPress={onPress} onLongPress={onLongPress}>
       <View style={styles.tabItem}>
-        {/* Gold indicator pill */}
+        {/* Gold indicator pill at top */}
         <Animated.View style={[styles.indicator, pillStyle]} />
 
         {/* Icon */}
-        <View style={styles.iconWrapper}>
+        <Animated.View style={[styles.iconWrapper, iconAnimatedStyle]}>
           {options.tabBarIcon?.({
             focused: isFocused,
             color: iconColor,
@@ -121,15 +128,15 @@ function TabItem({ label, isFocused, options, onPress }: {
           }) ?? (
             <Feather name="circle" size={22} color={iconColor} />
           )}
-        </View>
+        </Animated.View>
 
         {/* Label */}
         <Text
           style={[
             styles.tabLabel,
             {
-              color: isFocused ? SgateColors.gold : SgateColors.t3,
-              fontFamily: isFocused ? SgateFonts.bold : SgateFonts.regular,
+              color: isFocused ? SgateColors.gold : SgateColors.t4,
+              fontFamily: isFocused ? SgateFonts.bold : SgateFonts.medium,
             },
           ]}
           numberOfLines={1}
@@ -141,35 +148,54 @@ function TabItem({ label, isFocused, options, onPress }: {
   );
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: {
     backgroundColor: SgateColors.card,
     borderTopWidth: 1,
     borderTopColor: SgateColors.borderSoft,
-    paddingTop: 8,
+    paddingTop: 6,
+    // Subtle shadow on iOS, elevation on Android
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   tabRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-evenly',
     alignItems: 'flex-start',
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 4,
-    minWidth: 50,
+    paddingTop: 2,
+    paddingBottom: 2,
   },
   indicator: {
-    width: 24,
+    width: 20,
     height: 3,
-    borderRadius: 99,
+    borderRadius: 2,
     backgroundColor: SgateColors.gold,
     marginBottom: 6,
   },
   iconWrapper: {
-    marginBottom: 3,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   tabLabel: {
-    fontSize: 9.5,
+    fontSize: 11,
+    textAlign: 'center',
+    letterSpacing: 0.1,
   },
 });

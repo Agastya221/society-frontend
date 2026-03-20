@@ -1,79 +1,86 @@
-import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Platform, ScrollView, Share, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    ActivityIndicator,
+    Alert,
+    Image,
+    Modal,
+    Platform,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card } from '../../../components/ui/Card';
-import { PrimaryButton } from '../../../components/ui/PrimaryButton';
-import api from '../../../services/api';
+import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateMascot } from '@/components/Sgate/SgateMascot';
+import api from '@/services/api';
 
+// ─── Visitor type options (matches API) ──────────────────────────────────────
 const VISITOR_TYPES = [
-    { label: 'Guest', value: 'GUEST' },
-    { label: 'Family', value: 'FAMILY_MEMBER' },
-    { label: 'Friend', value: 'FRIEND' },
+    { label: 'Guest',    value: 'GUEST' },
     { label: 'Delivery', value: 'DELIVERY_PERSON' },
-    { label: 'Cab', value: 'CAB_DRIVER' },
-    { label: 'Service', value: 'SERVICE_PROVIDER' },
+    { label: 'Service',  value: 'SERVICE_PROVIDER' },
+    { label: 'Cab',      value: 'CAB_DRIVER' },
+    { label: 'Family',   value: 'FAMILY_MEMBER' },
+    { label: 'Friend',   value: 'FRIEND' },
 ];
 
 export default function CreatePreApprovalScreen() {
     const router = useRouter();
 
-    // Form State
-    const [name, setName] = useState('');
-    const [phone, setPhone] = useState('');
-    const [type, setType] = useState('GUEST');
+    // Form state
+    const [name, setName]           = useState('');
+    const [phone, setPhone]         = useState('');
+    const [type, setType]           = useState('GUEST');
     const [vehicleNo, setVehicleNo] = useState('');
 
-    // Date/Time State
+    // Date / time
     const [validFrom, setValidFrom] = useState(new Date());
     const [validUntil, setValidUntil] = useState(() => {
         const d = new Date();
-        d.setHours(d.getHours() + 2); // Default to 2 hours from now
+        d.setHours(d.getHours() + 2);
         return d;
     });
-
-    const [pickerMode, setPickerMode] = useState<'date' | 'time'>('date');
+    const [pickerMode, setPickerMode]     = useState<'date' | 'time'>('date');
     const [showPickerFor, setShowPickerFor] = useState<'from' | 'until' | null>(null);
 
-    // API State
-    const [submitting, setSubmitting] = useState(false);
-    const [successResponse, setSuccessResponse] = useState<any>(null); // To store QR returned
+    // API state
+    const [submitting, setSubmitting]       = useState(false);
+    const [successResponse, setSuccessResponse] = useState<any>(null);
 
-    // Date Picker Handlers
-    const onChangeDate = (event: any, selectedDate?: Date) => {
-        if (Platform.OS === 'android') {
-            setShowPickerFor(null);
-        }
+    // ── Picker handlers ──────────────────────────────────────────────────────
+    const onChangeDate = (_event: any, selectedDate?: Date) => {
+        if (Platform.OS === 'android') setShowPickerFor(null);
         if (selectedDate) {
-            if (showPickerFor === 'from') setValidFrom(selectedDate);
+            if (showPickerFor === 'from')  setValidFrom(selectedDate);
             if (showPickerFor === 'until') setValidUntil(selectedDate);
         }
     };
-
     const triggerPicker = (field: 'from' | 'until', mode: 'date' | 'time') => {
         setShowPickerFor(field);
         setPickerMode(mode);
     };
+    const formatDate = (d: Date) => d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Format helpers
-    const formatDateStr = (d: Date) => d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-    const formatTimeStr = (d: Date) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
+    // ── Submit ───────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
         if (!name.trim()) {
-            Alert.alert('Required Field', 'Please enter a visitor name.');
+            Alert.alert('Required', 'Please enter a visitor name.');
             return;
         }
-
         if (validUntil <= validFrom) {
-            Alert.alert('Invalid Time', 'Valid Until time must be after Valid From time.');
+            Alert.alert('Invalid Time', '"Valid Until" must be after "Valid From".');
             return;
         }
-
         setSubmitting(true);
-
         try {
             const payload: any = {
                 visitorName: name.trim(),
@@ -81,19 +88,16 @@ export default function CreatePreApprovalScreen() {
                 validFrom: validFrom.toISOString(),
                 validUntil: validUntil.toISOString(),
             };
-
             if (phone.trim()) {
                 let p = phone.replace(/\D/g, '');
                 if (p.length === 10) payload.visitorPhone = `+91${p}`;
                 else if (p.length > 10) payload.visitorPhone = `+${p}`;
                 else payload.visitorPhone = `+91${p}`;
             }
-
             if (vehicleNo.trim()) payload.vehicleNumber = vehicleNo.trim();
 
             const res = await api.post('/gate/preapprovals', payload);
             setSuccessResponse(res.data?.data);
-
         } catch (err: any) {
             console.error(err);
             Alert.alert('Error', err?.response?.data?.message || 'Failed to create pre-approval');
@@ -105,216 +109,266 @@ export default function CreatePreApprovalScreen() {
     const handleShare = async () => {
         try {
             await Share.share({
-                message: `Hi ${name.split(' ')[0]}, here is your Gate Pass for entry!\nVisitor Type: ${type.replace('_', ' ')}\nValid until: ${validUntil.toLocaleString()}\n\nPlease show this QR code at the security gate:\n${successResponse.qrCodeUrl}`,
+                message: `Hi ${name.split(' ')[0]}, here is your Gate Pass for entry!\nVisitor Type: ${type.replace('_', ' ')}\nValid until: ${validUntil.toLocaleString()}\n\nPlease show this QR code at the security gate:\n${successResponse?.qrCodeUrl}`,
             });
-        } catch (error) {
-            console.error('Error sharing:', error);
-        }
+        } catch {}
     };
 
-    const handleCloseFinal = () => {
+    const handleClose = () => {
         setSuccessResponse(null);
         router.back();
     };
 
+    // ── Render ───────────────────────────────────────────────────────────────
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-black" edges={['top']}>
+        <SafeAreaView edges={['top']} style={styles.safe}>
             {/* Header */}
-            <View className="px-5 py-4 flex-row items-center gap-3 bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800">
-                <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800">
-                    <Ionicons name="close" size={24} className="text-gray-700 dark:text-gray-300" />
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
+                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">Invite Visitor</Text>
+                <Text style={styles.headerTitle}>Pre-Approve Visitor</Text>
+                <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
-                <Card className="p-5 gap-6 mb-8">
-                    
-                    {/* Visitor Name */}
-                    <View>
-                        <Text className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Visitor Name *</Text>
+            <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
+                {/* ── Visitor type selector ─────────────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.typeRow}>
+                    {VISITOR_TYPES.map((t) => {
+                        const active = type === t.value;
+                        return (
+                            <TouchableOpacity
+                                key={t.value}
+                                onPress={() => setType(t.value)}
+                                activeOpacity={0.7}
+                                style={[
+                                    styles.typeChip,
+                                    active && styles.typeChipActive,
+                                ]}
+                            >
+                                <Text style={[
+                                    styles.typeChipText,
+                                    active && styles.typeChipTextActive,
+                                ]}>
+                                    {t.label}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </Animated.View>
+
+                {/* ── Visitor name ──────────────────────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(100).springify()}>
+                    <Text style={styles.fieldLabel}>VISITOR NAME</Text>
+                    <View style={styles.inputRow}>
+                        <Feather name="user" size={16} color={SgateColors.t4} style={styles.inputIcon} />
                         <TextInput
-                            className="bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl p-3.5 text-base font-semibold text-gray-900 dark:text-white"
-                            placeholder="e.g. Rahul Sharma"
-                            placeholderTextColor="#9ca3af"
+                            style={styles.input}
+                            placeholder="Enter full name"
+                            placeholderTextColor={SgateColors.t4}
                             value={name}
                             onChangeText={setName}
                             autoCapitalize="words"
                         />
                     </View>
+                </Animated.View>
 
-                    {/* Visitor Phone */}
-                    <View>
-                        <Text className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Visitor Phone (Optional)</Text>
+                {/* ── Phone ─────────────────────────────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(150).springify()}>
+                    <Text style={styles.fieldLabel}>PHONE NUMBER</Text>
+                    <View style={styles.inputRow}>
+                        <Feather name="phone" size={16} color={SgateColors.t4} style={styles.inputIcon} />
                         <TextInput
-                            className="bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl p-3.5 text-base font-semibold text-gray-900 dark:text-white"
-                            placeholder="10-digit mobile number"
-                            placeholderTextColor="#9ca3af"
+                            style={styles.input}
+                            placeholder="+91 00000 00000"
+                            placeholderTextColor={SgateColors.t4}
                             value={phone}
                             onChangeText={setPhone}
                             keyboardType="phone-pad"
                         />
                     </View>
+                </Animated.View>
 
-                    {/* Vehicle Number */}
-                    <View>
-                        <Text className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Vehicle Number (Optional)</Text>
+                {/* ── Vehicle number ────────────────────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(200).springify()}>
+                    <Text style={styles.fieldLabel}>VEHICLE NUMBER (OPTIONAL)</Text>
+                    <View style={styles.inputRow}>
+                        <Feather name="truck" size={16} color={SgateColors.t4} style={styles.inputIcon} />
                         <TextInput
-                            className="bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl p-3.5 text-base font-semibold text-gray-900 dark:text-white uppercase"
+                            style={styles.input}
                             placeholder="e.g. MH 01 AB 1234"
-                            placeholderTextColor="#9ca3af"
+                            placeholderTextColor={SgateColors.t4}
                             value={vehicleNo}
                             onChangeText={setVehicleNo}
                             autoCapitalize="characters"
                         />
                     </View>
+                </Animated.View>
 
-                    {/* Visitor Type Selector */}
-                    <View>
-                        <Text className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">Visitor Type *</Text>
-                        <View className="flex-row flex-wrap gap-2">
-                            {VISITOR_TYPES.map((t) => {
-                                const isSelected = type === t.value;
-                                return (
-                                    <TouchableOpacity
-                                        key={t.value}
-                                        onPress={() => setType(t.value)}
-                                        className={`px-4 py-2 rounded-xl border-2 ${
-                                            isSelected
-                                                ? 'bg-indigo-50 border-indigo-600 dark:bg-indigo-900/40 dark:border-indigo-500' 
-                                                : 'bg-white border-gray-200 dark:bg-zinc-800 dark:border-zinc-700'
-                                        }`}
-                                    >
-                                        <Text className={`text-sm font-bold ${
-                                            isSelected ? 'text-indigo-700 dark:text-indigo-400' : 'text-gray-600 dark:text-gray-400'
-                                        }`}>
-                                            {t.label}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
+                {/* ── Date / time pickers ───────────────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(250).springify()} style={styles.dateTimeSection}>
+                    <View style={styles.dateTimeRow}>
+                        <View style={styles.dateTimeCol}>
+                            <Text style={styles.fieldLabel}>DATE</Text>
+                            <TouchableOpacity
+                                style={styles.dateTimeBtn}
+                                onPress={() => triggerPicker('from', 'date')}
+                            >
+                                <Feather name="calendar" size={15} color={SgateColors.goldDeep} />
+                                <Text style={styles.dateTimeText}>{formatDate(validFrom)}</Text>
+                            </TouchableOpacity>
                         </View>
-                    </View>
-                    
-                    {/* Time Window */}
-                    <View className="mt-2 border-t border-gray-100 dark:border-zinc-800 pt-5">
-                        <Text className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-4">Valid Time Window *</Text>
-                        
-                        <View className="flex-row items-center justify-between mb-4">
-                            <View className="flex-1">
-                                <Text className="text-xs text-gray-500 mb-1 ml-1 font-semibold uppercase tracking-wider">Starts From</Text>
-                                <View className="flex-row items-center gap-2">
-                                    <TouchableOpacity 
-                                        onPress={() => triggerPicker('from', 'date')}
-                                        className="flex-1 bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 items-center justify-center flex-row gap-2"
-                                    >
-                                        <Ionicons name="calendar" size={16} color="#4f46e5" />
-                                        <Text className="text-xs font-bold text-gray-800 dark:text-gray-200">{formatDateStr(validFrom)}</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity 
-                                        onPress={() => triggerPicker('from', 'time')}
-                                        className="bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 items-center justify-center flex-row gap-2"
-                                    >
-                                        <Ionicons name="time" size={16} color="#4f46e5" />
-                                        <Text className="text-xs font-bold text-gray-800 dark:text-gray-200">{formatTimeStr(validFrom)}</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        </View>
-
-                        <View className="flex-row justify-center relative -my-3 z-10">
-                            <View className="bg-white border border-gray-200 h-8 w-8 rounded-full items-center justify-center">
-                                <Ionicons name="arrow-down" size={16} color="#9ca3af" />
-                            </View>
-                        </View>
-
-                        <View className="flex-row items-center justify-between">
-                            <View className="flex-1">
-                                <Text className="text-xs text-gray-500 mb-1 ml-1 font-semibold uppercase tracking-wider">Ends At</Text>
-                                <View className="flex-row items-center gap-2">
-                                    <TouchableOpacity 
-                                        onPress={() => triggerPicker('until', 'date')}
-                                        className="flex-1 bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 items-center justify-center flex-row gap-2"
-                                    >
-                                        <Ionicons name="calendar-outline" size={16} color="#6b7280" />
-                                        <Text className="text-xs font-bold text-gray-800 dark:text-gray-200">{formatDateStr(validUntil)}</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity 
-                                        onPress={() => triggerPicker('until', 'time')}
-                                        className="bg-gray-50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 items-center justify-center flex-row gap-2"
-                                    >
-                                        <Ionicons name="time-outline" size={16} color="#6b7280" />
-                                        <Text className="text-xs font-bold text-gray-800 dark:text-gray-200">{formatTimeStr(validUntil)}</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
+                        <View style={styles.dateTimeCol}>
+                            <Text style={styles.fieldLabel}>TIME</Text>
+                            <TouchableOpacity
+                                style={styles.dateTimeBtn}
+                                onPress={() => triggerPicker('from', 'time')}
+                            >
+                                <Feather name="clock" size={15} color={SgateColors.goldDeep} />
+                                <Text style={styles.dateTimeText}>{formatTime(validFrom)}</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
 
-                    {/* Native Date Time Pickers Layer */}
-                    {showPickerFor && (
-                        <DateTimePicker
-                            value={showPickerFor === 'from' ? validFrom : validUntil}
-                            mode={pickerMode}
-                            is24Hour={false}
-                            display="default"
-                            onChange={onChangeDate}
-                            minimumDate={showPickerFor === 'until' ? validFrom : new Date()}
-                        />
-                    )}
+                    <View style={styles.dateTimeDivider}>
+                        <View style={styles.dateTimeDividerLine} />
+                        <Text style={styles.dateTimeDividerText}>to</Text>
+                        <View style={styles.dateTimeDividerLine} />
+                    </View>
 
-                </Card>
+                    <View style={styles.dateTimeRow}>
+                        <View style={styles.dateTimeCol}>
+                            <Text style={styles.fieldLabel}>END DATE</Text>
+                            <TouchableOpacity
+                                style={styles.dateTimeBtn}
+                                onPress={() => triggerPicker('until', 'date')}
+                            >
+                                <Feather name="calendar" size={15} color={SgateColors.t3} />
+                                <Text style={styles.dateTimeText}>{formatDate(validUntil)}</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.dateTimeCol}>
+                            <Text style={styles.fieldLabel}>END TIME</Text>
+                            <TouchableOpacity
+                                style={styles.dateTimeBtn}
+                                onPress={() => triggerPicker('until', 'time')}
+                            >
+                                <Feather name="clock" size={15} color={SgateColors.t3} />
+                                <Text style={styles.dateTimeText}>{formatTime(validUntil)}</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Animated.View>
 
-                <PrimaryButton 
-                    title={submitting ? "Processing..." : "Generate Entry Code"} 
-                    onPress={handleSubmit}
-                    disabled={!name.trim() || submitting}
-                    className="mb-10 py-4 shadow-lg shadow-indigo-200 dark:shadow-none"
-                    leftIcon={submitting ? undefined : <Ionicons name="qr-code-outline" size={20} color="white" />}
-                />
+                {/* Native picker */}
+                {showPickerFor && (
+                    <DateTimePicker
+                        value={showPickerFor === 'from' ? validFrom : validUntil}
+                        mode={pickerMode}
+                        is24Hour={false}
+                        display="default"
+                        onChange={onChangeDate}
+                        minimumDate={showPickerFor === 'until' ? validFrom : new Date()}
+                    />
+                )}
+
+                {/* ── Photo area ────────────────────────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.photoArea}>
+                    <Feather name="camera" size={22} color={SgateColors.goldDeep} />
+                    <View style={{ marginLeft: 14 }}>
+                        <Text style={styles.photoTitle}>Add visitor photo</Text>
+                        <Text style={styles.photoSub}>Optional — helps guards identify</Text>
+                    </View>
+                </Animated.View>
+
+                {/* ── Submit button ─────────────────────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(350).springify()}>
+                    <TouchableOpacity
+                        style={[styles.submitBtn, (!name.trim() || submitting) && styles.submitBtnDisabled]}
+                        onPress={handleSubmit}
+                        disabled={!name.trim() || submitting}
+                        activeOpacity={0.85}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator size="small" color={SgateColors.gold} />
+                        ) : (
+                            <>
+                                <Feather name="shield" size={17} color={SgateColors.gold} style={{ marginRight: 8 }} />
+                                <Text style={styles.submitBtnText}>Generate Gate Pass</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                </Animated.View>
+
+                <View style={{ height: 40 }} />
             </ScrollView>
 
-            {/* Success QR Modal */}
+            {/* ── Success modal ─────────────────────────────────────────────── */}
             <Modal
                 visible={!!successResponse}
-                transparent={true}
+                transparent
                 animationType="slide"
-                onRequestClose={handleCloseFinal}
+                onRequestClose={handleClose}
             >
-                <View className="flex-1 bg-black/50 items-center justify-center p-6">
-                    <View className="bg-white rounded-3xl p-6 items-center border border-gray-100 shadow-xl w-full max-w-[340px]">
-                        <View className="w-16 h-16 bg-green-100 rounded-full items-center justify-center mb-4">
-                            <Ionicons name="checkmark-done" size={32} color="#16a34a" />
-                        </View>
-                        <Text className="text-2xl font-black text-gray-900 mb-1 text-center">Invited Successfully!</Text>
-                        <Text className="text-sm font-medium text-gray-500 mb-6 text-center">
-                            Gate pass created for {successResponse?.visitorName}
-                        </Text>
-                        
-                        <View className="p-4 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50 shadow-sm mb-6 pb-2 w-[240px] items-center">
-                            <Text className="text-xs font-bold tracking-widest text-indigo-600 mb-3">DIGITAL GATE PASS</Text>
-                            {successResponse?.qrCodeUrl && (
-                                <Image 
-                                    source={{ uri: successResponse.qrCodeUrl }} 
-                                    style={{ width: 180, height: 180, marginBottom: 8 }}
-                                    resizeMode="contain"
-                                />
-                            )}
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalCard}>
+                        {/* Mascot */}
+                        <SgateMascot size={68} pose="thumbsup" />
+                        <Text style={styles.modalSuccessLabel}>Pass Generated!</Text>
+
+                        {/* Gate pass card */}
+                        <View style={styles.gatePassCard}>
+                            {/* Card header */}
+                            <View style={styles.gatePassHeader}>
+                                <Text style={styles.gatePassBrand}>
+                                    m<Text style={{ color: SgateColors.gold }}>gate</Text> Pass
+                                </Text>
+                                <View style={styles.gatePassActiveTag}>
+                                    <Text style={styles.gatePassActiveText}>ACTIVE</Text>
+                                </View>
+                            </View>
+
+                            {/* QR */}
+                            <View style={styles.gatePassBody}>
+                                {successResponse?.qrCodeUrl ? (
+                                    <Image
+                                        source={{ uri: successResponse.qrCodeUrl }}
+                                        style={styles.qrImage}
+                                        resizeMode="contain"
+                                    />
+                                ) : (
+                                    <View style={styles.qrPlaceholder}>
+                                        <Feather name="grid" size={40} color={SgateColors.t4} />
+                                    </View>
+                                )}
+                                <Text style={styles.qrHint}>Show this QR at the gate</Text>
+
+                                {/* Details */}
+                                {[
+                                    ['Visitor', successResponse?.visitorName],
+                                    ['Type', type.replace(/_/g, ' ')],
+                                    ['Valid Until', formatDate(validUntil) + ', ' + formatTime(validUntil)],
+                                ].map(([label, val], i) => (
+                                    <View key={i} style={styles.detailRow}>
+                                        <Text style={styles.detailLabel}>{label}</Text>
+                                        <Text style={styles.detailValue}>{val}</Text>
+                                    </View>
+                                ))}
+                            </View>
                         </View>
 
-                        <View className="flex-row gap-3 w-full mt-2">
-                            <TouchableOpacity
-                                onPress={handleShare}
-                                className="flex-1 py-3.5 bg-indigo-600 rounded-xl flex-row justify-center items-center"
-                            >
-                                <Ionicons name="share-outline" size={18} color="white" className="mr-2" />
-                                <Text className="text-white font-bold text-sm">Share QR</Text>
+                        {/* Actions */}
+                        <View style={styles.modalActions}>
+                            <TouchableOpacity style={styles.modalShareBtn} onPress={handleShare}>
+                                <Text style={styles.modalShareText}>Share</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={handleCloseFinal}
-                                className="flex-1 py-3.5 bg-gray-100 rounded-xl flex-row justify-center items-center border border-gray-200"
-                            >
-                                <Text className="text-gray-700 font-bold text-sm">Close</Text>
+                            <TouchableOpacity style={styles.modalDoneBtn} onPress={handleClose}>
+                                <Text style={styles.modalDoneText}>Done</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -323,3 +377,321 @@ export default function CreatePreApprovalScreen() {
         </SafeAreaView>
     );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STYLES
+// ─────────────────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+    safe: {
+        flex: 1,
+        backgroundColor: SgateColors.bg,
+    },
+
+    // ── Header ───────────────────────────────────────────────────────────────
+    header: {
+        backgroundColor: SgateColors.card,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: SgateColors.borderSoft,
+    },
+    headerBackBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerTitle: {
+        flex: 1,
+        textAlign: 'center',
+        fontSize: 18,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+    },
+
+    // ── Scroll ───────────────────────────────────────────────────────────────
+    scroll: {
+        flex: 1,
+    },
+    scrollContent: {
+        padding: 20,
+    },
+
+    // ── Type chips ───────────────────────────────────────────────────────────
+    typeRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+        marginBottom: 24,
+    },
+    typeChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 14,
+        backgroundColor: SgateColors.surface,
+    },
+    typeChipActive: {
+        backgroundColor: SgateColors.black,
+    },
+    typeChipText: {
+        fontSize: 13,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t3,
+    },
+    typeChipTextActive: {
+        color: '#FFFFFF',
+    },
+
+    // ── Field label ──────────────────────────────────────────────────────────
+    fieldLabel: {
+        ...SgateTypography.microLabel,
+        color: SgateColors.t3,
+        marginBottom: 8,
+    },
+
+    // ── Input row ────────────────────────────────────────────────────────────
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: SgateColors.surface,
+        borderWidth: 1.5,
+        borderColor: SgateColors.border,
+        borderRadius: 16,
+        paddingHorizontal: 14,
+        marginBottom: 16,
+    },
+    inputIcon: {
+        marginRight: 10,
+    },
+    input: {
+        flex: 1,
+        paddingVertical: 14,
+        fontSize: 15,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t1,
+    },
+
+    // ── Date / time ──────────────────────────────────────────────────────────
+    dateTimeSection: {
+        marginBottom: 16,
+    },
+    dateTimeRow: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    dateTimeCol: {
+        flex: 1,
+    },
+    dateTimeBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: SgateColors.surface,
+        borderWidth: 1.5,
+        borderColor: SgateColors.border,
+        borderRadius: 16,
+        padding: 14,
+    },
+    dateTimeText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t1,
+    },
+    dateTimeDivider: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        gap: 10,
+    },
+    dateTimeDividerLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: SgateColors.border,
+    },
+    dateTimeDividerText: {
+        fontSize: 12,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t4,
+    },
+
+    // ── Photo area ───────────────────────────────────────────────────────────
+    photoArea: {
+        backgroundColor: SgateColors.goldPale,
+        borderRadius: 18,
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 26,
+        borderWidth: 1.5,
+        borderColor: '#FFB80035',
+        borderStyle: 'dashed',
+    },
+    photoTitle: {
+        fontSize: 14,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t1,
+    },
+    photoSub: {
+        fontSize: 12,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+        marginTop: 2,
+    },
+
+    // ── Submit button ────────────────────────────────────────────────────────
+    submitBtn: {
+        backgroundColor: SgateColors.black,
+        borderRadius: 16,
+        paddingVertical: 17,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    submitBtnDisabled: {
+        opacity: 0.45,
+    },
+    submitBtnText: {
+        fontSize: 16,
+        fontFamily: SgateFonts.bold,
+        color: '#FFFFFF',
+    },
+
+    // ── Modal ────────────────────────────────────────────────────────────────
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    modalCard: {
+        backgroundColor: SgateColors.card,
+        borderRadius: 24,
+        width: '100%',
+        maxWidth: 340,
+        padding: 24,
+        alignItems: 'center',
+    },
+    modalSuccessLabel: {
+        fontSize: 14,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.green,
+        marginTop: 4,
+        marginBottom: 20,
+    },
+
+    // ── Gate pass card ───────────────────────────────────────────────────────
+    gatePassCard: {
+        width: '100%',
+        borderRadius: 22,
+        borderWidth: 1.5,
+        borderColor: '#FFB80025',
+        overflow: 'hidden',
+    },
+    gatePassHeader: {
+        backgroundColor: SgateColors.black,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    gatePassBrand: {
+        fontSize: 14,
+        fontFamily: SgateFonts.bold,
+        color: '#FFFFFF',
+    },
+    gatePassActiveTag: {
+        backgroundColor: SgateColors.green + '18',
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 3,
+    },
+    gatePassActiveText: {
+        fontSize: 10,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.green,
+    },
+    gatePassBody: {
+        padding: 20,
+        alignItems: 'center',
+    },
+    qrImage: {
+        width: 140,
+        height: 140,
+        marginBottom: 10,
+    },
+    qrPlaceholder: {
+        width: 100,
+        height: 100,
+        borderRadius: 18,
+        backgroundColor: SgateColors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: SgateColors.border,
+        borderStyle: 'dashed',
+        marginBottom: 10,
+    },
+    qrHint: {
+        fontSize: 12,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t4,
+        marginBottom: 14,
+    },
+    detailRow: {
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: 9,
+        borderTopWidth: 1,
+        borderTopColor: SgateColors.borderSoft,
+    },
+    detailLabel: {
+        fontSize: 13,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+    },
+    detailValue: {
+        fontSize: 14,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t1,
+    },
+
+    // ── Modal actions ────────────────────────────────────────────────────────
+    modalActions: {
+        flexDirection: 'row',
+        gap: 10,
+        width: '100%',
+        marginTop: 18,
+    },
+    modalShareBtn: {
+        flex: 1,
+        backgroundColor: SgateColors.surface,
+        borderRadius: 16,
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalShareText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t1,
+    },
+    modalDoneBtn: {
+        flex: 1,
+        backgroundColor: SgateColors.black,
+        borderRadius: 16,
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalDoneText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.semibold,
+        color: '#FFFFFF',
+    },
+});

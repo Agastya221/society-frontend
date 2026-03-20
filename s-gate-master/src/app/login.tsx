@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    Dimensions,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -18,28 +19,29 @@ import {
 } from 'react-native';
 import Animated, {
     FadeInDown,
+    FadeInUp,
     interpolateColor,
     useAnimatedStyle,
     useSharedValue,
     withSpring,
     withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MSG91_TOKEN_AUTH, MSG91_WIDGET_ID } from '@/constants/msg91';
-import { SgateMascot } from '@/components/Sgate/SgateMascot';
+import { SgateBrandMark } from '@/components/Sgate/SgateBrandMark';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
 
+const { width: SCREEN_W } = Dimensions.get('window');
+
 // ─── Screen state ─────────────────────────────────────────────────────────────
 type Screen = 'phone' | 'otp';
 
-// ─── Animated primitives ──────────────────────────────────────────────────────
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableWithoutFeedback);
-
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Login() {
     const login = useAuthStore((s) => s.login);
+    const insets = useSafeAreaInsets();
 
     const [screen, setScreen]       = useState<Screen>('phone');
     const [phone, setPhone]         = useState('');
@@ -57,12 +59,9 @@ export default function Login() {
         OTPWidget.initializeWidget(MSG91_WIDGET_ID, MSG91_TOKEN_AUTH);
     }, []);
 
-    // ── Countdown ─────────────────────────────────────────────────────────────
+    // ── Countdown timer ───────────────────────────────────────────────────────
     useEffect(() => {
-        if (countdown <= 0) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            return;
-        }
+        if (countdown <= 0) { if (timerRef.current) clearInterval(timerRef.current); return; }
         timerRef.current = setInterval(() => {
             setCountdown((c) => {
                 if (c <= 1) { clearInterval(timerRef.current!); return 0; }
@@ -88,8 +87,7 @@ export default function Login() {
         try {
             const response = await OTPWidget.sendOTP({ identifier: `91${cleaned}` });
             console.log('📤 MSG91 sendOTP response:', JSON.stringify(response));
-            const isHardError =
-                response?.type === 'error' || response?.success === false;
+            const isHardError = response?.type === 'error' || response?.success === false;
             if (isHardError) {
                 setError('Failed to send OTP. Please try again.');
             } else {
@@ -151,7 +149,7 @@ export default function Login() {
                 (typeof verifyResponse?.message === 'string' && verifyResponse.message.startsWith('eyJ'))
                     ? verifyResponse.message
                     : verifyResponse?.reqId ?? reqId;
-            console.log('🔑 widgetToken being sent to backend:', widgetToken.substring(0, 20) + '...');
+            console.log('🔑 widgetToken:', widgetToken.substring(0, 20) + '...');
             const backendRes = await api.post('/auth/otp/verify', { widgetToken });
             const data = backendRes.data?.data;
             if (!data?.accessToken || !data?.user) {
@@ -192,7 +190,7 @@ export default function Login() {
             >
                 <ScrollView
                     style={styles.root}
-                    contentContainerStyle={styles.scrollContent}
+                    contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top }]}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
                     bounces={false}
@@ -220,11 +218,25 @@ export default function Login() {
                             onBack={() => { setScreen('phone'); setOtp(''); setError(''); }}
                           />
                     }
+
+                    {/* ── Bottom section: features + footer ─────────────── */}
+                    <View style={styles.bottomSection}>
+                        <View style={styles.featuresRow}>
+                            <FeaturePill icon="shield" label="SECURE" />
+                            <FeaturePill icon="user" label="RESIDENT" />
+                            <FeaturePill icon="headphones" label="ASSIST" />
+                        </View>
+                        <Text style={styles.footerText}>
+                            POWERED BY S-GATE TECHNOLOGY © 2024
+                        </Text>
+                    </View>
+
                 </ScrollView>
             </KeyboardAvoidingView>
         </View>
     );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PHONE SCREEN
@@ -239,16 +251,14 @@ interface PhoneScreenProps {
 }
 
 function PhoneScreen({ phone, setPhone, error, setError, isLoading, onSend }: PhoneScreenProps) {
-    const phoneFocus  = useSharedValue(0);
-    const btnScale    = useSharedValue(1);
-    const canSubmit   = phone.trim().length === 10 && !isLoading;
+    const phoneFocus = useSharedValue(0);
+    const btnScale   = useSharedValue(1);
+    const canSubmit  = phone.trim().length === 10 && !isLoading;
 
-    // Border color animation: rest→gold on focus
     const phoneContainerStyle = useAnimatedStyle(() => ({
-        borderColor: interpolateColor(phoneFocus.value, [0, 1], [SgateColors.border, SgateColors.gold]),
+        borderColor: interpolateColor(phoneFocus.value, [0, 1], ['#2A2A2A', SgateColors.gold]),
     }));
 
-    // Button press scale
     const btnStyle = useAnimatedStyle(() => ({
         transform: [{ scale: btnScale.value }],
     }));
@@ -258,19 +268,26 @@ function PhoneScreen({ phone, setPhone, error, setError, isLoading, onSend }: Ph
 
     return (
         <View style={styles.screenWrap}>
-            {/* ── Black hero section ────────────────────────────────────────── */}
-            <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.hero}>
-                {/* Mascot */}
-                <View style={{ marginBottom: 20 }}>
-                    <SgateMascot size={80} pose="happy" />
+            {/* ── Dark section: brand + welcome ────────────────────────── */}
+            <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.darkSection}>
+                {/* Dot grid background hint (decorative) */}
+                <View style={styles.dotGridOverlay} />
+
+                {/* Brand row */}
+                <View style={styles.brandRow}>
+                    <SgateBrandMark size={32} />
+                    <Text style={styles.brandText}>S-GATE</Text>
                 </View>
-                <Text style={styles.heroTitle}>Welcome back!</Text>
-                <Text style={styles.heroSub}>Sign in to your society</Text>
+
+                {/* Welcome text */}
+                <Text style={styles.welcomeTitle}>Welcome{'\n'}Home</Text>
+                <Text style={styles.welcomeSub}>
+                    Enter your credentials to access your{'\n'}gated community.
+                </Text>
             </Animated.View>
 
-            {/* ── White form section ────────────────────────────────────────── */}
-            <View style={styles.form}>
-
+            {/* ── White card ──────────────────────────────────────────── */}
+            <View style={styles.whiteCard}>
                 {/* Error banner */}
                 {error ? (
                     <Animated.View entering={FadeInDown.duration(250)} style={styles.errorBanner}>
@@ -279,47 +296,33 @@ function PhoneScreen({ phone, setPhone, error, setError, isLoading, onSend }: Ph
                     </Animated.View>
                 ) : null}
 
-                {/* PHONE NUMBER ─────────────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(200).springify()}>
-                    <Text style={styles.fieldLabel}>PHONE NUMBER</Text>
+                {/* MOBILE NUMBER */}
+                <Animated.View entering={FadeInDown.delay(150).springify()}>
+                    <Text style={styles.fieldLabel}>MOBILE NUMBER</Text>
                     <Animated.View style={[styles.inputRow, phoneContainerStyle]}>
-                        {/* +91 prefix */}
                         <View style={styles.prefixWrap}>
                             <Text style={styles.prefixText}>+91</Text>
-                            <View style={styles.prefixDivider} />
                         </View>
                         <TextInput
                             style={styles.phoneInput}
-                            placeholder="10-digit mobile number"
-                            placeholderTextColor={SgateColors.t4}
+                            placeholder="00000 00000"
+                            placeholderTextColor="rgba(255,255,255,0.25)"
                             value={phone}
                             onChangeText={(t) => { setPhone(t.replace(/\D/g, '').slice(0, 10)); setError(''); }}
                             keyboardType="number-pad"
                             maxLength={10}
                             editable={!isLoading}
-                            onFocus={()  => { phoneFocus.value = withTiming(1, { duration: 200 }); }}
-                            onBlur={()   => { phoneFocus.value = withTiming(0, { duration: 200 }); }}
+                            onFocus={() => { phoneFocus.value = withTiming(1, { duration: 200 }); }}
+                            onBlur={() => { phoneFocus.value = withTiming(0, { duration: 200 }); }}
                         />
                     </Animated.View>
+                    <Text style={styles.helperText}>
+                        We'll send a 6-digit OTP to verify your account.
+                    </Text>
                 </Animated.View>
 
-                {/* YOUR SOCIETY ─────────────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(300).springify()} style={{ marginTop: 20 }}>
-                    <Text style={styles.fieldLabel}>YOUR SOCIETY</Text>
-                    <TouchableOpacity activeOpacity={0.75} style={styles.societyRow}>
-                        <Feather name="map-pin" size={16} color={SgateColors.t3} style={{ marginRight: 10 }} />
-                        <Text style={styles.societyText} numberOfLines={1}>
-                            Sunrise Heights, Sakchi
-                        </Text>
-                        <Feather name="chevron-down" size={16} color={SgateColors.t3} />
-                    </TouchableOpacity>
-                </Animated.View>
-
-                {/* SEND OTP BUTTON ─────────────────────────────────────────── */}
-                <Animated.View
-                    entering={FadeInDown.delay(400).springify()}
-                    style={[styles.btnWrap, btnStyle]}
-                >
+                {/* SEND OTP BUTTON */}
+                <Animated.View entering={FadeInDown.delay(250).springify()} style={btnStyle}>
                     <TouchableWithoutFeedback
                         onPress={onSend}
                         onPressIn={handleBtnPressIn}
@@ -330,16 +333,26 @@ function PhoneScreen({ phone, setPhone, error, setError, isLoading, onSend }: Ph
                             {isLoading ? (
                                 <ActivityIndicator size="small" color="#FFFFFF" />
                             ) : (
-                                <Text style={styles.sendBtnText}>Send OTP</Text>
+                                <View style={styles.sendBtnContent}>
+                                    <Text style={styles.sendBtnText}>Send OTP</Text>
+                                    <Feather name="arrow-right" size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
+                                </View>
                             )}
                         </View>
                     </TouchableWithoutFeedback>
                 </Animated.View>
 
+                {/* Login as Service Provider */}
+                <Animated.View entering={FadeInDown.delay(350).springify()}>
+                    <TouchableOpacity style={styles.altLoginBtn}>
+                        <Text style={styles.altLoginText}>Login as Service Provider</Text>
+                    </TouchableOpacity>
+                </Animated.View>
             </View>
         </View>
     );
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OTP SCREEN
@@ -371,25 +384,33 @@ function OtpScreen({
 
     return (
         <View style={styles.screenWrap}>
-            {/* ── Compact hero ────────────────────────────────────────────────── */}
-            <Animated.View entering={FadeInDown.delay(0).springify()} style={[styles.hero, styles.heroCompact]}>
+            {/* ── Dark section ────────────────────────────────────────── */}
+            <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.darkSection}>
+                <View style={styles.dotGridOverlay} />
+
+                {/* Back button */}
                 <TouchableOpacity
                     onPress={onBack}
                     style={styles.backBtn}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                    <Feather name="arrow-left" size={20} color="#FFFFFF" />
+                    <Feather name="arrow-left" size={22} color="#FFFFFF" />
                 </TouchableOpacity>
-                <Text style={styles.heroTitle}>Enter OTP</Text>
-                <Text style={styles.heroSub}>
+
+                <View style={styles.brandRow}>
+                    <SgateBrandMark size={32} />
+                    <Text style={styles.brandText}>S-GATE</Text>
+                </View>
+
+                <Text style={styles.welcomeTitle}>Enter{'\n'}OTP</Text>
+                <Text style={styles.welcomeSub}>
                     Sent to +91 {phone}
                 </Text>
             </Animated.View>
 
-            {/* ── Form ────────────────────────────────────────────────────────── */}
-            <View style={styles.form}>
-
-                {/* Error banner */}
+            {/* ── White card ──────────────────────────────────────────── */}
+            <View style={styles.whiteCard}>
+                {/* Error */}
                 {error ? (
                     <Animated.View entering={FadeInDown.duration(250)} style={styles.errorBanner}>
                         <Feather name="alert-circle" size={14} color={SgateColors.red} style={{ marginRight: 8 }} />
@@ -397,8 +418,8 @@ function OtpScreen({
                     </Animated.View>
                 ) : null}
 
-                {/* 6-digit OTP boxes ──────────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(200).springify()}>
+                {/* OTP boxes */}
+                <Animated.View entering={FadeInDown.delay(150).springify()}>
                     <Text style={styles.fieldLabel}>6-DIGIT CODE</Text>
                     <OtpBoxes
                         value={otp}
@@ -408,12 +429,10 @@ function OtpScreen({
                     />
                 </Animated.View>
 
-                {/* Resend row ─────────────────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(300).springify()} style={styles.resendRow}>
+                {/* Resend row */}
+                <Animated.View entering={FadeInDown.delay(250).springify()} style={styles.resendRow}>
                     <Text style={styles.resendHint}>
-                        {countdown > 0
-                            ? `Resend OTP in ${countdown}s`
-                            : "Didn't receive it?"}
+                        {countdown > 0 ? `Resend OTP in ${countdown}s` : "Didn't receive it?"}
                     </Text>
                     {countdown === 0 && (
                         <TouchableOpacity onPress={onResend} disabled={isLoading} style={{ marginLeft: 6 }}>
@@ -422,11 +441,8 @@ function OtpScreen({
                     )}
                 </Animated.View>
 
-                {/* Verify button ──────────────────────────────────────────────── */}
-                <Animated.View
-                    entering={FadeInDown.delay(400).springify()}
-                    style={[styles.btnWrap, btnStyle]}
-                >
+                {/* Verify button */}
+                <Animated.View entering={FadeInDown.delay(350).springify()} style={btnStyle}>
                     <TouchableWithoutFeedback
                         onPress={onVerify}
                         onPressIn={() => { btnScale.value = withSpring(0.97, { damping: 15, stiffness: 300 }); }}
@@ -437,19 +453,22 @@ function OtpScreen({
                             {isLoading ? (
                                 <ActivityIndicator size="small" color={SgateColors.black} />
                             ) : (
-                                <Text style={styles.verifyBtnText}>Verify & Sign In</Text>
+                                <View style={styles.sendBtnContent}>
+                                    <Text style={styles.verifyBtnText}>Verify & Continue</Text>
+                                    <Feather name="arrow-right" size={18} color={SgateColors.black} style={{ marginLeft: 8 }} />
+                                </View>
                             )}
                         </View>
                     </TouchableWithoutFeedback>
                 </Animated.View>
-
             </View>
         </View>
     );
 }
 
+
 // ─────────────────────────────────────────────────────────────────────────────
-// OTP BOXES  — 6 visual digit cells backed by a hidden TextInput
+// OTP BOXES
 // ─────────────────────────────────────────────────────────────────────────────
 interface OtpBoxesProps {
     value: string;
@@ -467,7 +486,6 @@ function OtpBoxes({ value, inputRef, onChange, disabled }: OtpBoxesProps) {
             onPress={() => inputRef.current?.focus()}
             style={styles.otpRow}
         >
-            {/* Hidden input that captures real keystrokes */}
             <TextInput
                 ref={inputRef}
                 value={value}
@@ -477,12 +495,10 @@ function OtpBoxes({ value, inputRef, onChange, disabled }: OtpBoxesProps) {
                 autoFocus
                 editable={!disabled}
                 onFocus={() => setFocused(true)}
-                onBlur={()  => setFocused(false)}
+                onBlur={() => setFocused(false)}
                 style={styles.otpHiddenInput}
                 caretHidden
             />
-
-            {/* 6 visual cells */}
             {Array.from({ length: 6 }).map((_, i) => {
                 const char = value[i] ?? '';
                 const isActive = focused && (char ? i === value.length - 1 : i === value.length);
@@ -492,7 +508,7 @@ function OtpBoxes({ value, inputRef, onChange, disabled }: OtpBoxesProps) {
                         style={[
                             styles.otpCell,
                             isActive && styles.otpCellActive,
-                            char      && styles.otpCellFilled,
+                            !!char && styles.otpCellFilled,
                         ]}
                     >
                         <Text style={styles.otpDigit}>{char}</Text>
@@ -503,69 +519,118 @@ function OtpBoxes({ value, inputRef, onChange, disabled }: OtpBoxesProps) {
     );
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FEATURE PILL — bottom icons
+// ─────────────────────────────────────────────────────────────────────────────
+function FeaturePill({ icon, label }: { icon: keyof typeof Feather.glyphMap; label: string }) {
+    return (
+        <View style={styles.featurePill}>
+            <View style={styles.featureIconWrap}>
+                <Feather name={icon} size={18} color="rgba(255,255,255,0.35)" />
+            </View>
+            <Text style={styles.featureLabel}>{label}</Text>
+        </View>
+    );
+}
+
+
 // ─────────────────────────────────────────────────────────────────────────────
 // STYLES
 // ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: SgateColors.black,
+        backgroundColor: '#111111',
     },
     scrollContent: {
         flexGrow: 1,
-        backgroundColor: SgateColors.card,
+        backgroundColor: '#111111',
     },
     screenWrap: {
         flex: 1,
-        backgroundColor: SgateColors.card,
     },
 
-    // ── Hero (black top) ────────────────────────────────────────────────────
-    hero: {
-        backgroundColor: SgateColors.black,
+    // ── Dark section (top hero) ──────────────────────────────────────────────
+    darkSection: {
+        backgroundColor: '#111111',
+        paddingHorizontal: 28,
+        paddingTop: 20,
+        paddingBottom: 36,
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    dotGridOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        // Subtle pattern effect via opacity dot grid
+        opacity: 0.03,
+        backgroundColor: '#FFFFFF',
+    },
+    brandRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: 64,
-        paddingBottom: 40,
-        paddingHorizontal: 24,
-        borderBottomLeftRadius: 32,
-        borderBottomRightRadius: 32,
+        gap: 10,
+        marginBottom: 28,
     },
-    heroCompact: {
-        paddingTop: 56,
-        paddingBottom: 32,
+    brandText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.bold,
+        color: 'rgba(255,255,255,0.7)',
+        letterSpacing: 3,
     },
-    heroTitle: {
-        ...SgateTypography.screenTitle,
+    welcomeTitle: {
+        fontSize: 42,
+        fontFamily: SgateFonts.extrabold,
         color: '#FFFFFF',
-        marginBottom: 8,
-        textAlign: 'center',
+        letterSpacing: -1.5,
+        lineHeight: 48,
+        marginBottom: 12,
     },
-    heroSub: {
-        ...SgateTypography.body,
-        color: SgateColors.t3,
-        textAlign: 'center',
+    welcomeSub: {
+        fontSize: 14,
+        fontFamily: SgateFonts.regular,
+        color: 'rgba(255,255,255,0.35)',
+        lineHeight: 21,
     },
     backBtn: {
         position: 'absolute',
-        top: 56,
-        left: 20,
-        padding: 4,
+        top: 18,
+        right: 24,
+        zIndex: 10,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
-    // ── Form (white bottom) ─────────────────────────────────────────────────
-    form: {
-        backgroundColor: SgateColors.card,
-        paddingHorizontal: 24,
-        paddingTop: 28,
-        paddingBottom: 36,
-        flex: 1,
+    // ── White card ───────────────────────────────────────────────────────────
+    whiteCard: {
+        backgroundColor: '#FFFFFF',
+        marginHorizontal: 16,
+        borderRadius: 24,
+        padding: 24,
+        marginTop: -8,
+        // Shadow
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.12,
+                shadowRadius: 24,
+            },
+            android: {
+                elevation: 12,
+            },
+        }),
     },
 
-    // ── Error banner ────────────────────────────────────────────────────────
+    // ── Error banner ─────────────────────────────────────────────────────────
     errorBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: SgateColors.redBg,
+        backgroundColor: '#FEF2F2',
         borderRadius: 12,
         paddingVertical: 10,
         paddingHorizontal: 14,
@@ -575,110 +640,112 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 13,
         fontFamily: SgateFonts.medium,
-        color: SgateColors.red,
+        color: '#DC2626',
     },
 
-    // ── Field label ─────────────────────────────────────────────────────────
+    // ── Field label ──────────────────────────────────────────────────────────
     fieldLabel: {
-        ...SgateTypography.microLabel,
-        color: SgateColors.t2,
-        marginBottom: 8,
+        fontSize: 11,
+        fontFamily: SgateFonts.bold,
+        color: '#1A1A1A',
+        letterSpacing: 1.5,
+        marginBottom: 10,
     },
 
-    // ── Phone input ─────────────────────────────────────────────────────────
+    // ── Phone input (dark style, matches screenshot) ─────────────────────────
     inputRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: SgateColors.surface,
+        backgroundColor: '#1A1A1A',
         borderWidth: 1.5,
-        borderColor: SgateColors.border,
-        borderRadius: 16,
-        paddingHorizontal: 14,
+        borderColor: '#2A2A2A',
+        borderRadius: 14,
+        paddingHorizontal: 16,
     },
     prefixWrap: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingRight: 12,
-        marginRight: 4,
+        paddingRight: 14,
+        borderRightWidth: 1,
+        borderRightColor: '#333333',
+        paddingVertical: 15,
+        marginRight: 6,
     },
     prefixText: {
-        fontSize: 16,
+        fontSize: 15,
         fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        marginRight: 10,
-    },
-    prefixDivider: {
-        width: 1.5,
-        height: 20,
-        backgroundColor: SgateColors.border,
+        color: 'rgba(255,255,255,0.6)',
     },
     phoneInput: {
         flex: 1,
         paddingVertical: 15,
-        paddingLeft: 12,
+        paddingLeft: 10,
         fontSize: 16,
         fontFamily: SgateFonts.semibold,
-        color: SgateColors.t1,
+        color: '#FFFFFF',
     },
-
-    // ── Society selector ────────────────────────────────────────────────────
-    societyRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: SgateColors.surface,
-        borderWidth: 1.5,
-        borderColor: SgateColors.border,
-        borderRadius: 16,
-        paddingHorizontal: 14,
-        paddingVertical: 15,
-    },
-    societyText: {
-        flex: 1,
-        fontSize: 14,
+    helperText: {
+        fontSize: 12,
         fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
+        color: '#9CA3AF',
+        marginTop: 10,
+        marginLeft: 2,
     },
 
-    // ── Send OTP button ─────────────────────────────────────────────────────
-    btnWrap: {
-        marginTop: 28,
-    },
+    // ── Send OTP button ──────────────────────────────────────────────────────
     sendBtn: {
-        backgroundColor: SgateColors.black,
-        borderRadius: 16,
+        backgroundColor: '#1A1A1A',
+        borderRadius: 50,
         paddingVertical: 17,
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: 24,
     },
     sendBtnDisabled: {
-        opacity: 0.45,
+        opacity: 0.4,
+    },
+    sendBtnContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     sendBtnText: {
         fontSize: 15,
         fontFamily: SgateFonts.bold,
         color: '#FFFFFF',
-        letterSpacing: 0.2,
+        letterSpacing: 0.3,
     },
 
-    // ── Verify button ───────────────────────────────────────────────────────
+    // ── Verify button ────────────────────────────────────────────────────────
     verifyBtn: {
         backgroundColor: SgateColors.gold,
-        borderRadius: 16,
+        borderRadius: 50,
         paddingVertical: 17,
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: 24,
     },
     verifyBtnDisabled: {
-        opacity: 0.45,
+        opacity: 0.4,
     },
     verifyBtnText: {
         fontSize: 15,
         fontFamily: SgateFonts.bold,
-        color: SgateColors.black,
-        letterSpacing: 0.2,
+        color: '#1A1A1A',
+        letterSpacing: 0.3,
     },
 
-    // ── OTP boxes ───────────────────────────────────────────────────────────
+    // ── Alt login ────────────────────────────────────────────────────────────
+    altLoginBtn: {
+        alignItems: 'center',
+        marginTop: 20,
+        paddingVertical: 8,
+    },
+    altLoginText: {
+        fontSize: 13,
+        fontFamily: SgateFonts.medium,
+        color: '#6B7280',
+        textDecorationLine: 'underline',
+    },
+
+    // ── OTP boxes ────────────────────────────────────────────────────────────
     otpRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -696,28 +763,28 @@ const styles = StyleSheet.create({
     otpCell: {
         flex: 1,
         aspectRatio: 0.9,
-        backgroundColor: SgateColors.surface,
+        backgroundColor: '#F3F4F6',
         borderRadius: 14,
         borderWidth: 1.5,
-        borderColor: SgateColors.border,
+        borderColor: '#E5E7EB',
         alignItems: 'center',
         justifyContent: 'center',
     },
     otpCellActive: {
         borderColor: SgateColors.gold,
-        backgroundColor: SgateColors.goldPale,
+        backgroundColor: '#FEF9E7',
     },
     otpCellFilled: {
-        borderColor: SgateColors.border,
-        backgroundColor: SgateColors.surface,
+        borderColor: '#D1D5DB',
+        backgroundColor: '#F9FAFB',
     },
     otpDigit: {
         fontSize: 20,
         fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
+        color: '#1A1A1A',
     },
 
-    // ── Resend row ──────────────────────────────────────────────────────────
+    // ── Resend row ───────────────────────────────────────────────────────────
     resendRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -727,11 +794,50 @@ const styles = StyleSheet.create({
     resendHint: {
         fontSize: 13,
         fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
+        color: '#9CA3AF',
     },
     resendLink: {
         fontSize: 13,
         fontFamily: SgateFonts.bold,
         color: SgateColors.gold,
+    },
+
+    // ── Bottom section ───────────────────────────────────────────────────────
+    bottomSection: {
+        alignItems: 'center',
+        paddingVertical: 32,
+        paddingHorizontal: 24,
+    },
+    featuresRow: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 32,
+        marginBottom: 28,
+    },
+    featurePill: {
+        alignItems: 'center',
+        gap: 8,
+    },
+    featureIconWrap: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    featureLabel: {
+        fontSize: 10,
+        fontFamily: SgateFonts.bold,
+        color: 'rgba(255,255,255,0.25)',
+        letterSpacing: 1.5,
+    },
+    footerText: {
+        fontSize: 10,
+        fontFamily: SgateFonts.regular,
+        color: 'rgba(255,255,255,0.15)',
+        letterSpacing: 1,
+        textAlign: 'center',
     },
 });

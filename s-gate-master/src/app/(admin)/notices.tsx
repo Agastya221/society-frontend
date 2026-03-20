@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -8,17 +8,19 @@ import {
     Modal,
     RefreshControl,
     ScrollView,
+    StyleSheet,
     Switch,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card } from '../../components/Card';
-import { PrimaryButton } from '../../components/PrimaryButton';
-import api from '../../services/api';
+import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import api from '@/services/api';
 
+// ─── Types ───────────────────────────────────────────────────────────────────
 interface Notice {
     id: string;
     title: string;
@@ -30,75 +32,57 @@ interface Notice {
     expiresAt?: string;
 }
 
-type NoticeType = 'GENERAL' | 'URGENT' | 'EVENT' | 'MAINTENANCE' | 'MEETING' | 'EMERGENCY';
+type NoticeType     = 'GENERAL' | 'URGENT' | 'EVENT' | 'MAINTENANCE' | 'MEETING' | 'EMERGENCY';
 type NoticePriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
-const TYPES: NoticeType[] = ['GENERAL', 'URGENT', 'EVENT', 'MAINTENANCE', 'MEETING', 'EMERGENCY'];
+const TYPES: NoticeType[]         = ['GENERAL', 'URGENT', 'EVENT', 'MAINTENANCE', 'MEETING', 'EMERGENCY'];
 const PRIORITIES: NoticePriority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
 
 const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-    GENERAL: { bg: 'bg-gray-100', text: 'text-gray-700' },
-    URGENT: { bg: 'bg-red-100', text: 'text-red-700' },
-    EVENT: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
-    MAINTENANCE: { bg: 'bg-amber-100', text: 'text-amber-700' },
-    MEETING: { bg: 'bg-blue-100', text: 'text-blue-700' },
-    EMERGENCY: { bg: 'bg-red-100', text: 'text-red-700' },
+    GENERAL:     { bg: SgateColors.surface,  text: SgateColors.t2 },
+    URGENT:      { bg: SgateColors.redBg,    text: SgateColors.red },
+    EVENT:       { bg: SgateColors.blueBg,   text: SgateColors.blue },
+    MAINTENANCE: { bg: SgateColors.goldPale, text: SgateColors.goldDeep },
+    MEETING:     { bg: SgateColors.blueBg,   text: SgateColors.blue },
+    EMERGENCY:   { bg: SgateColors.redBg,    text: SgateColors.red },
 };
 
+// ─── Component ───────────────────────────────────────────────────────────────
 export default function NoticesScreen() {
-    const [notices, setNotices] = useState<Notice[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [notices, setNotices]       = useState<Notice[]>([]);
+    const [loading, setLoading]       = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [isModalVisible, setModalVisible] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const insets = useSafeAreaInsets();
 
-    // Form State
-    const [title, setTitle] = useState('');
-    const [content, setContent] = useState('');
-    const [type, setType] = useState<NoticeType>('GENERAL');
+    // Form
+    const [title, setTitle]       = useState('');
+    const [content, setContent]   = useState('');
+    const [type, setType]         = useState<NoticeType>('GENERAL');
     const [priority, setPriority] = useState<NoticePriority>('LOW');
     const [isPinned, setIsPinned] = useState(false);
 
-    const resetForm = () => {
-        setTitle('');
-        setContent('');
-        setType('GENERAL');
-        setPriority('LOW');
-        setIsPinned(false);
-    };
+    const resetForm = () => { setTitle(''); setContent(''); setType('GENERAL'); setPriority('LOW'); setIsPinned(false); };
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchNotices();
-        }, [])
-    );
+    useFocusEffect(useCallback(() => { fetchNotices(); }, []));
 
     const fetchNotices = async () => {
         try {
-            const res = await api.get('/api/v1/community/notices', { params: { page: 1, limit: 50 } });
+            const res = await api.get('/community/notices', { params: { page: 1, limit: 50 } });
             const data: Notice[] = res.data?.data ?? [];
-            // Sort: pinned first, then by createdAt desc
             data.sort((a, b) => {
                 if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
             });
             setNotices(data);
-        } catch (err) {
-            console.error('Failed to fetch notices:', err);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
+        } catch (err) { console.error('Failed to fetch notices:', err); }
+        finally { setLoading(false); setRefreshing(false); }
     };
 
-    const handleRefresh = () => {
-        setRefreshing(true);
-        fetchNotices();
-    };
+    const handleRefresh = () => { setRefreshing(true); fetchNotices(); };
 
     const handleTogglePin = async (id: string) => {
-        // Optimistic
         setNotices(prev => {
             const updated = prev.map(n => n.id === id ? { ...n, isPinned: !n.isPinned } : n);
             updated.sort((a, b) => {
@@ -107,222 +91,220 @@ export default function NoticesScreen() {
             });
             return updated;
         });
-        try {
-            await api.patch(`/api/v1/community/notices/${id}/toggle-pin`);
-        } catch {
-            fetchNotices(); // Revert on failure
-        }
+        try { await api.patch(`/community/notices/${id}/toggle-pin`); }
+        catch { fetchNotices(); }
     };
 
     const handleDelete = (id: string) => {
         Alert.alert('Delete Notice', 'Are you sure you want to delete this notice?', [
             { text: 'Cancel', style: 'cancel' },
             {
-                text: 'Delete',
-                style: 'destructive',
+                text: 'Delete', style: 'destructive',
                 onPress: async () => {
-                    // Optimistic
                     setNotices(prev => prev.filter(n => n.id !== id));
-                    try {
-                        await api.delete(`/api/v1/community/notices/${id}`);
-                    } catch {
-                        fetchNotices();
-                    }
+                    try { await api.delete(`/community/notices/${id}`); }
+                    catch { fetchNotices(); }
                 },
             },
         ]);
     };
 
     const handleCreate = async () => {
-        if (!title.trim() || !content.trim()) {
-            Alert.alert('Error', 'Title and content are required');
-            return;
-        }
+        if (!title.trim() || !content.trim()) { Alert.alert('Error', 'Title and content are required'); return; }
         setSubmitting(true);
         try {
-            await api.post('/api/v1/community/notices', {
-                title: title.trim(),
-                content: content.trim(),
-                type,
-                priority,
-                isPinned,
-            });
+            await api.post('/community/notices', { title: title.trim(), content: content.trim(), type, priority, isPinned });
             setModalVisible(false);
             resetForm();
             fetchNotices();
         } catch (err: any) {
             Alert.alert('Error', err?.response?.data?.message || 'Failed to create notice');
-        } finally {
-            setSubmitting(false);
-        }
+        } finally { setSubmitting(false); }
     };
 
     const getTypeStyle = (t: string) => TYPE_COLORS[t] ?? TYPE_COLORS.GENERAL;
-    const getPriorityDot = (p: string) => {
-        if (p === 'CRITICAL' || p === 'HIGH') return 'bg-red-500';
-        if (p === 'MEDIUM') return 'bg-amber-500';
-        return 'bg-gray-400';
+
+    const getPriorityColor = (p: string) => {
+        if (p === 'CRITICAL' || p === 'HIGH') return SgateColors.red;
+        if (p === 'MEDIUM') return SgateColors.goldDeep;
+        return SgateColors.t4;
     };
 
     if (loading) {
-        return (
-            <View className="flex-1 bg-zinc-50 dark:bg-zinc-950 items-center justify-center">
-                <ActivityIndicator size="large" color="#4f46e5" />
-            </View>
-        );
+        return <View style={styles.centerWrap}><ActivityIndicator size="large" color={SgateColors.gold} /></View>;
     }
 
     return (
-        <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
+        <View style={styles.root}>
             <FlatList
                 data={notices}
                 keyExtractor={item => item.id}
-                contentContainerStyle={{ padding: 16, paddingBottom: 100 + insets.bottom }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4f46e5" />}
+                contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
                 ListHeaderComponent={
-                    <PrimaryButton
-                        title="+ Create New Notice"
-                        onPress={() => { resetForm(); setModalVisible(true); }}
-                        className="mb-6"
-                    />
+                    <TouchableOpacity style={styles.addBtn} onPress={() => { resetForm(); setModalVisible(true); }} activeOpacity={0.8}>
+                        <Feather name="plus" size={18} color="#FFFFFF" />
+                        <Text style={styles.addBtnText}>Create New Notice</Text>
+                    </TouchableOpacity>
                 }
                 ListEmptyComponent={
-                    <View className="items-center py-16">
-                        <Feather name="bell-off" size={48} color="#d1d5db" />
-                        <Text className="text-gray-500 mt-4 text-base font-medium">No notices yet</Text>
-                        <Text className="text-gray-400 text-sm mt-1">Create the first one.</Text>
+                    <View style={styles.emptyWrap}>
+                        <Feather name="bell-off" size={48} color={SgateColors.t4} />
+                        <Text style={styles.emptyTitle}>No notices yet</Text>
+                        <Text style={styles.emptySub}>Create the first one.</Text>
                     </View>
                 }
-                renderItem={({ item }) => {
-                    const typeStyle = getTypeStyle(item.type);
+                renderItem={({ item, index }) => {
+                    const ts = getTypeStyle(item.type);
                     return (
-                        <Card className="mb-4">
-                            <View className="flex-row justify-between mb-2">
-                                <View className="flex-row gap-2 items-center flex-1">
-                                    {item.isPinned && (
-                                        <View className="bg-indigo-100 p-1 rounded">
-                                            <Feather name="bookmark" size={12} color="#4f46e5" />
+                        <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                            <View style={styles.card}>
+                                {/* Top: type pill + pinned + priority + actions */}
+                                <View style={styles.cardTopRow}>
+                                    <View style={styles.cardTopLeft}>
+                                        {item.isPinned && (
+                                            <View style={styles.pinBadge}>
+                                                <Feather name="bookmark" size={11} color={SgateColors.gold} />
+                                            </View>
+                                        )}
+                                        <View style={[styles.typePill, { backgroundColor: ts.bg }]}>
+                                            <Text style={[styles.typePillText, { color: ts.text }]}>{item.type}</Text>
                                         </View>
-                                    )}
-                                    <View className={`px-2 py-0.5 rounded ${typeStyle.bg}`}>
-                                        <Text className={`text-xs font-bold ${typeStyle.text}`}>{item.type}</Text>
+                                        <View style={styles.priorityRow}>
+                                            <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(item.priority) }]} />
+                                            <Text style={styles.priorityText}>{item.priority}</Text>
+                                        </View>
                                     </View>
-                                    <View className="flex-row items-center gap-1">
-                                        <View className={`w-2 h-2 rounded-full ${getPriorityDot(item.priority)}`} />
-                                        <Text className="text-xs text-gray-500">{item.priority}</Text>
+                                    <View style={styles.cardActions}>
+                                        <TouchableOpacity onPress={() => handleTogglePin(item.id)} hitSlop={8}>
+                                            <Feather name="bookmark" size={17} color={item.isPinned ? SgateColors.gold : SgateColors.t4} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={8}>
+                                            <Feather name="trash-2" size={17} color={SgateColors.red} />
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
-                                <View className="flex-row gap-3">
-                                    <TouchableOpacity onPress={() => handleTogglePin(item.id)}>
-                                        <Feather
-                                            name={item.isPinned ? 'bookmark' : 'bookmark'}
-                                            size={18}
-                                            color={item.isPinned ? '#4f46e5' : '#71717a'}
-                                        />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity onPress={() => handleDelete(item.id)}>
-                                        <Feather name="trash-2" size={18} color="#ef4444" />
-                                    </TouchableOpacity>
+
+                                <Text style={styles.noticeTitle}>{item.title}</Text>
+                                <Text style={styles.noticeContent} numberOfLines={3}>{item.content}</Text>
+
+                                <View style={styles.cardFooter}>
+                                    <Text style={styles.cardDate}>{new Date(item.createdAt).toLocaleString()}</Text>
                                 </View>
                             </View>
-
-                            <Text className="text-lg font-bold text-zinc-900 dark:text-white mb-2">{item.title}</Text>
-                            <Text className="text-zinc-600 dark:text-zinc-300 mb-3 leading-5">{item.content}</Text>
-
-                            <View className="border-t border-zinc-100 dark:border-zinc-800 pt-2 mt-2">
-                                <Text className="text-zinc-400 text-xs">
-                                    {new Date(item.createdAt).toLocaleString()}
-                                </Text>
-                            </View>
-                        </Card>
+                        </Animated.View>
                     );
                 }}
             />
 
-            {/* Create Modal */}
+            {/* ── Create Modal ────────────────────────────────────────────── */}
             <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet">
-                <View
-                    style={{ paddingBottom: insets.bottom }}
-                    className="flex-1 bg-zinc-50 dark:bg-zinc-950 p-6"
-                >
-                    <View className="flex-row justify-between items-center mb-6">
-                        <Text className="text-2xl font-bold text-zinc-900 dark:text-white">New Notice</Text>
+                <View style={[styles.modalWrap, { paddingBottom: insets.bottom }]}>
+                    <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>New Notice</Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <Feather name="x" size={24} color="#71717a" />
+                            <Feather name="x" size={22} color={SgateColors.t3} />
                         </TouchableOpacity>
                     </View>
 
                     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                        <Text className="font-medium mb-2 text-zinc-700 dark:text-zinc-300">Title *</Text>
-                        <TextInput
-                            className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 mb-4 text-zinc-900 dark:text-white"
-                            placeholder="Notice Title"
-                            value={title}
-                            onChangeText={setTitle}
-                            placeholderTextColor="#a1a1aa"
-                        />
+                        <Text style={styles.formLabel}>TITLE *</Text>
+                        <TextInput style={styles.formInput} placeholder="Notice Title" value={title}
+                            onChangeText={setTitle} placeholderTextColor={SgateColors.t4} />
 
-                        <Text className="font-medium mb-2 text-zinc-700 dark:text-zinc-300">Content *</Text>
-                        <TextInput
-                            className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 mb-6 h-32 text-zinc-900 dark:text-white"
-                            multiline
-                            textAlignVertical="top"
-                            placeholder="Notice details..."
-                            value={content}
-                            onChangeText={setContent}
-                            placeholderTextColor="#a1a1aa"
-                        />
+                        <Text style={styles.formLabel}>CONTENT *</Text>
+                        <TextInput style={[styles.formInput, { height: 120, textAlignVertical: 'top' }]}
+                            multiline placeholder="Notice details..." value={content}
+                            onChangeText={setContent} placeholderTextColor={SgateColors.t4} />
 
-                        <Text className="font-medium mb-2 text-zinc-700 dark:text-zinc-300">Type</Text>
-                        <View className="flex-row flex-wrap gap-2 mb-6">
+                        <Text style={styles.formLabel}>TYPE</Text>
+                        <View style={styles.chipRow}>
                             {TYPES.map(t => (
-                                <TouchableOpacity
-                                    key={t}
-                                    onPress={() => setType(t)}
-                                    className={`px-3 py-2 rounded-lg border ${type === t ? 'bg-zinc-900 border-zinc-900 dark:bg-white dark:border-white' : 'border-zinc-300 dark:border-zinc-700'}`}
-                                >
-                                    <Text className={type === t ? 'text-white dark:text-black font-bold text-xs' : 'text-zinc-600 dark:text-zinc-400 text-xs'}>
-                                        {t}
-                                    </Text>
+                                <TouchableOpacity key={t} onPress={() => setType(t)}
+                                    style={[styles.chip, type === t && styles.chipSelected]}>
+                                    <Text style={[styles.chipText, type === t && styles.chipTextSelected]}>{t}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
 
-                        <Text className="font-medium mb-2 text-zinc-700 dark:text-zinc-300">Priority</Text>
-                        <View className="flex-row flex-wrap gap-2 mb-6">
+                        <Text style={styles.formLabel}>PRIORITY</Text>
+                        <View style={styles.chipRow}>
                             {PRIORITIES.map(p => (
-                                <TouchableOpacity
-                                    key={p}
-                                    onPress={() => setPriority(p)}
-                                    className={`px-3 py-2 rounded-lg border ${priority === p ? 'border-blue-600 bg-blue-50' : 'border-zinc-300'}`}
-                                >
-                                    <Text className={priority === p ? 'text-blue-700 font-bold' : 'text-zinc-600'}>
-                                        {p}
-                                    </Text>
+                                <TouchableOpacity key={p} onPress={() => setPriority(p)}
+                                    style={[styles.chip, priority === p && styles.chipSelected]}>
+                                    <Text style={[styles.chipText, priority === p && styles.chipTextSelected]}>{p}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
 
-                        <View className="flex-row items-center justify-between mb-8 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                            <Text className="font-medium text-zinc-700 dark:text-zinc-300">Pin this notice</Text>
-                            <Switch
-                                value={isPinned}
-                                onValueChange={setIsPinned}
-                                trackColor={{ false: '#d1d5db', true: '#818cf8' }}
-                                thumbColor={isPinned ? '#4f46e5' : '#f4f4f5'}
-                            />
+                        <View style={styles.switchRow}>
+                            <Text style={styles.switchLabel}>Pin this notice</Text>
+                            <Switch value={isPinned} onValueChange={setIsPinned}
+                                trackColor={{ false: SgateColors.border, true: SgateColors.gold + '60' }}
+                                thumbColor={isPinned ? SgateColors.gold : SgateColors.surface} />
                         </View>
 
-                        <PrimaryButton
-                            title="Publish Notice"
-                            onPress={handleCreate}
-                            loading={submitting}
-                            disabled={submitting}
-                        />
-                        <View className="h-10" />
+                        <TouchableOpacity style={[styles.submitBtn, submitting && { opacity: 0.5 }]}
+                            onPress={handleCreate} disabled={submitting} activeOpacity={0.8}>
+                            {submitting ? <ActivityIndicator size="small" color="#FFFFFF" /> :
+                                <Text style={styles.submitBtnText}>Publish Notice</Text>}
+                        </TouchableOpacity>
+                        <View style={{ height: 20 }} />
                     </ScrollView>
                 </View>
             </Modal>
         </View>
     );
 }
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+    root: { flex: 1, backgroundColor: SgateColors.bg },
+    centerWrap: { flex: 1, backgroundColor: SgateColors.bg, alignItems: 'center', justifyContent: 'center' },
+    listContent: { padding: 20, flexGrow: 1 },
+
+    addBtn: { backgroundColor: SgateColors.black, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 },
+    addBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+
+    // Card
+    card: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 16, marginBottom: 10 },
+    cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    cardTopLeft: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
+    pinBadge: { backgroundColor: SgateColors.goldPale, padding: 4, borderRadius: 6 },
+    typePill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+    typePillText: { fontSize: 10, fontFamily: SgateFonts.bold },
+    priorityRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    priorityDot: { width: 7, height: 7, borderRadius: 4 },
+    priorityText: { fontSize: 10, fontFamily: SgateFonts.semibold, color: SgateColors.t4 },
+    cardActions: { flexDirection: 'row', gap: 14 },
+
+    noticeTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 6 },
+    noticeContent: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, lineHeight: 20, marginBottom: 10 },
+    cardFooter: { borderTopWidth: 1, borderTopColor: SgateColors.borderSoft, paddingTop: 8 },
+    cardDate: { fontSize: 11, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
+
+    // Empty
+    emptyWrap: { alignItems: 'center', paddingVertical: 48 },
+    emptyTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginTop: 10 },
+    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 2 },
+
+    // Modal
+    modalWrap: { flex: 1, backgroundColor: SgateColors.bg, padding: 24 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+    modalTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+
+    formLabel: { ...SgateTypography.microLabel, color: SgateColors.t3, marginBottom: 8, marginTop: 4 },
+    formInput: { backgroundColor: SgateColors.surface, borderWidth: 1.5, borderColor: SgateColors.border, borderRadius: 16, padding: 15, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1, marginBottom: 14 },
+
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 },
+    chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, borderWidth: 1.5, borderColor: SgateColors.border },
+    chipSelected: { backgroundColor: SgateColors.black, borderColor: SgateColors.black },
+    chipText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    chipTextSelected: { color: '#FFFFFF' },
+
+    switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: SgateColors.surface, borderWidth: 1.5, borderColor: SgateColors.border, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 24 },
+    switchLabel: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
+
+    submitBtn: { backgroundColor: SgateColors.black, borderRadius: 16, paddingVertical: 17, alignItems: 'center', justifyContent: 'center' },
+    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+});

@@ -1,17 +1,22 @@
 import { Stack } from 'expo-router';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
 export default function AdminLayout() {
     return (
         <Stack screenOptions={{
-            headerStyle: { 
-                backgroundColor: '#fff',
+            headerStyle: {
+                backgroundColor: SgateColors.card,
             },
             headerShadowVisible: false,
-            headerTintColor: '#000',
-            headerTitleStyle: { fontWeight: '600' },
-            contentStyle: { 
-                backgroundColor: '#f4f4f5'
-            }
+            headerTintColor: SgateColors.t1,
+            headerTitleStyle: {
+                fontFamily: SgateFonts.bold,
+                fontSize: 17,
+            },
+            contentStyle: {
+                backgroundColor: SgateColors.bg,
+            },
+            animation: 'fade',
         }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="flats" options={{ title: 'Flats & Residents', headerShown: false }} />
@@ -26,6 +31,7 @@ export default function AdminLayout() {
             <Stack.Screen name="settings" options={{ title: 'Settings' }} />
             <Stack.Screen name="profile" options={{ headerShown: false }} />
             <Stack.Screen name="onboarding-requests" options={{ headerShown: false }} />
+            <Stack.Screen name="gate-pass" options={{ headerShown: false }} />
         </Stack>
     );
 }

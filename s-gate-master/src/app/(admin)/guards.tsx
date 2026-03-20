@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -8,16 +8,18 @@ import {
     Modal,
     RefreshControl,
     ScrollView,
+    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card } from '../../components/Card';
-import { PrimaryButton } from '../../components/PrimaryButton';
-import api from '../../services/api';
+import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import api from '@/services/api';
 
+// ─── Types ───────────────────────────────────────────────────────────────────
 interface Guard {
     id: string;
     name: string;
@@ -29,32 +31,26 @@ interface Guard {
     society?: { name: string };
 }
 
+// ─── Component ───────────────────────────────────────────────────────────────
 export default function GuardsScreen() {
-    const [guards, setGuards] = useState<Guard[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [guards, setGuards]       = useState<Guard[]>([]);
+    const [loading, setLoading]     = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const insets = useSafeAreaInsets();
 
-    // Modal State
+    // Modal state
     const [isModalVisible, setModalVisible] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
-    const [name, setName] = useState('');
+    const [submitting, setSubmitting]       = useState(false);
+    const [name, setName]   = useState('');
     const [phone, setPhone] = useState('');
 
-    const resetForm = () => {
-        setName('');
-        setPhone('');
-    };
+    const resetForm = () => { setName(''); setPhone(''); };
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchGuards();
-        }, [])
-    );
+    useFocusEffect(useCallback(() => { fetchGuards(); }, []));
 
     const fetchGuards = async () => {
         try {
-            const res = await api.get('/api/v1/auth/resident-app/guards');
+            const res = await api.get('/auth/resident-app/guards');
             setGuards(res.data?.data ?? []);
         } catch (err) {
             console.error('Failed to fetch guards:', err);
@@ -64,41 +60,26 @@ export default function GuardsScreen() {
         }
     };
 
-    const handleRefresh = () => {
-        setRefreshing(true);
-        fetchGuards();
-    };
+    const handleRefresh = () => { setRefreshing(true); fetchGuards(); };
 
     const toggleStatus = async (guard: Guard) => {
         const newActive = !guard.isActive;
-        // Optimistic
         setGuards(prev => prev.map(g => g.id === guard.id ? { ...g, isActive: newActive } : g));
         try {
-            await api.patch(`/api/v1/auth/resident-app/users/${guard.id}/status`, { isActive: newActive });
+            await api.patch(`/auth/resident-app/users/${guard.id}/status`, { isActive: newActive });
         } catch {
-            // Revert
             setGuards(prev => prev.map(g => g.id === guard.id ? { ...g, isActive: !newActive } : g));
             Alert.alert('Error', 'Failed to update guard status');
         }
     };
 
     const handleCreate = async () => {
-        if (!name.trim()) {
-            Alert.alert('Error', 'Name is required');
-            return;
-        }
+        if (!name.trim()) { Alert.alert('Error', 'Name is required'); return; }
         const cleaned = phone.trim().replace(/\D/g, '');
-        if (cleaned.length !== 10) {
-            Alert.alert('Error', 'Enter a valid 10-digit phone number');
-            return;
-        }
-
+        if (cleaned.length !== 10) { Alert.alert('Error', 'Enter a valid 10-digit phone number'); return; }
         setSubmitting(true);
         try {
-            await api.post('/api/v1/auth/resident-app/create-guard', {
-                name: name.trim(),
-                phone: `+91${cleaned}`,
-            });
+            await api.post('/auth/resident-app/create-guard', { name: name.trim(), phone: `+91${cleaned}` });
             setModalVisible(false);
             resetForm();
             fetchGuards();
@@ -111,144 +92,182 @@ export default function GuardsScreen() {
 
     const formatDate = (dateStr: string) => {
         try {
-            return new Date(dateStr).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-            });
-        } catch {
-            return dateStr;
-        }
+            return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        } catch { return dateStr; }
     };
 
     if (loading) {
         return (
-            <View className="flex-1 bg-zinc-50 dark:bg-zinc-950 items-center justify-center">
-                <ActivityIndicator size="large" color="#4f46e5" />
+            <View style={styles.centerWrap}>
+                <ActivityIndicator size="large" color={SgateColors.gold} />
             </View>
         );
     }
 
     return (
-        <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
+        <View style={styles.root}>
             <FlatList
                 data={guards}
                 keyExtractor={item => item.id}
-                contentContainerStyle={{ padding: 16, paddingBottom: 100 + insets.bottom }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#4f46e5" />}
+                contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
                 ListHeaderComponent={
-                    <PrimaryButton
-                        title="+ Add New Guard"
-                        onPress={() => { resetForm(); setModalVisible(true); }}
-                        className="mb-6"
-                    />
+                    <TouchableOpacity style={styles.addBtn} onPress={() => { resetForm(); setModalVisible(true); }} activeOpacity={0.8}>
+                        <Feather name="plus" size={18} color="#FFFFFF" />
+                        <Text style={styles.addBtnText}>Add New Guard</Text>
+                    </TouchableOpacity>
                 }
                 ListEmptyComponent={
-                    <View className="items-center py-16">
-                        <Feather name="shield-off" size={48} color="#d1d5db" />
-                        <Text className="text-gray-500 mt-4 text-base font-medium">No guards yet</Text>
-                        <Text className="text-gray-400 text-sm mt-1">Add your first guard.</Text>
+                    <View style={styles.emptyWrap}>
+                        <Feather name="shield-off" size={48} color={SgateColors.t4} />
+                        <Text style={styles.emptyTitle}>No guards yet</Text>
+                        <Text style={styles.emptySub}>Add your first guard.</Text>
                     </View>
                 }
-                renderItem={({ item }) => (
-                    <Card className="mb-3">
-                        <View className="flex-row justify-between items-start mb-2">
-                            <View className="flex-row items-center gap-3 flex-1">
-                                <View className="w-11 h-11 bg-indigo-100 rounded-full items-center justify-center">
-                                    <Text className="text-indigo-700 font-bold text-base">
-                                        {item.name.charAt(0).toUpperCase()}
+                renderItem={({ item, index }) => {
+                    const initial = item.name.charAt(0).toUpperCase();
+                    return (
+                        <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+                            <View style={styles.card}>
+                                <View style={styles.cardTop}>
+                                    <View style={styles.avatarWrap}>
+                                        <View style={styles.avatar}>
+                                            <Text style={styles.avatarText}>{initial}</Text>
+                                        </View>
+                                        <View style={styles.cardInfo}>
+                                            <Text style={styles.cardName}>{item.name}</Text>
+                                            <Text style={styles.cardPhone}>{item.phone}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={[styles.statusPill, item.isActive ? styles.statusActive : styles.statusInactive]}>
+                                        <View style={[styles.statusDot, { backgroundColor: item.isActive ? SgateColors.green : SgateColors.t4 }]} />
+                                        <Text style={[styles.statusText, { color: item.isActive ? SgateColors.green : SgateColors.t4 }]}>
+                                            {item.isActive ? 'Active' : 'Inactive'}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                <View style={styles.metaRow}>
+                                    <Feather name="calendar" size={12} color={SgateColors.t4} />
+                                    <Text style={styles.metaText}>Joined {formatDate(item.createdAt)}</Text>
+                                </View>
+
+                                <TouchableOpacity
+                                    style={[styles.toggleBtn, item.isActive ? styles.toggleBtnDeactivate : styles.toggleBtnActivate]}
+                                    onPress={() => toggleStatus(item)}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={[styles.toggleBtnText, { color: item.isActive ? SgateColors.t2 : '#FFFFFF' }]}>
+                                        {item.isActive ? 'Deactivate' : 'Activate'}
                                     </Text>
-                                </View>
-                                <View className="flex-1">
-                                    <Text className="text-lg font-bold text-zinc-900 dark:text-white">{item.name}</Text>
-                                    <Text className="text-zinc-500 text-sm">{item.phone}</Text>
-                                </View>
+                                </TouchableOpacity>
                             </View>
-                            <View className={`flex-row items-center gap-1.5 px-2.5 py-1 rounded-full ${
-                                item.isActive ? 'bg-green-100' : 'bg-gray-100'
-                            }`}>
-                                <View className={`w-2 h-2 rounded-full ${item.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
-                                <Text className={`text-xs font-bold ${
-                                    item.isActive ? 'text-green-700' : 'text-gray-500'
-                                }`}>
-                                    {item.isActive ? 'Active' : 'Inactive'}
-                                </Text>
-                            </View>
-                        </View>
-
-                        <View className="flex-row items-center gap-4 mb-4 mt-1">
-                            <View className="flex-row items-center gap-1">
-                                <Feather name="calendar" size={12} color="#71717a" />
-                                <Text className="text-zinc-500 text-xs">Joined {formatDate(item.createdAt)}</Text>
-                            </View>
-                        </View>
-
-                        <PrimaryButton
-                            title={item.isActive ? 'Deactivate' : 'Activate'}
-                            onPress={() => toggleStatus(item)}
-                            variant={item.isActive ? 'secondary' : 'primary'}
-                            className="py-2"
-                        />
-                    </Card>
-                )}
+                        </Animated.View>
+                    );
+                }}
             />
 
-            {/* Add Guard Modal */}
+            {/* ── Add Guard Modal ─────────────────────────────────────────── */}
             <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet">
-                <View
-                    style={{ paddingBottom: insets.bottom }}
-                    className="flex-1 bg-zinc-50 dark:bg-zinc-950 p-6"
-                >
-                    <View className="flex-row justify-between items-center mb-6">
-                        <Text className="text-2xl font-bold text-zinc-900 dark:text-white">New Guard</Text>
+                <View style={[styles.modalWrap, { paddingBottom: insets.bottom }]}>
+                    <View style={styles.modalHeader}>
+                        <Text style={styles.modalTitle}>New Guard</Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <Feather name="x" size={24} color="#71717a" />
+                            <Feather name="x" size={22} color={SgateColors.t3} />
                         </TouchableOpacity>
                     </View>
 
                     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                        <View className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6 flex-row items-start gap-3">
-                            <Feather name="info" size={16} color="#4f46e5" />
-                            <Text className="text-indigo-700 text-sm flex-1">
-                                Guards log in via OTP only. No password is needed.
-                            </Text>
+                        <View style={styles.infoBanner}>
+                            <Feather name="info" size={15} color={SgateColors.goldDeep} />
+                            <Text style={styles.infoBannerText}>Guards log in via OTP only. No password is needed.</Text>
                         </View>
 
-                        <Text className="font-medium mb-2 text-zinc-700 dark:text-zinc-300">Full Name *</Text>
-                        <TextInput
-                            className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 mb-4 text-zinc-900 dark:text-white"
-                            value={name}
-                            onChangeText={setName}
-                            placeholder="e.g. Suresh Kumar"
-                            placeholderTextColor="#a1a1aa"
-                        />
+                        <Text style={styles.formLabel}>FULL NAME *</Text>
+                        <TextInput style={styles.formInput} value={name} onChangeText={setName}
+                            placeholder="e.g. Suresh Kumar" placeholderTextColor={SgateColors.t4} />
 
-                        <Text className="font-medium mb-2 text-zinc-700 dark:text-zinc-300">Mobile Number *</Text>
-                        <View className="flex-row items-center bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 mb-6">
-                            <View className="px-4 border-r border-zinc-200 dark:border-zinc-800">
-                                <Text className="text-zinc-500 font-medium">+91</Text>
+                        <Text style={styles.formLabel}>MOBILE NUMBER *</Text>
+                        <View style={styles.phoneRow}>
+                            <View style={styles.phonePrefix}>
+                                <Text style={styles.phonePrefixText}>+91</Text>
                             </View>
-                            <TextInput
-                                className="flex-1 p-4 text-zinc-900 dark:text-white"
-                                value={phone}
-                                onChangeText={(t) => setPhone(t.replace(/\D/g, '').slice(0, 10))}
-                                keyboardType="phone-pad"
-                                placeholder="10-digit number"
-                                placeholderTextColor="#a1a1aa"
-                                maxLength={10}
-                            />
+                            <TextInput style={styles.phoneInput} value={phone}
+                                onChangeText={t => setPhone(t.replace(/\D/g, '').slice(0, 10))}
+                                keyboardType="phone-pad" placeholder="10-digit number"
+                                placeholderTextColor={SgateColors.t4} maxLength={10} />
                         </View>
 
-                        <PrimaryButton
-                            title="Add Guard"
-                            onPress={handleCreate}
-                            loading={submitting}
-                            disabled={submitting}
-                        />
-                        <View className="h-10" />
+                        <TouchableOpacity style={[styles.submitBtn, submitting && { opacity: 0.5 }]}
+                            onPress={handleCreate} disabled={submitting} activeOpacity={0.8}>
+                            {submitting ? <ActivityIndicator size="small" color="#FFFFFF" /> :
+                                <Text style={styles.submitBtnText}>Add Guard</Text>}
+                        </TouchableOpacity>
                     </ScrollView>
                 </View>
             </Modal>
         </View>
     );
 }
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+    root: { flex: 1, backgroundColor: SgateColors.bg },
+    centerWrap: { flex: 1, backgroundColor: SgateColors.bg, alignItems: 'center', justifyContent: 'center' },
+    listContent: { padding: 20, flexGrow: 1 },
+
+    // Add button
+    addBtn: { backgroundColor: SgateColors.black, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 },
+    addBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+
+    // Card
+    card: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 16, marginBottom: 10 },
+    cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
+    avatarWrap: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+    avatar: { width: 44, height: 44, borderRadius: 15, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
+    cardInfo: { flex: 1 },
+    cardName: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    cardPhone: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+
+    // Status pill
+    statusPill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+    statusActive: { backgroundColor: SgateColors.greenBg },
+    statusInactive: { backgroundColor: SgateColors.surface },
+    statusDot: { width: 7, height: 7, borderRadius: 4 },
+    statusText: { fontSize: 11, fontFamily: SgateFonts.bold },
+
+    // Meta
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 12 },
+    metaText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
+
+    // Toggle button
+    toggleBtn: { borderRadius: 14, paddingVertical: 12, alignItems: 'center' },
+    toggleBtnActivate: { backgroundColor: SgateColors.black },
+    toggleBtnDeactivate: { backgroundColor: SgateColors.surface },
+    toggleBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold },
+
+    // Empty
+    emptyWrap: { alignItems: 'center', paddingVertical: 48 },
+    emptyTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginTop: 10 },
+    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 2 },
+
+    // Modal
+    modalWrap: { flex: 1, backgroundColor: SgateColors.bg, padding: 24 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+    modalTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+
+    infoBanner: { backgroundColor: SgateColors.goldPale, borderRadius: 16, padding: 14, flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 24 },
+    infoBannerText: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.goldDeep, flex: 1, lineHeight: 18 },
+
+    formLabel: { ...SgateTypography.microLabel, color: SgateColors.t3, marginBottom: 8 },
+    formInput: { backgroundColor: SgateColors.surface, borderWidth: 1.5, borderColor: SgateColors.border, borderRadius: 16, padding: 15, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1, marginBottom: 18 },
+
+    phoneRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderWidth: 1.5, borderColor: SgateColors.border, borderRadius: 16, marginBottom: 24, overflow: 'hidden' },
+    phonePrefix: { paddingHorizontal: 16, borderRightWidth: 1, borderRightColor: SgateColors.border, paddingVertical: 15 },
+    phonePrefixText: { fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+    phoneInput: { flex: 1, padding: 15, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
+
+    submitBtn: { backgroundColor: SgateColors.black, borderRadius: 16, paddingVertical: 17, alignItems: 'center', justifyContent: 'center' },
+    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+});
