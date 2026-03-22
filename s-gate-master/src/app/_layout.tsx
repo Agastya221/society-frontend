@@ -6,6 +6,7 @@ import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Platform, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 import { useSoraFonts } from "../hooks/useFonts";
@@ -162,9 +163,11 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <Slot />
-      <StatusBar style="dark" />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Slot />
+        <StatusBar style="dark" />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

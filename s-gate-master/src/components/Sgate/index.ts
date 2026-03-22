@@ -12,3 +12,4 @@ export { SgateSecurityBanner } from './SgateSecurityBanner';
 export { SgateSectionHeader } from './SgateSectionHeader';
 export { SgateStatusPill } from './SgateStatusPill';
 export { SgateTabBar } from './SgateTabBar';
+export { PreApproveSheet } from './PreApproveSheet';

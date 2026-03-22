@@ -8,6 +8,9 @@ import type {
     GatePass,
     GatePassStatus,
     GatePassType,
+    InvitePass,
+    InvitePassStatus,
+    InvitePassType,
     PreApproval,
     PreApprovalStatus,
     VisitorType,
@@ -106,6 +109,57 @@ export const getPreApprovalQR = async (
 export const cancelPreApproval = async (id: string): Promise<void> => {
     await api.delete(`/gate/${id}`);
 };
+
+// ─── Invite Passes (unified pre-approval system) ─────────────────────────
+
+export interface CreateInvitePassPayload {
+    type: InvitePassType;
+    flatId: string;
+    visitorName?: string;
+    visitorPhone?: string;
+    purpose?: string;
+    vehicleNumber?: string;
+    companyName?: string;
+    companies?: string[];
+    allowedDays?: string[];
+    timeFrom?: string;
+    timeUntil?: string;
+    validFrom: string;
+    validUntil: string;
+    maxUses?: number;
+    isPrivate?: boolean;
+    safePickup?: boolean;
+}
+
+export const createInvitePass = async (
+    data: CreateInvitePassPayload
+): Promise<InvitePass> => {
+    const res = await api.post('/gate/invites', data);
+    return res.data.data;
+};
+
+export const getMyInvitePasses = async (
+    status?: InvitePassStatus
+): Promise<InvitePass[]> => {
+    const res = await api.get('/gate/invites', { params: status ? { status } : undefined });
+    const data = res.data?.data;
+    return Array.isArray(data) ? data : (data?.invites ?? []);
+};
+
+export const getInvitePassById = async (id: string): Promise<InvitePass> => {
+    const res = await api.get(`/gate/invites/${id}`);
+    return res.data.data;
+};
+
+export const cancelInvitePass = async (id: string): Promise<void> => {
+    await api.patch(`/gate/invites/${id}/cancel`);
+};
+
+// Static delivery companies list (no API endpoint needed)
+export const DELIVERY_COMPANIES: string[] = [
+    'Amazon', 'Flipkart', 'Swiggy', 'Zomato', 'Blinkit',
+    'BigBasket', 'Dunzo', 'Zepto', 'JioMart', 'Myntra',
+];
 
 // ─── Deliveries ───────────────────────────────────────────────────────────────
 

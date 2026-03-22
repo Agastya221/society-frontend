@@ -15,6 +15,15 @@ export type EntryStatus =
 
 export type PreApprovalStatus = 'ACTIVE' | 'EXPIRED' | 'USED' | 'CANCELLED';
 
+export type InvitePassType =
+    | 'GUEST'
+    | 'DELIVERY_ONCE'
+    | 'DELIVERY_STANDING'
+    | 'CAB'
+    | 'SERVICE';
+
+export type InvitePassStatus = 'ACTIVE' | 'USED' | 'EXPIRED' | 'CANCELLED';
+
 export type VisitorType =
     | 'GUEST'
     | 'DELIVERY_PERSON'
@@ -124,6 +133,29 @@ export interface PreApproval {
     validUntil: string;
     qrToken?: string;
     flatId: string;
+}
+
+export interface InvitePass {
+    id: string;
+    type: InvitePassType;
+    status: InvitePassStatus;
+    visitorName?: string;
+    visitorPhone?: string;
+    purpose?: string;
+    vehicleNumber?: string;
+    companyName?: string;
+    companies?: string[];
+    allowedDays?: string[];
+    timeFrom?: string;
+    timeUntil?: string;
+    qrToken: string;
+    validFrom: string;
+    validUntil: string;
+    maxUses: number;
+    usedCount: number;
+    createdAt: string;
+    isPrivate?: boolean;
+    safePickup?: boolean;
 }
 
 export interface Entry {

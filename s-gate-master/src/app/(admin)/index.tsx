@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import { SgateAvatar } from '@/components/Sgate/SgateAvatar';
 import { SgateBrandMark } from '@/components/Sgate/SgateBrandMark';
+import { PreApproveSheet } from '@/components/Sgate/PreApproveSheet';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -46,6 +47,7 @@ export default function AdminDashboard() {
     const [stats, setStats]       = useState<DashboardStats | null>(null);
     const [loading, setLoading]   = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [showPreApprove, setShowPreApprove] = useState(false);
 
     const fetchDashboard = async () => {
         try {
@@ -117,7 +119,20 @@ export default function AdminDashboard() {
                 <Animated.View entering={FadeInDown.delay(200).springify()}>
                     <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
                     <View style={styles.actionsGrid}>
-                        {QUICK_ACTIONS.map((action, i) => (
+                        {/* Pre-Approve tile — only if admin has a flat */}
+                        {user?.flatId && (
+                            <QuickActionTile
+                                title="Pre-Approve"
+                                icon="user-check"
+                                bg={SgateColors.goldPale}
+                                iconColor={SgateColors.goldDeep}
+                                onPress={() => {
+                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    setShowPreApprove(true);
+                                }}
+                            />
+                        )}
+                        {QUICK_ACTIONS.map((action) => (
                             <QuickActionTile
                                 key={action.title}
                                 title={action.title}
@@ -136,6 +151,11 @@ export default function AdminDashboard() {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
+
+            <PreApproveSheet
+                visible={showPreApprove}
+                onClose={() => setShowPreApprove(false)}
+            />
         </View>
     );
 }

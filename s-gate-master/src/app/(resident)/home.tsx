@@ -26,6 +26,7 @@ import {
     SgateStatusPill,
 } from '../../components/Sgate';
 import { SgateAvatar } from '../../components/Sgate/SgateAvatar';
+import { PreApproveSheet } from '../../components/Sgate/PreApproveSheet';
 import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
 
 import { useAuthStore } from '../../store/useAuthStore';
@@ -81,6 +82,7 @@ export default function ResidentHomeScreen() {
 
     const { unreadCount, fetchUnreadCount } = useNotificationStore();
 
+    const [showPreApprove, setShowPreApprove] = useState(false);
     const [refreshing, setRefreshing]   = useState(false);
     // Track which id is currently being acted on (for per-card loading)
     const [actioningId, setActioningId] = useState<string | null>(null);
@@ -207,7 +209,7 @@ export default function ResidentHomeScreen() {
                             label={'Pre-\nApprove'}
                             bgColor={SgateColors.goldPale}
                             iconColor={SgateColors.goldDeep}
-                            onPress={() => router.push('/pre-approve' as any)}
+                            onPress={() => setShowPreApprove(true)}
                         />
                         <SgateQuickAction
                             icon="hash"
@@ -306,6 +308,11 @@ export default function ResidentHomeScreen() {
                     </Animated.View>
                 </View>
             </ScrollView>
+
+            <PreApproveSheet
+                visible={showPreApprove}
+                onClose={() => setShowPreApprove(false)}
+            />
         </View>
     );
 }
