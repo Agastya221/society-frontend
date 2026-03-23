@@ -48,7 +48,16 @@
       "Bash(done)",
       "Bash(ls e:/society-frontend/s-gate-master/node_modules/expo-file-system/build/legacy*)",
       "Bash(ls e:/society-frontend/s-gate-master/node_modules/expo-file-system/src/legacy*)",
-      "Read(//c/Users/agast/AppData/Local/Temp/claude/e--society-frontend/c243ba40-a5e0-43d3-90c2-67b5560945ac/tasks/**)"
+      "Read(//c/Users/agast/AppData/Local/Temp/claude/e--society-frontend/c243ba40-a5e0-43d3-90c2-67b5560945ac/tasks/**)",
+      "Bash(ls -la \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/\")",
+      "Bash(ls -la \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/notices/\")",
+      "Bash(ls -la \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/profile/\")",
+      "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/notices/\")",
+      "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/approvals/\")",
+      "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/complaints/\")",
+      "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/emergency/\")",
+      "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/family/\")",
+      "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/pre-approvals/\")"
     ],
     "additionalDirectories": [
       "e:\\society-frontend\\s-gate-master\\src\\assets"

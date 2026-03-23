@@ -12,19 +12,44 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
 // ─── Only show these 5 tabs ─────────────────────────────────────────────────
-const VISIBLE_TABS = new Set(['home', 'visitors', 'deliveries', 'society', 'profile']);
+const VISIBLE_TABS = new Set(['home', 'deliveries', 'notices', 'society', 'profile']);
+
+// ─── Explicit labels for each tab (route base name → display label) ─────────
+const TAB_LABELS: Record<string, string> = {
+  home: 'Home',
+  deliveries: 'Delivery',
+  notices: 'Notice',
+  society: 'Society',
+  profile: 'Profile',
+};
+
+// ─── Fallback icons (used when descriptor tabBarIcon is missing for dir routes)
+const TAB_ICONS: Record<string, string> = {
+  home: 'home',
+  deliveries: 'package',
+  notices: 'file-text',
+  society: 'users',
+  profile: 'user',
+};
+
+// Extract base route name: 'notices/index' → 'notices', 'home' → 'home'
+function getBaseName(routeName: string): string {
+  return routeName.split('/')[0];
+}
 
 // ─── SgateTabBar ─────────────────────────────────────────────────────────────
 export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
-  // Filter: only render routes that are in VISIBLE_TABS
-  const visibleRoutes = state.routes.filter(r => VISIBLE_TABS.has(r.name));
+  // Filter: only render routes whose base name is in VISIBLE_TABS
+  const visibleRoutes = state.routes.filter(r => VISIBLE_TABS.has(getBaseName(r.name)));
 
-  // Map the focused index: find the position of the currently-focused route
-  // in the filtered list (-1 if it's a hidden screen)
+  // Map the focused index
   const focusedRouteName = state.routes[state.index]?.name;
-  const focusedVisibleIndex = visibleRoutes.findIndex(r => r.name === focusedRouteName);
+  const focusedBaseName = getBaseName(focusedRouteName ?? '');
+  const focusedVisibleIndex = visibleRoutes.findIndex(
+    r => getBaseName(r.name) === focusedBaseName
+  );
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 10) }]}>
@@ -32,13 +57,10 @@ export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProp
         {visibleRoutes.map((route, idx) => {
           const { options } = descriptors[route.key];
           const isFocused = focusedVisibleIndex === idx;
+          const baseName = getBaseName(route.name);
 
-          const label =
-            typeof options.tabBarLabel === 'string'
-              ? options.tabBarLabel
-              : typeof options.title === 'string'
-                ? options.title
-                : route.name.charAt(0).toUpperCase() + route.name.slice(1);
+          // Use explicit label map — never fall back to raw route name
+          const label = TAB_LABELS[baseName] ?? baseName.charAt(0).toUpperCase() + baseName.slice(1);
 
           const onPress = () => {
             const event = navigation.emit({
@@ -63,6 +85,7 @@ export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProp
             <SgateTab
               key={route.key}
               label={label}
+              iconName={TAB_ICONS[baseName] ?? 'circle'}
               isFocused={isFocused}
               options={options}
               onPress={onPress}
@@ -77,8 +100,9 @@ export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProp
 
 // ─── Individual Tab ──────────────────────────────────────────────────────────
 
-function SgateTab({ label, isFocused, options, onPress, onLongPress }: {
+function SgateTab({ label, iconName, isFocused, options, onPress, onLongPress }: {
   label: string;
+  iconName: string;
   isFocused: boolean;
   options: any;
   onPress: () => void;
@@ -126,7 +150,7 @@ function SgateTab({ label, isFocused, options, onPress, onLongPress }: {
             color: iconColor,
             size: 22,
           }) ?? (
-            <Feather name="circle" size={22} color={iconColor} />
+            <Feather name={iconName as any} size={22} color={iconColor} />
           )}
         </Animated.View>
 
@@ -194,7 +218,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     textAlign: 'center',
     letterSpacing: 0.1,
   },

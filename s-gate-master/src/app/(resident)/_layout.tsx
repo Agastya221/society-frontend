@@ -111,20 +111,23 @@ export default function ResidentLayout() {
           name="home"
           options={{
             title: 'Home',
+            tabBarLabel: 'Home',
             tabBarIcon: ({ color }) => <Feather name="home" size={22} color={color} />,
           }}
         />
         <Tabs.Screen
-          name="visitors"
+          name="notices"
           options={{
-            title: 'Visitors',
-            tabBarIcon: ({ color }) => <Feather name="user-check" size={22} color={color} />,
+            title: 'Notice',
+            tabBarLabel: 'Notice',
+            tabBarIcon: ({ color }) => <Feather name="file-text" size={22} color={color} />,
           }}
         />
         <Tabs.Screen
           name="deliveries"
           options={{
             title: 'Delivery',
+            tabBarLabel: 'Delivery',
             tabBarIcon: ({ color }) => <Feather name="package" size={22} color={color} />,
           }}
         />
@@ -132,6 +135,7 @@ export default function ResidentLayout() {
           name="society"
           options={{
             title: 'Society',
+            tabBarLabel: 'Society',
             tabBarIcon: ({ color }) => <Feather name="users" size={22} color={color} />,
           }}
         />
@@ -139,17 +143,18 @@ export default function ResidentLayout() {
           name="profile"
           options={{
             title: 'Profile',
+            tabBarLabel: 'Profile',
             tabBarIcon: ({ color }) => <Feather name="user" size={22} color={color} />,
           }}
         />
 
         {/* ── Hidden from tab bar — still navigable ─────────────────────── */}
+        <Tabs.Screen name="visitors"    options={{ href: null }} />
         <Tabs.Screen name="approvals"   options={{ href: null }} />
         <Tabs.Screen name="complaints"  options={{ href: null }} />
         <Tabs.Screen name="emergency"   options={{ href: null }} />
         <Tabs.Screen name="family"      options={{ href: null }} />
         <Tabs.Screen name="gate-passes" options={{ href: null }} />
-        <Tabs.Screen name="notices"     options={{ href: null }} />
         <Tabs.Screen name="pre-approvals" options={{ href: null }} />
         <Tabs.Screen name="staff"       options={{ href: null }} />
         <Tabs.Screen name="pre-approve" options={{ href: null }} />
