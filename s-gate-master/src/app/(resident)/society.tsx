@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
     ActivityIndicator,
     FlatList,
@@ -121,6 +122,7 @@ function timeAgo(iso: string): string {
 
 export default function SocietyScreen() {
     const insets = useSafeAreaInsets();
+    const router = useRouter();
     const user = useAuthStore((s) => s.user);
 
     const [activeTab, setActiveTab] = useState<Tab>('Visitors');
@@ -451,6 +453,19 @@ export default function SocietyScreen() {
                 </View>
             </View>
 
+            {/* ── Search Vehicle shortcut (Visitors tab only) ─────────── */}
+            {activeTab === 'Visitors' && (
+                <TouchableOpacity
+                    style={S.searchVehicleBtn}
+                    onPress={() => router.push('/(resident)/search-vehicle' as any)}
+                    activeOpacity={0.75}
+                >
+                    <Feather name="truck" size={14} color={SgateColors.t2} />
+                    <Text style={S.searchVehicleText}>Search Vehicle in Society</Text>
+                    <Feather name="chevron-right" size={14} color={SgateColors.t3} />
+                </TouchableOpacity>
+            )}
+
             {/* ── Block filter pills (Residents only) ─────────────────── */}
             {activeTab === 'Residents' && (
                 <View style={S.blockWrap}>
@@ -582,6 +597,10 @@ const S = StyleSheet.create({
     searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderRadius: 12, paddingHorizontal: 12, height: 42, borderWidth: 1.5, borderColor: 'transparent', gap: 8 },
     searchBarFocused: { borderColor: SgateColors.gold, backgroundColor: SgateColors.card },
     searchInput: { flex: 1, fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1, paddingVertical: 0 },
+
+    // ── Search vehicle shortcut ─────────────────────────────────────────
+    searchVehicleBtn: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginTop: 8, marginBottom: 2, backgroundColor: SgateColors.surface, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, gap: 8 },
+    searchVehicleText: { flex: 1, fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
 
     // ── Block filter ────────────────────────────────────────────────────
     blockWrap: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 4, gap: 8 },

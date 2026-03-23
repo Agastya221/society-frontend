@@ -1,36 +1,60 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../../components/ui/Card';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 import { ComplaintCategory, ComplaintUrgency, createComplaint } from '../../../services/complaints';
 import { uploadImage } from '../../../services/uploadService';
 
-// UI-friendly category names
+const SgateColors = {
+    black: '#0D0F14', gold: '#FFB800', goldDeep: '#E5A500', goldPale: '#FFF8E1',
+    green: '#00D68F', greenBg: '#E5FBF3', red: '#FF5C5C', redBg: '#FFF0F0',
+    bg: '#F5F4F0', card: '#FFFFFF', surface: '#EEECEA', border: '#E5E3DE',
+    borderSoft: '#F0EEEB', t1: '#0D0F14', t2: '#4A4D57', t3: '#8A8D97', t4: '#B5B8C0',
+};
+const SgateFonts = {
+    regular: 'Sora-Regular', medium: 'Sora-Medium', semiBold: 'Sora-SemiBold',
+    bold: 'Sora-Bold', extraBold: 'Sora-ExtraBold',
+};
+
 const COMPLAINT_CATEGORIES: { label: string; value: ComplaintCategory }[] = [
-    { label: 'Maintenance', value: 'MAINTENANCE' },
-    { label: 'Security', value: 'SECURITY' },
-    { label: 'Cleanliness', value: 'CLEANLINESS' },
-    { label: 'Water', value: 'WATER' },
-    { label: 'Electricity', value: 'ELECTRICITY' },
-    { label: 'Parking', value: 'PARKING' },
-    { label: 'Noise', value: 'NOISE' },
-    { label: 'Pets', value: 'PETS' },
     { label: 'Plumbing', value: 'PLUMBING' },
+    { label: 'Electrical', value: 'ELECTRICITY' },
+    { label: 'Civil', value: 'MAINTENANCE' },
+    { label: 'Carpentry', value: 'MAINTENANCE' },
+    { label: 'Painting', value: 'MAINTENANCE' },
+    { label: 'Housekeeping', value: 'CLEANLINESS' },
+    { label: 'Security', value: 'SECURITY' },
+    { label: 'Lift', value: 'MAINTENANCE' },
+    { label: 'Water', value: 'WATER' },
     { label: 'Other', value: 'OTHER' },
 ];
 
-// UI-friendly urgency names
-const URGENCY_LEVELS: { label: string; value: ComplaintUrgency }[] = [
-    { label: 'Low', value: 'LOW' },
-    { label: 'Medium', value: 'MEDIUM' },
-    { label: 'High', value: 'HIGH' },
-    { label: 'Critical', value: 'CRITICAL' },
+const PREFERRED_TIMES = [
+    { label: 'Morning (9AM–12PM)', value: 'MORNING' },
+    { label: 'Afternoon (12PM–4PM)', value: 'AFTERNOON' },
+    { label: 'Evening (4PM–7PM)', value: 'EVENING' },
+    { label: 'Anytime', value: 'ANYTIME' },
 ];
+
+type RequestType = 'unit' | 'community';
 
 interface ImageState {
     localUri: string;
@@ -42,75 +66,58 @@ export default function CreateComplaintScreen() {
     const router = useRouter();
     const [formData, setFormData] = useState({
         title: '',
-        category: 'MAINTENANCE' as ComplaintCategory,
+        category: 'PLUMBING' as ComplaintCategory,
+        categoryLabel: 'Plumbing',
         description: '',
         location: '',
         urgency: 'MEDIUM' as ComplaintUrgency,
         isPrivate: false,
     });
     const [images, setImages] = useState<ImageState[]>([]);
-
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleSubmit = async () => {
-        // Validate required fields
-        if (!formData.title.trim()) {
-            setError('Please enter a title');
-            return;
-        }
+    // New enhanced state
+    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+    const [requestType, setRequestType] = useState<RequestType>('unit');
+    const [preferredTime, setPreferredTime] = useState('');
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [isUrgent, setIsUrgent] = useState(false);
 
-        if (!formData.description.trim()) {
-            setError('Please enter a description');
-            return;
-        }
+    const handleSubmit = async () => {
+        if (!formData.title.trim()) { setError('Please enter a title'); return; }
+        if (!formData.description.trim()) { setError('Please enter a description'); return; }
 
         setIsLoading(true);
         setError('');
 
-        // Check if any images are still uploading
         const stillUploading = images.some(img => img.uploading);
         if (stillUploading) {
             Alert.alert('Please Wait', 'Images are still uploading...');
+            setIsLoading(false);
             return;
         }
 
         try {
-            console.log('📝 Submitting complaint:', formData);
-
-            // Get S3 keys from uploaded images
             const s3Keys = images.filter(img => img.s3Key).map(img => img.s3Key!);
-
-            // Build payload
             const payload: any = {
                 title: formData.title.trim(),
                 description: formData.description.trim(),
                 category: formData.category,
                 location: formData.location.trim(),
-                urgency: formData.urgency,
-                isPrivate: formData.isPrivate,
-                photos: s3Keys, // Send S3 keys instead of local URIs
+                urgency: isUrgent ? 'CRITICAL' : formData.urgency,
+                isPrivate: requestType === 'unit',
+                photos: s3Keys,
+                preferredTime: preferredTime || 'ANYTIME',
             };
 
-            console.log('📤 Final payload:', payload);
-
             const result = await createComplaint(payload);
-
-            console.log('✅ Complaint created:', result);
-
-            // Show success alert with ticket number
             Alert.alert(
                 'Complaint Submitted',
                 `Your complaint has been registered successfully.\n\nTicket Number: ${result.ticketNumber}`,
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => router.back()
-                    }
-                ]
+                [{ text: 'OK', onPress: () => router.back() }]
             );
         } catch (err: any) {
-            console.error('❌ Failed to create complaint:', err);
             setError(err.message || 'Failed to submit complaint. Please try again.');
         } finally {
             setIsLoading(false);
@@ -118,146 +125,70 @@ export default function CreateComplaintScreen() {
     };
 
     const pickImageFromCamera = async () => {
-        if (images.length >= 5) {
-            Alert.alert('Limit Reached', 'You can add a maximum of 5 photos');
-            return;
-        }
-
+        if (images.length >= 5) { Alert.alert('Limit Reached', 'You can add a maximum of 5 photos'); return; }
         try {
-            // Request camera permissions
-            const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-            
-            if (!cameraPermission.granted) {
-                Alert.alert(
-                    'Permission Required',
-                    'Please allow camera access to take photos',
-                    [{ text: 'OK' }]
-                );
-                return;
-            }
-
-            // Launch camera with back camera
+            const permission = await ImagePicker.requestCameraPermissionsAsync();
+            if (!permission.granted) { Alert.alert('Permission Required', 'Please allow camera access'); return; }
             const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ['images'],
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 0.8,
+                mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8,
                 cameraType: ImagePicker.CameraType.back,
             });
-
-            if (!result.canceled && result.assets && result.assets.length > 0) {
+            if (!result.canceled && result.assets.length > 0) {
                 const localUri = result.assets[0].uri;
-                
-                // Add to state with uploading flag
-                const newImage: ImageState = { localUri, s3Key: undefined, uploading: true };
+                const newImage: ImageState = { localUri, uploading: true };
                 setImages(prev => [...prev, newImage]);
-
-                // Upload to S3 in background
                 try {
                     const s3Key = await uploadImage(localUri, { context: 'entry-photo' });
-                    
-                    // Update state with S3 key
-                    setImages(prev => prev.map(img =>
-                        img.localUri === localUri ? { ...img, s3Key, uploading: false } : img
-                    ));
-                } catch (uploadError) {
-                    console.error('Upload failed:', uploadError);
-                    Alert.alert('Upload Failed', 'Failed to upload image. Please try again.');
-                    // Remove failed image from list
+                    setImages(prev => prev.map(img => img.localUri === localUri ? { ...img, s3Key, uploading: false } : img));
+                } catch {
                     setImages(prev => prev.filter(img => img.localUri !== localUri));
+                    Alert.alert('Upload Failed', 'Failed to upload image.');
                 }
             }
-        } catch (error) {
-            console.error('Error taking photo:', error);
-            Alert.alert('Error', 'Failed to take photo. Please try again.');
-        }
+        } catch { Alert.alert('Error', 'Failed to take photo.'); }
     };
 
     const pickImageFromGallery = async () => {
-        if (images.length >= 5) {
-            Alert.alert('Limit Reached', 'You can add a maximum of 5 photos');
-            return;
-        }
-
+        if (images.length >= 5) { Alert.alert('Limit Reached', 'You can add a maximum of 5 photos'); return; }
         try {
-            // Request media library permissions
-            const galleryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            
-            if (!galleryPermission.granted) {
-                Alert.alert(
-                    'Permission Required',
-                    'Please allow gallery access to select photos',
-                    [{ text: 'OK' }]
-                );
-                return;
-            }
-
-            // Launch gallery
+            const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (!permission.granted) { Alert.alert('Permission Required', 'Please allow gallery access'); return; }
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images'],
-                allowsEditing: true,
-                aspect: [4, 3],
-                quality: 0.8,
+                mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8,
             });
-
-            if (!result.canceled && result.assets && result.assets.length > 0) {
+            if (!result.canceled && result.assets.length > 0) {
                 const localUri = result.assets[0].uri;
-                
-                // Add to state with uploading flag
-                const newImage: ImageState = { localUri, s3Key: undefined, uploading: true };
+                const newImage: ImageState = { localUri, uploading: true };
                 setImages(prev => [...prev, newImage]);
-
-                // Upload to S3 in background
                 try {
                     const s3Key = await uploadImage(localUri, { context: 'entry-photo' });
-                    
-                    // Update state with S3 key
-                    setImages(prev => prev.map(img =>
-                        img.localUri === localUri ? { ...img, s3Key, uploading: false } : img
-                    ));
-                } catch (uploadError) {
-                    console.error('Upload failed:', uploadError);
-                    Alert.alert('Upload Failed', 'Failed to upload image. Please try again.');
-                    // Remove failed image from list
+                    setImages(prev => prev.map(img => img.localUri === localUri ? { ...img, s3Key, uploading: false } : img));
+                } catch {
                     setImages(prev => prev.filter(img => img.localUri !== localUri));
+                    Alert.alert('Upload Failed', 'Failed to upload image.');
                 }
             }
-        } catch (error) {
-            console.error('Error picking image:', error);
-            Alert.alert('Error', 'Failed to select image. Please try again.');
-        }
+        } catch { Alert.alert('Error', 'Failed to select image.'); }
     };
 
     const showImagePickerOptions = () => {
-        Alert.alert(
-            'Add Photo',
-            'Choose an option',
-            [
-                {
-                    text: 'Take Photo',
-                    onPress: pickImageFromCamera,
-                },
-                {
-                    text: 'Choose from Gallery',
-                    onPress: pickImageFromGallery,
-                },
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
-                },
-            ]
-        );
+        Alert.alert('Add Photo', 'Choose an option', [
+            { text: 'Take Photo', onPress: pickImageFromCamera },
+            { text: 'Choose from Gallery', onPress: pickImageFromGallery },
+            { text: 'Cancel', style: 'cancel' },
+        ]);
     };
 
-    const removeImage = (index: number) => {
-        setImages(prev => prev.filter((_, i) => i !== index));
-    };
+    const removeImage = (index: number) => setImages(prev => prev.filter((_, i) => i !== index));
+
+    const selectedTimeLabel = PREFERRED_TIMES.find(t => t.value === preferredTime)?.label ?? 'Select preferred time';
 
     return (
         <SafeAreaView className="flex-1 bg-gray-50 dark:bg-black" edges={['top']}>
+            {/* Header */}
             <View className="px-5 py-4 flex-row items-center gap-3 bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800">
-                <TouchableOpacity 
-                    onPress={() => router.back()} 
+                <TouchableOpacity
+                    onPress={() => router.back()}
                     className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800"
                     disabled={isLoading}
                 >
@@ -273,7 +204,8 @@ export default function CreateComplaintScreen() {
                     </View>
                 ) : null}
 
-                <Card className="p-5 gap-5 mb-6">
+                <Card className="p-5 gap-5 mb-4">
+                    {/* Title */}
                     <View>
                         <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title *</Text>
                         <TextInput
@@ -281,62 +213,25 @@ export default function CreateComplaintScreen() {
                             placeholder="Brief title (e.g. Water Leak)"
                             placeholderTextColor="#9ca3af"
                             value={formData.title}
-                            onChangeText={t => {
-                                setFormData({ ...formData, title: t });
-                                setError('');
-                            }}
+                            onChangeText={t => { setFormData({ ...formData, title: t }); setError(''); }}
                             editable={!isLoading}
                         />
                     </View>
 
+                    {/* Category Dropdown */}
                     <View>
                         <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category *</Text>
-                        <View className="flex-row flex-wrap gap-2">
-                            {COMPLAINT_CATEGORIES.map(cat => (
-                                <TouchableOpacity
-                                    key={cat.value}
-                                    onPress={() => setFormData({ ...formData, category: cat.value })}
-                                    disabled={isLoading}
-                                    className={`px-3 py-2 rounded-lg border ${
-                                        formData.category === cat.value 
-                                            ? 'bg-indigo-600 border-indigo-600' 
-                                            : 'border-gray-200 dark:border-zinc-700'
-                                    }`}
-                                >
-                                    <Text className={`text-xs font-semibold ${
-                                        formData.category === cat.value ? 'text-white' : 'text-gray-600 dark:text-gray-400'
-                                    }`}>
-                                        {cat.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                        <TouchableOpacity
+                            style={styles.dropdown}
+                            onPress={() => setShowCategoryPicker(true)}
+                            disabled={isLoading}
+                        >
+                            <Text style={styles.dropdownText}>{formData.categoryLabel}</Text>
+                            <Feather name="chevron-down" size={18} color={SgateColors.t3} />
+                        </TouchableOpacity>
                     </View>
 
-                    <View>
-                        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Urgency *</Text>
-                        <View className="flex-row gap-2">
-                            {URGENCY_LEVELS.map(level => (
-                                <TouchableOpacity
-                                    key={level.value}
-                                    onPress={() => setFormData({ ...formData, urgency: level.value })}
-                                    disabled={isLoading}
-                                    className={`flex-1 py-2 rounded-lg border items-center ${
-                                        formData.urgency === level.value
-                                            ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800'
-                                            : 'border-gray-200 dark:border-zinc-700'
-                                    }`}
-                                >
-                                    <Text className={`text-xs font-semibold ${
-                                        formData.urgency === level.value ? 'text-indigo-700 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-400'
-                                    }`}>
-                                        {level.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
-
+                    {/* Description with counter */}
                     <View>
                         <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description *</Text>
                         <TextInput
@@ -345,15 +240,15 @@ export default function CreateComplaintScreen() {
                             placeholderTextColor="#9ca3af"
                             multiline
                             textAlignVertical="top"
+                            maxLength={3000}
                             value={formData.description}
-                            onChangeText={t => {
-                                setFormData({ ...formData, description: t });
-                                setError('');
-                            }}
+                            onChangeText={t => { setFormData({ ...formData, description: t }); setError(''); }}
                             editable={!isLoading}
                         />
+                        <Text style={styles.charCounter}>{formData.description.length} / 3000</Text>
                     </View>
 
+                    {/* Location */}
                     <View>
                         <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location</Text>
                         <TextInput
@@ -361,28 +256,28 @@ export default function CreateComplaintScreen() {
                             placeholder="e.g., Kitchen, Parking Lot B, Flat 204"
                             placeholderTextColor="#9ca3af"
                             value={formData.location}
-                            onChangeText={t => {
-                                setFormData({ ...formData, location: t });
-                                setError('');
-                            }}
+                            onChangeText={t => setFormData({ ...formData, location: t })}
                             editable={!isLoading}
                         />
                     </View>
 
-                    <View className="flex-row items-center justify-between py-2">
-                        <View>
-                            <Text className="text-sm font-medium text-gray-700 dark:text-gray-300">Private Complaint</Text>
-                            <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">Only management can see this</Text>
-                        </View>
-                        <Switch
-                            value={formData.isPrivate}
-                            onValueChange={value => setFormData({ ...formData, isPrivate: value })}
+                    {/* Preferred Time */}
+                    <View>
+                        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preferred Time</Text>
+                        <TouchableOpacity
+                            style={styles.dropdown}
+                            onPress={() => setShowTimePicker(true)}
                             disabled={isLoading}
-                            trackColor={{ false: '#d1d5db', true: '#818cf8' }}
-                            thumbColor={formData.isPrivate ? '#4f46e5' : '#f4f4f5'}
-                        />
+                        >
+                            <Feather name="clock" size={16} color={SgateColors.t3} style={{ marginRight: 4 }} />
+                            <Text style={[styles.dropdownText, !preferredTime && { color: SgateColors.t4 }]}>
+                                {selectedTimeLabel}
+                            </Text>
+                            <Feather name="chevron-down" size={18} color={SgateColors.t3} />
+                        </TouchableOpacity>
                     </View>
 
+                    {/* Photos */}
                     <View>
                         <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Photos (Optional, Max 5)</Text>
                         <View className="flex-row gap-3 flex-wrap">
@@ -405,16 +300,11 @@ export default function CreateComplaintScreen() {
                                             <Ionicons name="checkmark" size={10} color="white" />
                                         </View>
                                     )}
-                                    <Image 
-                                        source={{ uri: img.localUri }} 
-                                        style={{ width: '100%', height: '100%' }}
-                                        contentFit="cover"
-                                        transition={200}
-                                    />
+                                    <Image source={{ uri: img.localUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
                                 </View>
                             ))}
                             {images.length < 5 && (
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     onPress={showImagePickerOptions}
                                     disabled={isLoading}
                                     className="h-20 w-20 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-xl items-center justify-center bg-gray-50 dark:bg-zinc-800/50"
@@ -424,13 +314,58 @@ export default function CreateComplaintScreen() {
                                 </TouchableOpacity>
                             )}
                         </View>
-                        <Text className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            Tap to take a photo or choose from gallery
-                        </Text>
                     </View>
                 </Card>
 
-                <PrimaryButton 
+                {/* Request Type Section */}
+                <View style={styles.sectionCard}>
+                    <Text style={styles.sectionLabel}>Request Type</Text>
+                    <View style={styles.requestTypeRow}>
+                        <TouchableOpacity
+                            style={[styles.requestTypeCard, requestType === 'unit' && styles.requestTypeCardActive]}
+                            onPress={() => setRequestType('unit')}
+                        >
+                            <Feather name="home" size={20} color={requestType === 'unit' ? SgateColors.goldDeep : SgateColors.t3} />
+                            <Text style={[styles.requestTypeTitle, requestType === 'unit' && styles.requestTypeTitleActive]}>Unit</Text>
+                            <View style={styles.radioRow}>
+                                <View style={[styles.radio, requestType === 'unit' && styles.radioActive]}>
+                                    {requestType === 'unit' && <View style={styles.radioDot} />}
+                                </View>
+                            </View>
+                            <Text style={styles.requestTypeDesc}>For issues regarding the concerned flat. Visible only to unit members.</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.requestTypeCard, requestType === 'community' && styles.requestTypeCardActive]}
+                            onPress={() => setRequestType('community')}
+                        >
+                            <Feather name="grid" size={20} color={requestType === 'community' ? SgateColors.goldDeep : SgateColors.t3} />
+                            <Text style={[styles.requestTypeTitle, requestType === 'community' && styles.requestTypeTitleActive]}>Community</Text>
+                            <View style={styles.radioRow}>
+                                <View style={[styles.radio, requestType === 'community' && styles.radioActive]}>
+                                    {requestType === 'community' && <View style={styles.radioDot} />}
+                                </View>
+                            </View>
+                            <Text style={styles.requestTypeDesc}>Visible to the entire society. For common area issues.</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Mark as Urgent */}
+                <View style={styles.urgentCard}>
+                    <View style={styles.urgentContent}>
+                        <Text style={styles.urgentTitle}>Mark as Urgent?</Text>
+                        <Text style={styles.urgentSubtitle}>For critical issues that require immediate attention.</Text>
+                    </View>
+                    <Switch
+                        value={isUrgent}
+                        onValueChange={setIsUrgent}
+                        disabled={isLoading}
+                        trackColor={{ false: '#d1d5db', true: SgateColors.goldPale }}
+                        thumbColor={isUrgent ? SgateColors.gold : '#f4f4f5'}
+                    />
+                </View>
+
+                <PrimaryButton
                     title={isLoading ? 'Submitting...' : 'Submit Complaint'}
                     onPress={handleSubmit}
                     disabled={!formData.title.trim() || !formData.description.trim() || isLoading}
@@ -441,9 +376,132 @@ export default function CreateComplaintScreen() {
                         <ActivityIndicator size="small" color="#4f46e5" />
                     </View>
                 )}
-
                 <View className="h-10" />
             </ScrollView>
+
+            {/* Category Picker Modal */}
+            <Modal visible={showCategoryPicker} transparent animationType="slide" onRequestClose={() => setShowCategoryPicker(false)}>
+                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowCategoryPicker(false)}>
+                    <View style={styles.pickerSheet}>
+                        <View style={styles.pickerHandle} />
+                        <Text style={styles.pickerTitle}>Choose Category</Text>
+                        <FlatList
+                            data={COMPLAINT_CATEGORIES}
+                            keyExtractor={item => item.value + item.label}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={[styles.pickerRow, formData.categoryLabel === item.label && styles.pickerRowActive]}
+                                    onPress={() => {
+                                        setFormData({ ...formData, category: item.value, categoryLabel: item.label });
+                                        setShowCategoryPicker(false);
+                                    }}
+                                >
+                                    <Text style={[styles.pickerRowText, formData.categoryLabel === item.label && styles.pickerRowTextActive]}>
+                                        {item.label}
+                                    </Text>
+                                    {formData.categoryLabel === item.label && (
+                                        <Feather name="check" size={16} color={SgateColors.goldDeep} />
+                                    )}
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+
+            {/* Time Picker Modal */}
+            <Modal visible={showTimePicker} transparent animationType="slide" onRequestClose={() => setShowTimePicker(false)}>
+                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowTimePicker(false)}>
+                    <View style={styles.pickerSheet}>
+                        <View style={styles.pickerHandle} />
+                        <Text style={styles.pickerTitle}>Preferred Time</Text>
+                        {PREFERRED_TIMES.map(t => (
+                            <TouchableOpacity
+                                key={t.value}
+                                style={[styles.pickerRow, preferredTime === t.value && styles.pickerRowActive]}
+                                onPress={() => { setPreferredTime(t.value); setShowTimePicker(false); }}
+                            >
+                                <Text style={[styles.pickerRowText, preferredTime === t.value && styles.pickerRowTextActive]}>
+                                    {t.label}
+                                </Text>
+                                {preferredTime === t.value && <Feather name="check" size={16} color={SgateColors.goldDeep} />}
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </SafeAreaView>
     );
 }
+
+const styles = StyleSheet.create({
+    charCounter: {
+        fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4,
+        textAlign: 'right', marginTop: 4,
+    },
+    dropdown: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb',
+        borderRadius: 12, padding: 12, gap: 4,
+    },
+    dropdownText: {
+        flex: 1, fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1,
+    },
+    sectionCard: {
+        backgroundColor: SgateColors.card, borderRadius: 16, borderWidth: 1,
+        borderColor: SgateColors.borderSoft, padding: 16, marginBottom: 12,
+    },
+    sectionLabel: {
+        fontSize: 14, fontFamily: SgateFonts.semiBold, color: SgateColors.t2, marginBottom: 12,
+    },
+    requestTypeRow: { flexDirection: 'row', gap: 10 },
+    requestTypeCard: {
+        flex: 1, borderRadius: 14, borderWidth: 2, borderColor: SgateColors.border,
+        padding: 14, alignItems: 'center', gap: 6,
+    },
+    requestTypeCardActive: { borderColor: SgateColors.gold, backgroundColor: SgateColors.goldPale },
+    requestTypeTitle: {
+        fontSize: 14, fontFamily: SgateFonts.semiBold, color: SgateColors.t2,
+    },
+    requestTypeTitleActive: { color: SgateColors.goldDeep },
+    radioRow: { flexDirection: 'row', justifyContent: 'center' },
+    radio: {
+        width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: SgateColors.border,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    radioActive: { borderColor: SgateColors.gold },
+    radioDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: SgateColors.gold },
+    requestTypeDesc: {
+        fontSize: 10, fontFamily: SgateFonts.regular, color: SgateColors.t3,
+        textAlign: 'center', lineHeight: 14,
+    },
+    urgentCard: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: SgateColors.card, borderRadius: 16, borderWidth: 1,
+        borderColor: SgateColors.borderSoft, padding: 16, marginBottom: 16, gap: 12,
+    },
+    urgentContent: { flex: 1 },
+    urgentTitle: { fontSize: 14, fontFamily: SgateFonts.semiBold, color: SgateColors.t1, marginBottom: 2 },
+    urgentSubtitle: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    modalOverlay: {
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end',
+    },
+    pickerSheet: {
+        backgroundColor: SgateColors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+        padding: 20, paddingBottom: 40, maxHeight: '70%',
+    },
+    pickerHandle: {
+        width: 36, height: 4, borderRadius: 2, backgroundColor: SgateColors.border,
+        alignSelf: 'center', marginBottom: 16,
+    },
+    pickerTitle: {
+        fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 12,
+    },
+    pickerRow: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft,
+    },
+    pickerRowActive: { backgroundColor: SgateColors.goldPale, marginHorizontal: -20, paddingHorizontal: 20 },
+    pickerRowText: { fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
+    pickerRowTextActive: { color: SgateColors.goldDeep, fontFamily: SgateFonts.semiBold },
+});

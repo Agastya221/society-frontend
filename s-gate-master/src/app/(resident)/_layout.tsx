@@ -149,6 +149,15 @@ export default function ResidentLayout() {
         />
 
         {/* ── Hidden from tab bar — still navigable ─────────────────────── */}
+        <Tabs.Screen name="local-directory"  options={{ href: null }} />
+        <Tabs.Screen name="daily-help"       options={{ href: null }} />
+        <Tabs.Screen name="elections"        options={{ href: null }} />
+        <Tabs.Screen name="society-dues"     options={{ href: null }} />
+        <Tabs.Screen name="communication"    options={{ href: null }} />
+        <Tabs.Screen name="amenities"        options={{ href: null }} />
+        <Tabs.Screen name="vehicles"         options={{ href: null }} />
+        <Tabs.Screen name="documents"        options={{ href: null }} />
+        <Tabs.Screen name="search-vehicle"   options={{ href: null }} />
         <Tabs.Screen name="visitors"    options={{ href: null }} />
         <Tabs.Screen name="approvals"   options={{ href: null }} />
         <Tabs.Screen name="complaints"  options={{ href: null }} />

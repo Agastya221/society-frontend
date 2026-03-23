@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Share, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Modal, RefreshControl, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ImageCarousel } from '../../../components/ui/ImageCarousel';
 import { Complaint, fetchComplaintDetails } from '../../../services/complaints';
@@ -17,6 +18,12 @@ export default function ComplaintDetailScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState('');
+
+    // Rating modal state
+    const [showRatingModal, setShowRatingModal] = useState(false);
+    const [rating, setRating] = useState(0);
+    const [ratingComment, setRatingComment] = useState('');
+    const ratingShownRef = useRef(false);
 
     const loadComplaint = async () => {
         if (!id) return;
@@ -36,6 +43,14 @@ export default function ComplaintDetailScreen() {
     useEffect(() => {
         loadComplaint();
     }, [id]);
+
+    // Auto-show rating modal once when complaint is RESOLVED
+    useEffect(() => {
+        if (complaint?.status === 'RESOLVED' && !ratingShownRef.current) {
+            ratingShownRef.current = true;
+            setTimeout(() => setShowRatingModal(true), 600);
+        }
+    }, [complaint?.status]);
 
     const handleRefresh = () => {
         setIsRefreshing(true);
@@ -124,6 +139,7 @@ export default function ComplaintDetailScreen() {
     };
 
     return (
+        <>
         <SafeAreaView className="flex-1 bg-white dark:bg-black" edges={['top']}>
             {/* 1. Header with Title + X close button */}
             <View className="px-5 py-3 flex-row items-center justify-between border-b border-gray-100 dark:border-zinc-800">
@@ -241,5 +257,104 @@ export default function ComplaintDetailScreen() {
             
              <View style={{ height: insets.bottom, backgroundColor: 'white' }} className="dark:bg-zinc-900" />
         </SafeAreaView>
+
+        {/* Post-Resolution Rating Modal */}
+
+        <Modal
+            visible={showRatingModal}
+            transparent
+            animationType="slide"
+            onRequestClose={() => setShowRatingModal(false)}
+        >
+            <View style={rStyles.overlay}>
+                <View style={rStyles.sheet}>
+                    <View style={rStyles.handle} />
+                    {/* Close button */}
+                    <TouchableOpacity style={rStyles.closeBtn} onPress={() => setShowRatingModal(false)}>
+                        <Feather name="x" size={20} color="#6b7280" />
+                    </TouchableOpacity>
+                    {/* Title */}
+                    <Text style={rStyles.title}>Ticket is Resolved</Text>
+                    <Text style={rStyles.subtitle}>Please rate your experience of resolving this ticket.</Text>
+                    {/* Stars */}
+                    <View style={rStyles.starsRow}>
+                        {[1, 2, 3, 4, 5].map(s => (
+                            <TouchableOpacity key={s} onPress={() => setRating(s)} hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}>
+                                <Feather
+                                    name="star"
+                                    size={36}
+                                    color={s <= rating ? '#FFB800' : '#e5e7eb'}
+                                />
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                    {/* Comment */}
+                    <TextInput
+                        style={rStyles.commentInput}
+                        placeholder="Add a comment..."
+                        placeholderTextColor="#9ca3af"
+                        multiline
+                        value={ratingComment}
+                        onChangeText={setRatingComment}
+                    />
+                    {/* Submit */}
+                    <TouchableOpacity
+                        style={[rStyles.submitBtn, rating === 0 && rStyles.submitBtnDisabled]}
+                        disabled={rating === 0}
+                        onPress={() => {
+                            setShowRatingModal(false);
+                        }}
+                    >
+                        <Text style={[rStyles.submitBtnText, rating === 0 && rStyles.submitBtnTextDisabled]}>
+                            Submit Feedback
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </Modal>
+        </>
     );
 }
+
+const rStyles = StyleSheet.create({
+    overlay: {
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end',
+    },
+    sheet: {
+        backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+        padding: 24, paddingBottom: 40,
+    },
+    handle: {
+        width: 36, height: 4, borderRadius: 2, backgroundColor: '#e5e7eb',
+        alignSelf: 'center', marginBottom: 16,
+    },
+    closeBtn: {
+        position: 'absolute', top: 20, right: 20, padding: 4,
+    },
+    title: {
+        fontSize: 18, fontFamily: 'Sora-Bold', color: '#0D0F14',
+        textAlign: 'center', marginBottom: 8,
+    },
+    subtitle: {
+        fontSize: 14, fontFamily: 'Sora-Regular', color: '#8A8D97',
+        textAlign: 'center', marginBottom: 24, lineHeight: 20,
+    },
+    starsRow: {
+        flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 20,
+    },
+    commentInput: {
+        borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12,
+        padding: 12, minHeight: 80, textAlignVertical: 'top',
+        fontFamily: 'Sora-Regular', fontSize: 14, color: '#0D0F14',
+        marginBottom: 20,
+    },
+    submitBtn: {
+        backgroundColor: '#0D0F14', borderRadius: 14, paddingVertical: 16,
+        alignItems: 'center',
+    },
+    submitBtnDisabled: { backgroundColor: '#e5e7eb' },
+    submitBtnText: {
+        fontSize: 15, fontFamily: 'Sora-SemiBold', color: '#fff',
+    },
+    submitBtnTextDisabled: { color: '#9ca3af' },
+});
