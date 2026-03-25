@@ -12,7 +12,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SgateAvatar } from '../../components/Sgate';
+import { Avatar } from '../../components/ui/Avatar';
 import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
 import type { Entry, EntryType } from '../../types/api';
 import * as gateService from '../../services/gate.service';
@@ -166,7 +166,7 @@ export default function VisitorsScreen() {
             return (
                 <Animated.View entering={FadeInDown.delay(Math.min(index, 12) * 40).springify()}>
                     <View style={styles.row}>
-                        <SgateAvatar name={e.visitorName} size={42} />
+                        <Avatar name={e.visitorName} size={42} />
 
                         <View style={styles.rowBody}>
                             <View style={styles.rowTop}>

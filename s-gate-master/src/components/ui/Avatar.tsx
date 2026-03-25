@@ -21,7 +21,7 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-interface SgateAvatarProps {
+interface AvatarProps {
   name: string;
   size?: AvatarSize;
   photoUrl?: string;
@@ -61,7 +61,7 @@ function textColorForBg(bg: string): string {
   return LIGHT_BACKGROUNDS.has(bg) ? SgateColors.black : '#FFFFFF';
 }
 
-export function SgateAvatar({ name, size = 40, photoUrl, color }: SgateAvatarProps) {
+export function Avatar({ name, size = 40, photoUrl, color }: AvatarProps) {
   const px = resolveSize(size);
   // When a color is explicitly provided: tinted bg at 12% opacity, full-color text.
   // When auto-picked from palette: solid bg with contrast text.

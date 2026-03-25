@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
-interface SgateListItemProps {
+interface IconListItemProps {
   icon?: keyof typeof Feather.glyphMap;
   label: string;
   sublabel?: string;
@@ -19,7 +19,7 @@ interface SgateListItemProps {
   hideDivider?: boolean;
 }
 
-export function SgateListItem({
+export function IconListItem({
   icon,
   label,
   sublabel,
@@ -28,7 +28,7 @@ export function SgateListItem({
   rightContent,
   style,
   hideDivider = false,
-}: SgateListItemProps) {
+}: IconListItemProps) {
   const opacity = useSharedValue(1);
 
   const animStyle = useAnimatedStyle(() => ({

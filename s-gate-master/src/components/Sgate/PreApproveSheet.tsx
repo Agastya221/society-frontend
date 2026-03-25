@@ -1,6 +1,7 @@
 'use no memo';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Feather } from '@expo/vector-icons';
+import QRCode from 'react-native-qrcode-svg';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
@@ -18,17 +19,23 @@ import {
 import { Gesture, GestureDetector, NativeViewGestureHandler } from 'react-native-gesture-handler';
 import Animated, {
     Easing,
+    FadeIn,
+    FadeOut,
     interpolate,
     runOnJS,
+    SlideInRight,
+    SlideOutRight,
     useAnimatedStyle,
     useSharedValue,
     withDelay,
+    withSpring,
     withTiming,
     type SharedValue,
 } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { createInvitePass, DELIVERY_COMPANIES } from '@/services/gate.service';
 import { useAuthStore } from '@/store/useAuthStore';
+import { SelectGuestsPanel } from './SelectGuestsPanel';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -43,9 +50,13 @@ export interface PreApproveSheetProps {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const { height: SH } = Dimensions.get('window');
+const { height: SH, width: SW } = Dimensions.get('window');
 const EO = Easing.bezier(0.16, 1, 0.3, 1);
 const EI = Easing.bezier(0.55, 0, 1, 0.45);
+
+// Spring configs for premium feel
+const SPRING_SMOOTH  = { damping: 22, stiffness: 200, mass: 0.8 };
+const SPRING_SNAPPY  = { damping: 18, stiffness: 280, mass: 0.6 };
 
 const TYPES: {
     key: InviteType;
@@ -257,24 +268,6 @@ function GuestOnce({ state }: { state: FormState }) {
 function CabOnce({ state }: { state: FormState }) {
     return (
         <View style={S.formBody}>
-            {/* Safe Pickup Mode card */}
-            <View style={S.featureCard}>
-                <View style={S.recommendedRow}>
-                    <View style={S.recommendedBadge}>
-                        <Text style={S.recommendedText}>Recommended</Text>
-                    </View>
-                </View>
-                <CheckCard
-                    checked={state.safePickup}
-                    onToggle={() => state.setSafePickup(!state.safePickup)}
-                    title="Safe Pickup Mode"
-                    desc="No need to share flat details with cab driver or guard."
-                    rightIcon="shield"
-                    rightIconBg={SgateColors.blueBg}
-                    rightIconColor={SgateColors.blue}
-                    cardStyle={{ backgroundColor: 'transparent', paddingHorizontal: 0, borderWidth: 0 }}
-                />
-            </View>
 
             {/* Duration text */}
             <Text style={S.bodyLine}>
@@ -461,7 +454,6 @@ interface FormState {
     duration: string; setDuration: (v: string) => void;
     digits: string[]; onDigit: (i: number, v: string) => void;
     digitRefs: React.MutableRefObject<(TextInput | null)[]>;
-    safePickup: boolean; setSafePickup: (v: boolean) => void;
     surpriseDelivery: boolean; setSurpriseDelivery: (v: boolean) => void;
     validityDays: number; setValidityDays: (v: number) => void;
     selectedDays: string; setSelectedDays: (v: string) => void;
@@ -478,7 +470,7 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
     onBack: () => void; state: FormState; submitting: boolean; onSubmit: () => void;
 }) {
     const isGuest = inviteType === 'GUEST';
-    const ctaText = isGuest && tab === 'once' ? 'Select Guest(s)' : undefined;
+    const ctaText = isGuest ? 'Select Guest(s)' : undefined;
 
     function renderContent() {
         if (tab === 'once') {
@@ -541,16 +533,142 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// GUEST INVITE FLOW
+// ═══════════════════════════════════════════════════════════════════════════════
+
+
+const INVITE_THEMES: { icon: React.ComponentProps<typeof Feather>['name']; color: string; bg: string }[] = [
+    { icon: 'home',     color: SgateColors.goldDeep, bg: SgateColors.goldPale },
+    { icon: 'gift',     color: SgateColors.blue,     bg: SgateColors.blueBg   },
+    { icon: 'music',    color: SgateColors.green,    bg: SgateColors.greenBg  },
+    { icon: 'film',     color: SgateColors.violet,   bg: '#F0EBFF'            },
+    { icon: 'coffee',   color: SgateColors.t2,       bg: SgateColors.surface  },
+];
+
+const MOCK_GUESTS = [
+    { id: '1', name: 'Ag Bhai',  phone: '+91 74848 27530' },
+    { id: '2', name: 'Agastya',  phone: '+91 62029 23165' },
+];
+
+interface GuestEntry { id: string; name: string; phone: string; }
+
+// ─── Guest List Panel (final step: guests + theme + note → Create Invite) ────
+function GuestListPanel({ validFrom, validUntil, initialGuests, onBack, onSubmit }: {
+    validFrom: string; validUntil: string;
+    initialGuests: GuestEntry[];
+    onBack: () => void;
+    onSubmit: (data: { theme: number; note: string; guests: GuestEntry[] }) => void;
+}) {
+    const [selectedTheme, setSelectedTheme] = useState(0);
+    const [note, setNote]     = useState('');
+    const [guests, setGuests] = useState<GuestEntry[]>(initialGuests);
+    const [showAdd, setShowAdd] = useState(false);
+    const [addName, setAddName] = useState('');
+    const [addPhone, setAddPhone] = useState('');
+
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const fmtDt = (iso: string) => {
+        if (!iso) return '—';
+        const d = new Date(iso), h = d.getHours(), m = d.getMinutes();
+        return `${d.getDate()} ${months[d.getMonth()]} | ${String(h%12||12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+    };
+
+    const addGuest = () => {
+        if (!addName.trim() || !addPhone.trim()) return;
+        setGuests(g => [...g, { id: Date.now().toString(), name: addName.trim(), phone: addPhone.trim() }]);
+        setAddName(''); setAddPhone(''); setShowAdd(false);
+    };
+
+    return (
+        <View style={{ flex: 1 }}>
+            <View style={S.tabHeader}>
+                <TouchableOpacity onPress={onBack} style={S.backBtn} hitSlop={{ top:12,bottom:12,left:12,right:12 }}>
+                    <Feather name="arrow-left" size={22} color={SgateColors.t2} />
+                </TouchableOpacity>
+                <Text style={S.panelTitle}>Manage Guests</Text>
+            </View>
+
+            <View style={S.inviteSummaryBar}>
+                <Feather name="calendar" size={13} color={SgateColors.goldDeep} />
+                <Text style={S.inviteSummaryText} numberOfLines={1}>
+                    {fmtDt(validFrom)}  →  {fmtDt(validUntil)}
+                </Text>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}>
+                <Text style={[S.fieldLabel, { marginTop: 14 }]}>Guest list</Text>
+                {guests.map(g => (
+                    <View key={g.id} style={S.guestRow}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={S.guestName}>{g.name}</Text>
+                            <Text style={S.guestPhone}>{g.phone}</Text>
+                        </View>
+                        <TouchableOpacity style={S.guestActionBtn} onPress={() => setGuests(g2 => g2.filter(x => x.id !== g.id))}>
+                            <Feather name="trash-2" size={15} color={SgateColors.red} />
+                        </TouchableOpacity>
+                    </View>
+                ))}
+                <TouchableOpacity style={S.addGuestBtn} onPress={() => setShowAdd(v => !v)} activeOpacity={0.7}>
+                    <Feather name="plus-circle" size={18} color={SgateColors.goldDeep} />
+                    <Text style={S.addGuestBtnText}>Add Guest</Text>
+                </TouchableOpacity>
+                {showAdd && (
+                    <View style={S.addGuestBox}>
+                        <TextInput style={S.addGuestInput} placeholder="Name" placeholderTextColor={SgateColors.t4} value={addName} onChangeText={setAddName} />
+                        <TextInput style={S.addGuestInput} placeholder="+91 xxxxxxxxxx" placeholderTextColor={SgateColors.t4} value={addPhone} onChangeText={setAddPhone} keyboardType="phone-pad" />
+                        <TouchableOpacity style={S.addGuestConfirm} onPress={addGuest}>
+                            <Text style={{ fontFamily: SgateFonts.semibold, color: SgateColors.black, fontSize: 14 }}>Add</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                <Text style={[S.fieldLabel, { marginTop: 20 }]}>Select a theme</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 6 }}>
+                    {INVITE_THEMES.map((t, i) => (
+                        <TouchableOpacity key={i} style={[S.themeChip, { backgroundColor: t.bg }, selectedTheme === i && S.themeChipActive]} onPress={() => setSelectedTheme(i)} activeOpacity={0.7}>
+                            <Feather name={t.icon} size={22} color={t.color} />
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+
+                <Text style={[S.fieldLabel, { marginTop: 14 }]}>Add a Note (optional)</Text>
+                <TextInput
+                    style={S.noteInput}
+                    placeholder="e.g. Ring the bell twice"
+                    placeholderTextColor={SgateColors.t4}
+                    value={note} onChangeText={setNote}
+                    multiline
+                />
+            </ScrollView>
+
+            <View style={S.ctaWrap}>
+                <TouchableOpacity style={S.ctaBtn} onPress={() => onSubmit({ theme: selectedTheme, note, guests })} activeOpacity={0.85}>
+                    <Text style={S.ctaText}>Create Invite</Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheetProps) {
     const { user } = useAuthStore();
+    
+    // Nested sheet state
+    const [guestSheetConfig, setGuestSheetConfig] = useState<any>();
 
     // ── Step / tab ────────────────────────────────────────────────────────────
-    const [step,       setStep]       = useState<'select' | 'form'>('select');
-    const [inviteType, setInviteType] = useState<InviteType>('GUEST');
-    const [tab,        setTab]        = useState<FreqTab>('once');
+    const [step,            setStep]           = useState<'select' | 'guest_type' | 'guest_form' | 'guest_list' | 'form' | 'guests' | 'success'>('select');
+    const [inviteType,      setInviteType]     = useState<InviteType>('GUEST');
+    const [tab,             setTab]            = useState<FreqTab>('once');
+    const [inviteValidFrom, setInviteValidFrom]= useState('');
+    const [inviteValidUntil,setInviteValidUntil]= useState('');
+    const [selectedGuestsToManage, setSelectedGuestsToManage] = useState<GuestEntry[]>([]);
+    const [generatedOTP,    setGeneratedOTP]   = useState('');
 
     // ── Form state ────────────────────────────────────────────────────────────
     const [isPrivate,        setIsPrivate]        = useState(false);
@@ -558,7 +676,6 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     const [time,             setTime]             = useState(new Date());
     const [duration,         setDuration]         = useState('8 hours');
     const [digits,           setDigits]           = useState(['','','','']);
-    const [safePickup,       setSafePickup]       = useState(false);
     const [surpriseDelivery, setSurpriseDelivery] = useState(false);
     const [validityDays,     setValidityDays]     = useState(30);
     const [selectedDays,     setSelectedDays]     = useState('All days of Week');
@@ -593,8 +710,19 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     const sheetY     = useSharedValue(SH);
     const backdropOp = useSharedValue(0);
     const floatScale = useSharedValue(0);
-    const formSlideY = useSharedValue(40);
-    const formOp     = useSharedValue(0);
+    const sheetH     = useSharedValue(SH * 0.62);
+
+    // Per-step layer visibility
+    const selectOp    = useSharedValue(1);
+    const formOp      = useSharedValue(0);
+    const formX       = useSharedValue(0);
+    const guestsOp    = useSharedValue(0);
+    const guestsX     = useSharedValue(0);
+    const guestListOp = useSharedValue(0);
+    const guestListX  = useSharedValue(0);
+    const successOp   = useSharedValue(0);
+    const successSc   = useSharedValue(0.85);
+
     const isClosing       = useRef(false);
     const nativeScrollRef = useRef<any>(null);
     const onCloseRef      = useRef(onClose);
@@ -604,15 +732,26 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
           a2 = useSharedValue(0), a3 = useSharedValue(0);
     const anims = [a0, a1, a2, a3];
 
+    // Step snap heights
+    const H_SELECT     = SH * 0.62;
+    const H_GUEST_TYPE = SH * 0.72;
+    const H_GUEST_FORM = SH * 0.80;
+    const H_GUEST_LIST = SH * 0.92;
+    const H_FORM       = SH * 0.76;
+    const H_GUESTS     = SH * 0.88;
+    const H_SUCCESS    = SH * 0.50;
+
     useEffect(() => {
         if (visible) {
             isClosing.current = false;
             sheetY.value      = SH;
-            sheetY.value      = withTiming(0, { duration: 380, easing: EO });
+            sheetH.value      = H_SELECT;
+            selectOp.value    = 1;
+            sheetY.value      = withSpring(0, SPRING_SMOOTH);
             backdropOp.value  = withTiming(1, { duration: 280 });
             anims.forEach((a, i) => {
                 a.value = 0;
-                a.value = withDelay(i * 60, withTiming(1, { duration: 360, easing: EO }));
+                a.value = withDelay(i * 60, withSpring(1, SPRING_SNAPPY));
             });
         } else if (!isClosing.current) {
             sheetY.value     = withTiming(SH, { duration: 260, easing: EI });
@@ -625,25 +764,49 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
         if (!visible) {
             const t = setTimeout(() => {
                 setStep('select'); setTab('once'); setIsPrivate(false);
-                setDigits(['','','','']); setSafePickup(false);
+                setDigits(['','','','']);
                 setSurpriseDelivery(false); setCompany('');
                 setValidityDays(30); setDuration('8 hours');
-                setEntriesLabel('One Entry'); floatScale.value = 0;
+                setEntriesLabel('One Entry');
+                floatScale.value = 0;
+                selectOp.value = 1; formOp.value = 0; formX.value = 0;
+                guestListOp.value = 0; guestListX.value = 0;
+                guestsOp.value = 0; guestsX.value = 0;
+                successOp.value = 0; successSc.value = 0.85;
+                sheetH.value = H_SELECT;
                 setSubmitting(false);
             }, 380);
             return () => clearTimeout(t);
         }
     }, [visible]);
 
-    const sheetStyle    = useAnimatedStyle(() => ({ transform: [{ translateY: sheetY.value }] }));
-    const backdropStyle = useAnimatedStyle(() => ({ opacity: backdropOp.value }));
-    const floatStyle    = useAnimatedStyle(() => ({
+    const sheetStyle     = useAnimatedStyle(() => ({ transform: [{ translateY: sheetY.value }] }));
+    const backdropStyle  = useAnimatedStyle(() => ({ opacity: backdropOp.value }));
+    const sheetSizeStyle = useAnimatedStyle(() => ({ height: sheetH.value }));
+    const floatStyle     = useAnimatedStyle(() => ({
         opacity:   floatScale.value,
-        transform: [{ scale: floatScale.value }],
+        transform: [{ scale: interpolate(floatScale.value, [0, 1], [0.5, 1]) }],
     }));
-    const formPanelStyle = useAnimatedStyle(() => ({
-        opacity:   formOp.value,
-        transform: [{ translateY: formSlideY.value }],
+    const selectAnimStyle  = useAnimatedStyle(() => ({
+        opacity: selectOp.value,
+        transform: [{ scale: interpolate(selectOp.value, [0, 1], [0.96, 1]) }],
+    }));
+
+    const formAnimStyle    = useAnimatedStyle(() => ({
+        opacity: formOp.value,
+        transform: [{ translateX: formX.value }],
+    }));
+    const guestsAnimStyle  = useAnimatedStyle(() => ({
+        opacity: guestsOp.value,
+        transform: [{ translateX: guestsX.value }],
+    }));
+    const guestListAnimStyle = useAnimatedStyle(() => ({
+        opacity: guestListOp.value,
+        transform: [{ translateX: guestListX.value }],
+    }));
+    const successAnimStyle = useAnimatedStyle(() => ({
+        opacity: successOp.value,
+        transform: [{ scale: successSc.value }],
     }));
 
     // ── Swipe to close (RNGH Gesture.Pan — works from anywhere on the sheet) ──
@@ -677,21 +840,81 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     const goToForm = (type: InviteType) => {
         setInviteType(type);
         setTab('once');
-        // Reset form panel to off-screen before mounting
-        formSlideY.value = 40;
-        formOp.value     = 0;
         setStep('form');
-        // Animate form panel up + float icon in
-        floatScale.value = withDelay(60, withTiming(1, { duration: 240, easing: EO }));
-        formSlideY.value = withDelay(30, withTiming(0, { duration: 320, easing: EO }));
-        formOp.value     = withDelay(30, withTiming(1, { duration: 260, easing: EO }));
+        // Cross-fade: selector fades out, sheet expands, form fades in — all simultaneous
+        selectOp.value   = withTiming(0, { duration: 200 });
+        sheetH.value     = withSpring(H_FORM, SPRING_SMOOTH);
+        formX.value      = SW * 0.06;
+        formOp.value     = withDelay(80, withSpring(1, SPRING_SMOOTH));
+        formX.value      = withDelay(80, withSpring(0, SPRING_SMOOTH));
+        floatScale.value = withDelay(120, withSpring(1, SPRING_SNAPPY));
     };
 
+
+
     const goBack = () => {
-        floatScale.value = withTiming(0, { duration: 120 });
-        formOp.value     = withTiming(0, { duration: 120 });
-        formSlideY.value = withTiming(30, { duration: 150, easing: EI });
-        setTimeout(() => setStep('select'), 140);
+        // Cross-fade: form → selector, sheet shrinks
+        formOp.value     = withTiming(0, { duration: 180 });
+        floatScale.value = withTiming(0, { duration: 150 });
+        sheetH.value     = withSpring(H_SELECT, SPRING_SMOOTH);
+        setTimeout(() => {
+            setStep('select');
+            selectOp.value = withSpring(1, SPRING_SNAPPY);
+            anims.forEach((a, i) => { a.value = 0; a.value = withDelay(i * 40, withSpring(1, SPRING_SNAPPY)); });
+        }, 140);
+    };
+
+
+
+    const goBackFromGuests = () => {
+        guestsOp.value = withTiming(0, { duration: 180 });
+        sheetH.value   = withSpring(H_FORM, SPRING_SMOOTH);
+        setTimeout(() => {
+            setStep('form');
+            formX.value      = -SW * 0.04;
+            formOp.value     = withSpring(1, SPRING_SMOOTH);
+            formX.value      = withSpring(0, SPRING_SMOOTH);
+            floatScale.value = withDelay(60, withSpring(1, SPRING_SNAPPY));
+        }, 160);
+    };
+
+    const goToGuestListFromGuests = (guestsList: {name: string, phone: string}[]) => {
+        const entries = guestsList.map(g => ({ id: Math.random().toString(), ...g }));
+        setSelectedGuestsToManage(entries);
+        guestsOp.value = withTiming(0, { duration: 180 });
+        sheetH.value      = withSpring(H_GUEST_LIST, SPRING_SMOOTH);
+        setTimeout(() => {
+            setStep('guest_list');
+            guestListX.value  = SW * 0.06;
+            guestListOp.value = withSpring(1, SPRING_SMOOTH);
+            guestListX.value  = withSpring(0, SPRING_SMOOTH);
+        }, 160);
+    };
+
+    const goBackFromGuestListToGuests = () => {
+        guestListOp.value = withTiming(0, { duration: 180 });
+        sheetH.value      = withSpring(H_GUESTS, SPRING_SMOOTH);
+        setTimeout(() => {
+            setStep('guests');
+            guestsX.value  = -SW * 0.04;
+            guestsOp.value = withSpring(1, SPRING_SMOOTH);
+            guestsX.value  = withSpring(0, SPRING_SMOOTH);
+        }, 160);
+    };
+
+    const showSuccess = () => {
+        // Cross-fade: current → success, sheet shrinks
+        formOp.value      = withTiming(0, { duration: 150 });
+        guestsOp.value    = withTiming(0, { duration: 150 });
+        guestListOp.value = withTiming(0, { duration: 150 });
+        floatScale.value  = withTiming(0, { duration: 150 });
+        sheetH.value     = withSpring(H_SUCCESS, SPRING_SMOOTH);
+        setTimeout(() => {
+            setStep('success');
+            successSc.value = 0.85;
+            successOp.value = withSpring(1, SPRING_SMOOTH);
+            successSc.value = withSpring(1, SPRING_SNAPPY);
+        }, 180);
     };
 
     // ── Submit ────────────────────────────────────────────────────────────────
@@ -729,17 +952,32 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
 
             if (inviteType === 'GUEST') {
                 const w = tab === 'once' ? buildOnceWindow() : buildFreqWindow();
-                result = await createInvitePass({ type: 'GUEST', flatId, isPrivate, ...w, maxUses: tab === 'once' ? 1 : maxUses });
+                
+                // Cross-fade: form → guests, sheet expands
+                setGuestSheetConfig({ type: 'GUEST', flatId, isPrivate, validFrom: w.validFrom, validUntil: w.validUntil, maxUses: tab === 'once' ? 1 : maxUses });
+                setInviteValidFrom(w.validFrom);
+                setInviteValidUntil(w.validUntil);
+                formOp.value     = withTiming(0, { duration: 180 });
+                floatScale.value = withTiming(0, { duration: 150 });
+                sheetH.value     = withSpring(H_GUESTS, SPRING_SMOOTH);
+                setTimeout(() => {
+                    setStep('guests');
+                    guestsX.value  = SW * 0.06;
+                    guestsOp.value = withSpring(1, SPRING_SMOOTH);
+                    guestsX.value  = withSpring(0, SPRING_SMOOTH);
+                }, 160);
+                setSubmitting(false);
+                return;
 
             } else if (inviteType === 'CAB') {
                 if (tab === 'once') {
                     const digs = digits.join('');
                     if (digs.length < 4) { Alert.alert('Required', 'Enter the last 4 digits of the vehicle number.'); setSubmitting(false); return; }
                     const vF = new Date(), vU = new Date(vF); vU.setHours(vU.getHours() + durationHours);
-                    result = await createInvitePass({ type: 'CAB', flatId, safePickup, vehicleNumber: digs, validFrom: vF.toISOString(), validUntil: vU.toISOString() });
+                    result = await createInvitePass({ type: 'CAB', flatId, vehicleNumber: digs, validFrom: vF.toISOString(), validUntil: vU.toISOString() });
                 } else {
                     const w = buildFreqWindow();
-                    result = await createInvitePass({ type: 'CAB', flatId, safePickup, allowedDays: mapDays(selectedDays), timeFrom, timeUntil, ...w, maxUses });
+                    result = await createInvitePass({ type: 'CAB', flatId, allowedDays: mapDays(selectedDays), timeFrom, timeUntil, ...w, maxUses });
                 }
 
             } else if (inviteType === 'DELIVERY') {
@@ -758,7 +996,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
             }
 
             onSuccess?.({ type: inviteType, id: result.id });
-            onClose();
+            showSuccess();
         } catch (err: any) {
             Alert.alert('Error', err?.response?.data?.message ?? 'Something went wrong.');
         } finally {
@@ -770,7 +1008,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
 
     const formState: FormState = {
         inviteType, isPrivate, setIsPrivate, date, openDate, time, openTime,
-        duration, setDuration, digits, onDigit, digitRefs, safePickup, setSafePickup,
+        duration, setDuration, digits, onDigit, digitRefs,
         surpriseDelivery, setSurpriseDelivery, validityDays, setValidityDays,
         selectedDays, setSelectedDays, entriesLabel, setEntriesLabel,
         company, setCompany, timeFrom, setTimeFrom, timeUntil, setTimeUntil,
@@ -789,8 +1027,8 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
             {/* Sheet container */}
             <Animated.View style={[S.sheetWrap, sheetStyle]}>
 
-                {/* Floating icon (form step only) */}
-                {step === 'form' && typeConfig && (
+                {/* Floating icon — always rendered, opacity-controlled */}
+                {typeConfig && (
                     <Animated.View style={[S.floatWrap, floatStyle]}>
                         <View style={[S.floatCircle, { backgroundColor: typeConfig.iconBg }]}>
                             <Feather name={typeConfig.icon} size={24} color={typeConfig.iconColor} />
@@ -798,18 +1036,70 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                     </Animated.View>
                 )}
 
-                {/* Sheet — GestureDetector enables pan-to-dismiss from anywhere */}
+                {/* THE SINGLE CONTAINER — never unmounts, height animated with spring */}
                 <GestureDetector gesture={panGesture}>
-                <View style={[S.sheet, step === 'form' && S.sheetWithFloat, step === 'form' && S.sheetForm]}>
-                    {/* Drag handle */}
+                <Animated.View style={[S.sheet, sheetSizeStyle]}>
+                    {/* Drag handle — always visible, anchors continuity */}
                     <View style={S.handleRow}>
                         <View style={S.handle} />
                     </View>
 
-                    {step === 'select' ? (
-                        <TypeSelector onSelect={goToForm} anims={anims} />
-                    ) : (
-                        <Animated.View style={[S.formFlex, formPanelStyle]}>
+                    {/* All steps stacked absolutely — only active one is visible */}
+                    <View style={S.contentArea}>
+                        {/* Layer 1: Type selector */}
+                        <Animated.View style={[S.stepLayer, selectAnimStyle]} pointerEvents={step === 'select' ? 'auto' : 'none'}>
+                            <TypeSelector onSelect={goToForm} anims={anims} />
+                        </Animated.View>
+
+
+
+                        {/* Layer X: Select Guests */}
+                        <Animated.View style={[S.stepLayer, guestsAnimStyle]} pointerEvents={step === 'guests' ? 'auto' : 'none'}>
+                            {step === 'guests' && (
+                                <SelectGuestsPanel
+                                    onBack={goBackFromGuests}
+                                    onNext={goToGuestListFromGuests}
+                                />
+                            )}
+                        </Animated.View>
+
+                        {/* Layer 3b: Guest list (final preview: guests + theme + note) */}
+                        <Animated.View style={[S.stepLayer, guestListAnimStyle]} pointerEvents={step === 'guest_list' ? 'auto' : 'none'}>
+                            {step === 'guest_list' && (
+                                <GuestListPanel
+                                    validFrom={inviteValidFrom}
+                                    validUntil={inviteValidUntil}
+                                    initialGuests={selectedGuestsToManage}
+                                    onBack={goBackFromGuestListToGuests}
+                                    onSubmit={async (data) => {
+                                        if (data.guests.length === 0) { Alert.alert('Error', 'Add at least one guest.'); return; }
+                                        setSubmitting(true);
+                                        try {
+                                            for (const g of data.guests) {
+                                                await createInvitePass({
+                                                    ...guestSheetConfig,
+                                                    visitorName: g.name,
+                                                    visitorPhone: g.phone,
+                                                    note: data.note,
+                                                    theme: data.theme
+                                                });
+                                            }
+                                            const otp = String(Math.floor(1000 + Math.random() * 9000));
+                                            setGeneratedOTP(otp);
+                                            onSuccess?.({ type: 'GUEST' });
+                                            showSuccess();
+                                        } catch (err: any) {
+                                            Alert.alert('Error', err?.response?.data?.message ?? 'Failed to create pass');
+                                        } finally {
+                                            setSubmitting(false);
+                                        }
+                                    }}
+                                />
+                            )}
+                        </Animated.View>
+
+                        {/* Layer 4: Cab/Delivery/Service form */}
+                        <Animated.View style={[S.stepLayer, formAnimStyle]} pointerEvents={step === 'form' ? 'auto' : 'none'}>
                             <FormPanel
                                 inviteType={inviteType}
                                 tab={tab} setTab={setTab}
@@ -819,8 +1109,79 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                                 onSubmit={handleSubmit}
                             />
                         </Animated.View>
-                    )}
-                </View>
+
+                        {/* Layer 5: Success confirmation */}
+                        <Animated.View style={[S.stepLayer, successAnimStyle]} pointerEvents={step === 'success' ? 'auto' : 'none'}>
+                            {step === 'success' && (
+                                inviteType === 'GUEST' ? (
+                                    <ScrollView contentContainerStyle={S.otpCardWrap} showsVerticalScrollIndicator={false}>
+                                        <View style={S.otpCard}>
+                                            <Text style={S.otpCardTitle}>{user?.name || 'You'} has invited you.</Text>
+                                            
+                                            {/* Optional Note snippet if applicable */}
+                                            {guestSheetConfig?.note ? (
+                                                <Text style={S.otpCardHint}>"{guestSheetConfig.note}"</Text>
+                                            ) : null}
+
+                                            <Text style={S.otpCardInstruction}>Show this QR code or OTP to the guard at gate</Text>
+                                            
+                                            <View style={S.qrWrap}>
+                                                <QRCode value={generatedOTP} size={150} color="#1A1A1A" backgroundColor="#FAF6F0" />
+                                            </View>
+                                            
+                                            <View style={S.dividerWithText}>
+                                                <View style={S.dividerLine} />
+                                                <Text style={S.dividerText}>OR</Text>
+                                                <View style={S.dividerLine} />
+                                            </View>
+                                            
+                                            <View style={S.otpBox}>
+                                                <Text style={S.otpText}>{generatedOTP}</Text>
+                                            </View>
+                                            
+                                            <Text style={S.otpDate}>
+                                                {new Date(inviteValidFrom).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}, {new Date(inviteValidFrom).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}  to 
+                                                {"\n"}
+                                                {new Date(inviteValidUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}, {new Date(inviteValidUntil).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                                            </Text>
+
+                                            {user?.flatId ? (
+                                                <Text style={S.otpAddress}>
+                                                    {user?.flatId}{"\n"}
+                                                    Society Address, City - Pincode
+                                                </Text>
+                                            ) : null}
+
+                                            {/* Sgate logo text replacing mygate */}
+                                            <Text style={S.otpLogoText}>
+                                                <Feather name="grid" size={16} /> sgate
+                                            </Text>
+                                        </View>
+                                        
+                                        <Text style={S.otpShareHint}>Share this invite with your guest for a hassle-free entry</Text>
+                                        
+                                        <TouchableOpacity style={[S.ctaBtn, S.shareBtn]} activeOpacity={0.85} onPress={onClose}>
+                                            <Feather name="share" size={18} color="#000" />
+                                            <Text style={[S.ctaText, { marginLeft: 8, color: '#000' }]}>Share</Text>
+                                        </TouchableOpacity>
+                                        
+                                    </ScrollView>
+                                ) : (
+                                    <View style={S.successContent}>
+                                        <View style={S.successCircle}>
+                                            <Feather name="check" size={40} color={SgateColors.green} />
+                                        </View>
+                                        <Text style={S.successTitle}>Pass Created!</Text>
+                                        <Text style={S.successDesc}>Your gate pass has been successfully{"\n"}created and saved.</Text>
+                                        <TouchableOpacity style={[S.ctaBtn, S.successBtn]} onPress={onClose} activeOpacity={0.85}>
+                                            <Text style={S.ctaText}>Done</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )
+                            )}
+                        </Animated.View>
+                    </View>
+                </Animated.View>
                 </GestureDetector>
 
                 {/* Native date/time picker */}
@@ -868,17 +1229,241 @@ const S = StyleSheet.create({
         borderWidth: 3, borderColor: SgateColors.card,
     },
 
-    // ── Sheet ─────────────────────────────────────────────────────────────────
+    // ── Sheet (the ONE container) ──────────────────────────────────────────────
     sheet: {
         backgroundColor: SgateColors.card,
         borderTopLeftRadius: 26, borderTopRightRadius: 26,
+        paddingTop: 0,
         paddingBottom: 34,
-        maxHeight: SH * 0.9,
         overflow: 'hidden',
     },
-    sheetWithFloat: { paddingTop: 26 },
-    sheetForm: { height: SH * 0.84 },
-    formFlex: { flex: 1, overflow: 'hidden' },
+    contentArea: {
+        flex: 1,
+    },
+    stepLayer: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    stepLayerCenter: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // ── Guest Type Panel ────────────────────────────────────────────────────────────
+    panelTitle: {
+        flex: 1, fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t1,
+    },
+    guestTypeSub: {
+        fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3,
+        paddingHorizontal: 20, paddingBottom: 14, lineHeight: 20,
+    },
+    guestTypeCard: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: SgateColors.surface,
+        borderRadius: 16, padding: 16,
+        borderWidth: 1, borderColor: SgateColors.borderSoft,
+    },
+    guestTypeCardPrivate: { backgroundColor: '#F0EBFF', borderColor: '#C9B8FF' },
+    guestTypeTitle: {
+        fontSize: 15, fontFamily: SgateFonts.semibold,
+        color: SgateColors.t1, marginBottom: 4,
+    },
+    guestTypeTitlePrivate: { color: SgateColors.violet },
+    guestTypeDesc: {
+        fontSize: 13, fontFamily: SgateFonts.regular,
+        color: SgateColors.t3, lineHeight: 18,
+    },
+    guestTypeDescPrivate: { color: '#7C5CC4' },
+
+    // ── Guest Invite Form ─────────────────────────────────────────────────────
+    themeBanner: {
+        backgroundColor: SgateColors.goldPale, paddingVertical: 14, marginBottom: 4,
+    },
+    themeScroll: {
+        paddingHorizontal: 20, gap: 10, alignItems: 'center',
+    },
+    themeLabel: {
+        fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t2, marginRight: 4,
+    },
+    themeChip: {
+        width: 48, height: 48, borderRadius: 14,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    themeChipActive: {
+        borderWidth: 2.5, borderColor: SgateColors.goldDeep,
+    },
+    noteInput: {
+        backgroundColor: SgateColors.bg,
+        borderRadius: 12, borderWidth: 1, borderColor: SgateColors.borderSoft,
+        paddingHorizontal: 14, paddingVertical: 12,
+        fontSize: 14, fontFamily: SgateFonts.regular,
+        color: SgateColors.t1, minHeight: 56,
+    },
+    guestRow: {
+        flexDirection: 'row', alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft,
+    },
+    guestName: {
+        fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1,
+    },
+    guestPhone: {
+        fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2,
+    },
+    guestActionBtn: {
+        width: 36, height: 36, borderRadius: 18,
+        backgroundColor: SgateColors.bg,
+        alignItems: 'center', justifyContent: 'center', marginLeft: 6,
+    },
+    addGuestBox: {
+        backgroundColor: SgateColors.bg, borderRadius: 14, padding: 14, gap: 10, marginTop: 10,
+    },
+    addGuestInput: {
+        backgroundColor: SgateColors.card,
+        borderRadius: 10, borderWidth: 1, borderColor: SgateColors.borderSoft,
+        paddingHorizontal: 12, paddingVertical: 10,
+        fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1,
+    },
+    addGuestConfirm: {
+        backgroundColor: SgateColors.gold, borderRadius: 10, paddingVertical: 10,
+        alignItems: 'center',
+    },
+    addGuestBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 14, paddingBottom: 4,
+    },
+    addGuestBtnText: {
+        fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.goldDeep,
+    },
+
+    // ── OTP Invite Card (success for GUEST) ────────────────────────────────────────────
+    otpCardWrap: {
+        padding: 20, paddingBottom: 40,
+    },
+    otpCard: {
+        backgroundColor: '#FAF6F0', borderRadius: 20,
+        padding: 24, alignItems: 'center', marginBottom: 20,
+        elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+    },
+    otpCardTitle: {
+        fontSize: 20, fontFamily: SgateFonts.extrabold,
+        color: '#1A1A1A', textAlign: 'center', marginBottom: 6,
+    },
+    otpCardHint: {
+        fontSize: 14, fontFamily: SgateFonts.regular,
+        color: '#4A4A4A', textAlign: 'center', marginBottom: 20,
+    },
+    otpCardInstruction: {
+        fontSize: 13, fontFamily: SgateFonts.medium,
+        color: '#8F7351', textAlign: 'center', marginBottom: 16,
+    },
+    qrWrap: {
+        marginBottom: 16,
+    },
+    dividerWithText: {
+        flexDirection: 'row', alignItems: 'center', width: '60%', 
+        justifyContent: 'center', marginBottom: 16,
+    },
+    dividerLine: {
+        flex: 1, height: 1, backgroundColor: '#D9CDBF',
+    },
+    dividerText: {
+        marginHorizontal: 12, fontSize: 13, fontFamily: SgateFonts.medium, color: '#8F7351',
+    },
+    otpBox: {
+        backgroundColor: '#083B32',
+        borderRadius: 12, paddingHorizontal: 36, paddingVertical: 14, marginBottom: 20,
+    },
+    otpText: {
+        fontSize: 34, fontFamily: SgateFonts.bold, color: '#FFFFFF', letterSpacing: 4,
+    },
+    otpDate: {
+        fontSize: 14, fontFamily: SgateFonts.semibold,
+        color: '#6E4D2B', textAlign: 'center', marginBottom: 14, lineHeight: 20,
+    },
+    otpAddress: {
+        fontSize: 13, fontFamily: SgateFonts.medium,
+        color: '#4A4A4A', textAlign: 'center', marginBottom: 20, lineHeight: 18,
+    },
+    otpLogoText: {
+        fontSize: 18, fontFamily: SgateFonts.extrabold, color: '#1A1A1A', letterSpacing: -0.5,
+    },
+    otpShareHint: {
+        fontSize: 14, fontFamily: SgateFonts.medium,
+        color: '#F9F9F9', textAlign: 'center', marginBottom: 16,
+    },
+    shareBtn: { 
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        backgroundColor: '#FDE12A', // Vibrant yellow from image
+    },
+
+    // ── Guest invite form tabs / dropdown pickers ───────────────────────────────────────────
+    tabRow: {
+        flexDirection: 'row',
+        marginHorizontal: 20, marginBottom: 6,
+        backgroundColor: SgateColors.bg,
+        borderRadius: 14, padding: 4,
+    },
+    tabBtn: {
+        flex: 1, paddingVertical: 10, borderRadius: 11,
+        alignItems: 'center',
+    },
+    tabBtnActive: {
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 },
+        elevation: 2,
+    },
+    tabBtnText: {
+        fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3,
+    },
+    tabBtnTextActive: {
+        fontFamily: SgateFonts.semibold, color: SgateColors.t1,
+    },
+    pickerDropdown: {
+        backgroundColor: SgateColors.card,
+        borderRadius: 14, borderWidth: 1, borderColor: SgateColors.borderSoft,
+        overflow: 'hidden', marginTop: -6,
+    },
+    pickerOption: {
+        paddingHorizontal: 16, paddingVertical: 12,
+        borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft,
+    },
+    pickerOptionText: {
+        fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t2,
+    },
+    pickerOptionActive: {
+        fontFamily: SgateFonts.semibold, color: SgateColors.goldDeep,
+    },
+    inviteSummaryBar: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        backgroundColor: SgateColors.goldPale,
+        paddingHorizontal: 20, paddingVertical: 10,
+        marginBottom: 4,
+    },
+    inviteSummaryText: {
+        flex: 1, fontSize: 13, fontFamily: SgateFonts.semibold,
+        color: SgateColors.goldDeep,
+    },
+
+    successContent: {
+        alignItems: 'center', justifyContent: 'center',
+        paddingHorizontal: 24, paddingTop: 30, paddingBottom: 20,
+    },
+
+    successCircle: {
+        width: 80, height: 80, borderRadius: 40,
+        backgroundColor: SgateColors.greenBg,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 20,
+    },
+    successTitle: {
+        fontSize: 24, fontFamily: SgateFonts.extrabold,
+        color: SgateColors.t1, marginBottom: 8,
+    },
+    successDesc: {
+        fontSize: 15, fontFamily: SgateFonts.regular,
+        color: SgateColors.t3, textAlign: 'center', marginBottom: 28,
+        lineHeight: 22,
+    },
+    successBtn: { width: '100%' },
     handleRow: { alignItems: 'center', paddingTop: 10, paddingBottom: 6 },
     handle: { width: 38, height: 4, borderRadius: 2, backgroundColor: SgateColors.border },
 

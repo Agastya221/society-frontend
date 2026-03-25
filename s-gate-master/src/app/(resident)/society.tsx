@@ -15,7 +15,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SgateAvatar } from '../../components/Sgate';
+import { Avatar } from '../../components/ui/Avatar';
 import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
 import type { Entry, EntryType, Notice } from '../../types/api';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -298,7 +298,7 @@ export default function SocietyScreen() {
         return (
             <Animated.View entering={FadeInDown.delay(Math.min(index, 12) * 40).springify()}>
                 <View style={S.visitorRow}>
-                    <SgateAvatar name={e.visitorName} size={42} />
+                    <Avatar name={e.visitorName} size={42} />
                     <View style={S.visitorBody}>
                         <View style={S.visitorTop}>
                             <Text style={S.visitorName} numberOfLines={1}>{e.visitorName}</Text>
@@ -329,7 +329,7 @@ export default function SocietyScreen() {
         return (
             <Animated.View entering={FadeInDown.delay(Math.min(index, 10) * 50).springify()}>
                 <View style={S.residentRow}>
-                    <SgateAvatar name={item.name} size={44} />
+                    <Avatar name={item.name} size={44} />
                     <View style={S.residentBody}>
                         <Text style={S.residentName} numberOfLines={1}>{item.name}</Text>
                         <Text style={S.residentFlat}>{item.block}-{item.flat}</Text>

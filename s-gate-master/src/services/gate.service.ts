@@ -16,6 +16,43 @@ import type {
     VisitorType,
 } from '../types/api';
 
+let mockEntryRequests: EntryRequest[] = [
+    {
+        id: 'mock-req-1',
+        type: 'DELIVERY',
+        visitorName: 'Amazon Delivery',
+        status: 'PENDING',
+        flatId: 'flat-1',
+        flat: { number: '101' },
+        createdAt: new Date().toISOString()
+    }
+];
+
+let mockEntries: Entry[] = [
+    {
+        id: 'mock-ent-1',
+        type: 'VISITOR',
+        visitorName: 'Alice Smith',
+        status: 'CHECKED_IN',
+        createdAt: new Date(Date.now() - 3600000).toISOString()
+    }
+];
+
+let mockPreApprovals: PreApproval[] = [
+    {
+        id: 'mock-pre-1',
+        visitorName: 'Swiggy',
+        visitorType: 'DELIVERY_PERSON',
+        status: 'ACTIVE',
+        validFrom: new Date().toISOString(),
+        validUntil: new Date(Date.now() + 86400000).toISOString(),
+        qrToken: 'dummy-qr',
+        flatId: 'flat-1'
+    }
+];
+
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 // ─── Entry Requests ───────────────────────────────────────────────────────────
 
 export interface GetEntryRequestsParams {
@@ -25,30 +62,35 @@ export interface GetEntryRequestsParams {
     limit?: number;
 }
 
-export const getEntryRequests = async (
-    params?: GetEntryRequestsParams
-): Promise<EntryRequest[]> => {
-    const res = await api.get('/gate/requests', { params });
-    const data = res.data?.data;
-    return Array.isArray(data) ? data : (data?.entries ?? []);
+export const getEntryRequests = async (params?: GetEntryRequestsParams): Promise<EntryRequest[]> => {
+    await delay(600);
+    return mockEntryRequests.filter(r => params?.status ? r.status === params.status : true);
 };
 
 export const approveEntryRequest = async (id: string): Promise<void> => {
-    await api.patch(`/gate/requests/${id}/approve`);
+    await delay(400);
+    const req = mockEntryRequests.find(r => r.id === id);
+    if (req) {
+        req.status = 'APPROVED';
+        mockEntries.unshift({
+            id: 'mock-ent-' + Date.now(),
+            type: req.type,
+            visitorName: req.visitorName,
+            status: 'CHECKED_IN',
+            createdAt: new Date().toISOString()
+        });
+    }
 };
 
-export const rejectEntryRequest = async (
-    id: string,
-    reason?: string
-): Promise<void> => {
-    await api.patch(`/gate/requests/${id}/reject`, { reason });
+export const rejectEntryRequest = async (id: string, reason?: string): Promise<void> => {
+    await delay(400);
+    const req = mockEntryRequests.find(r => r.id === id);
+    if (req) req.status = 'REJECTED';
 };
 
-export const getEntryRequestPhoto = async (
-    id: string
-): Promise<{ viewUrl: string }> => {
-    const res = await api.get(`/gate/requests/${id}/photo`);
-    return res.data.data;
+export const getEntryRequestPhoto = async (id: string): Promise<{ viewUrl: string }> => {
+    await delay(200);
+    return { viewUrl: '' };
 };
 
 // ─── Entries ──────────────────────────────────────────────────────────────────
@@ -62,15 +104,12 @@ export interface GetEntriesParams {
 }
 
 export const getPendingApprovals = async (): Promise<Entry[]> => {
-    const res = await api.get('/gate/entries/pending');
-    const data = res.data?.data;
-    return Array.isArray(data) ? data : (data?.entries ?? []);
+    return [];
 };
 
 export const getEntries = async (params?: GetEntriesParams): Promise<Entry[]> => {
-    const res = await api.get('/gate/entries', { params });
-    const data = res.data?.data;
-    return Array.isArray(data) ? data : (data?.entries ?? []);
+    await delay(600);
+    return mockEntries;
 };
 
 // ─── Pre-Approvals ────────────────────────────────────────────────────────────
@@ -84,30 +123,22 @@ export interface CreatePreApprovalPayload {
     visitorType: VisitorType;
 }
 
-export const createPreApproval = async (
-    data: CreatePreApprovalPayload
-): Promise<{ id: string; qrToken: string }> => {
-    const res = await api.post('/gate/', data);
-    return res.data.data;
+export const createPreApproval = async (data: CreatePreApprovalPayload): Promise<{ id: string; qrToken: string }> => {
+    await delay(600);
+    return { id: 'dummy', qrToken: 'dummy' };
 };
 
-export const getMyPreApprovals = async (
-    status?: PreApprovalStatus
-): Promise<PreApproval[]> => {
-    const res = await api.get('/gate/', { params: status ? { status } : undefined });
-    const data = res.data?.data;
-    return Array.isArray(data) ? data : (data?.preApprovals ?? []);
+export const getMyPreApprovals = async (status?: PreApprovalStatus): Promise<PreApproval[]> => {
+    await delay(600);
+    return mockPreApprovals;
 };
 
-export const getPreApprovalQR = async (
-    id: string
-): Promise<{ qrToken: string; qrCodeImage: string }> => {
-    const res = await api.get(`/gate/${id}/qr`);
-    return res.data.data;
+export const getPreApprovalQR = async (id: string): Promise<{ qrToken: string; qrCodeImage: string }> => {
+    return { qrToken: '', qrCodeImage: '' };
 };
 
 export const cancelPreApproval = async (id: string): Promise<void> => {
-    await api.delete(`/gate/${id}`);
+    mockPreApprovals = mockPreApprovals.filter(p => p.id !== id);
 };
 
 // ─── Invite Passes (unified pre-approval system) ─────────────────────────
@@ -131,19 +162,28 @@ export interface CreateInvitePassPayload {
     safePickup?: boolean;
 }
 
-export const createInvitePass = async (
-    data: CreateInvitePassPayload
-): Promise<InvitePass> => {
-    const res = await api.post('/gate/invites', data);
-    return res.data.data;
+export const createInvitePass = async (data: CreateInvitePassPayload): Promise<InvitePass> => {
+    await delay(800);
+    
+    // Add to PreApprovals list for the home screen to show
+    const newPass: PreApproval = {
+        id: 'mock-pass-' + Date.now(),
+        visitorName: data.visitorName || data.companyName || data.type,
+        visitorType: data.type === 'GUEST' ? 'GUEST' : 'DELIVERY_PERSON',
+        status: 'ACTIVE',
+        validFrom: data.validFrom,
+        validUntil: data.validUntil,
+        qrToken: 'dummy-qr-' + Date.now(),
+        flatId: data.flatId
+    };
+    mockPreApprovals.unshift(newPass);
+
+    return newPass as any;
 };
 
-export const getMyInvitePasses = async (
-    status?: InvitePassStatus
-): Promise<InvitePass[]> => {
-    const res = await api.get('/gate/invites', { params: status ? { status } : undefined });
-    const data = res.data?.data;
-    return Array.isArray(data) ? data : (data?.invites ?? []);
+export const getMyInvitePasses = async (status?: InvitePassStatus): Promise<InvitePass[]> => {
+    await delay(300);
+    return [];
 };
 
 export const getInvitePassById = async (id: string): Promise<InvitePass> => {

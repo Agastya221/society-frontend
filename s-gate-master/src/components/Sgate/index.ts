@@ -1,15 +1,7 @@
-export { SgateApprovalCard } from './SgateApprovalCard';
 export { SgateBrandMark } from './SgateBrandMark';
-export { SgateAvatar } from './SgateAvatar';
-export { SgateButton } from './SgateButton';
-export { SgateCard } from './SgateCard';
 export { SgateHeader } from './SgateHeader';
-export { SgateInput } from './SgateInput';
-export { SgateListItem } from './SgateListItem';
 export { SgateMascot } from './SgateMascot';
 export { SgateQuickAction } from './SgateQuickAction';
 export { SgateSecurityBanner } from './SgateSecurityBanner';
-export { SgateSectionHeader } from './SgateSectionHeader';
-export { SgateStatusPill } from './SgateStatusPill';
 export { SgateTabBar } from './SgateTabBar';
 export { PreApproveSheet } from './PreApproveSheet';

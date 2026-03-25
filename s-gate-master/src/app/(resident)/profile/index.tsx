@@ -16,7 +16,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SgateListItem } from '../../../components/Sgate';
+import { IconListItem } from '../../../components/ui/IconListItem';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import { useAuthStore } from '../../../store/useAuthStore';
 import * as profileService from '../../../services/profile.service';
@@ -188,7 +188,7 @@ export default function ProfileScreen() {
                         entering={FadeInDown.delay(240).springify()}
                         style={styles.settingsCard}
                     >
-                        <SgateListItem
+                        <IconListItem
                             icon="user"
                             label="Edit Profile"
                             sublabel="Name, email, photo"
@@ -200,12 +200,12 @@ export default function ProfileScreen() {
                                 setEditModal(true);
                             }}
                         />
-                        <SgateListItem
+                        <IconListItem
                             icon="shield"
                             label="Security Settings"
                             sublabel="PIN, biometrics"
                         />
-                        <SgateListItem
+                        <IconListItem
                             icon="bell"
                             label="Notifications"
                             sublabel="Alerts & push settings"
@@ -215,12 +215,12 @@ export default function ProfileScreen() {
                                 )
                             }
                         />
-                        <SgateListItem
+                        <IconListItem
                             icon="lock"
                             label="Privacy"
                             sublabel="Visibility & data"
                         />
-                        <SgateListItem
+                        <IconListItem
                             icon="users"
                             label="Family Members"
                             sublabel={`${familyCount} member${familyCount !== 1 ? 's' : ''}`}
@@ -228,7 +228,7 @@ export default function ProfileScreen() {
                                 router.push('/(resident)/family' as any)
                             }
                         />
-                        <SgateListItem
+                        <IconListItem
                             icon="clock"
                             label="Activity History"
                             sublabel="Visitor & entry log"
@@ -236,7 +236,7 @@ export default function ProfileScreen() {
                                 router.push('/(resident)/visitors' as any)
                             }
                         />
-                        <SgateListItem
+                        <IconListItem
                             icon="settings"
                             label="App Settings"
                             sublabel="Theme, language"

@@ -18,14 +18,14 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
-    SgateApprovalCard,
     SgateBrandMark,
     SgateQuickAction,
     SgateSecurityBanner,
-    SgateSectionHeader,
-    SgateStatusPill,
 } from '../../components/Sgate';
-import { SgateAvatar } from '../../components/Sgate/SgateAvatar';
+import { SectionHeader } from '../../components/ui/SectionHeader';
+import { StatusPill } from '../../components/ui/StatusPill';
+import { Avatar } from '../../components/ui/Avatar';
+import { ApprovalCard } from '../../components/visitors/ApprovalCard';
 import { PreApproveSheet } from '../../components/Sgate/PreApproveSheet';
 import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
 
@@ -309,7 +309,7 @@ export default function ResidentHomeScreen() {
                         entering={FadeInDown.delay(240).springify()}
                         style={styles.section}
                     >
-                        <SgateSectionHeader
+                        <SectionHeader
                             title="Waiting at Gate"
                             rightPill={
                                 pendingRequests.length > 0
@@ -338,7 +338,7 @@ export default function ResidentHomeScreen() {
                                     }
                                     style={styles.cardWrap}
                                 >
-                                    <SgateApprovalCard
+                                    <ApprovalCard
                                         name={req.visitorName}
                                         type={formatType(req.type)}
                                         time={timeAgo(req.createdAt)}
@@ -356,7 +356,7 @@ export default function ResidentHomeScreen() {
                         entering={FadeInDown.delay(320).springify()}
                         style={styles.section}
                     >
-                        <SgateSectionHeader
+                        <SectionHeader
                             title="Today's Activity"
                             rightLabel="See all"
                             onRightPress={() => router.push('/(resident)/approvals' as any)}
@@ -393,7 +393,7 @@ function ActivityRow({ entry, isLast }: { entry: Entry; isLast: boolean }) {
     const { pill, label } = entryStatusToPill(entry.status);
     return (
         <View style={[styles.activityRow, !isLast && styles.activityDivider]}>
-            <SgateAvatar name={entry.visitorName} size={36} />
+            <Avatar name={entry.visitorName} size={36} />
             <View style={styles.activityInfo}>
                 <Text style={styles.activityName} numberOfLines={1}>
                     {entry.visitorName}

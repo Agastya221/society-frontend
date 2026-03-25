@@ -5,7 +5,7 @@ import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 type Status = 'active' | 'pending' | 'approved' | 'denied' | 'expired';
 type Size = 'sm' | 'md';
 
-interface SgateStatusPillProps {
+interface StatusPillProps {
   status: Status;
   size?: Size;
 }
@@ -23,7 +23,7 @@ const SIZE_STYLES: Record<Size, { fontSize: number; paddingH: number; paddingV: 
   md: { fontSize: 11, paddingH: 10, paddingV: 3 },
 };
 
-export function SgateStatusPill({ status, size = 'md' }: SgateStatusPillProps) {
+export function StatusPill({ status, size = 'md' }: StatusPillProps) {
   const { bg, text, label } = STATUS_COLORS[status];
   const s = SIZE_STYLES[size];
 

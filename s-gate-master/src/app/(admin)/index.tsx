@@ -13,7 +13,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
-import { SgateAvatar } from '@/components/Sgate/SgateAvatar';
+import { Avatar } from '@/components/ui/Avatar';
 import { SgateBrandMark } from '@/components/Sgate/SgateBrandMark';
 import { PreApproveSheet } from '@/components/Sgate/PreApproveSheet';
 import api from '@/services/api';
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
                             onPress={() => router.push('/(admin)/profile')}
                             style={styles.profileBtn}
                         >
-                            <SgateAvatar name={user?.name ?? 'A'} size={40} />
+                            <Avatar name={user?.name ?? 'A'} size={40} />
                         </TouchableOpacity>
                     </View>
                 </Animated.View>

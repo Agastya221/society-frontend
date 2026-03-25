@@ -8,7 +8,7 @@ interface RightPill {
   bg: string;
 }
 
-interface SgateSectionHeaderProps {
+interface SectionHeaderProps {
   title: string;
   rightLabel?: string;
   rightPill?: RightPill;
@@ -16,13 +16,13 @@ interface SgateSectionHeaderProps {
   style?: ViewStyle;
 }
 
-export function SgateSectionHeader({
+export function SectionHeader({
   title,
   rightLabel,
   rightPill,
   onRightPress,
   style,
-}: SgateSectionHeaderProps) {
+}: SectionHeaderProps) {
   const hasRight = rightLabel || rightPill;
 
   return (

@@ -2,11 +2,10 @@ import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
-import { SgateAvatar } from './SgateAvatar';
-
+import { Avatar } from '@/components/ui/Avatar';
 type VisitorType = 'Service' | 'Delivery' | 'Guest' | 'Cab' | string;
 
-interface SgateApprovalCardProps {
+interface ApprovalCardProps {
   name: string;
   type: VisitorType;
   time: string;
@@ -20,7 +19,7 @@ interface SgateApprovalCardProps {
   onDeny: () => void;
 }
 
-export function SgateApprovalCard({
+export function ApprovalCard({
   name,
   type,
   time,
@@ -30,7 +29,7 @@ export function SgateApprovalCard({
   avatarColor,
   onApprove,
   onDeny,
-}: SgateApprovalCardProps) {
+}: ApprovalCardProps) {
   // When avatarBg is provided, pass it as `color` — SgateAvatar will use it
   // as the solid bg (12%-opacity tint mode). avatarColor becomes the text color.
   const avatarName = initials ? `${initials[0]} ${initials[1] ?? ''}`.trim() : name;
@@ -39,7 +38,7 @@ export function SgateApprovalCard({
     <View style={styles.card}>
       {/* Top row: avatar + info + pill */}
       <View style={styles.topRow}>
-        <SgateAvatar name={avatarName} size={44} color={avatarBg ?? avatarColor} />
+        <Avatar name={avatarName} size={44} color={avatarBg ?? avatarColor} />
 
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={1}>
