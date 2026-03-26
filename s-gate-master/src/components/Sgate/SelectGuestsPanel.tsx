@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, FlatList, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { Feather } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
@@ -8,9 +9,13 @@ import { createInvitePass, CreateInvitePassPayload } from '@/services/gate.servi
 type Tab = 'contacts' | 'recent' | 'manual';
 
 export function SelectGuestsPanel({ 
+    initialGuests = [],
+    scrollRef,
     onNext, 
     onBack 
 }: {
+    initialGuests?: {name: string, phone: string}[];
+    scrollRef?: any;
     onNext?: (guests: {name: string, phone: string}[]) => void;
     onBack: () => void;
 }) {
@@ -26,7 +31,7 @@ export function SelectGuestsPanel({
     const [mobileNumber, setMobileNumber] = useState('');
 
     // Selection
-    const [selectedGuests, setSelectedGuests] = useState<{name: string, phone: string}[]>([]);
+    const [selectedGuests, setSelectedGuests] = useState<{name: string, phone: string}[]>(initialGuests);
 
     useEffect(() => {
         if (activeTab === 'contacts' && allContacts.length === 0) {
@@ -54,12 +59,21 @@ export function SelectGuestsPanel({
         c.name?.toLowerCase().includes(search.toLowerCase())
     );
 
+    /** Normalise any phone format → 10-digit number */
+    const cleanPhone = (raw: string) => {
+        let p = raw.replace(/[\s\-()]/g, '');
+        p = p.replace(/^(\+91|0091|91)/, '');
+        p = p.replace(/^0/, '');
+        return p;
+    };
+
     const toggleSelection = (name: string, phone: string) => {
-        const exists = selectedGuests.find(g => g.phone === phone);
+        const normalised = cleanPhone(phone);
+        const exists = selectedGuests.find(g => g.phone === normalised);
         if (exists) {
-            setSelectedGuests(prev => prev.filter(g => g.phone !== phone));
+            setSelectedGuests(prev => prev.filter(g => g.phone !== normalised));
         } else {
-            setSelectedGuests(prev => [...prev, { name, phone }]);
+            setSelectedGuests(prev => [...prev, { name, phone: normalised }]);
         }
     };
 
@@ -129,12 +143,13 @@ export function SelectGuestsPanel({
                             </View>
                         ) : (
                             <FlatList
+                                ref={scrollRef}
                                 data={filteredContacts}
                                 keyExtractor={i => (i as any).id || Math.random().toString()}
                                 showsVerticalScrollIndicator={false}
                                 renderItem={({item}) => {
                                     const phone = item.phoneNumbers?.[0]?.number || '';
-                                    const isSelected = selectedGuests.some(g => g.phone === phone);
+                                    const isSelected = selectedGuests.some(g => g.phone === cleanPhone(phone));
                                     return (
                                         <TouchableOpacity style={S.contactRow} onPress={() => toggleSelection(item.name || 'Unknown', phone)} activeOpacity={0.7}>
                                             <View style={S.contactAvatar}>
@@ -159,7 +174,7 @@ export function SelectGuestsPanel({
                 )}
 
                 {activeTab === 'manual' && (
-                    <View style={S.tabFlex}>
+                    <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={S.tabFlex}>
                         <Text style={S.inputLabel}>GUEST NAME</Text>
                         <TextInput 
                             style={S.manualInput}
@@ -196,7 +211,7 @@ export function SelectGuestsPanel({
                                 ))}
                             </View>
                         )}
-                    </View>
+                    </ScrollView>
                 )}
             </View>
 

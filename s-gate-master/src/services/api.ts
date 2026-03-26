@@ -16,6 +16,9 @@ api.interceptors.request.use(
         const accessToken = useAuthStore.getState().accessToken;
         if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
         console.log('🚀 API Request:', config.method?.toUpperCase(), `${BASE_URL}${config.url}`);
+        if (config.data) {
+            console.log('📦 Request Body:', JSON.stringify(config.data, null, 2));
+        }
         return config;
     },
     (error) => Promise.reject(error)
@@ -83,6 +86,7 @@ api.interceptors.response.use(
         }
 
         console.error('❌ API Error:', error.response?.status, error.config?.url, error.response?.data?.message);
+        console.error('❌ Full Error Body:', JSON.stringify(error.response?.data, null, 2));
         return Promise.reject(error);
     }
 );

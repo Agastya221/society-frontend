@@ -162,23 +162,37 @@ export interface CreateInvitePassPayload {
     safePickup?: boolean;
 }
 
+/** Strip country code, spaces, dashes — always returns a plain 10-digit number */
+const sanitizePhone = (phone?: string): string | undefined => {
+    if (!phone) return undefined;
+    // Remove spaces, dashes, parentheses
+    let cleaned = phone.replace(/[\s\-()]/g, '');
+    // Strip country code: +91, 0091, or leading 0
+    cleaned = cleaned.replace(/^(\+91|0091|91)/, '');
+    cleaned = cleaned.replace(/^0/, '');
+    return cleaned;
+};
+
 export const createInvitePass = async (data: CreateInvitePassPayload): Promise<InvitePass> => {
-    await delay(800);
+    const cleanData = { ...data, visitorPhone: sanitizePhone(data.visitorPhone) };
+    console.log('📋 [createInvitePass] Payload being sent:', JSON.stringify(cleanData, null, 2));
+    const res = await api.post('/gate/invites/guest', cleanData);
+    const pass = res.data.data;
     
-    // Add to PreApprovals list for the home screen to show
+    // Convert to the old type for the mock home screen UI so it doesn't break
     const newPass: PreApproval = {
-        id: 'mock-pass-' + Date.now(),
-        visitorName: data.visitorName || data.companyName || data.type,
-        visitorType: data.type === 'GUEST' ? 'GUEST' : 'DELIVERY_PERSON',
+        id: pass.id,
+        visitorName: pass.visitorName || 'Guest',
+        visitorType: pass.type === 'QUICK' ? 'GUEST' : 'OTHER',
         status: 'ACTIVE',
-        validFrom: data.validFrom,
-        validUntil: data.validUntil,
-        qrToken: 'dummy-qr-' + Date.now(),
+        validFrom: pass.validFrom,
+        validUntil: pass.validUntil,
+        qrToken: pass.passcode || 'fallback',
         flatId: data.flatId
     };
     mockPreApprovals.unshift(newPass);
 
-    return newPass as any;
+    return pass;
 };
 
 export const getMyInvitePasses = async (status?: InvitePassStatus): Promise<InvitePass[]> => {
@@ -200,6 +214,103 @@ export const DELIVERY_COMPANIES: string[] = [
     'Amazon', 'Flipkart', 'Swiggy', 'Zomato', 'Blinkit',
     'BigBasket', 'Dunzo', 'Zepto', 'JioMart', 'Myntra',
 ];
+
+// ─── Party / Group Invite ─────────────────────────────────────────────────────
+
+export interface PartySlot {
+    code: string;           // pre-generated 6-char alphanumeric OTP
+    phone: string | null;   // null = unclaimed
+    name: string | null;    // populated when resident adds manually
+    addedByResident: boolean;
+}
+
+export interface PartyInvite {
+    id: string;             // "grp-XXXX"
+    inviteLink: string;     // "https://sgate.app/grp-XXXX"
+    flatId: string;
+    hostName: string;
+    validFrom: string;
+    validUntil: string;
+    venue: string;
+    theme: number;
+    note: string;
+    maxGuests: number;
+    slots: PartySlot[];     // pre-generated pool
+}
+
+// In-memory store for demo
+const mockPartyInvites: Map<string, PartyInvite> = new Map();
+
+function genCode(): string {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+export interface CreatePartyInvitePayload {
+    flatId: string;
+    hostName: string;
+    validFrom: string;
+    validUntil: string;
+    venue: string;
+    maxGuests: number;
+    theme: number;
+    note: string;
+}
+
+export const createPartyInvite = async (data: CreatePartyInvitePayload): Promise<PartyInvite> => {
+    await delay(700);
+    const id = 'grp-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    const slots: PartySlot[] = Array.from({ length: data.maxGuests }, () => ({
+        code: genCode(), phone: null, name: null, addedByResident: false,
+    }));
+    const invite: PartyInvite = {
+        id, inviteLink: `https://sgate.app/${id}`,
+        ...data, slots,
+    };
+    mockPartyInvites.set(id, invite);
+    return invite;
+};
+
+/** Resident manually adds a guest → immediately claims a slot */
+export const addPartyGuest = async (inviteId: string, name: string, phone: string): Promise<PartySlot> => {
+    await delay(400);
+    const invite = mockPartyInvites.get(inviteId);
+    if (!invite) throw new Error('Invite not found');
+    const freeSlot = invite.slots.find(s => s.phone === null);
+    if (!freeSlot) throw new Error('No slots remaining');
+    freeSlot.phone = phone;
+    freeSlot.name = name;
+    freeSlot.addedByResident = true;
+    return freeSlot;
+};
+
+/** Guest self-service via link → enter phone → get code (or existing if already claimed) */
+export const claimPartySlot = async (inviteId: string, phone: string): Promise<{ code: string; invite: Omit<PartyInvite, 'slots'> }> => {
+    await delay(500);
+    const invite = mockPartyInvites.get(inviteId);
+    if (!invite) throw new Error('Invite not found');
+    // Already claimed by this phone?
+    const existing = invite.slots.find(s => s.phone === phone);
+    if (existing) return { code: existing.code, invite };
+    const free = invite.slots.find(s => s.phone === null);
+    if (!free) throw new Error('This invite is full');
+    free.phone = phone;
+    return { code: free.code, invite };
+};
+
+export const getPartyInvite = async (inviteId: string): Promise<PartyInvite> => {
+    await delay(300);
+    const invite = mockPartyInvites.get(inviteId);
+    if (!invite) throw new Error('Invite not found');
+    return invite;
+};
+
+export const removePartyGuest = async (inviteId: string, code: string): Promise<void> => {
+    await delay(300);
+    const invite = mockPartyInvites.get(inviteId);
+    if (!invite) return;
+    const slot = invite.slots.find(s => s.code === code);
+    if (slot) { slot.phone = null; slot.name = null; slot.addedByResident = false; }
+};
 
 // ─── Deliveries ───────────────────────────────────────────────────────────────
 
