@@ -133,8 +133,8 @@ export const getMyPreApprovals = async (status?: PreApprovalStatus): Promise<Pre
     return mockPreApprovals;
 };
 
-export const getPreApprovalQR = async (id: string): Promise<{ qrToken: string; qrCodeImage: string }> => {
-    return { qrToken: '', qrCodeImage: '' };
+export const getPreApprovalQR = async (id: string): Promise<{ qrToken: string }> => {
+    return { qrToken: '' };
 };
 
 export const cancelPreApproval = async (id: string): Promise<void> => {
@@ -386,7 +386,7 @@ export const getGatePasses = async (
 
 export const getGatePassQR = async (
     id: string
-): Promise<{ qrToken: string; qrCodeImage: string }> => {
+): Promise<{ qrToken: string }> => {
     const res = await api.get(`/gate/passes/${id}/qr`);
     return res.data.data;
 };

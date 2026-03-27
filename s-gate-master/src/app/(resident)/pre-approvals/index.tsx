@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, Modal, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Text, TouchableOpacity, View } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../../components/ui/Card';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
@@ -16,7 +17,6 @@ interface PreApproval {
     validUntil: string;
     status: 'ACTIVE' | 'EXPIRED' | 'USED' | 'CANCELLED';
     qrToken: string;
-    qrCodeUrl: string;
     usedCount: number;
     maxUses: number;
 }
@@ -119,7 +119,7 @@ export default function PreApprovalsScreen() {
                 {isActive && (
                     <View className="flex-row p-3 bg-gray-50 dark:bg-zinc-900/50 gap-3 border-t border-gray-100 dark:border-zinc-800">
                         <TouchableOpacity
-                            onPress={() => setSelectedQr(item.qrCodeUrl)}
+                            onPress={() => setSelectedQr(item.qrToken)}
                             className="flex-1 flex-row items-center justify-center py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-900/50"
                         >
                             <Ionicons name="qr-code" size={18} className="text-indigo-600 dark:text-indigo-400 mr-2" />
@@ -212,11 +212,9 @@ export default function PreApprovalsScreen() {
                         
                         <View className="p-4 border border-gray-200 rounded-2xl bg-white shadow-sm mb-8">
                             {selectedQr && (
-                                <Image 
-                                    source={{ uri: selectedQr }} 
-                                    style={{ width: 220, height: 220 }}
-                                    resizeMode="contain"
-                                />
+                                <View style={{ width: 220, height: 220, alignItems: 'center', justifyContent: 'center' }}>
+                                    <QRCode value={selectedQr} size={220} />
+                                </View>
                             )}
                         </View>
 

@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import { SgateMascot } from '@/components/Sgate/SgateMascot';
 import api from '@/services/api';
+import { QRCarousel } from '@/components/Sgate/QRCarousel';
 
 // ─── Visitor type options (matches API) ──────────────────────────────────────
 const VISITOR_TYPES = [
@@ -315,63 +316,27 @@ export default function CreatePreApprovalScreen() {
                 animationType="slide"
                 onRequestClose={handleClose}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalCard}>
-                        {/* Mascot */}
-                        <SgateMascot size={68} pose="thumbsup" />
-                        <Text style={styles.modalSuccessLabel}>Pass Generated!</Text>
-
-                        {/* Gate pass card */}
-                        <View style={styles.gatePassCard}>
-                            {/* Card header */}
-                            <View style={styles.gatePassHeader}>
-                                <Text style={styles.gatePassBrand}>
-                                    m<Text style={{ color: SgateColors.gold }}>gate</Text> Pass
-                                </Text>
-                                <View style={styles.gatePassActiveTag}>
-                                    <Text style={styles.gatePassActiveText}>ACTIVE</Text>
-                                </View>
-                            </View>
-
-                            {/* QR */}
-                            <View style={styles.gatePassBody}>
-                                {successResponse?.qrCodeUrl ? (
-                                    <Image
-                                        source={{ uri: successResponse.qrCodeUrl }}
-                                        style={styles.qrImage}
-                                        resizeMode="contain"
-                                    />
-                                ) : (
-                                    <View style={styles.qrPlaceholder}>
-                                        <Feather name="grid" size={40} color={SgateColors.t4} />
-                                    </View>
-                                )}
-                                <Text style={styles.qrHint}>Show this QR at the gate</Text>
-
-                                {/* Details */}
-                                {[
-                                    ['Visitor', successResponse?.visitorName],
-                                    ['Type', type.replace(/_/g, ' ')],
-                                    ['Valid Until', formatDate(validUntil) + ', ' + formatTime(validUntil)],
-                                ].map(([label, val], i) => (
-                                    <View key={i} style={styles.detailRow}>
-                                        <Text style={styles.detailLabel}>{label}</Text>
-                                        <Text style={styles.detailValue}>{val}</Text>
-                                    </View>
-                                ))}
-                            </View>
+                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.85)', padding: 0 }]}>
+                    {successResponse && (
+                        <View style={{ flex: 1, width: '100%', justifyContent: 'center' }}>
+                            <QRCarousel
+                                passes={[{
+                                    id: successResponse.id || Math.random().toString(),
+                                    code: successResponse.passcode || successResponse.id || 'N/A',
+                                    name: successResponse.visitorName || name.trim(),
+                                    type: type,
+                                    validUntil: new Date(validUntil).toLocaleString('en-IN', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    }),
+                                }]}
+                                hostName="You"
+                                onDone={handleClose}
+                            />
                         </View>
-
-                        {/* Actions */}
-                        <View style={styles.modalActions}>
-                            <TouchableOpacity style={styles.modalShareBtn} onPress={handleShare}>
-                                <Text style={styles.modalShareText}>Share</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.modalDoneBtn} onPress={handleClose}>
-                                <Text style={styles.modalDoneText}>Done</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                    )}
                 </View>
             </Modal>
         </SafeAreaView>

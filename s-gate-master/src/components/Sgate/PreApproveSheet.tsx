@@ -39,6 +39,7 @@ import type { PartyInvite, PartySlot } from '@/services/gate.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { SelectGuestsPanel } from './SelectGuestsPanel';
 import { Share } from 'react-native';
+import { QRCarousel, type QRPassData } from './QRCarousel';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1065,7 +1066,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     const [inviteValidFrom, setInviteValidFrom]= useState('');
     const [inviteValidUntil,setInviteValidUntil]= useState('');
     const [selectedGuestsToManage, setSelectedGuestsToManage] = useState<GuestEntry[]>([]);
-    const [generatedOTP,    setGeneratedOTP]   = useState('');
+    const [generatedPasses, setGeneratedPasses] = useState<QRPassData[]>([]);
     const [partyThemeData,  setPartyThemeData] = useState<{ theme: number; note: string }>({ theme: 0, note: '' });
 
     // ── Form state ────────────────────────────────────────────────────────────
@@ -1148,7 +1149,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     const H_PARTY_THEME   = SH * 0.85;
     const H_PARTY_FORM    = SH * 0.88;
     const H_PARTY_SUCCESS = SH * 0.92;
-    const H_SUCCESS       = SH * 0.50;
+    const H_SUCCESS       = SH * 0.92;
 
     const handleClose = useCallback(() => {
         if (isClosing.current) return;
@@ -1168,6 +1169,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
             setValidityDays(30); setDuration('8 hours');
             setEntriesLabel('One Entry');
             setSubmitting(false);
+            setGeneratedPasses([]);
 
             floatScale.value = 0;
             selectOp.value    = 1;
@@ -1255,6 +1257,9 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     const panGesture = useMemo(() => Gesture.Pan()
         // Allow this gesture to run at the same time as the ScrollView's native gesture
         .simultaneousWithExternalGesture(nativeScrollRef)
+        // Let horizontal swipes pass through to the QR carousel FlatList
+        .failOffsetX([-20, 20])
+        .activeOffsetY([-10, 10])
         .onUpdate((e) => {
             // Only drag the sheet down (never up — leave upward motion to the scroll view)
             if (e.translationY > 0) {
@@ -1689,7 +1694,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                                         if (data.guests.length === 0) { Alert.alert('Error', 'Add at least one guest.'); return; }
                                         setSubmitting(true);
                                         try {
-                                            let lastPasscode = '';
+                                            const newPasses: QRPassData[] = [];
                                             for (const g of data.guests) {
                                                 // Build a clean, explicit payload — only fields the backend accepts
                                                 const payload: Parameters<typeof createInvitePass>[0] = {
@@ -1704,10 +1709,17 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                                                 };
                                                 const res = await createInvitePass(payload);
                                                 if (res.passcode) {
-                                                    lastPasscode = res.passcode;
+                                                    newPasses.push({
+                                                        id: res.id || Math.random().toString(),
+                                                        code: res.passcode,
+                                                        name: g.name,
+                                                        type: guestSheetConfig?.type ?? 'GUEST',
+                                                        validUntil: guestSheetConfig?.validUntil ? new Date(guestSheetConfig.validUntil).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : undefined,
+                                                        note: guestSheetConfig?.note,
+                                                    });
                                                 }
                                             }
-                                            setGeneratedOTP(lastPasscode || 'ERROR');
+                                            setGeneratedPasses(newPasses);
                                             onSuccess?.({ type: 'GUEST' });
                                             showSuccess();
                                         } catch (err: any) {
@@ -1736,58 +1748,15 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                         <Animated.View style={[S.stepLayer, successAnimStyle]} pointerEvents={step === 'success' ? 'auto' : 'none'}>
                             {step === 'success' && (
                                 inviteType === 'GUEST' ? (
-                                    <ScrollView contentContainerStyle={S.otpCardWrap} showsVerticalScrollIndicator={false}>
-                                        <View style={S.otpCard}>
-                                            <Text style={S.otpCardTitle}>{user?.name || 'You'} has invited you.</Text>
-                                            
-                                            {/* Optional Note snippet if applicable */}
-                                            {guestSheetConfig?.note ? (
-                                                <Text style={S.otpCardHint}>"{guestSheetConfig.note}"</Text>
-                                            ) : null}
-
-                                            <Text style={S.otpCardInstruction}>Show this QR code or OTP to the guard at gate</Text>
-                                            
-                                            <View style={S.qrWrap}>
-                                                <QRCode value={generatedOTP} size={150} color="#1A1A1A" backgroundColor="#FAF6F0" />
-                                            </View>
-                                            
-                                            <View style={S.dividerWithText}>
-                                                <View style={S.dividerLine} />
-                                                <Text style={S.dividerText}>OR</Text>
-                                                <View style={S.dividerLine} />
-                                            </View>
-                                            
-                                            <View style={S.otpBox}>
-                                                <Text style={S.otpText}>{generatedOTP}</Text>
-                                            </View>
-                                            
-                                            <Text style={S.otpDate}>
-                                                {new Date(inviteValidFrom).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}, {new Date(inviteValidFrom).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}  to 
-                                                {"\n"}
-                                                {new Date(inviteValidUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}, {new Date(inviteValidUntil).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                                            </Text>
-
-                                            {user?.flatId ? (
-                                                <Text style={S.otpAddress}>
-                                                    {user?.flatId}{"\n"}
-                                                    Society Address, City - Pincode
-                                                </Text>
-                                            ) : null}
-
-                                            {/* Sgate logo text replacing mygate */}
-                                            <Text style={S.otpLogoText}>
-                                                <Feather name="grid" size={16} /> sgate
-                                            </Text>
-                                        </View>
-                                        
-                                        <Text style={S.otpShareHint}>Share this invite with your guest for a hassle-free entry</Text>
-                                        
-                                        <TouchableOpacity style={[S.ctaBtn, S.shareBtn]} activeOpacity={0.85} onPress={handleClose}>
-                                            <Feather name="share" size={18} color="#000" />
-                                            <Text style={[S.ctaText, { marginLeft: 8, color: '#000' }]}>Share</Text>
-                                        </TouchableOpacity>
-                                        
-                                    </ScrollView>
+                                    <View style={{ flex: 1, backgroundColor: 'transparent', borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden' }}>
+                                        <QRCarousel
+                                            passes={generatedPasses}
+                                            hostName={user?.name || 'You'}
+                                            flatInfo={user?.flat ? `${user.flat.block?.name ? user.flat.block.name + ' ' : ''}${user.flat.number}` : undefined}
+                                            societyInfo={user?.society ? { name: user.society.name, address: user.society.address, city: user.society.city } : undefined}
+                                            onDone={handleClose}
+                                        />
+                                    </View>
                                 ) : (
                                     <View style={S.successContent}>
                                         <View style={S.successCircle}>

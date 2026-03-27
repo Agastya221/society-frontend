@@ -39,7 +39,6 @@ export interface GatePass {
     qrToken?: string;
     // Helper fields that might come from backend response
     code?: string;
-    qrCodeUrl?: string;
     flat?: {
         flatNumber: string;
         block?: {
@@ -56,7 +55,6 @@ export interface GatePassResponse {
     id: string;
     code: string;
     status: string;
-    qrCodeUrl: string;
 }
 
 /**
