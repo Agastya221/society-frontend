@@ -82,9 +82,19 @@ function PassContent({
         addrSub.push('Hyderabad - 500052');
     }
     const addrSubLine = addrSub.join(',\n');
+    
+    const isPrivate = pass.type === 'PRIVATE';
 
     return (
         <View style={S.passContentWrapper}>
+            {/* ── Private Badge ── */}
+            {isPrivate && (
+                <View style={S.privateBadge}>
+                    <Feather name="lock" size={14} color="#7C5CC4" />
+                    <Text style={S.privateBadgeText}>PRIVATE INVITE</Text>
+                </View>
+            )}
+
             {/* ── Invite header ── */}
             <Text style={S.inviteTitle}>
                 <Text style={S.inviteBold}>{hostName || 'You'}</Text>
@@ -96,7 +106,9 @@ function PassContent({
             )}
 
             {/* ── Subtitle ── */}
-            <Text style={S.subtitle}>Show this QR code or OTP to the guard at gate</Text>
+            <Text style={S.subtitle}>
+                {isPrivate ? 'Silent entry. Show this code to the guard.' : 'Show this QR code or OTP to the guard at gate'}
+            </Text>
 
             {/* ── QR Code ── */}
             <View style={S.qrWrap}>
@@ -383,6 +395,25 @@ const S = StyleSheet.create({
     },
 
     // Invite
+    privateBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F0EBFF',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        marginTop: 30,
+        marginBottom: -20, // Negative margin to sit above title without pushing everything down too much
+        gap: 6,
+        borderWidth: 1,
+        borderColor: '#C9B8FF',
+    },
+    privateBadgeText: {
+        fontSize: 12,
+        fontFamily: SgateFonts.bold,
+        color: '#7C5CC4',
+        letterSpacing: 0.8,
+    },
     inviteTitle: {
         fontSize: 22,
         fontFamily: SgateFonts.regular,

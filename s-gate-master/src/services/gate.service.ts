@@ -176,37 +176,29 @@ const sanitizePhone = (phone?: string): string | undefined => {
 export const createInvitePass = async (data: CreateInvitePassPayload): Promise<InvitePass> => {
     const cleanData = { ...data, visitorPhone: sanitizePhone(data.visitorPhone) };
     console.log('📋 [createInvitePass] Payload being sent:', JSON.stringify(cleanData, null, 2));
-    const res = await api.post('/gate/invites/guest', cleanData);
-    const pass = res.data.data;
-    
-    // Convert to the old type for the mock home screen UI so it doesn't break
-    const newPass: PreApproval = {
-        id: pass.id,
-        visitorName: pass.visitorName || 'Guest',
-        visitorType: pass.type === 'QUICK' ? 'GUEST' : 'OTHER',
-        status: 'ACTIVE',
-        validFrom: pass.validFrom,
-        validUntil: pass.validUntil,
-        qrToken: pass.passcode || 'fallback',
-        flatId: data.flatId
-    };
-    mockPreApprovals.unshift(newPass);
-
-    return pass;
-};
-
-export const getMyInvitePasses = async (status?: InvitePassStatus): Promise<InvitePass[]> => {
-    await delay(300);
-    return [];
-};
-
-export const getInvitePassById = async (id: string): Promise<InvitePass> => {
-    const res = await api.get(`/gate/invites/${id}`);
+    const res = await api.post<{ success: boolean; data: InvitePass }>('/gate/invites/guest', cleanData);
     return res.data.data;
 };
 
-export const cancelInvitePass = async (id: string): Promise<void> => {
-    await api.patch(`/gate/invites/${id}/cancel`);
+export const getMyInvitePasses = async (status?: InvitePassStatus, type?: InvitePassType): Promise<InvitePass[]> => {
+    const params: Record<string, string> = {};
+    if (status) params.status = status;
+    if (type) params.type = type;
+    const res = await api.get<{ success: boolean; data: InvitePass[] }>('/gate/invites/guest', { params });
+    return res.data.data;
+};
+
+export const getInvitePassById = async (id: string): Promise<InvitePass> => {
+    const res = await api.get<{ success: boolean; data: InvitePass }>(`/gate/invites/guest/${id}`);
+    return res.data.data;
+};
+
+export const revokeInvitePass = async (id: string): Promise<void> => {
+    await api.patch(`/gate/invites/guest/${id}/revoke`);
+};
+
+export const deleteInvitePass = async (id: string): Promise<void> => {
+    await api.delete(`/gate/invites/guest/${id}`);
 };
 
 // Static delivery companies list (no API endpoint needed)
@@ -215,7 +207,7 @@ export const DELIVERY_COMPANIES: string[] = [
     'BigBasket', 'Dunzo', 'Zepto', 'JioMart', 'Myntra',
 ];
 
-// ─── Party / Group Invite ─────────────────────────────────────────────────────
+export type PartyInviteStatus = 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
 
 export interface PartySlot {
     code: string;           // pre-generated 6-char alphanumeric OTP
@@ -235,18 +227,11 @@ export interface PartyInvite {
     theme: number;
     note: string;
     maxGuests: number;
+    status: PartyInviteStatus;
     slots: PartySlot[];     // pre-generated pool
 }
 
-// In-memory store for demo
-const mockPartyInvites: Map<string, PartyInvite> = new Map();
-
-function genCode(): string {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
-}
-
 export interface CreatePartyInvitePayload {
-    flatId: string;
     hostName: string;
     validFrom: string;
     validUntil: string;
@@ -257,59 +242,51 @@ export interface CreatePartyInvitePayload {
 }
 
 export const createPartyInvite = async (data: CreatePartyInvitePayload): Promise<PartyInvite> => {
-    await delay(700);
-    const id = 'grp-' + Math.random().toString(36).substring(2, 6).toUpperCase();
-    const slots: PartySlot[] = Array.from({ length: data.maxGuests }, () => ({
-        code: genCode(), phone: null, name: null, addedByResident: false,
-    }));
-    const invite: PartyInvite = {
-        id, inviteLink: `https://sgate.app/${id}`,
-        ...data, slots,
-    };
-    mockPartyInvites.set(id, invite);
-    return invite;
+    const res = await api.post<{ success: boolean; data: PartyInvite }>('/gate/invites/party', data);
+    return res.data.data;
 };
 
 /** Resident manually adds a guest → immediately claims a slot */
 export const addPartyGuest = async (inviteId: string, name: string, phone: string): Promise<PartySlot> => {
-    await delay(400);
-    const invite = mockPartyInvites.get(inviteId);
-    if (!invite) throw new Error('Invite not found');
-    const freeSlot = invite.slots.find(s => s.phone === null);
-    if (!freeSlot) throw new Error('No slots remaining');
-    freeSlot.phone = phone;
-    freeSlot.name = name;
-    freeSlot.addedByResident = true;
-    return freeSlot;
+    const cleanPhone = sanitizePhone(phone);
+    const res = await api.post<{ success: boolean; data: PartySlot }>(`/gate/invites/party/${inviteId}/add-guest`, { name, phone: cleanPhone });
+    return res.data.data;
 };
 
 /** Guest self-service via link → enter phone → get code (or existing if already claimed) */
-export const claimPartySlot = async (inviteId: string, phone: string): Promise<{ code: string; invite: Omit<PartyInvite, 'slots'> }> => {
-    await delay(500);
-    const invite = mockPartyInvites.get(inviteId);
-    if (!invite) throw new Error('Invite not found');
-    // Already claimed by this phone?
-    const existing = invite.slots.find(s => s.phone === phone);
-    if (existing) return { code: existing.code, invite };
-    const free = invite.slots.find(s => s.phone === null);
-    if (!free) throw new Error('This invite is full');
-    free.phone = phone;
-    return { code: free.code, invite };
+export const claimPartySlot = async (inviteCode: string, phone: string): Promise<{ code: string; invite: Omit<PartyInvite, 'slots'> }> => {
+    const cleanPhone = sanitizePhone(phone);
+    const res = await api.post<{ success: boolean; data: { code: string; invite: Omit<PartyInvite, 'slots'> } }>(`/gate/invites/party/${inviteCode}/claim`, { phone: cleanPhone });
+    return res.data.data;
 };
 
 export const getPartyInvite = async (inviteId: string): Promise<PartyInvite> => {
-    await delay(300);
-    const invite = mockPartyInvites.get(inviteId);
-    if (!invite) throw new Error('Invite not found');
-    return invite;
+    const res = await api.get<{ success: boolean; data: PartyInvite }>(`/gate/invites/party/${inviteId}`);
+    return res.data.data;
+};
+
+export const cancelPartyInvite = async (inviteId: string): Promise<void> => {
+    await api.patch(`/gate/invites/party/${inviteId}/cancel`);
 };
 
 export const removePartyGuest = async (inviteId: string, code: string): Promise<void> => {
-    await delay(300);
-    const invite = mockPartyInvites.get(inviteId);
-    if (!invite) return;
-    const slot = invite.slots.find(s => s.code === code);
-    if (slot) { slot.phone = null; slot.name = null; slot.addedByResident = false; }
+    await api.delete(`/gate/invites/party/${inviteId}/guests/${code}`);
+};
+
+// ─── Guard App Verification ───────────────────────────────────────────────────
+
+export interface VerifyCodeResponse {
+    allowed: boolean;
+    reason?: string;
+    inviteType?: string;
+    visitorName?: string;
+    flatNumber?: string;
+    [key: string]: any;
+}
+
+export const verifyGuardCode = async (code: string): Promise<VerifyCodeResponse> => {
+    const res = await api.post<{ success: boolean; message: string; data: VerifyCodeResponse }>('/guard-app/verify-code', { code });
+    return res.data.data;
 };
 
 // ─── Deliveries ───────────────────────────────────────────────────────────────

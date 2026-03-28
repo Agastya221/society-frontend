@@ -4,7 +4,6 @@ import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { Feather } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
-import { createInvitePass, CreateInvitePassPayload } from '@/services/gate.service';
 
 type Tab = 'contacts' | 'recent' | 'manual';
 

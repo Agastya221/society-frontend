@@ -1,18 +1,18 @@
 import { create } from 'zustand';
-import type { Entry, EntryRequest, PreApproval } from '../types/api';
+import type { Entry, EntryRequest, InvitePass } from '../types/api';
 import * as gateService from '../services/gate.service';
 
 interface GateState {
     // ── State ──────────────────────────────────────────────────────────────
     pendingRequests: EntryRequest[];
     entries: Entry[];
-    preApprovals: PreApproval[];
+    invitePasses: InvitePass[];
     isLoading: boolean;
 
     // ── Actions ────────────────────────────────────────────────────────────
     fetchPendingRequests: () => Promise<void>;
     fetchEntries: (params?: gateService.GetEntriesParams) => Promise<void>;
-    fetchPreApprovals: () => Promise<void>;
+    fetchInvitePasses: () => Promise<void>;
     approveRequest: (id: string) => Promise<void>;
     rejectRequest: (id: string, reason?: string) => Promise<void>;
 }
@@ -20,7 +20,7 @@ interface GateState {
 export const useGateStore = create<GateState>((set, get) => ({
     pendingRequests: [],
     entries: [],
-    preApprovals: [],
+    invitePasses: [],
     isLoading: false,
 
     fetchPendingRequests: async () => {
@@ -49,13 +49,13 @@ export const useGateStore = create<GateState>((set, get) => ({
         }
     },
 
-    fetchPreApprovals: async () => {
+    fetchInvitePasses: async () => {
         set({ isLoading: true });
         try {
-            const preApprovals = await gateService.getMyPreApprovals('ACTIVE');
-            set({ preApprovals });
+            const invitePasses = await gateService.getMyInvitePasses('ACTIVE');
+            set({ invitePasses });
         } catch (err) {
-            console.error('fetchPreApprovals failed:', err);
+            console.error('fetchInvitePasses failed:', err);
         } finally {
             set({ isLoading: false });
         }

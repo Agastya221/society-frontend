@@ -232,16 +232,18 @@ function GuestOnce({ state }: { state: FormState }) {
     return (
         <View style={S.formBody}>
             {/* Make it private */}
-            <CheckCard
-                checked={state.isPrivate}
-                onToggle={() => state.setIsPrivate(!state.isPrivate)}
-                title="Make it private"
-                desc="Silent entry — flat members not notified"
-                rightIcon="lock"
-                rightIconBg={SgateColors.surface}
-                rightIconColor={SgateColors.t3}
-                cardStyle={S.checkCardBordered}
-            />
+            {state.guestMode !== 'private' && (
+                <CheckCard
+                    checked={state.isPrivate}
+                    onToggle={() => state.setIsPrivate(!state.isPrivate)}
+                    title="Make it private"
+                    desc="Silent entry — flat members not notified"
+                    rightIcon="lock"
+                    rightIconBg={SgateColors.surface}
+                    rightIconColor={SgateColors.t3}
+                    cardStyle={S.checkCardBordered}
+                />
+            )}
 
             {/* Date */}
             <Text style={S.fieldLabel}>SELECT DATE</Text>
@@ -452,6 +454,7 @@ function StandingFrequently({ state }: { state: FormState }) {
 
 // ─── Form state type ─────────────────────────────────────────────────────────
 interface FormState {
+    guestMode: GuestInviteMode;
     inviteType: InviteType;
     isPrivate: boolean; setIsPrivate: (v: boolean) => void;
     date: Date; openDate: () => void;
@@ -866,7 +869,7 @@ const THEME_ILLUSTRATIONS = ['🍛', '🎮', '🎊', '🎬', '♟️', '🎂'];
 const THEME_BGSRC = ['#F3EDE3', '#EDF0FF', '#FFF0F3', '#EDF8F8', '#F5F5F5', '#FFF3E0'];
 
 function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: () => void }) {
-    const [guests, setGuests] = useState<PartySlot[]>(invite.slots.filter(s => s.phone !== null));
+    const [guests, setGuests] = useState<PartySlot[]>(invite.slots?.filter(s => s.phone !== null) || []);
     const [addName, setAddName]   = useState('');
     const [addPhone, setAddPhone] = useState('');
     const [showAdd, setShowAdd]   = useState(false);
@@ -1505,13 +1508,23 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
 
             const maxUses = entriesLabel === 'Unlimited' ? -1 : entriesLabel === 'Two Entries' ? 2 : 1;
 
+            const parseTime = (str: string) => {
+                if (!str) return undefined;
+                const [timeStr, modifier] = str.toLowerCase().split(' ');
+                let [hours, minutes] = timeStr.split(':').map(Number);
+                if (modifier === 'pm' && hours < 12) hours += 12;
+                if (modifier === 'am' && hours === 12) hours = 0;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            };
+
             let result: { id: string };
 
             if (inviteType === 'GUEST') {
                 const w = tab === 'once' ? buildOnceWindow() : buildFreqWindow();
                 
+                const finalType = guestMode === 'private' ? 'PRIVATE' : tab === 'once' ? 'QUICK' : 'FREQUENT';
                 // Cross-fade: form → guests, sheet expands
-                setGuestSheetConfig({ type: tab === 'once' ? 'QUICK' : 'FREQUENT', flatId, isPrivate, validFrom: w.validFrom, validUntil: w.validUntil, maxUses: tab === 'once' ? 1 : maxUses });
+                setGuestSheetConfig({ type: finalType, flatId, isPrivate: guestMode === 'private' || isPrivate, validFrom: w.validFrom, validUntil: w.validUntil, maxUses: tab === 'once' ? 1 : maxUses, timeFrom: tab === 'frequently' ? parseTime(timeFrom) : undefined, timeUntil: tab === 'frequently' ? parseTime(timeUntil) : undefined, allowedDays: tab === 'frequently' ? mapDays(selectedDays) : undefined });
                 setInviteValidFrom(w.validFrom);
                 setInviteValidUntil(w.validUntil);
                 formOp.value     = withTiming(0, { duration: 180 });
@@ -1531,25 +1544,25 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                     const digs = digits.join('');
                     if (digs.length < 4) { Alert.alert('Required', 'Enter the last 4 digits of the vehicle number.'); setSubmitting(false); return; }
                     const vF = new Date(), vU = new Date(vF); vU.setHours(vU.getHours() + durationHours);
-                    result = await createInvitePass({ type: 'QUICK', flatId, vehicleNumber: digs, validFrom: vF.toISOString(), validUntil: vU.toISOString() });
+                    result = await createInvitePass({ type: 'QUICK', purpose: inviteType, flatId, vehicleNumber: digs, validFrom: vF.toISOString(), validUntil: vU.toISOString() });
                 } else {
                     const w = buildFreqWindow();
-                    result = await createInvitePass({ type: 'FREQUENT', flatId, allowedDays: mapDays(selectedDays), timeFrom, timeUntil, ...w, maxUses });
+                    result = await createInvitePass({ type: 'FREQUENT', purpose: inviteType, flatId, allowedDays: mapDays(selectedDays), timeFrom: parseTime(timeFrom), timeUntil: parseTime(timeUntil), ...w, maxUses });
                 }
 
             } else if (inviteType === 'DELIVERY') {
                 if (tab === 'once') {
                     const vF = new Date(), vU = new Date(vF); vU.setHours(vU.getHours() + durationHours);
-                    result = await createInvitePass({ type: 'QUICK', flatId, isPrivate: surpriseDelivery, companyName: company || undefined, validFrom: vF.toISOString(), validUntil: vU.toISOString() });
+                    result = await createInvitePass({ type: 'QUICK', purpose: inviteType, flatId, isPrivate: surpriseDelivery, companyName: company || undefined, validFrom: vF.toISOString(), validUntil: vU.toISOString() });
                 } else {
                     if (!company) { Alert.alert('Required', 'Select a delivery company.'); setSubmitting(false); return; }
                     const w = buildFreqWindow();
-                    result = await createInvitePass({ type: 'FREQUENT', flatId, companies: [company], allowedDays: mapDays(selectedDays), timeFrom, timeUntil, ...w, maxUses });
+                    result = await createInvitePass({ type: 'FREQUENT', purpose: inviteType, flatId, companies: [company], allowedDays: mapDays(selectedDays), timeFrom: parseTime(timeFrom), timeUntil: parseTime(timeUntil), ...w, maxUses });
                 }
 
             } else {
                 const w = tab === 'once' ? buildOnceWindow() : buildFreqWindow();
-                result = await createInvitePass({ type: tab === 'once' ? 'QUICK' : 'FREQUENT', flatId, allowedDays: tab === 'frequently' ? mapDays(selectedDays) : undefined, timeFrom: tab === 'frequently' ? timeFrom : undefined, timeUntil: tab === 'frequently' ? timeUntil : undefined, ...w, maxUses: tab === 'frequently' ? maxUses : 1 });
+                result = await createInvitePass({ type: tab === 'once' ? 'QUICK' : 'FREQUENT', purpose: inviteType, flatId, allowedDays: tab === 'frequently' ? mapDays(selectedDays) : undefined, timeFrom: tab === 'frequently' ? parseTime(timeFrom) : undefined, timeUntil: tab === 'frequently' ? parseTime(timeUntil) : undefined, ...w, maxUses: tab === 'frequently' ? maxUses : 1 });
             }
 
             onSuccess?.({ type: inviteType, id: result.id });
@@ -1564,7 +1577,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     const typeConfig = TYPES.find(t => t.key === inviteType);
 
     const formState: FormState = {
-        inviteType, isPrivate, setIsPrivate, date, openDate, time, openTime,
+        guestMode, inviteType, isPrivate, setIsPrivate, date, openDate, time, openTime,
         duration, setDuration, digits, onDigit, digitRefs,
         surpriseDelivery, setSurpriseDelivery, validityDays, setValidityDays,
         selectedDays, setSelectedDays, entriesLabel, setEntriesLabel,
@@ -1640,7 +1653,6 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                                         setSubmitting(true);
                                         try {
                                             const result = await createPartyInvite({
-                                                flatId: user.flatId,
                                                 hostName: user.name ?? 'Resident',
                                                 validFrom: data.validFrom,
                                                 validUntil: data.validUntil,
@@ -1706,6 +1718,9 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                                                     validUntil: guestSheetConfig?.validUntil,
                                                     isPrivate: guestSheetConfig?.isPrivate ?? false,
                                                     maxUses: guestSheetConfig?.maxUses ?? 1,
+                                                    timeFrom: guestSheetConfig?.timeFrom,
+                                                    timeUntil: guestSheetConfig?.timeUntil,
+                                                    allowedDays: guestSheetConfig?.allowedDays,
                                                 };
                                                 const res = await createInvitePass(payload);
                                                 if (res.passcode) {
