@@ -26,7 +26,7 @@ import { SectionHeader } from '../../components/ui/SectionHeader';
 import { StatusPill } from '../../components/ui/StatusPill';
 import { Avatar } from '../../components/ui/Avatar';
 import { ApprovalCard } from '../../components/visitors/ApprovalCard';
-import { PreApproveSheet } from '../../components/Sgate/PreApproveSheet';
+import { PreApproveSheet } from '../../components/pre-approvals/PreApproveSheet';
 import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
 
 import { useAuthStore } from '../../store/useAuthStore';

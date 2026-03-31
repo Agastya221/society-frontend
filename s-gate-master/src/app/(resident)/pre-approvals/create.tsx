@@ -18,7 +18,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
-import { QRCarousel } from '@/components/Sgate/QRCarousel';
+import { QRCarousel } from '@/components/pre-approvals/QRCarousel';
 import { createPreApproved } from '@/services/gate.service';
 import type {
     CreatePreApprovedPayload,

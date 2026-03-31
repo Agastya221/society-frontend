@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import { Avatar } from '@/components/ui/Avatar';
 import { SgateBrandMark } from '@/components/Sgate/SgateBrandMark';
-import { PreApproveSheet } from '@/components/Sgate/PreApproveSheet';
+import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
 
