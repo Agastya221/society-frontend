@@ -1,17 +1,45 @@
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LOCAL_CATEGORIES, LocalCategory } from '../../../mocks/localDirectory';
+import api from '../../../services/api';
 
 const SgateColors = { black: '#0D0F14', gold: '#FFB800', goldDeep: '#E5A500', goldPale: '#FFF8E1', green: '#00D68F', greenBg: '#E5FBF3', bg: '#F5F4F0', card: '#FFFFFF', surface: '#EEECEA', border: '#E5E3DE', borderSoft: '#F0EEEB', t1: '#0D0F14', t2: '#4A4D57', t3: '#8A8D97', t4: '#B5B8C0' };
-const SgateFonts = { regular: 'Sora-Regular', medium: 'Sora-Medium', semiBold: 'Sora-SemiBold', bold: 'Sora-Bold', extraBold: 'Sora-ExtraBold' };
+const SgateFonts = { regular: 'Sora-Regular', medium: 'Sora-Medium', semiBold: 'Sora-SemiBold', bold: 'Sora-Bold' };
+
+interface LocalCategory {
+  name: string;
+  count: number;
+}
 
 export default function LocalDirectoryIndex() {
   const router = useRouter();
   const [search, setSearch] = useState('');
-  const filtered = LOCAL_CATEGORIES.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+  const [categories, setCategories] = useState<LocalCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get('/resident/local-directory/categories');
+      const raw = res.data?.data ?? res.data;
+      const list: any[] = Array.isArray(raw) ? raw : [];
+      // Backend sends { category, count } — map to { name, count }
+      setCategories(list.map(item => ({
+        name: item.name ?? item.category ?? '',
+        count: item.count ?? 0,
+      })));
+    } catch (err) {
+      console.error('Failed to fetch local directory categories:', err);
+      setCategories([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(useCallback(() => { fetchCategories(); }, []));
+
+  const filtered = categories.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
 
   const renderItem = ({ item }: { item: LocalCategory }) => (
     <TouchableOpacity style={styles.row} activeOpacity={0.7}
@@ -34,22 +62,28 @@ export default function LocalDirectoryIndex() {
         <Text style={styles.headerTitle}>Local Directory</Text>
         <View style={{ width: 22 }} />
       </View>
-      <FlatList data={filtered} keyExtractor={item => item.name} renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={<View>
-          <View style={styles.searchBar}>
-            <Feather name="search" size={16} color={SgateColors.t3} />
-            <TextInput style={styles.searchInput} placeholder="Search Category or Name" placeholderTextColor={SgateColors.t4} value={search} onChangeText={setSearch} />
-            {search.length > 0 && <TouchableOpacity onPress={() => setSearch('')}><Feather name="x" size={16} color={SgateColors.t3} /></TouchableOpacity>}
-          </View>
-          <Text style={styles.subtitle}>Discover useful contacts shared by residents. Contribute to grow this list.</Text>
-        </View>}
-        ListEmptyComponent={<View style={styles.emptyWrap}>
-          <Feather name="search" size={32} color={SgateColors.t4} />
-          <Text style={styles.emptyTitle}>No categories found</Text>
-          <Text style={styles.emptySubtitle}>Try a different search term</Text>
-        </View>}
-      />
+
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+      ) : (
+        <FlatList data={filtered} keyExtractor={item => item.name} renderItem={renderItem}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={<View>
+            <View style={styles.searchBar}>
+              <Feather name="search" size={16} color={SgateColors.t3} />
+              <TextInput style={styles.searchInput} placeholder="Search Category or Name" placeholderTextColor={SgateColors.t4} value={search} onChangeText={setSearch} />
+              {search.length > 0 && <TouchableOpacity onPress={() => setSearch('')}><Feather name="x" size={16} color={SgateColors.t3} /></TouchableOpacity>}
+            </View>
+            <Text style={styles.subtitle}>Discover useful contacts shared by residents. Contribute to grow this list.</Text>
+          </View>}
+          ListEmptyComponent={<View style={styles.emptyWrap}>
+            <Feather name="search" size={32} color={SgateColors.t4} />
+            <Text style={styles.emptyTitle}>No categories found</Text>
+            <Text style={styles.emptySubtitle}>Try a different search term</Text>
+          </View>}
+        />
+      )}
+
       <TouchableOpacity style={styles.fab} activeOpacity={0.85}>
         <Feather name="plus" size={18} color={SgateColors.black} />
         <Text style={styles.fabLabel}>Add contact</Text>
@@ -60,6 +94,7 @@ export default function LocalDirectoryIndex() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SgateColors.bg },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
   headerTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
   listContent: { padding: 16, paddingBottom: 100 },

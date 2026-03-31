@@ -34,7 +34,8 @@ import Animated, {
     type SharedValue,
 } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
-import { createInvitePass, createPartyInvite, addPartyGuest, removePartyGuest, DELIVERY_COMPANIES } from '@/services/gate.service';
+import { createInvitePass, createPartyInvite, addPartyGuest, removePartyGuest, DELIVERY_COMPANIES, createPreApproved } from '@/services/gate.service';
+import type { HelpCategory } from '@/types/api';
 import type { PartyInvite, PartySlot } from '@/services/gate.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { SelectGuestsPanel } from './SelectGuestsPanel';
@@ -151,27 +152,49 @@ function Dropdown({ value, options, onSelect, icon = 'chevron-down', title }: {
     );
 }
 
-// ─── Check card (Make it private / Surprise Delivery) ────────────────────────
-function CheckCard({ checked, onToggle, title, desc, rightIcon, rightIconBg, rightIconColor, cardStyle }: {
+// ─── Check card (Make it private / Surprise Delivery / Safe Pickup) ──────────
+function CheckCard({ checked, onToggle, title, desc, rightIcon, rightIconBg, rightIconColor,
+    cardStyle, recommended, activeBg, activeCheckColor, knowMore }: {
     checked: boolean; onToggle: () => void; title: string; desc: string;
     rightIcon?: React.ComponentProps<typeof Feather>['name'];
     rightIconBg?: string; rightIconColor?: string;
     cardStyle?: object;
+    recommended?: boolean;
+    activeBg?: string;
+    activeCheckColor?: string;
+    knowMore?: () => void;
 }) {
     return (
-        <TouchableOpacity style={[S.checkCard, cardStyle]} onPress={onToggle} activeOpacity={0.7}>
-            <View style={[S.checkbox, checked && S.checkboxOn]}>
-                {checked && <Feather name="check" size={11} color="#fff" />}
-            </View>
-            <View style={S.checkTexts}>
-                <Text style={S.checkTitle}>{title}</Text>
-                <Text style={S.checkDesc}>{desc}</Text>
-            </View>
-            {rightIcon && (
-                <View style={[S.checkIconCircle, { backgroundColor: rightIconBg ?? SgateColors.surface }]}>
-                    <Feather name={rightIcon} size={16} color={rightIconColor ?? SgateColors.t3} />
+        <TouchableOpacity
+            style={[S.checkCard, cardStyle, checked && activeBg ? { backgroundColor: activeBg } : null]}
+            onPress={onToggle}
+            activeOpacity={0.7}
+        >
+            {recommended && (
+                <View style={S.recommendedBadge}>
+                    <Text style={S.recommendedText}>Recommended</Text>
                 </View>
             )}
+            <View style={S.checkCardRow}>
+                <View style={[S.checkbox, checked && (activeCheckColor ? { backgroundColor: activeCheckColor, borderColor: activeCheckColor } : S.checkboxOn)]}>
+                    {checked && <Feather name="check" size={11} color="#fff" />}
+                </View>
+                <View style={S.checkTexts}>
+                    <Text style={[S.checkTitle, checked && activeBg ? { color: activeCheckColor ?? SgateColors.t1 } : null]}>{title}</Text>
+                    <Text style={S.checkDesc}>
+                        {desc}
+                        {knowMore && (
+                            <Text style={[S.knowMoreLink, checked && activeBg ? { color: activeCheckColor ?? SgateColors.goldDeep } : null]}
+                                onPress={e => { e.stopPropagation?.(); knowMore(); }}> Know more »</Text>
+                        )}
+                    </Text>
+                </View>
+                {rightIcon && (
+                    <View style={[S.checkIconCircle, { backgroundColor: rightIconBg ?? SgateColors.surface }]}>
+                        <Feather name={rightIcon} size={16} color={rightIconColor ?? SgateColors.t3} />
+                    </View>
+                )}
+            </View>
         </TouchableOpacity>
     );
 }
@@ -273,8 +296,25 @@ function GuestOnce({ state }: { state: FormState }) {
 
 // ─── Cab Once ────────────────────────────────────────────────────────────────
 function CabOnce({ state }: { state: FormState }) {
+    const VIOLET = '#7C3AED';
+    const VIOLET_BG = '#EDE9FE';
+
     return (
         <View style={S.formBody}>
+            {/* Safe Pickup Mode card */}
+            <CheckCard
+                checked={state.safeMode}
+                onToggle={() => state.setSafeMode(!state.safeMode)}
+                title="Safe Pickup Mode"
+                desc="No need to share flat details with the cab driver or guard."
+                rightIcon="shield"
+                rightIconBg={state.safeMode ? VIOLET + '22' : SgateColors.surface}
+                rightIconColor={state.safeMode ? VIOLET : SgateColors.t3}
+                recommended
+                activeBg={VIOLET_BG}
+                activeCheckColor={VIOLET}
+                cardStyle={[S.checkCardBordered, { marginBottom: 16 }]}
+            />
 
             {/* Duration text */}
             <Text style={S.bodyLine}>
@@ -285,8 +325,10 @@ function CabOnce({ state }: { state: FormState }) {
             <Dropdown value={state.duration} options={DURATIONS.slice(0, 5)}
                 onSelect={state.setDuration} title="Duration" />
 
-            {/* Vehicle digits */}
-            <Text style={S.fieldLabel}>ADD LAST 4-DIGITS OF VEHICLE NO.</Text>
+            {/* Vehicle digits — always required for cab verification at gate */}
+            <Text style={[S.fieldLabel, { color: state.safeMode ? VIOLET : SgateColors.ink, marginTop: 8 }]}>
+                ADD LAST 4-DIGITS OF VEHICLE NO.
+            </Text>
             <View style={S.digitRow}>
                 {state.digits.map((d, i) => (
                     <TextInput
@@ -302,6 +344,11 @@ function CabOnce({ state }: { state: FormState }) {
                     />
                 ))}
             </View>
+            <Text style={[S.checkDesc, { color: state.safeMode ? VIOLET : SgateColors.t3, marginBottom: 8 }]}>
+                {state.safeMode
+                    ? 'Vehicle number will be used for Safe Pickup verification at the gate.'
+                    : 'Vehicle number is required for cab verification at the gate.'}
+            </Text>
 
             <TouchableOpacity style={S.advLink}>
                 <Text style={S.advText}>Advanced Options »</Text>
@@ -312,23 +359,73 @@ function CabOnce({ state }: { state: FormState }) {
 
 // ─── Delivery Once ───────────────────────────────────────────────────────────
 function DeliveryOnce({ state }: { state: FormState }) {
+    const VIOLET = '#7C3AED';
+    const VIOLET_BG = '#EDE9FE';
+
     return (
         <View style={S.formBody}>
+            {/* Surprise Delivery card */}
             <CheckCard
                 checked={state.surpriseDelivery}
                 onToggle={() => state.setSurpriseDelivery(!state.surpriseDelivery)}
                 title="Surprise Delivery"
-                desc="Deliveries without notifying flat members."
-                cardStyle={S.checkCardBordered}
+                desc="This allows deliveries without notifying your flat members."
+                rightIcon="gift"
+                rightIconBg={state.surpriseDelivery ? VIOLET + '22' : SgateColors.surface}
+                rightIconColor={state.surpriseDelivery ? VIOLET : SgateColors.t3}
+                activeBg={VIOLET_BG}
+                activeCheckColor={VIOLET}
+                cardStyle={[S.checkCardBordered, { marginBottom: 16 }]}
             />
 
-            <Text style={S.bodyLine}>
-                Allow delivery executive to enter{' '}
-                <Text style={S.bodyUnderline}>today</Text>
-                {' '}once in next
-            </Text>
-            <Dropdown value={state.duration} options={DURATIONS.slice(0, 5)}
-                onSelect={state.setDuration} title="Duration" />
+            {state.surpriseDelivery ? (
+                /* ── Surprise mode: show date + time + company ── */
+                <>
+                    <Text style={S.fieldLabel}>SELECT DATE</Text>
+                    <TouchableOpacity style={S.dropRow} onPress={state.openDate} activeOpacity={0.7}>
+                        <Text style={S.dropText}>{isToday(state.date) ? 'Today' : fmtDateShort(state.date)}</Text>
+                        <Feather name="calendar" size={18} color={SgateColors.t3} />
+                    </TouchableOpacity>
+
+                    <View style={S.twoCol}>
+                        <View style={S.col}>
+                            <Text style={S.fieldLabel}>STARTING FROM</Text>
+                            <TouchableOpacity style={S.dropRow} onPress={state.openTime} activeOpacity={0.7}>
+                                <Text style={S.dropText}>{fmt12(state.time)}</Text>
+                                <Feather name="clock" size={18} color={SgateColors.t3} />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={S.col}>
+                            <Text style={S.fieldLabel}>VALID FOR</Text>
+                            <Dropdown value={state.duration} options={DURATIONS.slice(0, 5)}
+                                onSelect={state.setDuration} icon="clock" title="Valid For" />
+                        </View>
+                    </View>
+
+                    <Text style={S.fieldLabel}>COMPANY NAME</Text>
+                    <Dropdown
+                        value={state.company || 'Select company'}
+                        options={DELIVERY_COMPANIES}
+                        onSelect={state.setCompany}
+                        title="Company"
+                    />
+
+                    <Text style={[S.checkDesc, { color: VIOLET, marginTop: 4 }]}>
+                        Leave at Gate is disabled for surprise deliveries
+                    </Text>
+                </>
+            ) : (
+                /* ── Normal mode: simple duration ── */
+                <>
+                    <Text style={S.bodyLine}>
+                        Allow delivery executive to enter{' '}
+                        <Text style={S.bodyUnderline}>today</Text>
+                        {' '}once in next
+                    </Text>
+                    <Dropdown value={state.duration} options={DURATIONS.slice(0, 5)}
+                        onSelect={state.setDuration} title="Duration" />
+                </>
+            )}
 
             <TouchableOpacity style={S.advLink}>
                 <Text style={S.advText}>Advanced Options</Text>
@@ -337,10 +434,37 @@ function DeliveryOnce({ state }: { state: FormState }) {
     );
 }
 
+const SERVICE_CATEGORIES: { label: string; value: HelpCategory }[] = [
+    { label: 'Plumber',          value: 'PLUMBER'          },
+    { label: 'Electrician',      value: 'ELECTRICIAN'      },
+    { label: 'Carpenter',        value: 'CARPENTER'        },
+    { label: 'Painter',          value: 'PAINTER'          },
+    { label: 'Tutor',            value: 'TUTOR'            },
+    { label: 'Beautician',       value: 'BEAUTICIAN'       },
+    { label: 'Fitness Trainer',  value: 'FITNESS_TRAINER'  },
+    { label: 'Physiotherapist',  value: 'PHYSIOTHERAPIST'  },
+    { label: 'Cook',             value: 'COOK'             },
+    { label: 'Pest Control',     value: 'PEST_CONTROL'     },
+    { label: 'Appliance Repair', value: 'APPLIANCE_REPAIR' },
+    { label: 'Other',            value: 'OTHER'            },
+];
+
 // ─── Service Once ────────────────────────────────────────────────────────────
 function ServiceOnce({ state }: { state: FormState }) {
     return (
         <View style={S.formBody}>
+            <Text style={S.fieldLabel}>SERVICE CATEGORY</Text>
+            <Dropdown
+                value={state.serviceCategory
+                    ? SERVICE_CATEGORIES.find(c => c.value === state.serviceCategory)?.label ?? state.serviceCategory
+                    : 'Select category'}
+                options={SERVICE_CATEGORIES.map(c => c.label)}
+                onSelect={(label) => {
+                    const cat = SERVICE_CATEGORIES.find(c => c.label === label);
+                    if (cat) state.setServiceCategory(cat.value);
+                }}
+                title="Service Category"
+            />
             <Text style={S.fieldLabel}>SELECT DATE</Text>
             <TouchableOpacity style={S.dropRow} onPress={state.openDate} activeOpacity={0.7}>
                 <Text style={S.dropText}>{isToday(state.date) ? 'Today' : fmtDateShort(state.date)}</Text>
@@ -463,12 +587,14 @@ interface FormState {
     digits: string[]; onDigit: (i: number, v: string) => void;
     digitRefs: React.MutableRefObject<(TextInput | null)[]>;
     surpriseDelivery: boolean; setSurpriseDelivery: (v: boolean) => void;
+    safeMode: boolean; setSafeMode: (v: boolean) => void;
     validityDays: number; setValidityDays: (v: number) => void;
     selectedDays: string; setSelectedDays: (v: string) => void;
     entriesLabel: string; setEntriesLabel: (v: string) => void;
     company: string; setCompany: (v: string) => void;
     timeFrom: string; setTimeFrom: (v: string) => void;
     timeUntil: string; setTimeUntil: (v: string) => void;
+    serviceCategory: HelpCategory | null; setServiceCategory: (v: HelpCategory | null) => void;
     nativeScrollRef: React.RefObject<any>;
 }
 
@@ -1079,12 +1205,14 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     const [duration,         setDuration]         = useState('8 hours');
     const [digits,           setDigits]           = useState(['','','','']);
     const [surpriseDelivery, setSurpriseDelivery] = useState(false);
+    const [safeMode,         setSafeMode]         = useState(true); // default ON — Safe Pickup recommended
     const [validityDays,     setValidityDays]     = useState(30);
     const [selectedDays,     setSelectedDays]     = useState('All days of Week');
     const [entriesLabel,     setEntriesLabel]     = useState('One Entry');
     const [company,          setCompany]          = useState('');
     const [timeFrom,         setTimeFrom]         = useState('00:00 am');
     const [timeUntil,        setTimeUntil]        = useState('11:59 pm');
+    const [serviceCategory,  setServiceCategory]  = useState<HelpCategory | null>(null);
     const [submitting,       setSubmitting]       = useState(false);
 
     // ── Date/time picker ──────────────────────────────────────────────────────
@@ -1540,29 +1668,94 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                 return;
 
             } else if (inviteType === 'CAB') {
+                const digs = digits.join('');
+                if (digs.length < 4) { Alert.alert('Required', 'Enter the last 4 digits of the vehicle number for gate verification.'); setSubmitting(false); return; }
                 if (tab === 'once') {
-                    const digs = digits.join('');
-                    if (digs.length < 4) { Alert.alert('Required', 'Enter the last 4 digits of the vehicle number.'); setSubmitting(false); return; }
-                    const vF = new Date(), vU = new Date(vF); vU.setHours(vU.getHours() + durationHours);
-                    result = await createInvitePass({ type: 'QUICK', purpose: inviteType, flatId, vehicleNumber: digs, validFrom: vF.toISOString(), validUntil: vU.toISOString() });
+                    const w = buildOnceWindow();
+                    result = await createPreApproved({
+                        type: 'CAB',
+                        mode: safeMode ? 'SAFE' : 'NORMAL',
+                        scheduleType: 'ONCE',
+                        date: w.validFrom.slice(0, 10),
+                        startTime: new Date(w.validFrom).toTimeString().slice(0, 5),
+                        endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
+                        vehicleLast4Digits: digs,
+                    }) as { id: string };
                 } else {
                     const w = buildFreqWindow();
-                    result = await createInvitePass({ type: 'FREQUENT', purpose: inviteType, flatId, allowedDays: mapDays(selectedDays), timeFrom: parseTime(timeFrom), timeUntil: parseTime(timeUntil), ...w, maxUses });
+                    result = await createPreApproved({
+                        type: 'CAB',
+                        mode: safeMode ? 'SAFE' : 'NORMAL',
+                        scheduleType: 'RECURRING',
+                        validFrom: w.validFrom,
+                        validUntil: w.validUntil,
+                        daysOfWeek: mapDays(selectedDays) as any,
+                        timeFrom: parseTime(timeFrom),
+                        timeTo: parseTime(timeUntil),
+                        entriesPerDay: maxUses < 0 ? 10 : maxUses,
+                        vehicleLast4Digits: digs,
+                    }) as { id: string };
                 }
 
             } else if (inviteType === 'DELIVERY') {
                 if (tab === 'once') {
-                    const vF = new Date(), vU = new Date(vF); vU.setHours(vU.getHours() + durationHours);
-                    result = await createInvitePass({ type: 'QUICK', purpose: inviteType, flatId, isPrivate: surpriseDelivery, companyName: company || undefined, validFrom: vF.toISOString(), validUntil: vU.toISOString() });
+                    const w = buildOnceWindow();
+                    result = await createPreApproved({
+                        type: 'DELIVERY',
+                        mode: surpriseDelivery ? 'SURPRISE' : 'NORMAL',
+                        scheduleType: 'ONCE',
+                        date: w.validFrom.slice(0, 10),
+                        startTime: new Date(w.validFrom).toTimeString().slice(0, 5),
+                        endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
+                        companyName: company || undefined,
+                        isSurprise: surpriseDelivery,
+                    }) as { id: string };
                 } else {
                     if (!company) { Alert.alert('Required', 'Select a delivery company.'); setSubmitting(false); return; }
                     const w = buildFreqWindow();
-                    result = await createInvitePass({ type: 'FREQUENT', purpose: inviteType, flatId, companies: [company], allowedDays: mapDays(selectedDays), timeFrom: parseTime(timeFrom), timeUntil: parseTime(timeUntil), ...w, maxUses });
+                    result = await createPreApproved({
+                        type: 'DELIVERY',
+                        mode: 'NORMAL',
+                        scheduleType: 'RECURRING',
+                        validFrom: w.validFrom,
+                        validUntil: w.validUntil,
+                        daysOfWeek: mapDays(selectedDays) as any,
+                        timeFrom: parseTime(timeFrom),
+                        timeTo: parseTime(timeUntil),
+                        entriesPerDay: maxUses < 0 ? 10 : maxUses,
+                        companyName: company,
+                    }) as { id: string };
                 }
 
             } else {
-                const w = tab === 'once' ? buildOnceWindow() : buildFreqWindow();
-                result = await createInvitePass({ type: tab === 'once' ? 'QUICK' : 'FREQUENT', purpose: inviteType, flatId, allowedDays: tab === 'frequently' ? mapDays(selectedDays) : undefined, timeFrom: tab === 'frequently' ? parseTime(timeFrom) : undefined, timeUntil: tab === 'frequently' ? parseTime(timeUntil) : undefined, ...w, maxUses: tab === 'frequently' ? maxUses : 1 });
+                // SERVICE → HELP
+                if (!serviceCategory) { Alert.alert('Required', 'Please select a service category.'); setSubmitting(false); return; }
+                if (tab === 'once') {
+                    const w = buildOnceWindow();
+                    result = await createPreApproved({
+                        type: 'HELP',
+                        mode: 'NORMAL',
+                        scheduleType: 'ONCE',
+                        date: w.validFrom.slice(0, 10),
+                        startTime: new Date(w.validFrom).toTimeString().slice(0, 5),
+                        endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
+                        category: serviceCategory,
+                    }) as { id: string };
+                } else {
+                    const w = buildFreqWindow();
+                    result = await createPreApproved({
+                        type: 'HELP',
+                        mode: 'NORMAL',
+                        scheduleType: 'RECURRING',
+                        validFrom: w.validFrom,
+                        validUntil: w.validUntil,
+                        daysOfWeek: mapDays(selectedDays) as any,
+                        timeFrom: parseTime(timeFrom),
+                        timeTo: parseTime(timeUntil),
+                        entriesPerDay: maxUses < 0 ? 10 : maxUses,
+                        category: serviceCategory,
+                    }) as { id: string };
+                }
             }
 
             onSuccess?.({ type: inviteType, id: result.id });
@@ -1579,9 +1772,10 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     const formState: FormState = {
         guestMode, inviteType, isPrivate, setIsPrivate, date, openDate, time, openTime,
         duration, setDuration, digits, onDigit, digitRefs,
-        surpriseDelivery, setSurpriseDelivery, validityDays, setValidityDays,
+        surpriseDelivery, setSurpriseDelivery, safeMode, setSafeMode, validityDays, setValidityDays,
         selectedDays, setSelectedDays, entriesLabel, setEntriesLabel,
         company, setCompany, timeFrom, setTimeFrom, timeUntil, setTimeUntil,
+        serviceCategory, setServiceCategory,
         nativeScrollRef,
     };
 
@@ -2193,13 +2387,29 @@ const S = StyleSheet.create({
 
     // ── Check card ────────────────────────────────────────────────────────────
     checkCard: {
-        flexDirection: 'row', alignItems: 'center',
         backgroundColor: SgateColors.bg,
         borderRadius: 14, padding: 14,
+    },
+    checkCardRow: {
+        flexDirection: 'row', alignItems: 'center',
     },
     checkCardBordered: {
         backgroundColor: SgateColors.card,
         borderWidth: 1, borderColor: SgateColors.borderSoft,
+    },
+    recommendedBadge: {
+        alignSelf: 'flex-start',
+        backgroundColor: SgateColors.blue,
+        borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2,
+        marginBottom: 8,
+    },
+    recommendedText: {
+        fontSize: 11, fontFamily: SgateFonts.bold,
+        color: '#FFFFFF', letterSpacing: 0.4,
+    },
+    knowMoreLink: {
+        fontSize: 12, fontFamily: SgateFonts.semibold,
+        color: SgateColors.goldDeep, textDecorationLine: 'underline',
     },
     checkbox: {
         width: 22, height: 22, borderRadius: 5,
@@ -2223,14 +2433,6 @@ const S = StyleSheet.create({
         borderRadius: 14, padding: 14, marginTop: 4,
     },
     recommendedRow: { marginBottom: 8 },
-    recommendedBadge: {
-        alignSelf: 'flex-start',
-        backgroundColor: SgateColors.gold,
-        borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4,
-    },
-    recommendedText: {
-        fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.black,
-    },
 
     // ── Body text ─────────────────────────────────────────────────────────────
     bodyLine: {

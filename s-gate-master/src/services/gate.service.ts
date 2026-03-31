@@ -1,5 +1,7 @@
 import api from './api';
 import type {
+    CreatePreApprovedPayload,
+    DayOfWeek,
     Entry,
     EntryRequest,
     EntryRequestStatus,
@@ -13,6 +15,12 @@ import type {
     InvitePassType,
     PreApproval,
     PreApprovalStatus,
+    PreApprovedDuplicateWarning,
+    PreApprovedEntry,
+    PreApprovedStatus,
+    PreApprovedType,
+    PreApprovedUsage,
+    UpdatePreApprovedPayload,
     VisitorType,
 } from '../types/api';
 
@@ -328,6 +336,93 @@ export const createAutoApproveRule = async (data: {
 export const getDeliveryCompanies = async (): Promise<string[]> => {
     const res = await api.get('/gate/deliveries/companies');
     return res.data.data?.companies ?? [];
+};
+
+// ─── Pre-Approved Entries (new /api/v1/gate/pre-approved system) ─────────────
+
+export interface GetPreApprovedListParams {
+    type?: PreApprovedType;
+    status?: PreApprovedStatus;
+    page?: number;
+    limit?: number;
+}
+
+export interface PreApprovedListResponse {
+    entries: PreApprovedEntry[];
+    pagination: { total: number; page: number; limit: number; pages: number };
+}
+
+/** Create a new pre-approved entry (CAB / DELIVERY / HELP). */
+export const createPreApproved = async (
+    data: CreatePreApprovedPayload
+): Promise<PreApprovedEntry | PreApprovedDuplicateWarning> => {
+    const res = await api.post<{ success: boolean; data: PreApprovedEntry | PreApprovedDuplicateWarning }>(
+        '/gate/pre-approved',
+        data
+    );
+    return res.data.data;
+};
+
+/** List all pre-approved entries for the resident's flat. */
+export const getPreApprovedList = async (
+    params?: GetPreApprovedListParams
+): Promise<PreApprovedListResponse> => {
+    const res = await api.get<{ success: boolean; data: PreApprovedListResponse }>(
+        '/gate/pre-approved',
+        { params }
+    );
+    return res.data.data;
+};
+
+/** Get a single pre-approved entry by ID. */
+export const getPreApprovedById = async (id: string): Promise<PreApprovedEntry> => {
+    const res = await api.get<{ success: boolean; data: PreApprovedEntry }>(`/gate/pre-approved/${id}`);
+    return res.data.data;
+};
+
+/** Update an active pre-approved entry. */
+export const updatePreApproved = async (
+    id: string,
+    data: UpdatePreApprovedPayload
+): Promise<PreApprovedEntry> => {
+    const res = await api.patch<{ success: boolean; data: PreApprovedEntry }>(
+        `/gate/pre-approved/${id}`,
+        data
+    );
+    return res.data.data;
+};
+
+/** Cancel an active entry. Idempotent — already-cancelled entries return as-is. */
+export const cancelPreApproved = async (id: string): Promise<PreApprovedEntry> => {
+    const res = await api.patch<{ success: boolean; data: PreApprovedEntry }>(
+        `/gate/pre-approved/${id}/cancel`
+    );
+    return res.data.data;
+};
+
+/** Delete a non-ACTIVE entry (must cancel first before deleting). */
+export const deletePreApproved = async (id: string): Promise<void> => {
+    await api.delete(`/gate/pre-approved/${id}`);
+};
+
+/** Get a pre-filled template to repeat/recreate an old entry. Dates cleared, everything else pre-filled. */
+export const getRepeatTemplate = async (id: string): Promise<Partial<CreatePreApprovedPayload>> => {
+    const res = await api.get<{ success: boolean; data: Partial<CreatePreApprovedPayload> }>(
+        `/gate/pre-approved/${id}/repeat`
+    );
+    return res.data.data;
+};
+
+/** Get paginated usage history for one pre-approved entry. */
+export const getPreApprovedUsages = async (
+    id: string,
+    params?: { page?: number; limit?: number }
+): Promise<{ usages: PreApprovedUsage[]; pagination: { total: number; page: number; limit: number; pages: number } }> => {
+    const res = await api.get<{ success: boolean; data: { usages: PreApprovedUsage[]; pagination: { total: number; page: number; limit: number; pages: number } } }>(
+        `/gate/pre-approved/${id}/usages`,
+        { params }
+    );
+    return res.data.data;
 };
 
 // ─── Gate Passes ──────────────────────────────────────────────────────────────

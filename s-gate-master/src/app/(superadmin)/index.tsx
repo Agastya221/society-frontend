@@ -60,9 +60,9 @@ export default function SuperAdminDashboard() {
     const fetchAll = async () => {
         try {
             const [pendingRes, approvedRes, rejectedRes] = await Promise.all([
-                api.get('/api/v1/society-registration/requests', { params: { status: 'PENDING', page: 1, limit: 5 } }),
-                api.get('/api/v1/society-registration/requests', { params: { status: 'APPROVED', page: 1, limit: 1 } }),
-                api.get('/api/v1/society-registration/requests', { params: { status: 'REJECTED', page: 1, limit: 1 } }),
+                api.get('/society-registration/requests', { params: { status: 'PENDING', page: 1, limit: 5 } }),
+                api.get('/society-registration/requests', { params: { status: 'APPROVED', page: 1, limit: 1 } }),
+                api.get('/society-registration/requests', { params: { status: 'REJECTED', page: 1, limit: 1 } }),
             ]);
             setPendingRequests(pendingRes.data?.data ?? []);
             setPendingCount(pendingRes.data?.pagination?.total ?? 0);
@@ -92,7 +92,7 @@ export default function SuperAdminDashboard() {
                     onPress: async () => {
                         setActionLoading(true);
                         try {
-                            await api.post(`/api/v1/society-registration/requests/${req.id}/approve`);
+                            await api.post(`/society-registration/requests/${req.id}/approve`);
                             setPendingRequests((prev) => prev.filter((r) => r.id !== req.id));
                             setPendingCount((c) => Math.max(0, c - 1));
                             setApprovedCount((c) => c + 1);
@@ -111,7 +111,7 @@ export default function SuperAdminDashboard() {
         if (!rejectReason.trim() || !rejectTarget) return;
         setActionLoading(true);
         try {
-            await api.post(`/api/v1/society-registration/requests/${rejectTarget.id}/reject`, {
+            await api.post(`/society-registration/requests/${rejectTarget.id}/reject`, {
                 rejectionReason: rejectReason.trim(),
             });
             setPendingRequests((prev) => prev.filter((r) => r.id !== rejectTarget.id));

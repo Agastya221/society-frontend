@@ -22,7 +22,6 @@ interface Notice {
     expiresAt?: string;
     author?: string;
     location?: string;
-    attachment?: string;
 }
 
 const TYPE_CFG = {
@@ -34,83 +33,32 @@ const TYPE_CFG = {
 
 const FILTERS = ['ALL', 'ALERT', 'EVENT', 'MAINTENANCE'] as const;
 
-// ── Mock data ──────────────────────────────────────────────────────────────
-const MOCK_NOTICES: Notice[] = [
-    {
-        id: 'm1',
-        title: 'Water Supply Interruption – Block A & B',
-        content: 'Due to urgent pipeline maintenance, water supply will be suspended in Block A and Block B on Sunday from 10:00 AM to 4:00 PM. Please store sufficient water in advance.\n\nThe maintenance team will be working on the main supply line running through the basement. Residents are advised to store at least 2–3 buckets of water per flat before 9:00 AM on Sunday.\n\nFor emergencies, water tankers will be stationed near the main gate from 12:00 PM to 3:00 PM.',
-        type: 'ALERT',
-        isPinned: true,
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        author: 'Management Committee',
-        location: 'Block A & B',
-    },
-    {
-        id: 'm2',
-        title: 'Annual Society Sports Day – 2025',
-        content: 'Join us for the Annual Sports Day on March 30th at the society ground. Events include cricket, badminton, tug-of-war and kids races. Registration open till March 27th.\n\nSchedule:\n• 9:00 AM – Opening ceremony\n• 9:30 AM – Kids events (ages 5–12)\n• 11:00 AM – Badminton tournament\n• 2:00 PM – Cricket match\n• 4:30 PM – Tug-of-war finals\n• 6:00 PM – Prize distribution & refreshments\n\nRegister at the society office or WhatsApp the sports committee.',
-        type: 'EVENT',
-        isPinned: true,
-        createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        author: 'Sports Committee',
-        location: 'Society Ground',
-    },
-    {
-        id: 'm3',
-        title: 'Elevator Servicing – Tower 2',
-        content: 'The elevator in Tower 2 will undergo annual maintenance on March 25th, 9 AM – 1 PM. Please use the staircase or Tower 1 elevator during this period.\n\nThe servicing includes lubrication of cables, inspection of safety mechanisms, and software updates for the control panel. This is mandatory as per building safety regulations.',
-        type: 'MAINTENANCE',
-        isPinned: false,
-        createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-        location: 'Tower 2',
-    },
-    {
-        id: 'm4',
-        title: 'Holi Celebration in the Society',
-        content: 'Residents are invited to the Holi celebration at the clubhouse lawn on March 25th from 10 AM. Refreshments and music will be arranged. All are welcome!\n\nDJ and live dhol will be arranged. Organic colors will be provided free of cost. Please wear white clothes. Children below 10 must be accompanied by a guardian.',
-        type: 'EVENT',
-        isPinned: false,
-        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-        location: 'Clubhouse Lawn',
-    },
-    {
-        id: 'm5',
-        title: 'Parking Policy Update',
-        content: 'Effective April 1st, all residents must display their new parking stickers issued at the office. Vehicles without stickers will not be allowed entry after April 15th.\n\nVisit the society office between 10 AM – 5 PM on weekdays with your flat number and vehicle registration number. Stickers are free of charge for one vehicle per flat.',
-        type: 'GENERAL',
-        isPinned: false,
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        author: 'Security Team',
-    },
-    {
-        id: 'm6',
-        title: 'CCTV Upgrade – Common Areas',
-        content: 'CCTV cameras in lobbies, parking, and entry points will be upgraded on March 26–27. Minor disruptions expected. New cameras provide 4K resolution coverage.\n\nThe new system includes AI-based motion detection and 30-day cloud storage. All footage is encrypted and accessible only by the security team and management.',
-        type: 'MAINTENANCE',
-        isPinned: false,
-        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-        id: 'm7',
-        title: 'Monthly Maintenance Due – April 2025',
-        content: 'A reminder that monthly maintenance fees for April 2025 are due by March 31st. Late payments will incur a 2% surcharge. Contact the office for payment options.\n\nPayment methods accepted: NEFT/RTGS, UPI (scan QR at office), cheque. Please mention your flat number in the payment reference.',
-        type: 'GENERAL',
-        isPinned: false,
-        createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-        author: 'Accounts Dept.',
-    },
-    {
-        id: 'm8',
-        title: 'Fire Drill – All Residents Mandatory',
-        content: 'A mandatory fire safety drill will be conducted on March 28th at 11 AM. All residents must participate. Please vacate your flats and assemble at the designated muster point.\n\nThe drill will last approximately 30 minutes. Fire wardens will guide residents through evacuation procedures. Please do not use elevators during the drill.',
-        type: 'ALERT',
-        isPinned: false,
-        createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-        author: 'Safety Committee',
-        location: 'Main Gate Assembly',
-    },
-];
+// Maps every value the backend might send → one of the 4 UI types
+const TYPE_MAP: Record<string, 'ALERT' | 'EVENT' | 'MAINTENANCE' | 'GENERAL'> = {
+    ALERT:       'ALERT',
+    URGENT:      'ALERT',
+    EMERGENCY:   'ALERT',
+    CRITICAL:    'ALERT',
+    EVENT:       'EVENT',
+    MAINTENANCE: 'MAINTENANCE',
+    MEETING:     'GENERAL',
+    GENERAL:     'GENERAL',
+};
+
+function normaliseNotice(raw: any): Notice {
+    return {
+        id:        raw.id,
+        title:     raw.title ?? '',
+        content:   raw.content ?? '',
+        type:      TYPE_MAP[raw.type] ?? 'GENERAL',
+        isPinned:  raw.isPinned ?? false,
+        createdAt: raw.publishAt ?? raw.createdAt ?? new Date().toISOString(),
+        expiresAt: raw.expiresAt ?? undefined,
+        // backend returns `postedBy` as a plain string — expose as `author`
+        author:    raw.author ?? raw.postedBy ?? undefined,
+        location:  raw.location ?? undefined,
+    };
+}
 
 // ── Notice Detail Bottom Sheet ─────────────────────────────────────────────
 function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () => void }) {
@@ -121,7 +69,6 @@ function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () =>
     const backdropO = useRef(new Animated.Value(0)).current;
     const scrollY   = useRef(0);
 
-    // Open animation
     useCallback(() => {
         Animated.parallel([
             Animated.spring(sheetY, { toValue: 0, damping: 24, stiffness: 220, useNativeDriver: true }),
@@ -156,22 +103,16 @@ function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () =>
 
     return (
         <Modal transparent animationType="none" statusBarTranslucent onRequestClose={close}>
-            {/* Backdrop */}
             <Animated.View style={[M.backdrop, { opacity: backdropO }]}>
                 <Pressable style={{ flex: 1 }} onPress={close} />
             </Animated.View>
 
-            {/* Sheet */}
             <Animated.View
                 style={[M.sheet, { transform: [{ translateY: sheetY }], paddingBottom: insets.bottom + 16 }]}
                 {...panResponder.panHandlers}
             >
-                {/* Coloured type bar — flush to top, handle pill embedded inside */}
                 <View style={[M.typeBanner, { backgroundColor: cfg.bg, borderBottomColor: cfg.border }]}>
-                    {/* Handle pill sits at top of banner */}
                     <View style={M.handleInBanner} />
-
-                    {/* Banner content row */}
                     <View style={M.bannerRow}>
                         <View style={[M.typeIconBox, { backgroundColor: cfg.bar }]}>
                             <Feather name={cfg.icon as any} size={16} color="#fff" />
@@ -186,7 +127,6 @@ function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () =>
                     </View>
                 </View>
 
-                {/* Scrollable content */}
                 <ScrollView
                     style={M.scroll}
                     contentContainerStyle={M.scrollContent}
@@ -196,7 +136,6 @@ function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () =>
                 >
                     <Text style={M.title}>{notice.title}</Text>
 
-                    {/* Meta chips */}
                     <View style={M.metaRow}>
                         <View style={M.metaChip}>
                             <Feather name="calendar" size={11} color={SgateColors.t3} />
@@ -216,13 +155,9 @@ function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () =>
                         )}
                     </View>
 
-                    {/* Divider */}
                     <View style={M.divider} />
-
-                    {/* Full content */}
                     <Text style={M.body}>{notice.content}</Text>
 
-                    {/* Expiry */}
                     {notice.expiresAt && (
                         <View style={M.expiryRow}>
                             <Feather name="clock" size={12} color={SgateColors.t4} />
@@ -249,7 +184,7 @@ export default function NoticesScreen() {
         try {
             const res = await api.get('/community/notices');
             const raw = res.data;
-            const list: Notice[] = Array.isArray(raw)
+            const rawList: any[] = Array.isArray(raw)
                 ? raw
                 : Array.isArray(raw?.data)
                     ? raw.data
@@ -257,17 +192,15 @@ export default function NoticesScreen() {
                         ? raw.notices
                         : [];
 
-            if (list.length > 0) {
-                list.sort((a, b) => {
-                    if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
-                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                });
-                setNotices(list);
-            } else {
-                setNotices(MOCK_NOTICES);
-            }
-        } catch {
-            setNotices(MOCK_NOTICES);
+            const list: Notice[] = rawList.map(normaliseNotice);
+            list.sort((a, b) => {
+                if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
+            setNotices(list);
+        } catch (err) {
+            console.error('Failed to fetch notices:', err);
+            setNotices([]);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -293,7 +226,6 @@ export default function NoticesScreen() {
 
     const ListHeader = (
         <>
-            {/* ── Pinned Notices ───────────────────────────────────────── */}
             {pinned.length > 0 && (
                 <View>
                     <View style={S.sectionRow}>
@@ -337,7 +269,6 @@ export default function NoticesScreen() {
                 </View>
             )}
 
-            {/* ── Recent Updates header + filter ──────────────────────── */}
             <View style={S.recentHeaderRow}>
                 <Text style={S.sectionLabel}>RECENT UPDATES</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterRow}>
@@ -360,7 +291,6 @@ export default function NoticesScreen() {
 
     return (
         <SafeAreaView style={S.root} edges={['top']}>
-            {/* ── Page Header ──────────────────────────────────────────── */}
             <View style={S.header}>
                 <Text style={S.headerLabel}>RESIDENT HUB</Text>
                 <Text style={S.headerTitle}>Newsletter</Text>
@@ -388,20 +318,13 @@ export default function NoticesScreen() {
                                 onPress={() => setSelected(item)}
                                 style={[S.recentCard, isExpired && { opacity: 0.5 }]}
                             >
-                                {/* Left accent bar */}
                                 <View style={[S.recentAccent, { backgroundColor: cfg.bar }]} />
-
-                                {/* Icon */}
                                 <View style={[S.recentIcon, { backgroundColor: cfg.bg }]}>
                                     <Feather name={cfg.icon as any} size={18} color={cfg.text} />
                                 </View>
-
-                                {/* Body */}
                                 <View style={S.recentBody}>
                                     <Text style={S.recentTitle} numberOfLines={1}>{item.title}</Text>
                                     <Text style={S.recentContent} numberOfLines={2}>{item.content}</Text>
-
-                                    {/* Meta row */}
                                     <View style={S.metaRow}>
                                         <Feather name="calendar" size={10} color={SgateColors.t4} />
                                         <Text style={S.metaText}>{fmtShort(item.createdAt)}</Text>
@@ -413,8 +336,6 @@ export default function NoticesScreen() {
                                         )}
                                     </View>
                                 </View>
-
-                                {/* Chevron */}
                                 <Feather name="chevron-right" size={16} color={SgateColors.t4} style={S.chevron} />
                             </TouchableOpacity>
                         );
@@ -428,7 +349,6 @@ export default function NoticesScreen() {
                 />
             )}
 
-            {/* ── Detail Sheet ──────────────────────────────────────────── */}
             {selected && (
                 <NoticeDetailSheet
                     notice={selected}
@@ -458,7 +378,6 @@ const S = StyleSheet.create({
     sectionRow:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
     sectionLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 1.1 },
 
-    // Pinned card
     pinnedCard: {
         backgroundColor: SgateColors.card,
         marginHorizontal: 16, marginBottom: 12,
@@ -480,7 +399,6 @@ const S = StyleSheet.create({
     readMore:     { flexDirection: 'row', alignItems: 'center', gap: 2 },
     readMoreText: { fontSize: 11, fontFamily: SgateFonts.semibold, color: SgateColors.gold },
 
-    // Recent header
     recentHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 20, paddingTop: 20, paddingBottom: 12 },
     filterRow:       { flexDirection: 'row', gap: 6, paddingRight: 20 },
     chip:            { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: SgateColors.surface },
@@ -488,7 +406,6 @@ const S = StyleSheet.create({
     chipText:        { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 0.5 },
     chipTextActive:  { color: SgateColors.card },
 
-    // Recent card
     recentCard: {
         flexDirection: 'row', alignItems: 'center',
         backgroundColor: SgateColors.card,
@@ -526,7 +443,6 @@ const M = StyleSheet.create({
         shadowColor: '#000', shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.12, shadowRadius: 20, elevation: 24,
     },
-    // Type banner — flush to top of sheet, handle pill embedded at top
     typeBanner: {
         borderTopLeftRadius: 24, borderTopRightRadius: 24,
         borderBottomWidth: 1,
@@ -554,7 +470,6 @@ const M = StyleSheet.create({
     },
     pinnedBadgeText: { fontSize: 9, fontFamily: SgateFonts.bold, color: SgateColors.gold, letterSpacing: 0.5 },
 
-    // Scroll content
     scroll: { flex: 1 },
     scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 },
 

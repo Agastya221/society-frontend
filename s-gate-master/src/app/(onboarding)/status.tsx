@@ -76,7 +76,7 @@ export default function StatusScreen() {
 
     const fetchStatus = async () => {
         try {
-            const res = await api.get('/api/v1/resident/onboarding/status');
+            const res = await api.get('/resident/onboarding/status');
             const statusData: OnboardingStatusData = res.data?.data;
             setData(statusData);
 
@@ -100,7 +100,7 @@ export default function StatusScreen() {
         if (pollRef.current) clearInterval(pollRef.current);
         pollRef.current = setInterval(async () => {
             try {
-                const res = await api.get('/api/v1/resident/onboarding/status');
+                const res = await api.get('/resident/onboarding/status');
                 const statusData: OnboardingStatusData = res.data?.data;
                 setData(statusData);
 

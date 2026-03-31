@@ -51,7 +51,7 @@ export default function RequestDetailScreen() {
 
     const fetchDetail = async () => {
         try {
-            const res = await api.get(`/api/v1/society-registration/requests/${id}`);
+            const res = await api.get(`/society-registration/requests/${id}`);
             setRequest(res.data?.data ?? null);
         } catch (err: any) {
             Alert.alert('Error', err?.response?.data?.message || 'Failed to load request');
@@ -72,7 +72,7 @@ export default function RequestDetailScreen() {
                     onPress: async () => {
                         setActionLoading(true);
                         try {
-                            await api.post(`/api/v1/society-registration/requests/${id}/approve`);
+                            await api.post(`/society-registration/requests/${id}/approve`);
                             Alert.alert('Success', 'Society approved successfully', [
                                 { text: 'OK', onPress: () => router.back() },
                             ]);
@@ -91,7 +91,7 @@ export default function RequestDetailScreen() {
         if (!rejectReason.trim()) return;
         setActionLoading(true);
         try {
-            await api.post(`/api/v1/society-registration/requests/${id}/reject`, {
+            await api.post(`/society-registration/requests/${id}/reject`, {
                 rejectionReason: rejectReason.trim(),
             });
             setRejectVisible(false);

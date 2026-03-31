@@ -21,13 +21,15 @@ import type { Entry, EntryType, Notice } from '../../types/api';
 import { useAuthStore } from '../../store/useAuthStore';
 import * as communityService from '../../services/community.service';
 import * as gateService from '../../services/gate.service';
+import api from '../../services/api';
+
 
 // ─── Tabs ────────────────────────────────────────────────────────────────────
 
 type Tab = 'Visitors' | 'Notices' | 'Residents';
 const TABS: Tab[] = ['Visitors', 'Notices', 'Residents'];
 
-// ─── Mock residents (no API endpoint yet) ────────────────────────────────────
+// ─── Resident types ───────────────────────────────────────────────────────────
 
 interface Resident {
     id: string;
@@ -38,16 +40,16 @@ interface Resident {
     role: 'Owner' | 'Tenant' | 'Family';
 }
 
-const MOCK_RESIDENTS: Resident[] = [
-    { id: '1', name: 'Rahul Sharma',   phone: '+919876543210', flat: '101', block: 'A', role: 'Owner' },
-    { id: '2', name: 'Priya Patel',    phone: '+919876543211', flat: '202', block: 'A', role: 'Tenant' },
-    { id: '3', name: 'Amit Kumar',     phone: '+919876543212', flat: '303', block: 'B', role: 'Owner' },
-    { id: '4', name: 'Sneha Gupta',    phone: '+919876543213', flat: '104', block: 'B', role: 'Family' },
-    { id: '5', name: 'Vikram Singh',   phone: '+919876543214', flat: '501', block: 'A', role: 'Owner' },
-    { id: '6', name: 'Anita Desai',    phone: '+919876543215', flat: '402', block: 'C', role: 'Tenant' },
-    { id: '7', name: 'Rajesh Nair',    phone: '+919876543216', flat: '201', block: 'C', role: 'Owner' },
-    { id: '8', name: 'Meera Iyer',     phone: '+919876543217', flat: '305', block: 'A', role: 'Family' },
-];
+function normaliseResident(raw: any): Resident {
+    return {
+        id:    raw.id,
+        name:  raw.user?.name ?? raw.name ?? '',
+        phone: raw.user?.phone ?? raw.phone ?? '',
+        flat:  raw.flat?.number ?? raw.flatNumber ?? raw.flat ?? '',
+        block: raw.flat?.block?.name ?? raw.block ?? raw.blockName ?? '',
+        role:  raw.residentType ?? raw.role ?? 'Owner',
+    };
+}
 
 const ROLE_COLORS: Record<string, { bg: string; fg: string }> = {
     Owner:  { bg: SgateColors.goldPale, fg: SgateColors.goldDeep },
@@ -201,20 +203,25 @@ export default function SocietyScreen() {
         setLoadingMore(false);
     }, [loadingMore, search, fetchVisitorPage]);
 
-    // ── Block pills ──────────────────────────────────────────────────────
-    const blocks = useMemo(() => {
-        const set = new Set(MOCK_RESIDENTS.map((r) => r.block));
-        return ['All', ...Array.from(set).sort()];
+    // ── Residents state ──────────────────────────────────────────────────
+    const [residents, setResidents] = useState<Resident[]>([]);
+    const [residentsLoading, setResidentsLoading] = useState(false);
+
+    const fetchResidents = useCallback(async () => {
+        setResidentsLoading(true);
+        try {
+            const res = await api.get('/resident/society/residents', { params: { page: 1, limit: 100 } });
+            const list: any[] = res.data?.data ?? res.data ?? [];
+            setResidents((Array.isArray(list) ? list : []).map(normaliseResident));
+        } catch (err) {
+            console.error('fetchResidents failed:', err);
+        } finally { setResidentsLoading(false); }
     }, []);
 
-    // ── Filtered residents ───────────────────────────────────────────────
-    const filteredResidents = useMemo(() => {
-        let list = MOCK_RESIDENTS;
-        if (blockFilter !== 'All') list = list.filter((r) => r.block === blockFilter);
-        const q = search.toLowerCase().trim();
-        if (q) list = list.filter(r => r.name.toLowerCase().includes(q) || r.flat.toLowerCase().includes(q));
-        return list;
-    }, [blockFilter, search]);
+    useEffect(() => {
+        if (activeTab === 'Residents' && residents.length === 0) fetchResidents();
+    }, [activeTab]);
+
 
     // ── Filtered notices ─────────────────────────────────────────────────
     const pinnedNotices = useMemo(() => notices.filter(n => n.isPinned), [notices]);
@@ -226,7 +233,22 @@ export default function SocietyScreen() {
         return list;
     }, [notices, search, noticeFilter]);
 
-    // ── Visitor rows (grouped by date) ───────────────────────────────────
+    // ── Block pills ──────────────────────────────────────────────────────
+    const blocks = useMemo(() => {
+        const set = new Set(residents.map((r) => r.block).filter(Boolean));
+        return ['All', ...Array.from(set).sort()];
+    }, [residents]);
+
+    // ── Filtered residents ───────────────────────────────────────────────
+    const filteredResidents = useMemo(() => {
+        let list = residents;
+        if (blockFilter !== 'All') list = list.filter((r) => r.block === blockFilter);
+        const q = search.toLowerCase().trim();
+        if (q) list = list.filter(r => r.name.toLowerCase().includes(q) || r.flat.toLowerCase().includes(q));
+        return list;
+    }, [residents, blockFilter, search]);
+
+
     const visitorRows = useMemo<VisitorListRow[]>(() => {
         const q = search.toLowerCase().trim();
         const filtered = q
@@ -550,20 +572,16 @@ export default function SocietyScreen() {
 
             {/* ── Residents List ───────────────────────────────────────── */}
             {activeTab === 'Residents' && (
-                <>
-                    <FlatList
-                        data={filteredResidents}
-                        keyExtractor={(r) => r.id}
-                        renderItem={renderResident}
-                        ListEmptyComponent={ResidentsEmpty}
-                        contentContainerStyle={filteredResidents.length === 0 ? S.emptyContainer : S.listContent}
-                        showsVerticalScrollIndicator={false}
-                    />
-                    <View style={S.comingSoonBanner}>
-                        <Feather name="info" size={14} color={SgateColors.t3} />
-                        <Text style={S.comingSoonText}>Showing sample data — resident directory coming soon</Text>
-                    </View>
-                </>
+                <FlatList
+                    data={filteredResidents}
+                    keyExtractor={(r) => r.id}
+                    renderItem={renderResident}
+                    ListEmptyComponent={ResidentsEmpty}
+                    contentContainerStyle={filteredResidents.length === 0 ? S.emptyContainer : S.listContent}
+                    showsVerticalScrollIndicator={false}
+                    onRefresh={fetchResidents}
+                    refreshing={residentsLoading}
+                />
             )}
         </View>
     );

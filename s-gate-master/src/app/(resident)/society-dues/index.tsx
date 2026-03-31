@@ -1,18 +1,37 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
+  View, Text, FlatList, TouchableOpacity, StyleSheet, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
-import { DUES, DUES_SUMMARY, DueItem, DueStatus } from '../../../mocks/societyDues';
+import api from '../../../services/api';
+
+type DueStatus = 'PAID' | 'PENDING' | 'OVERDUE';
+
+interface DueItem {
+  id: string; month: string; year: number; dueDate: string;
+  status: DueStatus; totalAmount: number; paidOn?: string;
+}
+
+interface DuesSummary {
+  totalOutstanding: number; currentMonth: number; overdue: number;
+}
+
+function normaliseDue(raw: any): DueItem {
+  const d = new Date(raw.dueDate ?? raw.periodStart ?? new Date());
+  return {
+    id:          raw.id,
+    month:       d.toLocaleString('default', { month: 'long' }),
+    year:        d.getFullYear(),
+    dueDate:     raw.dueDate ?? raw.periodStart ?? new Date().toISOString().split('T')[0],
+    status:      raw.status ?? 'PENDING',
+    totalAmount: raw.totalAmount ?? raw.amount ?? 0,
+    paidOn:      raw.paidOn ?? raw.paidAt ?? undefined,
+  };
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -127,12 +146,36 @@ function DueCard({ item, index, onPress }: DueCardProps) {
 
 export default function SocietyDuesScreen() {
   const router = useRouter();
-  const [dues] = useState<DueItem[]>(DUES);
+  const [dues, setDues]       = useState<DueItem[]>([]);
+  const [summary, setSummary] = useState<DuesSummary>({ totalOutstanding: 0, currentMonth: 0, overdue: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(useCallback(() => {
+    (async () => {
+      try {
+        const res = await api.get('/resident/dues');
+        const raw = res.data?.data ?? res.data;
+        const list: any[] = Array.isArray(raw) ? raw : raw?.dues ?? raw?.items ?? [];
+        setDues(list.map(normaliseDue));
+        // Summary may be in the same response or separate field
+        const s = raw?.summary;
+        if (s) setSummary({ totalOutstanding: s.totalOutstanding ?? 0, currentMonth: s.currentMonth ?? 0, overdue: s.overdue ?? 0 });
+        else {
+          const pending = list.filter(d => d.status !== 'PAID');
+          setSummary({
+            totalOutstanding: pending.reduce((a, d) => a + (d.totalAmount ?? 0), 0),
+            currentMonth: list[0]?.totalAmount ?? 0,
+            overdue: list.filter(d => d.status === 'OVERDUE').reduce((a, d) => a + (d.totalAmount ?? 0), 0),
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch dues:', err);
+      } finally { setLoading(false); }
+    })();
+  }, []));
 
   function handlePayOutstanding() {
-    Alert.alert('Pay Outstanding', 'Redirecting to payment gateway...', [
-      { text: 'OK' },
-    ]);
+    Alert.alert('Pay Outstanding', 'Redirecting to payment gateway...', [{ text: 'OK' }]);
   }
 
   const ListHeader = (
@@ -140,43 +183,22 @@ export default function SocietyDuesScreen() {
       {/* Summary Card */}
       <View style={styles.summaryCard}>
         <Text style={styles.summaryLabel}>Total Outstanding</Text>
-        <Text style={styles.summaryAmount}>
-          {formatAmount(DUES_SUMMARY.totalOutstanding)}
-        </Text>
-
+        <Text style={styles.summaryAmount}>{formatAmount(summary.totalOutstanding)}</Text>
         <View style={styles.summaryDivider} />
-
-        {/* Current Month */}
         <View style={styles.summaryRow}>
           <Text style={styles.summaryRowLabel}>Current Month</Text>
           <View style={{ flex: 1 }} />
-          <Text style={styles.summaryRowValue}>
-            {formatAmount(DUES_SUMMARY.currentMonth)}
-          </Text>
+          <Text style={styles.summaryRowValue}>{formatAmount(summary.currentMonth)}</Text>
         </View>
-
-        {/* Overdue */}
         <View style={[styles.summaryRow, { marginTop: 8 }]}>
           <Text style={styles.summaryRowLabel}>Overdue</Text>
           <View style={{ flex: 1 }} />
-          <Text
-            style={[styles.summaryRowValue, { color: SgateColors.red }]}
-          >
-            {formatAmount(DUES_SUMMARY.overdue)}
-          </Text>
+          <Text style={[styles.summaryRowValue, { color: SgateColors.red }]}>{formatAmount(summary.overdue)}</Text>
         </View>
-
-        {/* Pay button */}
-        <TouchableOpacity
-          style={styles.payButton}
-          onPress={handlePayOutstanding}
-          activeOpacity={0.85}
-        >
+        <TouchableOpacity style={styles.payButton} onPress={handlePayOutstanding} activeOpacity={0.85}>
           <Text style={styles.payButtonText}>Pay Outstanding</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Section header */}
       <Text style={styles.sectionHeader}>Payment History</Text>
     </>
   );

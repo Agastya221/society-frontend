@@ -15,6 +15,138 @@ export type EntryStatus =
 
 export type PreApprovalStatus = 'ACTIVE' | 'EXPIRED' | 'USED' | 'CANCELLED';
 
+// ─── Pre-Approved Entry (new /api/v1/gate/pre-approved system) ────────────────
+
+export type PreApprovedType = 'CAB' | 'DELIVERY' | 'HELP';
+
+export type PreApprovedMode = 'NORMAL' | 'SAFE' | 'SURPRISE';
+
+export type PreApprovedScheduleType = 'ONCE' | 'RECURRING';
+
+export type PreApprovedStatus = 'ACTIVE' | 'EXPIRED' | 'USED' | 'CANCELLED';
+
+export type HelpCategory =
+    | 'PLUMBER'
+    | 'ELECTRICIAN'
+    | 'CARPENTER'
+    | 'PAINTER'
+    | 'TUTOR'
+    | 'BEAUTICIAN'
+    | 'FITNESS_TRAINER'
+    | 'PHYSIOTHERAPIST'
+    | 'COOK'
+    | 'PEST_CONTROL'
+    | 'APPLIANCE_REPAIR'
+    | 'OTHER';
+
+export type DayOfWeek = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
+
+export interface PreApprovedSchedule {
+    scheduleType: PreApprovedScheduleType;
+    // ONCE
+    date?: string;
+    startTime?: string;
+    endTime?: string;
+    // RECURRING
+    validFrom?: string;
+    validUntil?: string;
+    daysOfWeek?: DayOfWeek[];
+    timeFrom?: string;
+    timeTo?: string;
+    entriesPerDay?: number;
+    // Grace
+    graceBeforeMinutes?: number;
+    graceAfterMinutes?: number;
+}
+
+export interface PreApprovedMeta {
+    visitorName?: string;
+    visitorPhone?: string;
+    // CAB SAFE
+    vehicleLast4Digits?: string;
+    // DELIVERY
+    companyName?: string;
+    isSurprise?: boolean;
+    // HELP
+    category?: HelpCategory;
+    customCategory?: string;
+}
+
+export interface PreApprovedEntry {
+    id: string;
+    type: PreApprovedType;
+    mode: PreApprovedMode;
+    status: PreApprovedStatus;
+    schedule: PreApprovedSchedule;
+    meta: PreApprovedMeta;
+    isPrivate?: boolean;
+    qrToken?: string;
+    createdAt: string;
+    flat?: { number: string; block?: { name: string } };
+    user?: { name: string };
+}
+
+export interface PreApprovedUsage {
+    id: string;
+    usedAt: string;
+    guardName?: string;
+    gatePointId?: string;
+    notes?: string;
+}
+
+export interface CreatePreApprovedPayload {
+    type: PreApprovedType;
+    mode?: PreApprovedMode;
+    scheduleType?: PreApprovedScheduleType;
+    visitorName?: string;
+    visitorPhone?: string;
+    // ONCE
+    date?: string;
+    startTime?: string;
+    endTime?: string;
+    // RECURRING
+    validFrom?: string;
+    validUntil?: string;
+    daysOfWeek?: DayOfWeek[];
+    timeFrom?: string;
+    timeTo?: string;
+    entriesPerDay?: number;
+    // Grace
+    graceBeforeMinutes?: number;
+    graceAfterMinutes?: number;
+    // CAB SAFE
+    vehicleLast4Digits?: string;
+    // DELIVERY
+    companyName?: string;
+    isSurprise?: boolean;
+    // HELP
+    category?: HelpCategory;
+    customCategory?: string;
+    // Duplicate handling
+    skipDuplicateCheck?: boolean;
+}
+
+export interface UpdatePreApprovedPayload {
+    visitorName?: string;
+    visitorPhone?: string;
+    startTime?: string;
+    endTime?: string;
+    timeFrom?: string;
+    timeTo?: string;
+    daysOfWeek?: DayOfWeek[];
+    entriesPerDay?: number;
+    vehicleLast4Digits?: string;
+    graceBeforeMinutes?: number;
+    graceAfterMinutes?: number;
+}
+
+export interface PreApprovedDuplicateWarning {
+    warning: 'DUPLICATE_EXISTS';
+    message: string;
+    existingEntryId: string;
+    hint: string;
+}
+
 export type InvitePassType =
     | 'QUICK'
     | 'FREQUENT'

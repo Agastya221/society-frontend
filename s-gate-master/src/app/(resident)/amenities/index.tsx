@@ -1,17 +1,33 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
+  View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
-import { AMENITIES, Amenity } from '../../../mocks/amenities';
+import api from '../../../services/api';
+
+interface Amenity {
+  id: string; name: string; timing: string; maxCapacity: number;
+  icon: string; colorBg: string; colorIcon: string;
+  slotDurationHours?: number; rules?: string[];
+}
+
+function normalise(raw: any): Amenity {
+  return {
+    id:               raw.id,
+    name:             raw.name ?? '',
+    timing:           raw.timings ?? raw.timing ?? '',
+    maxCapacity:      raw.maxCapacity ?? raw.capacity ?? 0,
+    icon:             raw.icon ?? 'home',
+    colorBg:          raw.colorBg ?? SgateColors.goldPale,
+    colorIcon:        raw.colorIcon ?? SgateColors.goldDeep,
+    slotDurationHours: raw.slotDurationHours ?? 1,
+    rules:            raw.rules ?? [],
+  };
+}
 
 function AmenityCard({ item, index }: { item: Amenity; index: number }) {
   const router = useRouter();
@@ -49,41 +65,51 @@ function AmenityCard({ item, index }: { item: Amenity; index: number }) {
 
 export default function AmenitiesScreen() {
   const router = useRouter();
+  const [amenities, setAmenities] = useState<Amenity[]>([]);
+  const [loading, setLoading]     = useState(true);
+
+  useFocusEffect(useCallback(() => {
+    (async () => {
+      try {
+        const res = await api.get('/resident/amenities');
+        const list: any[] = res.data?.data ?? res.data ?? [];
+        setAmenities((Array.isArray(list) ? list : []).map(normalise));
+      } catch (err) {
+        console.error('Failed to fetch amenities:', err);
+      } finally { setLoading(false); }
+    })();
+  }, []));
+
+  if (loading) return (
+    <SafeAreaView edges={['top']} style={S.root}>
+      <View style={[S.root, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color={SgateColors.gold} />
+      </View>
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView edges={['top']} style={S.root}>
       {/* Header */}
       <View style={S.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Feather name="arrow-left" size={22} color={SgateColors.t1} />
         </TouchableOpacity>
-
         <Text style={S.headerTitle}>Amenities</Text>
-
-        <TouchableOpacity
-          onPress={() =>
-            router.push('/(resident)/amenities/my-bookings' as any)
-          }
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
+        <TouchableOpacity onPress={() => router.push('/(resident)/amenities/my-bookings' as any)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Feather name="bookmark" size={20} color={SgateColors.t1} />
         </TouchableOpacity>
       </View>
-
       {/* Grid */}
       <FlatList
-        data={AMENITIES}
+        data={amenities}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={S.columnWrapper}
         contentContainerStyle={S.listContent}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item, index }) => (
-          <AmenityCard item={item} index={index} />
-        )}
+        ListEmptyComponent={<View style={{ flex: 1, alignItems: 'center', paddingTop: 60 }}><Feather name="home" size={32} color={SgateColors.t4} /><Text style={{ color: SgateColors.t3, marginTop: 12, fontFamily: SgateFonts.medium }}>No amenities available</Text></View>}
+        renderItem={({ item, index }) => <AmenityCard item={item} index={index} />}
       />
     </SafeAreaView>
   );

@@ -31,7 +31,7 @@ export default function RegistrationStatusScreen() {
 
     const fetchStatus = async () => {
         try {
-            const res = await api.get('/api/v1/society-registration/my-status');
+            const res = await api.get('/society-registration/my-status');
             const statusData: RegistrationStatusData = res.data?.data;
             setData(statusData);
 
@@ -58,7 +58,7 @@ export default function RegistrationStatusScreen() {
         if (pollRef.current) clearInterval(pollRef.current);
         pollRef.current = setInterval(async () => {
             try {
-                const res = await api.get('/api/v1/society-registration/my-status');
+                const res = await api.get('/society-registration/my-status');
                 const statusData: RegistrationStatusData = res.data?.data;
                 setData(statusData);
 

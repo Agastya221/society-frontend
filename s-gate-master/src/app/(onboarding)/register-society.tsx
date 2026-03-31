@@ -80,7 +80,7 @@ export default function RegisterSocietyScreen() {
         if (!validate()) return;
         setSubmitting(true);
         try {
-            await api.post('/api/v1/society-registration/request', {
+            await api.post('/society-registration/request', {
                 societyName: form.societyName.trim(),
                 address: form.address.trim(),
                 city: form.city.trim(),

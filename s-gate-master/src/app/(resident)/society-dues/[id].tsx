@@ -11,7 +11,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
-import { DUES, DueItem, DueLineItem, PaymentRecord } from '../../../mocks/societyDues';
+
+// ─── Local types ─────────────────────────────────────────────────────────────
+type DueStatus = 'PAID' | 'PENDING' | 'OVERDUE';
+interface DueLineItem { label: string; amount: number; isRed?: boolean }
+interface PaymentRecord { date: string; method: string; amount: number; txnId: string }
+interface DueItem {
+  id: string; month: string; year: number; dueDate: string; flat: string; society: string;
+  status: DueStatus; totalAmount: number; lineItems: DueLineItem[];
+  paidOn?: string; paidVia?: string; paymentHistory?: PaymentRecord[];
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -111,7 +120,7 @@ function TimelineRow({ record }: TimelineRowProps) {
 export default function SocietyDueDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const original = DUES.find((d) => d.id === id) ?? null;
+  const original: DueItem | null = null; // Will be fetched by ID when GET /resident/dues/:id is available
   const [due, setDue] = useState<DueItem | null>(original);
 
   if (!due) {

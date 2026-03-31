@@ -52,7 +52,7 @@ export default function SelectFlatScreen() {
 
     const fetchBlocks = async () => {
         try {
-            const res = await api.get(`/api/v1/resident/onboarding/societies/${societyId}/blocks`);
+            const res = await api.get(`/resident/onboarding/societies/${societyId}/blocks`);
             setBlocks(res.data?.data ?? []);
         } catch (err) {
             console.error('Failed to fetch blocks:', err);
@@ -64,7 +64,7 @@ export default function SelectFlatScreen() {
     const fetchFlats = async (blockId: string) => {
         setLoadingFlats(true);
         try {
-            const res = await api.get(`/api/v1/resident/onboarding/societies/${societyId}/blocks/${blockId}/flats`);
+            const res = await api.get(`/resident/onboarding/societies/${societyId}/blocks/${blockId}/flats`);
             setFlats(res.data?.data ?? []);
         } catch (err) {
             console.error('Failed to fetch flats:', err);

@@ -99,7 +99,7 @@ export default function DocumentsScreen() {
                 s3Key: doc.s3Key,
             }));
 
-            await api.post('/api/v1/resident/onboarding/request', {
+            await api.post('/resident/onboarding/request', {
                 societyId,
                 blockId,
                 flatId,

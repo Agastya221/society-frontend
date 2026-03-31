@@ -38,7 +38,7 @@ export default function SocietySearchScreen() {
             if (searchTerm.trim()) params.search = searchTerm.trim();
             if (cityFilter && cityFilter !== 'All Cities') params.city = cityFilter;
 
-            const res = await api.get('/api/v1/resident/onboarding/societies', { params });
+            const res = await api.get('/resident/onboarding/societies', { params });
             setSocieties(res.data?.data ?? []);
         } catch (err) {
             console.error('Failed to fetch societies:', err);

@@ -69,7 +69,7 @@ export default function RequestsListScreen() {
         try {
             const params: Record<string, any> = { page: 1, limit: 20 };
             if (tab !== 'ALL') params.status = tab;
-            const res = await api.get('/api/v1/society-registration/requests', { params });
+            const res = await api.get('/society-registration/requests', { params });
             const data = res.data?.data ?? [];
             const pagination = res.data?.pagination;
             setRequests(data);
@@ -90,7 +90,7 @@ export default function RequestsListScreen() {
         try {
             const params: Record<string, any> = { page: nextPage, limit: 20 };
             if (activeTab !== 'ALL') params.status = activeTab;
-            const res = await api.get('/api/v1/society-registration/requests', { params });
+            const res = await api.get('/society-registration/requests', { params });
             const data = res.data?.data ?? [];
             const pagination = res.data?.pagination;
             setRequests((prev) => [...prev, ...data]);

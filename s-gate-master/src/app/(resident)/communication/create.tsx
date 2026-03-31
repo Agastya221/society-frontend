@@ -1,112 +1,105 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  StyleSheet,
-  Switch,
-  Alert,
+  View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
+  Switch, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
-import { PostCategory } from '../../../mocks/communication';
+import api from '../../../services/api';
 
-// ─── Category config ───────────────────────────────────────────────────────────
-const CATEGORY_CFG: Record<string, { label: string; bg: string; fg: string }> = {
-  GENERAL:     { label: 'General',      bg: SgateColors.blueBg,   fg: SgateColors.blue },
-  MAINTENANCE: { label: 'Maintenance',  bg: SgateColors.goldPale, fg: SgateColors.goldDeep },
-  EVENTS:      { label: 'Events',       bg: SgateColors.greenBg,  fg: SgateColors.green },
-  LOST_FOUND:  { label: 'Lost & Found', bg: '#F3EEFF',            fg: '#9B6DFF' },
-  SAFETY:      { label: 'Safety',       bg: SgateColors.redBg,    fg: SgateColors.red },
-  FOR_SALE:    { label: 'For Sale',     bg: SgateColors.surface,  fg: SgateColors.t2 },
+// ─── Types — match exact backend PostCategory enum values ────────────────────
+type PostCategory =
+  | 'GENERAL' | 'ANNOUNCEMENT' | 'QUESTION' | 'ISSUE'
+  | 'APPRECIATION' | 'HELP' | 'EVENT'
+  | 'MAINTENANCE' | 'LOST_FOUND' | 'SAFETY' | 'FOR_SALE';
+
+const CATEGORY_CFG: Record<PostCategory, { label: string; bg: string; fg: string }> = {
+  GENERAL:      { label: 'General',      bg: SgateColors.blueBg,   fg: SgateColors.blue },
+  ANNOUNCEMENT: { label: 'Announcement', bg: SgateColors.goldPale, fg: SgateColors.goldDeep },
+  QUESTION:     { label: 'Question',     bg: SgateColors.blueBg,   fg: SgateColors.blue },
+  ISSUE:        { label: 'Issue',        bg: SgateColors.redBg,    fg: SgateColors.red },
+  APPRECIATION: { label: 'Appreciation', bg: SgateColors.greenBg,  fg: SgateColors.green },
+  HELP:         { label: 'Help',         bg: '#FFF8E1',            fg: '#E5A500' },
+  EVENT:        { label: 'Event',        bg: SgateColors.greenBg,  fg: SgateColors.green },
+  MAINTENANCE:  { label: 'Maintenance',  bg: SgateColors.goldPale, fg: SgateColors.goldDeep },
+  LOST_FOUND:   { label: 'Lost & Found', bg: '#F3EEFF',            fg: '#9B6DFF' },
+  SAFETY:       { label: 'Safety',       bg: SgateColors.redBg,    fg: SgateColors.red },
+  FOR_SALE:     { label: 'For Sale',     bg: SgateColors.surface,  fg: SgateColors.t2 },
 };
 
 const CATEGORIES: PostCategory[] = [
-  'GENERAL', 'MAINTENANCE', 'EVENTS', 'LOST_FOUND', 'SAFETY', 'FOR_SALE',
+  'GENERAL', 'ANNOUNCEMENT', 'QUESTION', 'ISSUE',
+  'APPRECIATION', 'HELP', 'EVENT',
+  'MAINTENANCE', 'LOST_FOUND', 'SAFETY', 'FOR_SALE',
 ];
-
-const CATEGORY_LABELS: Record<PostCategory, string> = {
-  GENERAL:     'General',
-  MAINTENANCE: 'Maintenance',
-  EVENTS:      'Events',
-  LOST_FOUND:  'Lost & Found',
-  SAFETY:      'Safety',
-  FOR_SALE:    'For Sale',
-};
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function CreatePostScreen() {
   const router = useRouter();
-
-  const [category, setCategory] = useState<PostCategory | null>(null);
+  const [category, setCategory]               = useState<PostCategory | null>(null);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-  const [title, setTitle] = useState('');
-  const [body, setBody] = useState('');
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [title, setTitle]                     = useState('');
+  const [body, setBody]                       = useState('');
+  const [isAnonymous, setIsAnonymous]         = useState(false);
+  const [submitting, setSubmitting]           = useState(false);
 
-  const isPostDisabled = !title.trim() || !body.trim() || !category;
+  const isPostDisabled = !title.trim() || !body.trim() || !category || submitting;
 
-  function handlePost() {
+  const handlePost = async () => {
     if (isPostDisabled) return;
-    Alert.alert(
-      'Post Created',
-      'Your post has been shared with the community.',
-      [{ text: 'OK', onPress: () => router.back() }],
-    );
-  }
+    setSubmitting(true);
+    try {
+      await api.post('/resident/posts', {
+        title:       title.trim(),
+        content:     body.trim(),   // backend expects 'content'
+        category:    category,
+        isAnonymous: isAnonymous,
+      });
+      Alert.alert('Posted! 🎉', 'Your post has been shared with the community.', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message ?? 'Could not create post. Please try again.';
+      Alert.alert('Error', msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Feather name="arrow-left" size={22} color={SgateColors.t1} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Post</Text>
-        <TouchableOpacity
-          onPress={handlePost}
-          disabled={isPostDisabled}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={[styles.postButton, isPostDisabled && styles.postButtonDisabled]}>
-            Post
-          </Text>
+        <TouchableOpacity onPress={handlePost} disabled={isPostDisabled} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          {submitting
+            ? <ActivityIndicator size="small" color={SgateColors.blue} />
+            : <Text style={[styles.postButton, isPostDisabled && styles.postButtonDisabled]}>Post</Text>
+          }
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+
         {/* ── Category ─────────────────────────────────────────────────────── */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Category *</Text>
-
-          {/* Dropdown trigger */}
           <TouchableOpacity
-            style={[
-              styles.dropdownRow,
-              { borderColor: showCategoryPicker ? SgateColors.blue : SgateColors.border },
-            ]}
+            style={[styles.dropdownRow, { borderColor: showCategoryPicker ? SgateColors.blue : SgateColors.border }]}
             onPress={() => setShowCategoryPicker(prev => !prev)}
             activeOpacity={0.8}
           >
             <Text style={[styles.dropdownText, !category && styles.dropdownPlaceholder]}>
-              {category ? CATEGORY_LABELS[category] : 'Choose Category'}
+              {category ? CATEGORY_CFG[category].label : 'Choose Category'}
             </Text>
-            <Feather name="chevron-down" size={18} color={SgateColors.t3} />
+            <Feather name={showCategoryPicker ? 'chevron-up' : 'chevron-down'} size={18} color={SgateColors.t3} />
           </TouchableOpacity>
 
-          {/* Dropdown list */}
           {showCategoryPicker && (
             <View style={styles.dropdownList}>
               {CATEGORIES.map((cat, idx) => {
@@ -116,25 +109,15 @@ export default function CreatePostScreen() {
                 return (
                   <TouchableOpacity
                     key={cat}
-                    style={[
-                      styles.dropdownItem,
-                      !isLast && styles.dropdownItemBorder,
-                    ]}
-                    onPress={() => {
-                      setCategory(cat);
-                      setShowCategoryPicker(false);
-                    }}
+                    style={[styles.dropdownItem, !isLast && styles.dropdownItemBorder]}
+                    onPress={() => { setCategory(cat); setShowCategoryPicker(false); }}
                     activeOpacity={0.75}
                   >
                     <View style={[styles.dropdownBadge, { backgroundColor: cfg.bg }]}>
-                      <Text style={[styles.dropdownBadgeText, { color: cfg.fg }]}>
-                        {cfg.label}
-                      </Text>
+                      <Text style={[styles.dropdownBadgeText, { color: cfg.fg }]}>{cfg.label}</Text>
                     </View>
                     <Text style={styles.dropdownItemLabel}>{cfg.label}</Text>
-                    {isSelected && (
-                      <Feather name="check" size={16} color={SgateColors.blue} />
-                    )}
+                    {isSelected && <Feather name="check" size={16} color={SgateColors.blue} />}
                   </TouchableOpacity>
                 );
               })}
@@ -142,7 +125,7 @@ export default function CreatePostScreen() {
           )}
         </View>
 
-        {/* ── Title ────────────────────────────────────────────────────────── */}
+        {/* ── Title ─────────────────────────────────────────────────────────── */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Title *</Text>
           <TextInput
@@ -154,7 +137,7 @@ export default function CreatePostScreen() {
           />
         </View>
 
-        {/* ── Description ──────────────────────────────────────────────────── */}
+        {/* ── Description ───────────────────────────────────────────────────── */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Description *</Text>
           <TextInput
@@ -174,13 +157,11 @@ export default function CreatePostScreen() {
           </View>
         </View>
 
-        {/* ── Anonymous ────────────────────────────────────────────────────── */}
+        {/* ── Anonymous ─────────────────────────────────────────────────────── */}
         <View style={[styles.card, styles.anonymousCard]}>
           <View style={styles.flex1}>
             <Text style={styles.anonymousTitle}>Post Anonymously</Text>
-            <Text style={styles.anonymousSubtitle}>
-              Your name will not be shown on this post.
-            </Text>
+            <Text style={styles.anonymousSubtitle}>Your name will not be shown on this post.</Text>
           </View>
           <Switch
             value={isAnonymous}
@@ -196,162 +177,31 @@ export default function CreatePostScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: SgateColors.card,
-  },
-  flex1: {
-    flex: 1,
-  },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: SgateColors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: SgateColors.borderSoft,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontFamily: SgateFonts.bold,
-    fontSize: 18,
-    color: SgateColors.t1,
-    flex: 1,
-    marginLeft: 12,
-  },
-  postButton: {
-    fontFamily: SgateFonts.semibold,
-    fontSize: 15,
-    color: SgateColors.blue,
-  },
-  postButtonDisabled: {
-    color: SgateColors.t4,
-  },
-
-  // Scroll
-  scrollView: {
-    flex: 1,
-    backgroundColor: SgateColors.bg,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 32,
-  },
-
-  // Card base
-  card: {
-    backgroundColor: SgateColors.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: SgateColors.borderSoft,
-  },
-  cardLabel: {
-    fontFamily: SgateFonts.semibold,
-    fontSize: 13,
-    color: SgateColors.t1,
-    marginBottom: 10,
-  },
-
-  // Dropdown
-  dropdownRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: SgateColors.surface,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-  },
-  dropdownText: {
-    flex: 1,
-    fontFamily: SgateFonts.medium,
-    fontSize: 14,
-    color: SgateColors.t1,
-  },
-  dropdownPlaceholder: {
-    color: SgateColors.t3,
-  },
-  dropdownList: {
-    backgroundColor: SgateColors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: SgateColors.border,
-    marginTop: 8,
-    overflow: 'hidden',
-  },
-  dropdownItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  dropdownItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: SgateColors.borderSoft,
-  },
-  dropdownBadge: {
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  dropdownBadgeText: {
-    fontSize: 11,
-    fontFamily: SgateFonts.bold,
-  },
-  dropdownItemLabel: {
-    flex: 1,
-    fontFamily: SgateFonts.medium,
-    fontSize: 14,
-    color: SgateColors.t1,
-    marginLeft: 10,
-  },
-
-  // Title input
-  titleInput: {
-    fontFamily: SgateFonts.regular,
-    fontSize: 14,
-    color: SgateColors.t1,
-  },
-
-  // Body input
-  bodyInput: {
-    fontFamily: SgateFonts.regular,
-    fontSize: 14,
-    color: SgateColors.t1,
-    minHeight: 120,
-  },
-  counterRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 8,
-  },
-  counterText: {
-    fontFamily: SgateFonts.regular,
-    fontSize: 12,
-    color: SgateColors.t4,
-  },
-  counterTextWarn: {
-    color: SgateColors.red,
-  },
-
-  // Anonymous card
-  anonymousCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  anonymousTitle: {
-    fontFamily: SgateFonts.semibold,
-    fontSize: 14,
-    color: SgateColors.t1,
-  },
-  anonymousSubtitle: {
-    fontFamily: SgateFonts.regular,
-    fontSize: 12,
-    color: SgateColors.t3,
-    marginTop: 2,
-  },
+  safeArea: { flex: 1, backgroundColor: SgateColors.card },
+  flex1: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft, paddingHorizontal: 16, paddingVertical: 12 },
+  headerTitle: { fontFamily: SgateFonts.bold, fontSize: 18, color: SgateColors.t1, flex: 1, marginLeft: 12 },
+  postButton: { fontFamily: SgateFonts.semibold, fontSize: 15, color: SgateColors.blue },
+  postButtonDisabled: { color: SgateColors.t4 },
+  scrollView: { flex: 1, backgroundColor: SgateColors.bg },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 32 },
+  card: { backgroundColor: SgateColors.card, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: SgateColors.borderSoft },
+  cardLabel: { fontFamily: SgateFonts.semibold, fontSize: 13, color: SgateColors.t1, marginBottom: 10 },
+  dropdownRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderRadius: 12, padding: 14, borderWidth: 1 },
+  dropdownText: { flex: 1, fontFamily: SgateFonts.medium, fontSize: 14, color: SgateColors.t1 },
+  dropdownPlaceholder: { color: SgateColors.t3 },
+  dropdownList: { backgroundColor: SgateColors.card, borderRadius: 12, borderWidth: 1, borderColor: SgateColors.border, marginTop: 8, overflow: 'hidden' },
+  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12 },
+  dropdownItemBorder: { borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+  dropdownBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  dropdownBadgeText: { fontSize: 11, fontFamily: SgateFonts.bold },
+  dropdownItemLabel: { flex: 1, fontFamily: SgateFonts.medium, fontSize: 14, color: SgateColors.t1, marginLeft: 10 },
+  titleInput: { fontFamily: SgateFonts.regular, fontSize: 14, color: SgateColors.t1 },
+  bodyInput: { fontFamily: SgateFonts.regular, fontSize: 14, color: SgateColors.t1, minHeight: 120 },
+  counterRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 },
+  counterText: { fontFamily: SgateFonts.regular, fontSize: 12, color: SgateColors.t4 },
+  counterTextWarn: { color: SgateColors.red },
+  anonymousCard: { flexDirection: 'row', alignItems: 'center' },
+  anonymousTitle: { fontFamily: SgateFonts.semibold, fontSize: 14, color: SgateColors.t1 },
+  anonymousSubtitle: { fontFamily: SgateFonts.regular, fontSize: 12, color: SgateColors.t3, marginTop: 2 },
 });

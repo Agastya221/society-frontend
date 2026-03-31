@@ -1,231 +1,752 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card } from '../../../components/ui/Card';
-import { PrimaryButton } from '../../../components/ui/PrimaryButton';
-import api from '../../../services/api';
+import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import {
+    cancelPreApproved,
+    deletePreApproved,
+    getPreApprovedList,
+    getRepeatTemplate,
+} from '../../../services/gate.service';
+import type {
+    PreApprovedEntry,
+    PreApprovedMode,
+    PreApprovedScheduleType,
+    PreApprovedStatus,
+    PreApprovedType,
+} from '../../../types/api';
 
-interface PreApproval {
-    id: string;
-    visitorName: string;
-    visitorPhone?: string;
-    visitorType: string;
-    validFrom: string;
-    validUntil: string;
-    status: 'ACTIVE' | 'EXPIRED' | 'USED' | 'CANCELLED';
-    qrToken: string;
-    usedCount: number;
-    maxUses: number;
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const TYPE_CONFIG: Record<PreApprovedType, { label: string; icon: React.ComponentProps<typeof Feather>['name']; color: string; bg: string }> = {
+    CAB:      { label: 'Cab',      icon: 'navigation', color: SgateColors.blue,   bg: SgateColors.blueBg  },
+    DELIVERY: { label: 'Delivery', icon: 'package',    color: SgateColors.green,  bg: SgateColors.greenBg },
+    HELP:     { label: 'Help',     icon: 'tool',       color: SgateColors.gold,   bg: SgateColors.goldPale },
+};
+
+const STATUS_CONFIG: Record<PreApprovedStatus, { label: string; color: string; bg: string }> = {
+    ACTIVE:    { label: 'Active',    color: SgateColors.green, bg: SgateColors.greenBg },
+    EXPIRED:   { label: 'Expired',   color: SgateColors.t3,    bg: SgateColors.surface  },
+    USED:      { label: 'Used',      color: SgateColors.blue,  bg: SgateColors.blueBg   },
+    CANCELLED: { label: 'Cancelled', color: SgateColors.red,   bg: SgateColors.redBg    },
+};
+
+const DAYS_SHORT: Record<string, string> = {
+    MON: 'M', TUE: 'T', WED: 'W', THU: 'T', FRI: 'F', SAT: 'S', SUN: 'S',
+};
+
+function scheduleLabel(entry: PreApprovedEntry): string {
+    const s = entry.schedule;
+    if (s.scheduleType === 'ONCE') {
+        if (s.date) return `${s.date}  ${s.startTime ?? ''}–${s.endTime ?? ''}`.trim();
+        return 'One-time';
+    }
+    const days = (s.daysOfWeek ?? []).map(d => DAYS_SHORT[d] ?? d).join(' ');
+    return `${days}  ${s.timeFrom ?? ''}–${s.timeTo ?? ''}`.trim();
 }
+
+// ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function PreApprovalsScreen() {
     const router = useRouter();
-    const [preApprovals, setPreApprovals] = useState<PreApproval[]>([]);
+    const [entries, setEntries] = useState<PreApprovedEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [selectedQr, setSelectedQr] = useState<string | null>(null);
+    // QR modal
+    const [qrEntry, setQrEntry] = useState<PreApprovedEntry | null>(null);
 
-    const fetchPreApprovals = async () => {
+    // 3-dot action menu
+    const [menuEntry, setMenuEntry] = useState<PreApprovedEntry | null>(null);
+
+    const fetchEntries = async () => {
         try {
             setError(null);
-            const res = await api.get('/gate/preapprovals');
-            setPreApprovals(res.data?.data || []);
+            const res = await getPreApprovedList({ limit: 50 });
+            setEntries(res.entries);
         } catch (err: any) {
-            console.error(err);
-            setError(err?.response?.data?.message || 'Failed to fetch pre-approvals');
+            setError(err?.response?.data?.message ?? 'Failed to load pre-approvals');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchPreApprovals();
-        }, [])
-    );
+    useFocusEffect(useCallback(() => { fetchEntries(); }, []));
 
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchPreApprovals();
-    };
+    const onRefresh = () => { setRefreshing(true); fetchEntries(); };
 
-    const handleCancel = (id: string) => {
+    // ── Cancel ───────────────────────────────────────────────────────────────
+    const handleCancel = (entry: PreApprovedEntry) => {
+        setMenuEntry(null);
         Alert.alert(
             'Cancel Pre-Approval?',
-            'Are you sure you want to cancel this pre-approval? The QR code will no longer work.',
+            'The QR code will stop working. You can delete it afterwards.',
             [
                 { text: 'Keep', style: 'cancel' },
                 {
-                    text: 'Cancel It',
-                    style: 'destructive',
+                    text: 'Cancel It', style: 'destructive',
                     onPress: async () => {
                         try {
-                            await api.delete(`/gate/preapprovals/${id}`);
-                            // Optimistic UI update
-                            setPreApprovals(prev => prev.map(p => p.id === id ? { ...p, status: 'CANCELLED' } : p));
+                            const updated = await cancelPreApproved(entry.id);
+                            setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, status: 'CANCELLED' } : e));
                         } catch (err: any) {
-                            console.error(err);
-                            Alert.alert('Error', err?.response?.data?.message || 'Failed to cancel pre-approval');
+                            Alert.alert('Error', err?.response?.data?.message ?? 'Failed to cancel');
                         }
-                    }
-                }
+                    },
+                },
             ]
         );
     };
 
-    const getStatusColor = (status: PreApproval['status']) => {
-        switch (status) {
-            case 'ACTIVE': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-            case 'USED': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-            case 'CANCELLED': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-            case 'EXPIRED': default: return 'bg-gray-200 text-gray-800 dark:bg-zinc-800 dark:text-gray-400';
-        }
-    };
-
-    const renderItem = ({ item }: { item: PreApproval }) => {
-        const isActive = item.status === 'ACTIVE';
-
-        return (
-            <Card className="mb-4 overflow-hidden border-0 shadow-md">
-                <View className="p-4 flex-row items-start justify-between bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800">
-                    <View className="flex-1">
-                        <View className="flex-row items-center justify-between mb-1">
-                            <Text className={`font-bold text-lg ${isActive ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>
-                                {item.visitorName}
-                            </Text>
-                            <View className={`px-2 py-1 rounded ${getStatusColor(item.status)}`}>
-                                <Text className={`text-[10px] font-bold tracking-wider ${getStatusColor(item.status)}`}>
-                                    {item.status}
-                                </Text>
-                            </View>
-                        </View>
-                        <View className="flex-row items-center gap-2 mt-1">
-                            <Text className="text-xs font-medium bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 self-start px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 capitalize">
-                                {item.visitorType.toLowerCase().replace('_', ' ')}
-                            </Text>
-                            <Text className="text-xs text-gray-400 line-clamp-1 flex-1">
-                                valid until {new Date(item.validUntil).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </Text>
-                        </View>
-                    </View>
-                </View>
-
-                {isActive && (
-                    <View className="flex-row p-3 bg-gray-50 dark:bg-zinc-900/50 gap-3 border-t border-gray-100 dark:border-zinc-800">
-                        <TouchableOpacity
-                            onPress={() => setSelectedQr(item.qrToken)}
-                            className="flex-1 flex-row items-center justify-center py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-900/50"
-                        >
-                            <Ionicons name="qr-code" size={18} className="text-indigo-600 dark:text-indigo-400 mr-2" />
-                            <Text className="text-sm font-bold text-indigo-600 dark:text-indigo-400">View QR</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            onPress={() => handleCancel(item.id)}
-                            className="flex-1 flex-row items-center justify-center py-2 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30"
-                        >
-                            <Ionicons name="close-circle" size={18} className="text-red-600 dark:text-red-400 mr-2" />
-                            <Text className="text-sm font-bold text-red-600 dark:text-red-400">Cancel</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-            </Card>
+    // ── Delete ───────────────────────────────────────────────────────────────
+    const handleDelete = (entry: PreApprovedEntry) => {
+        setMenuEntry(null);
+        Alert.alert(
+            'Delete Entry?',
+            'This will permanently remove this pre-approval.',
+            [
+                { text: 'Keep', style: 'cancel' },
+                {
+                    text: 'Delete', style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await deletePreApproved(entry.id);
+                            setEntries(prev => prev.filter(e => e.id !== entry.id));
+                        } catch (err: any) {
+                            Alert.alert('Error', err?.response?.data?.message ?? 'Failed to delete');
+                        }
+                    },
+                },
+            ]
         );
     };
 
+    // ── Repeat ───────────────────────────────────────────────────────────────
+    const handleRepeat = async (entry: PreApprovedEntry) => {
+        setMenuEntry(null);
+        try {
+            const template = await getRepeatTemplate(entry.id);
+            router.push({
+                pathname: '/(resident)/pre-approvals/create',
+                params: { prefill: JSON.stringify(template) },
+            });
+        } catch {
+            router.push('/(resident)/pre-approvals/create');
+        }
+    };
+
+    // ── Render item ──────────────────────────────────────────────────────────
+    const renderItem = ({ item }: { item: PreApprovedEntry }) => {
+        const typeConf  = TYPE_CONFIG[item.type];
+        const statConf  = STATUS_CONFIG[item.status];
+        const isActive  = item.status === 'ACTIVE';
+        const isCancelled = item.status === 'CANCELLED';
+        const schedInfo = scheduleLabel(item);
+
+        return (
+            <View style={styles.card}>
+                {/* Top row */}
+                <View style={styles.cardTop}>
+                    {/* Type bubble */}
+                    <View style={[styles.typeBubble, { backgroundColor: typeConf.bg }]}>
+                        <Feather name={typeConf.icon} size={20} color={typeConf.color} />
+                    </View>
+
+                    <View style={styles.cardInfo}>
+                        {/* Name + status */}
+                        <View style={styles.cardRow}>
+                            <Text style={styles.cardName} numberOfLines={1}>
+                                {item.meta.visitorName ?? typeConf.label}
+                            </Text>
+                            <View style={[styles.statusBadge, { backgroundColor: statConf.bg }]}>
+                                <Text style={[styles.statusText, { color: statConf.color }]}>{statConf.label}</Text>
+                            </View>
+                        </View>
+
+                        {/* Type + mode badges */}
+                        <View style={styles.badgeRow}>
+                            <View style={[styles.typePill, { backgroundColor: typeConf.bg }]}>
+                                <Text style={[styles.typePillText, { color: typeConf.color }]}>{typeConf.label}</Text>
+                            </View>
+                            {item.mode === 'SAFE' && (
+                                <View style={[styles.typePill, { backgroundColor: SgateColors.blueBg }]}>
+                                    <Feather name="shield" size={10} color={SgateColors.blue} style={{ marginRight: 3 }} />
+                                    <Text style={[styles.typePillText, { color: SgateColors.blue }]}>Safe</Text>
+                                </View>
+                            )}
+                            {item.mode === 'SURPRISE' && (
+                                <View style={[styles.typePill, { backgroundColor: '#F3EEFF' }]}>
+                                    <Text style={[styles.typePillText, { color: '#9B6DFF' }]}>Surprise</Text>
+                                </View>
+                            )}
+                            {item.schedule.scheduleType === 'RECURRING' && (
+                                <View style={[styles.typePill, { backgroundColor: SgateColors.surface }]}>
+                                    <Feather name="repeat" size={10} color={SgateColors.t3} style={{ marginRight: 3 }} />
+                                    <Text style={[styles.typePillText, { color: SgateColors.t3 }]}>Recurring</Text>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Schedule info */}
+                        {!!schedInfo && (
+                            <View style={styles.schedRow}>
+                                <Feather name="clock" size={11} color={SgateColors.t4} style={{ marginRight: 4 }} />
+                                <Text style={styles.schedText} numberOfLines={1}>{schedInfo}</Text>
+                            </View>
+                        )}
+                    </View>
+
+                    {/* 3-dot menu */}
+                    <TouchableOpacity
+                        style={styles.menuBtn}
+                        onPress={() => setMenuEntry(item)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        <Feather name="more-vertical" size={18} color={SgateColors.t3} />
+                    </TouchableOpacity>
+                </View>
+
+                {/* HELP category */}
+                {item.type === 'HELP' && !!item.meta.category && (
+                    <View style={styles.categoryRow}>
+                        <Text style={styles.categoryText}>
+                            {(item.meta.customCategory ?? item.meta.category ?? '').replace(/_/g, ' ')}
+                        </Text>
+                    </View>
+                )}
+
+                {/* Active footer */}
+                {isActive && !!item.qrToken && (
+                    <TouchableOpacity
+                        style={styles.qrBtn}
+                        onPress={() => setQrEntry(item)}
+                        activeOpacity={0.8}
+                    >
+                        <Feather name="maximize" size={14} color={SgateColors.t1} style={{ marginRight: 6 }} />
+                        <Text style={styles.qrBtnText}>View QR Code</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+        );
+    };
+
+    // ── Loading / error ──────────────────────────────────────────────────────
     if (loading) {
         return (
-            <SafeAreaView className="flex-1 bg-gray-50 dark:bg-black items-center justify-center" edges={['top']}>
-                <ActivityIndicator size="large" color="#4f46e5" />
+            <SafeAreaView style={styles.safe} edges={['top']}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Pre-Approvals</Text>
+                    <View style={{ width: 40 }} />
+                </View>
+                <View style={styles.centered}>
+                    <ActivityIndicator size="large" color={SgateColors.gold} />
+                </View>
             </SafeAreaView>
         );
     }
 
-    if (error && preApprovals.length === 0) {
+    if (error && entries.length === 0) {
         return (
-            <SafeAreaView className="flex-1 bg-gray-50 dark:bg-black items-center justify-center p-6 gap-4" edges={['top']}>
-                <Ionicons name="alert-circle-outline" size={48} color="#ef4444" />
-                <Text className="text-gray-600 dark:text-gray-400 text-center">{error}</Text>
-                <PrimaryButton title="Retry" onPress={() => { setLoading(true); fetchPreApprovals(); }} />
+            <SafeAreaView style={styles.safe} edges={['top']}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Pre-Approvals</Text>
+                    <View style={{ width: 40 }} />
+                </View>
+                <View style={styles.centered}>
+                    <Feather name="wifi-off" size={40} color={SgateColors.t4} />
+                    <Text style={styles.errorText}>{error}</Text>
+                    <TouchableOpacity
+                        style={styles.retryBtn}
+                        onPress={() => { setLoading(true); fetchEntries(); }}
+                    >
+                        <Text style={styles.retryBtnText}>Retry</Text>
+                    </TouchableOpacity>
+                </View>
             </SafeAreaView>
         );
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-black" edges={['top']}>
-            <View className="px-5 py-4 flex-row items-center justify-between bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800">
-                <View className="flex-row items-center gap-3">
-                    <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800">
-                        <Ionicons name="arrow-back" size={24} className="text-gray-700 dark:text-gray-300" />
-                    </TouchableOpacity>
-                    <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">Pre-Approvals</Text>
-                </View>
-                <TouchableOpacity onPress={() => router.push('/(resident)/pre-approvals/create')} className="bg-indigo-600 h-9 w-9 rounded-full items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-none">
-                    <Ionicons name="add" size={24} color="white" />
+        <SafeAreaView style={styles.safe} edges={['top']}>
+            {/* Header */}
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Pre-Approvals</Text>
+                <TouchableOpacity
+                    style={styles.addBtn}
+                    onPress={() => router.push('/(resident)/pre-approvals/create')}
+                >
+                    <Feather name="plus" size={20} color={SgateColors.card} />
                 </TouchableOpacity>
             </View>
 
             <FlatList
-                data={preApprovals}
+                data={entries}
                 keyExtractor={item => item.id}
                 renderItem={renderItem}
-                contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+                contentContainerStyle={styles.listContent}
                 onRefresh={onRefresh}
                 refreshing={refreshing}
                 showsVerticalScrollIndicator={false}
-                ListHeaderComponent={
-                    preApprovals.length > 0 ? (
-                        <Text className="text-gray-500 dark:text-gray-400 text-sm mb-4 px-1">
-                            Pre-approved visitors can enter by showing their QR code to the guard.
-                        </Text>
-                    ) : null
-                }
                 ListEmptyComponent={
-                    <View className="flex-1 items-center justify-center py-20 opacity-70">
-                        <Ionicons name="qr-code-outline" size={64} className="text-gray-300 dark:text-zinc-700 mb-4" />
-                        <Text className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">No Pre-approvals</Text>
-                        <Text className="text-sm text-gray-500 text-center px-10">No pre-approvals yet. Create one to effortlessly invite guests without manual approvals!</Text>
-                        <View className="mt-6 w-full px-10">
-                            <PrimaryButton title="Create Pre-Approval" onPress={() => router.push('/(resident)/pre-approvals/create')} />
-                        </View>
+                    <View style={styles.empty}>
+                        <Feather name="shield" size={52} color={SgateColors.t4} />
+                        <Text style={styles.emptyTitle}>No Pre-Approvals</Text>
+                        <Text style={styles.emptySubtitle}>
+                            Create a pre-approval so cabs, deliveries, or helpers can enter without manual approval.
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.emptyBtn}
+                            onPress={() => router.push('/(resident)/pre-approvals/create')}
+                        >
+                            <Text style={styles.emptyBtnText}>Create Pre-Approval</Text>
+                        </TouchableOpacity>
                     </View>
                 }
             />
 
-            {/* QR Code Modal */}
+            {/* ── QR Modal ─────────────────────────────────────────────────── */}
             <Modal
-                visible={!!selectedQr}
-                transparent={true}
+                visible={!!qrEntry}
+                transparent
                 animationType="fade"
-                onRequestClose={() => setSelectedQr(null)}
+                onRequestClose={() => setQrEntry(null)}
             >
-                <View className="flex-1 bg-black/60 items-center justify-center p-6">
-                    <View className="bg-white rounded-3xl p-8 items-center border border-gray-100 shadow-xl w-full max-w-[340px]">
-                        <Text className="text-lg font-bold text-gray-900 mb-1">Gate Pass QR Cache</Text>
-                        <Text className="text-xs font-medium text-gray-500 mb-6 text-center">Share this QR code with your visitor</Text>
-                        
-                        <View className="p-4 border border-gray-200 rounded-2xl bg-white shadow-sm mb-8">
-                            {selectedQr && (
-                                <View style={{ width: 220, height: 220, alignItems: 'center', justifyContent: 'center' }}>
-                                    <QRCode value={selectedQr} size={220} />
-                                </View>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.qrModal}>
+                        <Text style={styles.qrModalTitle}>Gate Pass QR</Text>
+                        <Text style={styles.qrModalSub}>
+                            {qrEntry?.meta.visitorName ?? TYPE_CONFIG[qrEntry?.type ?? 'CAB']?.label}
+                        </Text>
+                        <View style={styles.qrBox}>
+                            {qrEntry?.qrToken && (
+                                <QRCode value={qrEntry.qrToken} size={200} />
                             )}
                         </View>
-
-                        <PrimaryButton 
-                            title="Close" 
-                            className="w-full"
-                            onPress={() => setSelectedQr(null)} 
-                        />
+                        <TouchableOpacity
+                            style={styles.qrCloseBtn}
+                            onPress={() => setQrEntry(null)}
+                            activeOpacity={0.85}
+                        >
+                            <Text style={styles.qrCloseBtnText}>Close</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
+            </Modal>
+
+            {/* ── 3-dot Action Menu Modal ──────────────────────────────────── */}
+            <Modal
+                visible={!!menuEntry}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setMenuEntry(null)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setMenuEntry(null)}
+                >
+                    <View style={styles.actionSheet}>
+                        <View style={styles.actionSheetHandle} />
+                        <Text style={styles.actionSheetTitle} numberOfLines={1}>
+                            {menuEntry?.meta.visitorName ?? TYPE_CONFIG[menuEntry?.type ?? 'CAB']?.label}
+                        </Text>
+
+                        {/* View QR */}
+                        {menuEntry?.status === 'ACTIVE' && menuEntry.qrToken && (
+                            <TouchableOpacity
+                                style={styles.actionItem}
+                                onPress={() => { setQrEntry(menuEntry); setMenuEntry(null); }}
+                            >
+                                <View style={[styles.actionIcon, { backgroundColor: SgateColors.surface }]}>
+                                    <Feather name="maximize" size={18} color={SgateColors.t2} />
+                                </View>
+                                <Text style={styles.actionLabel}>View QR Code</Text>
+                                <Feather name="chevron-right" size={16} color={SgateColors.t4} />
+                            </TouchableOpacity>
+                        )}
+
+                        {/* Repeat */}
+                        <TouchableOpacity
+                            style={styles.actionItem}
+                            onPress={() => menuEntry && handleRepeat(menuEntry)}
+                        >
+                            <View style={[styles.actionIcon, { backgroundColor: SgateColors.blueBg }]}>
+                                <Feather name="refresh-cw" size={18} color={SgateColors.blue} />
+                            </View>
+                            <Text style={styles.actionLabel}>Repeat This</Text>
+                            <Feather name="chevron-right" size={16} color={SgateColors.t4} />
+                        </TouchableOpacity>
+
+                        {/* Cancel (only ACTIVE) */}
+                        {menuEntry?.status === 'ACTIVE' && (
+                            <TouchableOpacity
+                                style={styles.actionItem}
+                                onPress={() => menuEntry && handleCancel(menuEntry)}
+                            >
+                                <View style={[styles.actionIcon, { backgroundColor: '#FFF3F3' }]}>
+                                    <Feather name="x-circle" size={18} color={SgateColors.red} />
+                                </View>
+                                <Text style={[styles.actionLabel, { color: SgateColors.red }]}>Cancel Pre-Approval</Text>
+                                <Feather name="chevron-right" size={16} color={SgateColors.t4} />
+                            </TouchableOpacity>
+                        )}
+
+                        {/* Delete (only non-ACTIVE) */}
+                        {menuEntry?.status !== 'ACTIVE' && (
+                            <TouchableOpacity
+                                style={styles.actionItem}
+                                onPress={() => menuEntry && handleDelete(menuEntry)}
+                            >
+                                <View style={[styles.actionIcon, { backgroundColor: '#FFF3F3' }]}>
+                                    <Feather name="trash-2" size={18} color={SgateColors.red} />
+                                </View>
+                                <Text style={[styles.actionLabel, { color: SgateColors.red }]}>Delete Entry</Text>
+                                <Feather name="chevron-right" size={16} color={SgateColors.t4} />
+                            </TouchableOpacity>
+                        )}
+
+                        <TouchableOpacity
+                            style={styles.actionCancelRow}
+                            onPress={() => setMenuEntry(null)}
+                        >
+                            <Text style={styles.actionCancelText}>Dismiss</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
             </Modal>
         </SafeAreaView>
     );
 }
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+    safe: { flex: 1, backgroundColor: SgateColors.bg },
+
+    header: {
+        backgroundColor: SgateColors.card,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 13,
+        borderBottomWidth: 1,
+        borderBottomColor: SgateColors.borderSoft,
+    },
+    backBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerTitle: {
+        flex: 1,
+        textAlign: 'center',
+        fontSize: 17,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+    },
+    addBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: SgateColors.black,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    centered: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+    },
+    errorText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t3,
+        textAlign: 'center',
+        paddingHorizontal: 40,
+    },
+    retryBtn: {
+        backgroundColor: SgateColors.black,
+        paddingHorizontal: 28,
+        paddingVertical: 12,
+        borderRadius: 14,
+        marginTop: 4,
+    },
+    retryBtnText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.card,
+    },
+
+    listContent: {
+        padding: 16,
+        gap: 10,
+        flexGrow: 1,
+    },
+
+    // ── Card ─────────────────────────────────────────────────────────────────
+    card: {
+        backgroundColor: SgateColors.card,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+        overflow: 'hidden',
+    },
+    cardTop: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        padding: 14,
+        gap: 12,
+    },
+    typeBubble: {
+        width: 46,
+        height: 46,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 2,
+    },
+    cardInfo: { flex: 1 },
+    cardRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 6,
+    },
+    cardName: {
+        fontSize: 15,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t1,
+        flex: 1,
+        marginRight: 8,
+    },
+    statusBadge: {
+        borderRadius: 10,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+    },
+    statusText: {
+        fontSize: 10,
+        fontFamily: SgateFonts.bold,
+        letterSpacing: 0.6,
+    },
+    badgeRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 5,
+        marginBottom: 6,
+    },
+    typePill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 8,
+    },
+    typePillText: {
+        fontSize: 11,
+        fontFamily: SgateFonts.semibold,
+    },
+    schedRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    schedText: {
+        fontSize: 12,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+    },
+    menuBtn: {
+        paddingTop: 2,
+    },
+    categoryRow: {
+        paddingHorizontal: 14,
+        paddingBottom: 12,
+    },
+    categoryText: {
+        fontSize: 12,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t3,
+        textTransform: 'capitalize',
+    },
+    qrBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderTopWidth: 1,
+        borderTopColor: SgateColors.borderSoft,
+        paddingVertical: 11,
+        backgroundColor: SgateColors.surface,
+    },
+    qrBtnText: {
+        fontSize: 13,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t1,
+    },
+
+    // ── Empty ────────────────────────────────────────────────────────────────
+    empty: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 80,
+        paddingHorizontal: 36,
+        gap: 10,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        marginTop: 8,
+    },
+    emptySubtitle: {
+        fontSize: 13,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+        textAlign: 'center',
+        lineHeight: 20,
+    },
+    emptyBtn: {
+        marginTop: 12,
+        backgroundColor: SgateColors.black,
+        paddingHorizontal: 28,
+        paddingVertical: 13,
+        borderRadius: 14,
+    },
+    emptyBtnText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.card,
+    },
+
+    // ── Modals ───────────────────────────────────────────────────────────────
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    qrModal: {
+        backgroundColor: SgateColors.card,
+        borderRadius: 24,
+        padding: 24,
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: 320,
+    },
+    qrModalTitle: {
+        fontSize: 16,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        marginBottom: 4,
+    },
+    qrModalSub: {
+        fontSize: 13,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+        marginBottom: 20,
+    },
+    qrBox: {
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: SgateColors.border,
+        marginBottom: 20,
+        backgroundColor: '#FFFFFF',
+    },
+    qrCloseBtn: {
+        width: '100%',
+        backgroundColor: SgateColors.black,
+        borderRadius: 14,
+        paddingVertical: 14,
+        alignItems: 'center',
+    },
+    qrCloseBtnText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.card,
+    },
+
+    actionSheet: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: SgateColors.card,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 20,
+        paddingBottom: 32,
+    },
+    actionSheetHandle: {
+        width: 36,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: SgateColors.border,
+        alignSelf: 'center',
+        marginBottom: 16,
+    },
+    actionSheetTitle: {
+        fontSize: 14,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t3,
+        marginBottom: 14,
+    },
+    actionItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: SgateColors.borderSoft,
+        gap: 12,
+    },
+    actionIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    actionLabel: {
+        flex: 1,
+        fontSize: 15,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t1,
+    },
+    actionCancelRow: {
+        paddingTop: 16,
+        alignItems: 'center',
+    },
+    actionCancelText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t3,
+    },
+});

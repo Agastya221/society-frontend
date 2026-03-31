@@ -1,18 +1,31 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
+  View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
-import { MY_BOOKINGS, MyBooking, BookingStatus } from '../../../mocks/amenities';
+import api from '../../../services/api';
+
+type BookingStatus = 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'PENDING';
+interface MyBooking {
+  id: string; amenityName: string; amenityIcon: string;
+  date: string; timeSlot: string; members: number; status: BookingStatus;
+}
+
+function normalise(raw: any): MyBooking {
+  return {
+    id:           raw.id,
+    amenityName:  raw.amenity?.name ?? raw.amenityName ?? '',
+    amenityIcon:  raw.amenity?.icon ?? raw.amenityIcon ?? 'home',
+    date:         raw.date ?? raw.bookingDate ?? '',
+    timeSlot:     raw.timeSlot ?? raw.slot?.time ?? '',
+    members:      raw.membersCount ?? raw.members ?? 1,
+    status:       raw.status ?? 'CONFIRMED',
+  };
+}
 
 type Tab = 'UPCOMING' | 'PAST';
 
@@ -122,20 +135,38 @@ function BookingCard({
 
 export default function MyBookingsScreen() {
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>('UPCOMING');
-  const [bookings, setBookings] = useState<MyBooking[]>(MY_BOOKINGS);
+  const [tab, setTab]           = useState<Tab>('UPCOMING');
+  const [bookings, setBookings] = useState<MyBooking[]>([]);
+  const [loading, setLoading]   = useState(true);
 
-  const filtered =
-    tab === 'UPCOMING'
-      ? bookings.filter((b) => b.status === 'CONFIRMED')
-      : bookings.filter((b) => b.status !== 'CONFIRMED');
+  useFocusEffect(useCallback(() => {
+    (async () => {
+      try {
+        const res = await api.get('/resident/amenities/my-bookings');
+        const list: any[] = res.data?.data ?? res.data ?? [];
+        setBookings((Array.isArray(list) ? list : []).map(normalise));
+      } catch (err) {
+        console.error('Failed to fetch bookings:', err);
+      } finally { setLoading(false); }
+    })();
+  }, []));
+
+  const filtered = tab === 'UPCOMING'
+    ? bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'PENDING')
+    : bookings.filter(b => b.status !== 'CONFIRMED' && b.status !== 'PENDING');
 
   const handleCancel = (id: string) => {
-    setBookings((bs) =>
-      bs.map((b) =>
-        b.id === id ? { ...b, status: 'CANCELLED' as BookingStatus } : b,
-      ),
-    );
+    Alert.alert('Cancel Booking', 'Are you sure you want to cancel?', [
+      { text: 'Keep It', style: 'cancel' },
+      { text: 'Cancel Booking', style: 'destructive', onPress: async () => {
+        try {
+          await api.delete(`/resident/amenities/bookings/${id}`);
+          setBookings(bs => bs.map(b => b.id === id ? { ...b, status: 'CANCELLED' as BookingStatus } : b));
+        } catch {
+          Alert.alert('Error', 'Could not cancel booking. Please try again.');
+        }
+      }},
+    ]);
   };
 
   return (

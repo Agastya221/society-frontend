@@ -1,208 +1,126 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Share,
-  ScrollView,
+  View, Text, TouchableOpacity, StyleSheet, Alert,
+  Share, ScrollView, ActivityIndicator, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
-import {
-  DOCUMENTS,
-  SocietyDocument,
-  CATEGORY_LABELS,
-} from '../../../mocks/documents';
+import api from '../../../services/api';
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+const CATEGORY_LABELS: Record<string, string> = {
+  RULES_AND_BYLAWS: 'Rules & Regulations', MEETING_MINUTES: 'Minutes of Meeting',
+  FINANCIAL: 'Financial Report', CIRCULAR: 'Circular', MAINTENANCE: 'Maintenance',
+  LEGAL: 'Legal', PERSONAL: 'Personal', OTHER: 'Other',
+};
 
-const MONTHS = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function formatDate(iso: string) { const d = new Date(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; }
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+interface Doc {
+  id: string; name: string; category: string; fileName: string;
+  fileSizeMB: number; fileType: string; uploadedBy: string; createdAt: string;
 }
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
-
-function LargeFileIcon({ fileType }: { fileType: SocietyDocument['fileType'] }) {
-  let bgColor: string;
-  let iconColor: string;
-  let iconName: React.ComponentProps<typeof Feather>['name'];
-
-  if (fileType === 'PDF') {
-    bgColor = SgateColors.redBg;
-    iconColor = SgateColors.red;
-    iconName = 'file-text';
-  } else if (fileType === 'DOC') {
-    bgColor = SgateColors.blueBg;
-    iconColor = SgateColors.blue;
-    iconName = 'file';
-  } else {
-    bgColor = SgateColors.greenBg;
-    iconColor = SgateColors.green;
-    iconName = 'image';
-  }
-
-  return (
-    <View
-      style={[styles.largeIconBubble, { backgroundColor: bgColor }]}
-    >
-      <Feather name={iconName} size={40} color={iconColor} />
-    </View>
-  );
+function normalise(raw: any): Doc {
+  const ub = raw.uploadedBy;
+  return {
+    id: raw.id, name: raw.name ?? raw.fileName ?? '',
+    category: raw.category ?? 'OTHER', fileName: raw.fileName ?? '',
+    fileSizeMB: raw.fileSizeMB ?? 0, fileType: (raw.fileType ?? 'PDF').toUpperCase(),
+    uploadedBy: typeof ub === 'string' ? ub : (ub?.name ?? 'Unknown'),
+    createdAt: raw.createdAt ?? raw.uploadedAt ?? new Date().toISOString(),
+  };
 }
 
-interface DetailRowProps {
-  icon: React.ComponentProps<typeof Feather>['name'];
-  label: string;
-  value: string;
+function FileIcon({ ft }: { ft: string }) {
+  if (ft === 'PDF') return <View style={[S.iconBubble, { backgroundColor: SgateColors.redBg }]}><Feather name="file-text" size={40} color={SgateColors.red} /></View>;
+  if (ft === 'DOC' || ft === 'DOCX') return <View style={[S.iconBubble, { backgroundColor: SgateColors.blueBg }]}><Feather name="file" size={40} color={SgateColors.blue} /></View>;
+  return <View style={[S.iconBubble, { backgroundColor: SgateColors.greenBg }]}><Feather name="image" size={40} color={SgateColors.green} /></View>;
 }
-
-function DetailRow({ icon, label, value }: DetailRowProps) {
-  return (
-    <View style={styles.detailRow}>
-      <Feather name={icon} size={14} color={SgateColors.t4} style={styles.detailIcon} />
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
-    </View>
-  );
-}
-
-// ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function DocumentDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const doc = DOCUMENTS.find((d) => d.id === id) ?? null;
+  const [doc, setDoc] = useState<Doc | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [opening, setOpening] = useState(false);
 
-  if (!doc) {
-    return (
-      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-        <View style={styles.notFoundContainer}>
-          <Feather name="file" size={40} color={SgateColors.t4} />
-          <Text style={styles.notFoundText}>Document not found</Text>
-          <TouchableOpacity style={styles.backLink} onPress={() => router.back()}>
-            <Text style={styles.backLinkText}>Go back</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  useFocusEffect(useCallback(() => {
+    (async () => {
+      try {
+        const res = await api.get(`/resident/documents/${id}`);
+        setDoc(normalise(res.data?.data ?? res.data));
+      } catch { /* handled below */ } finally { setLoading(false); }
+    })();
+  }, [id]));
 
-  const handleShare = async () => {
-    await Share.share({
-      message: `${doc.name} - Shared from S-Gate app`,
-    });
+  const handleOpen = async () => {
+    if (!doc || opening) return;
+    setOpening(true);
+    try {
+      const res = await api.get(`/resident/documents/${id}/view-url`);
+      const url: string = res.data?.data?.url ?? res.data?.url ?? res.data;
+      if (url) await Linking.openURL(url);
+      else Alert.alert('Error', 'Could not get document URL.');
+    } catch { Alert.alert('Error', 'Could not open document.'); }
+    finally { setOpening(false); }
   };
 
-  const handleOpenDocument = () => {
-    Alert.alert(
-      'Coming Soon',
-      'Document viewer will be available in a future update.',
-    );
-  };
+  const handleShare = async () => doc && Share.share({ message: `${doc.name} - Shared from S-Gate` });
+
+  if (loading) return <SafeAreaView style={S.safe} edges={['top','bottom']}><View style={S.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View></SafeAreaView>;
+
+  if (!doc) return (
+    <SafeAreaView style={S.safe} edges={['top','bottom']}>
+      <View style={S.center}>
+        <Feather name="file" size={40} color={SgateColors.t4} />
+        <Text style={S.notFoundText}>Document not found</Text>
+        <TouchableOpacity onPress={() => router.back()}><Text style={S.backLink}>Go back</Text></TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
+    <SafeAreaView style={S.safe} edges={['top','bottom']}>
+      <View style={S.header}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:8,bottom:8,left:8,right:8 }}>
           <Feather name="arrow-left" size={22} color={SgateColors.t1} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {doc.name}
-        </Text>
-        <TouchableOpacity
-          onPress={handleShare}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.headerShareBtn}
-        >
+        <Text style={S.headerTitle} numberOfLines={1}>{doc.name}</Text>
+        <TouchableOpacity onPress={handleShare} hitSlop={{ top:8,bottom:8,left:8,right:8 }} style={{ marginRight: 12 }}>
           <Feather name="share-2" size={22} color={SgateColors.t1} />
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() =>
-            Alert.alert('Downloading...', `${doc.name} is being downloaded.`, [
-              { text: 'OK' },
-            ])
-          }
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Feather name="download" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
       </View>
-
-      {/* ── Center content ── */}
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.centerArea}>
-          {/* Main card */}
-          <View style={styles.mainCard}>
-            <LargeFileIcon fileType={doc.fileType} />
-
-            <View style={styles.fileTypePill}>
-              <Text style={styles.fileTypeText}>{doc.fileType}</Text>
-            </View>
-
-            <Text style={styles.docName}>{doc.name}</Text>
-
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>
-                {CATEGORY_LABELS[doc.category]}
-              </Text>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.detailRows}>
-              <DetailRow
-                icon="user"
-                label="Uploaded by"
-                value={doc.uploadedBy}
-              />
-              <DetailRow
-                icon="calendar"
-                label="Upload date"
-                value={formatDate(doc.uploadedAt)}
-              />
-              <DetailRow
-                icon="hard-drive"
-                label="File size"
-                value={`${doc.fileSizeMB} MB`}
-              />
-            </View>
+      <ScrollView contentContainerStyle={S.scroll} showsVerticalScrollIndicator={false}>
+        <View style={S.centerArea}>
+          <View style={S.mainCard}>
+            <FileIcon ft={doc.fileType} />
+            <View style={S.pill}><Text style={S.pillText}>{doc.fileType}</Text></View>
+            <Text style={S.docName}>{doc.name}</Text>
+            <View style={S.pill}><Text style={S.pillText}>{CATEGORY_LABELS[doc.category] ?? doc.category}</Text></View>
+            <View style={S.divider} />
+            {[
+              { icon: 'user' as const, label: 'Uploaded by', value: doc.uploadedBy },
+              { icon: 'calendar' as const, label: 'Upload date', value: formatDate(doc.createdAt) },
+              { icon: 'hard-drive' as const, label: 'File size', value: `${doc.fileSizeMB} MB` },
+            ].map(r => (
+              <View key={r.label} style={S.row}>
+                <Feather name={r.icon} size={14} color={SgateColors.t4} style={{ marginRight: 10 }} />
+                <Text style={S.rowLabel}>{r.label}</Text>
+                <Text style={S.rowValue}>{r.value}</Text>
+              </View>
+            ))}
           </View>
         </View>
-
-        {/* ── Bottom buttons ── */}
-        <View style={styles.bottomButtons}>
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            onPress={handleOpenDocument}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.primaryBtnText}>Open Document</Text>
+        <View style={S.btns}>
+          <TouchableOpacity style={S.primary} onPress={handleOpen} activeOpacity={0.85}>
+            {opening ? <ActivityIndicator size="small" color={SgateColors.card} /> : <Text style={S.primaryText}>Open Document</Text>}
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={handleShare}
-            activeOpacity={0.85}
-          >
+          <TouchableOpacity style={S.secondary} onPress={handleShare} activeOpacity={0.85}>
             <Feather name="share-2" size={16} color={SgateColors.t2} />
-            <Text style={styles.secondaryBtnText}>Share</Text>
+            <Text style={S.secondaryText}>Share</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -210,171 +128,27 @@ export default function DocumentDetailScreen() {
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: SgateColors.bg,
-  },
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: SgateColors.card,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t1,
-    flex: 1,
-    marginLeft: 12,
-  },
-  headerShareBtn: {
-    marginRight: 12,
-  },
-  // Scroll / layout
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 8,
-  },
-  centerArea: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  // Main card
-  mainCard: {
-    backgroundColor: SgateColors.card,
-    borderRadius: 20,
-    padding: 28,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: SgateColors.borderSoft,
-  },
-  largeIconBubble: {
-    width: 88,
-    height: 88,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fileTypePill: {
-    marginTop: 12,
-    backgroundColor: SgateColors.surface,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  fileTypeText: {
-    fontSize: 12,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t2,
-    letterSpacing: 1.2,
-  },
-  docName: {
-    fontSize: 17,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-    textAlign: 'center',
-    marginTop: 14,
-    lineHeight: 24,
-  },
-  categoryBadge: {
-    backgroundColor: SgateColors.surface,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    marginTop: 8,
-  },
-  categoryText: {
-    fontSize: 12,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t2,
-  },
-  divider: {
-    width: 60,
-    height: 1,
-    backgroundColor: SgateColors.borderSoft,
-    marginVertical: 20,
-  },
-  detailRows: {
-    width: '100%',
-    gap: 10,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  detailIcon: {
-    marginRight: 10,
-  },
-  detailLabel: {
-    fontSize: 12,
-    fontFamily: SgateFonts.regular,
-    color: SgateColors.t3,
-    flex: 1,
-  },
-  detailValue: {
-    fontSize: 13,
-    fontFamily: SgateFonts.medium,
-    color: SgateColors.t1,
-  },
-  // Bottom buttons
-  bottomButtons: {
-    paddingHorizontal: 16,
-    paddingBottom: 0,
-    gap: 10,
-  },
-  primaryBtn: {
-    backgroundColor: SgateColors.black,
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryBtnText: {
-    fontSize: 15,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.card,
-  },
-  secondaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 48,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: SgateColors.border,
-    gap: 8,
-  },
-  secondaryBtnText: {
-    fontSize: 14,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t1,
-  },
-  // Not found
-  notFoundContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  notFoundText: {
-    fontSize: 16,
-    fontFamily: SgateFonts.medium,
-    color: SgateColors.t2,
-  },
-  backLink: {
-    marginTop: 4,
-  },
-  backLinkText: {
-    fontSize: 14,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.gold,
-  },
+const S = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: SgateColors.bg },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: 16, paddingVertical: 12 },
+  headerTitle: { fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t1, flex: 1, marginLeft: 12 },
+  scroll: { flexGrow: 1, paddingBottom: 8 },
+  centerArea: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 16 },
+  mainCard: { backgroundColor: SgateColors.card, borderRadius: 20, padding: 28, alignItems: 'center', borderWidth: 1, borderColor: SgateColors.borderSoft },
+  iconBubble: { width: 88, height: 88, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  pill: { marginTop: 10, backgroundColor: SgateColors.surface, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
+  pillText: { fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t2, letterSpacing: 0.8 },
+  docName: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, textAlign: 'center', marginTop: 12, lineHeight: 24 },
+  divider: { width: 60, height: 1, backgroundColor: SgateColors.borderSoft, marginVertical: 20 },
+  row: { flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 10 },
+  rowLabel: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, flex: 1 },
+  rowValue: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
+  btns: { paddingHorizontal: 16, gap: 10, paddingBottom: 16 },
+  primary: { backgroundColor: SgateColors.black, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  primaryText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.card },
+  secondary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 48, borderRadius: 14, borderWidth: 1.5, borderColor: SgateColors.border, gap: 8 },
+  secondaryText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+  notFoundText: { fontSize: 16, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
+  backLink: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.gold },
 });

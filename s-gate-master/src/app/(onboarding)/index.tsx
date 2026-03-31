@@ -19,7 +19,7 @@ export default function OnboardingIndex() {
 
     const checkExistingStatus = async () => {
         try {
-            const res = await api.get('/api/v1/resident/onboarding/status');
+            const res = await api.get('/resident/onboarding/status');
             const status: OnboardingStatus = res.data?.data?.status ?? null;
 
             if (status === 'PENDING_APPROVAL' || status === 'RESUBMIT_REQUESTED' || status === 'REJECTED') {

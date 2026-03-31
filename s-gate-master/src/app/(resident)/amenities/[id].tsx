@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
-import { AMENITIES, TimeSlot } from '../../../mocks/amenities';
+import api from '../../../services/api';
+
+interface TimeSlot { id: string; time: string; startTime: string; endTime: string; isBooked: boolean; availableCapacity: number; }
+interface Amenity { id: string; name: string; timing: string; maxCapacity: number; slotDurationHours: number; rules: string[]; icon: string; colorBg: string; colorIcon: string; slots: TimeSlot[]; }
 
 const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
@@ -36,41 +35,66 @@ function buildDates(): DateItem[] {
 export default function AmenityDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const amenity = AMENITIES.find((a) => a.id === id) ?? null;
 
+  const [amenity, setAmenity] = useState<Amenity | null>(null);
+  const [loading, setLoading]   = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [slotsLoading, setSlotsLoading] = useState(false);
   const [showRules, setShowRules] = useState(false);
-
   const dates = buildDates();
 
-  if (!amenity) {
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={S.root}>
-        <View style={S.notFound}>
-          <Text style={S.notFoundText}>Amenity not found</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  useFocusEffect(useCallback(() => {
+    (async () => {
+      try {
+        const res = await api.get(`/resident/amenities/${id}`);
+        const raw = res.data?.data ?? res.data;
+        setAmenity({
+          id: raw.id, name: raw.name ?? '', timing: raw.timings ?? raw.timing ?? '',
+          maxCapacity: raw.maxCapacity ?? 0, slotDurationHours: raw.slotDurationHours ?? 1,
+          rules: raw.rules ?? [], icon: raw.icon ?? 'home',
+          colorBg: raw.colorBg ?? SgateColors.goldPale, colorIcon: raw.colorIcon ?? SgateColors.goldDeep,
+          slots: [],
+        });
+      } catch { /* shown below */ } finally { setLoading(false); }
+    })();
+  }, [id]));
 
-  const handleDateSelect = (key: string) => {
+  const handleDateSelect = async (key: string) => {
     setSelectedDate(key);
     setSelectedSlot(null);
+    if (!amenity) return;
+    setSlotsLoading(true);
+    try {
+      const res = await api.get(`/resident/amenities/${id}/slots`, { params: { date: key } });
+      const rawSlots: any[] = res.data?.data ?? res.data ?? [];
+      setAmenity(a => a ? { ...a, slots: rawSlots.map(s => ({
+        id: s.id, time: s.time ?? `${s.startTime}–${s.endTime}`,
+        startTime: s.startTime, endTime: s.endTime,
+        isBooked: s.isBooked ?? s.status === 'BOOKED',
+        availableCapacity: s.availableCapacity ?? 0,
+      })) } : a);
+    } catch { /* silently fail */ } finally { setSlotsLoading(false); }
   };
 
   const handleBookSlot = () => {
-    if (!selectedSlot || !selectedDate) return;
-    router.push({
-      pathname: '/(resident)/amenities/book/[id]' as any,
-      params: {
-        id: amenity.id,
-        slotId: selectedSlot.id,
-        slotTime: selectedSlot.time,
-        date: selectedDate,
-      },
-    });
+    if (!selectedSlot || !selectedDate || !amenity) return;
+    router.push({ pathname: '/(resident)/amenities/book/[id]' as any, params: {
+      id: amenity.id, slotId: selectedSlot.id, slotTime: selectedSlot.time, date: selectedDate,
+    }});
   };
+
+  if (loading) return (
+    <SafeAreaView edges={['top', 'bottom']} style={S.root}>
+      <View style={[S.notFound]}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+    </SafeAreaView>
+  );
+
+  if (!amenity) return (
+    <SafeAreaView edges={['top', 'bottom']} style={S.root}>
+      <View style={S.notFound}><Text style={S.notFoundText}>Amenity not found</Text></View>
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={S.root}>
