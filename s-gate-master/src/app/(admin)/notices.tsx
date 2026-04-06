@@ -70,7 +70,8 @@ export default function NoticesScreen() {
     const fetchNotices = async () => {
         try {
             const res = await api.get('/community/notices', { params: { page: 1, limit: 50 } });
-            const data: Notice[] = res.data?.data ?? [];
+            const raw = res.data?.data ?? res.data?.notices ?? res.data ?? [];
+            const data: Notice[] = Array.isArray(raw) ? raw : [];
             data.sort((a, b) => {
                 if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
                 return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();

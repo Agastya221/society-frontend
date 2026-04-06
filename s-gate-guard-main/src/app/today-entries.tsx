@@ -21,7 +21,7 @@ import {
 interface Entry {
     id: string;
     visitorName: string;
-    visitorType: string;
+    type: string;
     flatNumber?: string;
     flat?: { flatNumber: string; resident?: { name: string } };
     purpose?: string;
@@ -201,7 +201,7 @@ function EntryCard({
 }: {
     entry: Entry; index: number; checkingOut: boolean; onCheckOut: () => void;
 }) {
-    const color = TYPE_COLORS[entry.visitorType] ?? '#6B7280';
+    const color = TYPE_COLORS[entry.type] ?? '#6B7280';
     const fadeAnim = React.useRef(new Animated.Value(0)).current;
     const slideAnim = React.useRef(new Animated.Value(30)).current;
     
@@ -244,9 +244,9 @@ function EntryCard({
 
     // Infer Icon
     let iconName: any = 'person';
-    if (entry.visitorType === 'DELIVERY_PERSON') iconName = 'cube';
-    else if (entry.visitorType === 'SERVICE_PROVIDER') iconName = 'construct';
-    else if (entry.visitorType === 'CAB_DRIVER') iconName = 'car';
+    if (entry.type === 'DELIVERY_PERSON') iconName = 'cube';
+    else if (entry.type === 'SERVICE_PROVIDER') iconName = 'construct';
+    else if (entry.type === 'CAB_DRIVER') iconName = 'car';
 
     return (
         <Animated.View style={[styles.card, { borderLeftColor: color, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>

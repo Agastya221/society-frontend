@@ -59,10 +59,17 @@
       "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/family/\")",
       "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(resident\\)/pre-approvals/\")",
       "Bash(curl -s -X POST \"https://society-gate-backend-gsrq.onrender.com/api/v1/auth/send-otp\" -H \"Content-Type: application/json\" -d '{\"\"phone\"\":\"\"6202923165\"\"}')",
-      "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(admin\\)/\")"
+      "Bash(ls \"e:/society-frontend/s-gate-master/src/app/\\(admin\\)/\")",
+      "Bash(find e:society-frontends-gate-mastersrcapp\\\\\\(resident\\\\\\)pre-approvals -type f -name *.tsx -o -name *.ts)",
+      "Bash(wc -l \"e:\\\\society-frontend\\\\s-gate-master\\\\src\\\\app\\\\\\(resident\\)\\\\pre-approvals\\\\create.tsx\")",
+      "Bash(xargs grep:*)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\(''''dependencies'''',{}\\), indent=2\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d[''''dependencies''''].get\\(''''expo''''\\)\\)\")",
+      "Bash(npm install:*)"
     ],
     "additionalDirectories": [
-      "e:\\society-frontend\\s-gate-master\\src\\assets"
+      "e:\\society-frontend\\s-gate-master\\src\\assets",
+      "e:\\society-frontend\\s-gate-master\\src\\app\\(resident)\\pre-approvals"
     ]
   }
 }

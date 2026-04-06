@@ -41,7 +41,14 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Skip token refresh for endpoints that may legitimately 401 during onboarding
+        const requestUrl: string = originalRequest.url ?? '';
+        const shouldSkip =
+            requestUrl.includes('/resident/onboarding') ||
+            requestUrl.includes('/society-registration') ||
+            requestUrl.includes('/users/resident-app/fcm-token');
+
+        if (error.response?.status === 401 && !originalRequest._retry && !shouldSkip) {
             // If already refreshing, queue this request until we get a new token
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {

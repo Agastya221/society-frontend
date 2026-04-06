@@ -7,7 +7,8 @@ import { ComplaintStatusBadge } from '../../../components/complaints/ComplaintSt
 import { PriorityBadge } from '../../../components/complaints/PriorityBadge';
 import { ImageCarousel } from '../../../components/ui/ImageCarousel';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
-import { Complaint, ComplaintStatus, fetchComplaintDetails, fetchGuards, Guard, updateComplaint } from '../../../services/complaints';
+import { Complaint, ComplaintStatus, fetchComplaintDetails, updateComplaint } from '../../../services/complaints';
+import { getStaffList, StaffMember } from '../../../services/staffService';
 
 const IMAGE_BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
 
@@ -18,7 +19,7 @@ export default function AdminComplaintDetailScreen() {
     
     // Data State
     const [complaint, setComplaint] = useState<Complaint | null>(null);
-    const [guards, setGuards] = useState<Guard[]>([]);
+    const [staffList, setStaffList] = useState<StaffMember[]>([]);
     
     // UI State
     const [isLoading, setIsLoading] = useState(true);
@@ -35,12 +36,12 @@ export default function AdminComplaintDetailScreen() {
         if (!id) return;
         try {
             setError('');
-            const [complaintData, guardsData] = await Promise.all([
+            const [complaintData, staffData] = await Promise.all([
                 fetchComplaintDetails(id),
-                fetchGuards()
+                getStaffList()
             ]);
             setComplaint(complaintData);
-            setGuards(guardsData);
+            setStaffList(staffData);
         } catch (err: any) {
             console.error('Failed to load data:', err);
             setError(err.message || 'Failed to load data');
@@ -102,13 +103,11 @@ export default function AdminComplaintDetailScreen() {
         }
     };
 
-    const handleAssignGuard = async (guardId: string) => {
+    const handleAssignStaff = async (staffId: string) => {
         if (!complaint) return;
         setIsUpdating(true);
         try {
-            // Docs imply assignment is part of update or separate. 
-            // We implemented updateComplaint to handle assignedToId if supported by backend patch.
-            const updated = await updateComplaint(complaint.id, { assignedToId: guardId });
+            const updated = await updateComplaint(complaint.id, { assignedToId: staffId });
             setComplaint(updated);
             setShowAssignModal(false);
             Alert.alert('Success', 'Staff assigned successfully');
@@ -385,31 +384,31 @@ export default function AdminComplaintDetailScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        {/* List of guards */}
+                        {/* List of staff */}
                         <ScrollView className="flex-1">
-                            {guards.length === 0 ? (
+                            {staffList.length === 0 ? (
                                 <Text className="text-center text-gray-500 mt-10">No staff members found.</Text>
                             ) : (
-                                guards.map((guard) => (
+                                staffList.map((staff) => (
                                     <TouchableOpacity 
-                                        key={guard.id}
-                                        onPress={() => handleAssignGuard(guard.id)}
+                                        key={staff.id}
+                                        onPress={() => handleAssignStaff(staff.id)}
                                         className={`flex-row items-center p-4 mb-3 rounded-xl border ${
-                                            complaint.assignedTo?.id === guard.id
+                                            complaint.assignedTo?.id === staff.id
                                                 ? 'bg-indigo-50 border-indigo-500 dark:bg-indigo-900/30'
                                                 : 'bg-gray-50 dark:bg-zinc-800 border-gray-100 dark:border-zinc-700'
                                         }`}
                                     >
                                         <View className="h-10 w-10 bg-gray-200 dark:bg-zinc-700 rounded-full items-center justify-center mr-3">
                                             <Text className="text-gray-600 dark:text-gray-300 font-bold">
-                                                {guard.name.charAt(0)}
+                                                {staff.name.charAt(0)}
                                             </Text>
                                         </View>
                                         <View>
-                                            <Text className="font-bold text-gray-900 dark:text-white">{guard.name}</Text>
-                                            <Text className="text-xs text-gray-500">{guard.role} • {guard.phone}</Text>
+                                            <Text className="font-bold text-gray-900 dark:text-white">{staff.name}</Text>
+                                            <Text className="text-xs text-gray-500">{staff.role} • {staff.phone}</Text>
                                         </View>
-                                        {complaint.assignedTo?.id === guard.id && (
+                                        {complaint.assignedTo?.id === staff.id && (
                                             <View className="ml-auto">
                                                 <Ionicons name="checkmark-circle" size={24} color="#4f46e5" />
                                             </View>

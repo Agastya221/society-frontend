@@ -1,37 +1,76 @@
-import { Stack } from 'expo-router';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { Feather } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+import React from 'react';
+import { View } from 'react-native';
+import { AdminTabBar } from '@/components/Sgate/AdminTabBar';
+import { SgateColors } from '@/constants/Sgate-theme';
 
 export default function AdminLayout() {
     return (
-        <Stack screenOptions={{
-            headerStyle: {
-                backgroundColor: SgateColors.card,
-            },
-            headerShadowVisible: false,
-            headerTintColor: SgateColors.t1,
-            headerTitleStyle: {
-                fontFamily: SgateFonts.bold,
-                fontSize: 17,
-            },
-            contentStyle: {
-                backgroundColor: SgateColors.bg,
-            },
-            animation: 'fade',
-        }}>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="flats" options={{ title: 'Flats & Residents', headerShown: false }} />
-            <Stack.Screen name="guards" options={{ title: 'Guard Management' }} />
-            <Stack.Screen name="gate-points" options={{ title: 'Gate Points' }} />
-            <Stack.Screen name="gate-passes" options={{ headerShown: false }} />
-            <Stack.Screen name="complaints" options={{ headerShown: false }} />
-            <Stack.Screen name="approval-requests" options={{ headerShown: false, presentation: 'card' }} />
-            <Stack.Screen name="notices" options={{ title: 'Notices & Announcements' }} />
-            <Stack.Screen name="payments" options={{ title: 'Payments' }} />
-            <Stack.Screen name="residents" options={{ title: 'Resident Management' }} />
-            <Stack.Screen name="settings" options={{ title: 'Settings' }} />
-            <Stack.Screen name="profile" options={{ headerShown: false }} />
-            <Stack.Screen name="onboarding-requests" options={{ headerShown: false }} />
-            <Stack.Screen name="gate-pass" options={{ headerShown: false }} />
-        </Stack>
+        <View style={{ flex: 1 }}>
+            <Tabs
+                tabBar={(props) => <AdminTabBar {...props} />}
+                screenOptions={{
+                    headerShown: false,
+                    animation: 'fade',
+                }}
+            >
+                {/* ── Visible tabs ──────────────────────────────────────────────── */}
+                <Tabs.Screen
+                    name="index"
+                    options={{
+                        title: 'Home',
+                        tabBarIcon: ({ color }) => <Feather name="home" size={22} color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="gate-passes"
+                    options={{
+                        title: 'Passes',
+                        tabBarIcon: ({ color }) => <Feather name="clipboard" size={22} color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="staff"
+                    options={{
+                        title: 'Staff',
+                        tabBarIcon: ({ color }) => <Feather name="briefcase" size={22} color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="broadcast"
+                    options={{
+                        title: 'Alerts',
+                        tabBarIcon: ({ color }) => <Feather name="radio" size={22} color={color} />,
+                    }}
+                />
+                <Tabs.Screen
+                    name="profile"
+                    options={{
+                        title: 'Profile',
+                        tabBarIcon: ({ color }) => <Feather name="user" size={22} color={color} />,
+                    }}
+                />
+
+                {/* ── Hidden from tab bar — still navigable ─────────────────────── */}
+                <Tabs.Screen name="all-tools" options={{ href: null }} />
+                <Tabs.Screen name="flats" options={{ href: null }} />
+                <Tabs.Screen name="guards" options={{ href: null }} />
+                <Tabs.Screen name="gate-points" options={{ href: null }} />
+                <Tabs.Screen name="gate-pass" options={{ href: null }} />
+                <Tabs.Screen name="complaints" options={{ href: null }} />
+                <Tabs.Screen name="approval-requests" options={{ href: null }} />
+                <Tabs.Screen name="notices" options={{ href: null }} />
+                <Tabs.Screen name="payments" options={{ href: null }} />
+                <Tabs.Screen name="residents" options={{ href: null }} />
+                <Tabs.Screen name="settings" options={{ href: null }} />
+                <Tabs.Screen name="onboarding-requests" options={{ href: null }} />
+                <Tabs.Screen name="my-home" options={{ href: null }} />
+                <Tabs.Screen name="emergencies" options={{ href: null }} />
+                <Tabs.Screen name="notifications" options={{ href: null }} />
+                <Tabs.Screen name="community" options={{ href: null }} />
+                <Tabs.Screen name="elections" options={{ href: null }} />
+            </Tabs>
+        </View>
     );
 }

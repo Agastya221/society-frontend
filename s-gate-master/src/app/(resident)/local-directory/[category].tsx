@@ -60,10 +60,15 @@ export default function CategoryContacts() {
   const [loading, setLoading] = useState(true);
 
   const fetchContacts = async () => {
+    setLoading(true);
     try {
       const res = await api.get('/resident/local-directory', { params: { category } });
+      console.log('LOCAL DIR RAW:', JSON.stringify(res.data));
       const raw = res.data?.data ?? res.data;
-      const list: any[] = Array.isArray(raw) ? raw : [];
+      const list: any[] = Array.isArray(raw)
+        ? raw
+        : (raw?.contacts ?? raw?.vendors ?? raw?.items ?? raw?.results ?? raw?.data ?? []);
+      console.log('LOCAL DIR LIST length:', list.length, 'keys:', raw && typeof raw === 'object' ? Object.keys(raw) : raw);
       setContacts(list.map(normaliseContact));
     } catch (err) {
       console.error('Failed to fetch contacts:', err);

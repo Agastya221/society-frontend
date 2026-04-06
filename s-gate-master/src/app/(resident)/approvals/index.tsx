@@ -1,11 +1,15 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { getEntryRequestPhoto } from '@/services/gate.service';
 import {
     ActivityIndicator,
     Alert,
+    AppState,
     FlatList,
     Modal,
+    Platform,
     StyleSheet,
     Text,
     TextInput,
@@ -14,15 +18,14 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface EntryRequest {
     id: string;
     type: string;
-    visitorName: string;
-    visitorPhone?: string;
+    visitorName?: string;
     providerTag?: string;
     photoKey?: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
@@ -31,116 +34,167 @@ interface EntryRequest {
     expiresAt: string;
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+const POLL_MS = 5000;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function typeLabel(type: string, providerTag?: string): string {
+    const base =
+        type === 'DELIVERY_PERSON' || type === 'DELIVERY' ? 'Delivery' :
+        type === 'CAB'     ? 'Cab'     :
+        type === 'SERVICE' ? 'Service' :
+        type === 'GUEST'   ? 'Guest'   :
+        type.replace(/_/g, ' ');
+    return providerTag ? `${base} • ${providerTag}` : base;
+}
+
+function typeIconName(type: string): any {
+    if (type?.includes('DELIVERY')) return 'cube-outline';
+    if (type === 'CAB')     return 'car-outline';
+    if (type === 'SERVICE') return 'construct-outline';
+    return 'person-outline';
+}
+
+function typeColor(type: string): string {
+    if (type?.includes('DELIVERY')) return '#F97316';
+    if (type === 'CAB')     return '#8B5CF6';
+    if (type === 'SERVICE') return '#0EA5E9';
+    return SgateColors.goldDeep;
+}
+
+// ─── Photo cell — lazily loads viewUrl from the photo endpoint ────────────────
+function PhotoCell({ id, type, photoKey, color }: { id: string; type: string; photoKey?: string; color: string }) {
+    const [viewUrl, setViewUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!photoKey) return;
+        getEntryRequestPhoto(id)
+            .then((r) => { if (r.viewUrl) setViewUrl(r.viewUrl); })
+            .catch(() => {});
+    }, [id, photoKey]);
+
+    return (
+        <View style={[styles.photoWrap, { backgroundColor: color + '18' }]}>
+            {viewUrl ? (
+                <Image
+                    source={{ uri: viewUrl }}
+                    style={styles.photo}
+                    contentFit="cover"
+                    transition={200}
+                />
+            ) : (
+                <Ionicons name={typeIconName(type)} size={30} color={color} />
+            )}
+        </View>
+    );
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function ApprovalsScreen() {
     const router = useRouter();
     const [requests, setRequests]     = useState<EntryRequest[]>([]);
     const [loading, setLoading]       = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError]           = useState<string | null>(null);
-
-    const [selectedRequest, setSelectedRequest] = useState<EntryRequest | null>(null);
-    const [modalConfig, setModalConfig] = useState<{
-        visible: boolean;
-        type: 'APPROVE' | 'REJECT';
-    }>({ visible: false, type: 'APPROVE' });
+    const [rejectTarget, setRejectTarget] = useState<EntryRequest | null>(null);
     const [rejectReason, setRejectReason] = useState('');
+    const [actioning, setActioning]   = useState<string | null>(null);
+
+    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // ── Fetch ────────────────────────────────────────────────────────────────
-    const fetchRequests = async () => {
+    const fetchRequests = useCallback(async (silent = false) => {
         try {
-            setError(null);
-            const res = await api.get('/gate/requests?status=PENDING');
+            if (!silent) setError(null);
+            const res = await api.get('/gate/entry-requests?status=PENDING');
             setRequests(res.data?.data || []);
         } catch (err: any) {
-            console.error(err);
-            setError(err?.response?.data?.message || 'Failed to fetch pending requests');
+            if (!silent) setError(err?.response?.data?.message || 'Failed to fetch pending requests');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
             fetchRequests();
-            const interval = setInterval(fetchRequests, 60000);
-            return () => clearInterval(interval);
-        }, [])
+            pollRef.current = setInterval(() => fetchRequests(true), POLL_MS);
+            return () => { if (pollRef.current) clearInterval(pollRef.current); };
+        }, [fetchRequests])
     );
 
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchRequests();
-    };
+    // Re-poll when app comes back to foreground
+    useEffect(() => {
+        const sub = AppState.addEventListener('change', (state) => {
+            if (state === 'active') fetchRequests(true);
+        });
+        return () => sub.remove();
+    }, [fetchRequests]);
 
     // ── Actions ──────────────────────────────────────────────────────────────
-    const handleAction = (request: EntryRequest, type: 'APPROVE' | 'REJECT') => {
-        setSelectedRequest(request);
-        setRejectReason('');
-        setModalConfig({ visible: true, type });
-    };
-
-    const confirmApprove = async () => {
-        if (!selectedRequest) return;
-        const requestId = selectedRequest.id;
+    const handleApprove = async (item: EntryRequest) => {
+        if (actioning) return;
+        setActioning(item.id);
         const previous = [...requests];
-        setRequests((prev) => prev.filter((r) => r.id !== requestId));
-        setModalConfig({ ...modalConfig, visible: false });
-        setSelectedRequest(null);
+        setRequests((prev) => prev.filter((r) => r.id !== item.id));
         try {
-            await api.patch(`/gate/requests/${requestId}/approve`);
+            await api.patch(`/gate/entry-requests/${item.id}/approve`);
         } catch (err: any) {
             setRequests(previous);
             Alert.alert('Error', err?.response?.data?.message || 'Failed to approve request');
+        } finally {
+            setActioning(null);
         }
     };
 
-    const confirmReject = async () => {
-        if (!selectedRequest) return;
-        const requestId = selectedRequest.id;
+    const handleDenyConfirm = async () => {
+        if (!rejectTarget || actioning) return;
+        const item = rejectTarget;
         const reason = rejectReason.trim() || 'Not expecting anyone';
-        const previous = [...requests];
-        setRequests((prev) => prev.filter((r) => r.id !== requestId));
-        setModalConfig({ ...modalConfig, visible: false });
-        setSelectedRequest(null);
+        setActioning(item.id);
+        setRejectTarget(null);
         setRejectReason('');
+        const previous = [...requests];
+        setRequests((prev) => prev.filter((r) => r.id !== item.id));
         try {
-            await api.patch(`/gate/requests/${requestId}/reject`, { reason });
+            await api.patch(`/gate/entry-requests/${item.id}/reject`, { reason });
         } catch (err: any) {
             setRequests(previous);
             Alert.alert('Error', err?.response?.data?.message || 'Failed to reject request');
+        } finally {
+            setActioning(null);
         }
     };
 
     // ── List item ────────────────────────────────────────────────────────────
     const renderItem = ({ item, index }: { item: EntryRequest; index: number }) => {
         const expiresAt = new Date(item.expiresAt).getTime();
-        const now = Date.now();
-        const minsLeft = Math.max(0, Math.floor((expiresAt - now) / 60000));
-        const initials = item.visitorName
-            .split(' ')
-            .map((w) => w[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
+        const now       = Date.now();
+        const secsLeft  = Math.max(0, Math.floor((expiresAt - now) / 1000));
+        const minsLeft  = Math.floor(secsLeft / 60);
+        const isExpired = secsLeft <= 0;
+        const isPending = item.status === 'PENDING' && !isExpired;
+        const color     = typeColor(item.type);
+        const isUrgent  = secsLeft < 60 && !isExpired;
 
         return (
             <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
-                <View style={styles.requestCard}>
-                    {/* Top: visitor info */}
+                <View style={[styles.requestCard, isPending && styles.requestCardActive]}>
+                    {/* Top: photo + info */}
                     <View style={styles.requestTop}>
-                        <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>{initials}</Text>
-                        </View>
+                        {/* Photo or type icon */}
+                        <PhotoCell id={item.id} type={item.type} photoKey={item.photoKey} color={color} />
+
                         <View style={styles.requestInfo}>
                             <View style={styles.requestNameRow}>
-                                <Text style={styles.requestName} numberOfLines={1}>
-                                    {item.visitorName}
+                                <Text style={[styles.typeLabel, { color }]} numberOfLines={1}>
+                                    {typeLabel(item.type, item.providerTag)}
                                 </Text>
-                                {minsLeft > 0 ? (
-                                    <View style={styles.timerBadge}>
-                                        <Text style={styles.timerText}>{minsLeft}m left</Text>
+                                {!isExpired ? (
+                                    <View style={[styles.timerBadge, isUrgent && styles.timerBadgeUrgent]}>
+                                        <Text style={[styles.timerText, isUrgent && styles.timerTextUrgent]}>
+                                            {minsLeft > 0 ? `${minsLeft}m` : `${secsLeft}s`}
+                                        </Text>
                                     </View>
                                 ) : (
                                     <View style={[styles.statusPill, styles.statusExpired]}>
@@ -148,16 +202,10 @@ export default function ApprovalsScreen() {
                                     </View>
                                 )}
                             </View>
-                            <View style={styles.requestMeta}>
-                                <View style={styles.typePill}>
-                                    <Text style={styles.typePillText}>
-                                        {item.type.replace(/_/g, ' ')}
-                                    </Text>
-                                </View>
-                                {item.flat?.flatNumber && (
-                                    <Text style={styles.flatText}>{item.flat.flatNumber}</Text>
-                                )}
-                            </View>
+
+                            {item.flat?.flatNumber && (
+                                <Text style={styles.flatText}>Flat {item.flat.flatNumber}</Text>
+                            )}
                             <Text style={styles.timeText}>
                                 {new Date(item.createdAt).toLocaleTimeString([], {
                                     hour: '2-digit',
@@ -167,24 +215,32 @@ export default function ApprovalsScreen() {
                         </View>
                     </View>
 
-                    {/* Bottom: action buttons */}
-                    {item.status === 'PENDING' && minsLeft > 0 && (
+                    {/* Action buttons — pending only */}
+                    {isPending && (
                         <View style={styles.actionRow}>
                             <TouchableOpacity
                                 style={styles.denyBtn}
-                                onPress={() => handleAction(item, 'REJECT')}
+                                onPress={() => { setRejectTarget(item); setRejectReason(''); }}
                                 activeOpacity={0.75}
+                                disabled={!!actioning}
                             >
                                 <Feather name="x" size={15} color={SgateColors.t2} />
                                 <Text style={styles.denyText}>Deny</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={styles.approveBtn}
-                                onPress={() => handleAction(item, 'APPROVE')}
+                                onPress={() => handleApprove(item)}
                                 activeOpacity={0.75}
+                                disabled={!!actioning}
                             >
-                                <Feather name="check" size={15} color={SgateColors.gold} />
-                                <Text style={styles.approveText}>Approve</Text>
+                                {actioning === item.id ? (
+                                    <ActivityIndicator size="small" color={SgateColors.gold} />
+                                ) : (
+                                    <>
+                                        <Feather name="check" size={15} color={SgateColors.gold} />
+                                        <Text style={styles.approveText}>Allow Entry</Text>
+                                    </>
+                                )}
                             </TouchableOpacity>
                         </View>
                     )}
@@ -226,7 +282,15 @@ export default function ApprovalsScreen() {
                 <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
                     <Feather name="arrow-left" size={22} color={SgateColors.t1} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Visitor Approvals</Text>
+                <View style={styles.headerTitleWrap}>
+                    <Text style={styles.headerTitle}>Visitor Approvals</Text>
+                    {requests.length > 0 && (
+                        <View style={styles.liveBadge}>
+                            <View style={styles.liveDot} />
+                            <Text style={styles.liveText}>LIVE</Text>
+                        </View>
+                    )}
+                </View>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -236,7 +300,7 @@ export default function ApprovalsScreen() {
                 renderItem={renderItem}
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
-                onRefresh={onRefresh}
+                onRefresh={() => { setRefreshing(true); fetchRequests(); }}
                 refreshing={refreshing}
                 ListEmptyComponent={
                     <View style={styles.emptyWrap}>
@@ -247,67 +311,43 @@ export default function ApprovalsScreen() {
                 }
             />
 
-            {/* ── Approve / Reject modal ──────────────────────────────────────── */}
+            {/* Deny modal */}
             <Modal
-                visible={modalConfig.visible}
+                visible={!!rejectTarget}
                 transparent
                 animationType="fade"
-                onRequestClose={() => setModalConfig({ ...modalConfig, visible: false })}
+                onRequestClose={() => setRejectTarget(null)}
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalCard}>
-                        {modalConfig.type === 'APPROVE' ? (
-                            <>
-                                <Text style={styles.modalTitle}>Approve Entry?</Text>
-                                <Text style={styles.modalSub}>
-                                    Allow {selectedRequest?.visitorName} to enter?
-                                </Text>
-                                <View style={styles.modalBtnRow}>
-                                    <TouchableOpacity
-                                        style={styles.modalCancelBtn}
-                                        onPress={() => setModalConfig({ ...modalConfig, visible: false })}
-                                    >
-                                        <Text style={styles.modalCancelText}>Cancel</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.modalApproveBtn}
-                                        onPress={confirmApprove}
-                                    >
-                                        <Text style={styles.modalApproveText}>Approve</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </>
-                        ) : (
-                            <>
-                                <Text style={styles.modalTitle}>Reject Entry?</Text>
-                                <Text style={styles.modalSub}>
-                                    Provide a reason for rejecting {selectedRequest?.visitorName}.
-                                </Text>
-                                <TextInput
-                                    style={styles.modalTextInput}
-                                    multiline
-                                    textAlignVertical="top"
-                                    placeholder="e.g. Not expecting anyone"
-                                    placeholderTextColor={SgateColors.t4}
-                                    value={rejectReason}
-                                    onChangeText={setRejectReason}
-                                />
-                                <View style={styles.modalBtnRow}>
-                                    <TouchableOpacity
-                                        style={styles.modalCancelBtn}
-                                        onPress={() => setModalConfig({ ...modalConfig, visible: false })}
-                                    >
-                                        <Text style={styles.modalCancelText}>Cancel</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.modalRejectBtn}
-                                        onPress={confirmReject}
-                                    >
-                                        <Text style={styles.modalRejectText}>Reject</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </>
-                        )}
+                        <Text style={styles.modalTitle}>Deny Entry?</Text>
+                        <Text style={styles.modalSub}>
+                            {typeLabel(rejectTarget?.type ?? '', rejectTarget?.providerTag)}
+                            {rejectTarget?.flat?.flatNumber ? ` · Flat ${rejectTarget.flat.flatNumber}` : ''}
+                        </Text>
+                        <TextInput
+                            style={styles.modalTextInput}
+                            multiline
+                            textAlignVertical="top"
+                            placeholder="Reason (optional)"
+                            placeholderTextColor={SgateColors.t4}
+                            value={rejectReason}
+                            onChangeText={setRejectReason}
+                        />
+                        <View style={styles.modalBtnRow}>
+                            <TouchableOpacity
+                                style={styles.modalCancelBtn}
+                                onPress={() => setRejectTarget(null)}
+                            >
+                                <Text style={styles.modalCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.modalRejectBtn}
+                                onPress={handleDenyConfirm}
+                            >
+                                <Text style={styles.modalRejectText}>Deny</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </Modal>
@@ -349,12 +389,38 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    headerTitle: {
+    headerTitleWrap: {
         flex: 1,
-        textAlign: 'center',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    headerTitle: {
         fontSize: 18,
         fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
+    },
+    liveBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#FEF2F2',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 20,
+    },
+    liveDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: SgateColors.red,
+    },
+    liveText: {
+        fontSize: 10,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.red,
+        letterSpacing: 0.5,
     },
 
     // ── List ─────────────────────────────────────────────────────────────────
@@ -372,26 +438,36 @@ const styles = StyleSheet.create({
         borderColor: SgateColors.borderSoft,
         marginBottom: 10,
         overflow: 'hidden',
+        ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12 },
+            android: { elevation: 2 },
+        }),
+    },
+    requestCardActive: {
+        borderColor: SgateColors.border,
     },
     requestTop: {
         flexDirection: 'row',
         padding: 16,
-        gap: 12,
-        alignItems: 'flex-start',
+        gap: 14,
+        alignItems: 'center',
     },
-    avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 16,
-        backgroundColor: SgateColors.goldPale,
+
+    // Photo / icon
+    photoWrap: {
+        width: 64,
+        height: 64,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
     },
-    avatarText: {
-        fontSize: 14,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.goldDeep,
+    photo: {
+        width: 64,
+        height: 64,
     },
+
+    // Info column
     requestInfo: {
         flex: 1,
     },
@@ -401,10 +477,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 4,
     },
-    requestName: {
+    typeLabel: {
         fontSize: 15,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.t1,
+        fontFamily: SgateFonts.bold,
         flex: 1,
         marginRight: 8,
     },
@@ -416,10 +491,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 3,
     },
+    timerBadgeUrgent: {
+        backgroundColor: '#FEE2E2',
+    },
     timerText: {
         fontSize: 11,
         fontFamily: SgateFonts.bold,
         color: SgateColors.red,
+    },
+    timerTextUrgent: {
+        color: '#DC2626',
     },
 
     // Status pill
@@ -437,29 +518,11 @@ const styles = StyleSheet.create({
         color: SgateColors.t3,
     },
 
-    // Type pill & meta
-    requestMeta: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        marginBottom: 4,
-    },
-    typePill: {
-        backgroundColor: SgateColors.surface,
-        borderRadius: 20,
-        paddingHorizontal: 10,
-        paddingVertical: 3,
-    },
-    typePillText: {
-        fontSize: 11,
+    flatText: {
+        fontSize: 13,
         fontFamily: SgateFonts.semibold,
         color: SgateColors.t2,
-        textTransform: 'capitalize',
-    },
-    flatText: {
-        fontSize: 12,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t4,
+        marginBottom: 2,
     },
     timeText: {
         fontSize: 12,
@@ -478,7 +541,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: SgateColors.surface,
         borderRadius: 14,
-        paddingVertical: 12,
+        paddingVertical: 13,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -490,10 +553,10 @@ const styles = StyleSheet.create({
         color: SgateColors.t2,
     },
     approveBtn: {
-        flex: 1.4,
+        flex: 1.6,
         backgroundColor: SgateColors.black,
         borderRadius: 14,
-        paddingVertical: 12,
+        paddingVertical: 13,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -600,18 +663,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontFamily: SgateFonts.semibold,
         color: SgateColors.t2,
-    },
-    modalApproveBtn: {
-        flex: 1,
-        paddingVertical: 14,
-        borderRadius: 14,
-        backgroundColor: SgateColors.green,
-        alignItems: 'center',
-    },
-    modalApproveText: {
-        fontSize: 14,
-        fontFamily: SgateFonts.bold,
-        color: '#FFFFFF',
     },
     modalRejectBtn: {
         flex: 1,

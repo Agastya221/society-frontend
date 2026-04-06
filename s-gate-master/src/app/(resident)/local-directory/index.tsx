@@ -23,7 +23,7 @@ export default function LocalDirectoryIndex() {
     try {
       const res = await api.get('/resident/local-directory/categories');
       const raw = res.data?.data ?? res.data;
-      const list: any[] = Array.isArray(raw) ? raw : [];
+      const list: any[] = Array.isArray(raw) ? raw : (raw?.categories ?? raw?.items ?? raw?.data ?? []);
       // Backend sends { category, count } — map to { name, count }
       setCategories(list.map(item => ({
         name: item.name ?? item.category ?? '',

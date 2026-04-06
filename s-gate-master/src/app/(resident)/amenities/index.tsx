@@ -15,17 +15,38 @@ interface Amenity {
   slotDurationHours?: number; rules?: string[];
 }
 
+// ─── Auto icon + color from amenity name ─────────────────────────────────────
+const AMENITY_THEMES: { keywords: string[]; icon: string; colorBg: string; colorIcon: string }[] = [
+  { keywords: ['swim', 'pool'],                     icon: 'droplet',    colorBg: '#DBEEFF', colorIcon: '#1A7FD4' },
+  { keywords: ['gym', 'fitness', 'workout'],        icon: 'activity',   colorBg: '#FFE8E8', colorIcon: '#D94040' },
+  { keywords: ['club', 'hall', 'lounge', 'party'],  icon: 'home',       colorBg: SgateColors.goldPale, colorIcon: SgateColors.goldDeep },
+  { keywords: ['badminton', 'tennis', 'squash'],    icon: 'target',     colorBg: '#E8FFE8', colorIcon: '#2E9E4F' },
+  { keywords: ['basket', 'cricket', 'football'],    icon: 'circle',     colorBg: '#FFF0DB', colorIcon: '#E07B00' },
+  { keywords: ['kids', 'play', 'children'],         icon: 'smile',      colorBg: '#FFF8DB', colorIcon: '#D4A000' },
+  { keywords: ['garden', 'terrace', 'park', 'lawn'],icon: 'sun',        colorBg: '#E8FFE8', colorIcon: '#2E9E4F' },
+  { keywords: ['yoga', 'meditation', 'aerobic'],    icon: 'wind',       colorBg: '#EDE9FE', colorIcon: '#7C3AED' },
+  { keywords: ['library', 'reading', 'study'],      icon: 'book-open',  colorBg: '#EDE9FE', colorIcon: '#5B21B6' },
+  { keywords: ['parking', 'car', 'vehicle'],        icon: 'truck',      colorBg: '#F0F0F0', colorIcon: '#555555' },
+];
+
+function resolveTheme(name: string) {
+  const lower = name.toLowerCase();
+  const match = AMENITY_THEMES.find(t => t.keywords.some(k => lower.includes(k)));
+  return match ?? { icon: 'home', colorBg: SgateColors.goldPale, colorIcon: SgateColors.goldDeep };
+}
+
 function normalise(raw: any): Amenity {
+  const theme = resolveTheme(raw.name ?? '');
   return {
-    id:               raw.id,
-    name:             raw.name ?? '',
-    timing:           raw.timings ?? raw.timing ?? '',
-    maxCapacity:      raw.maxCapacity ?? raw.capacity ?? 0,
-    icon:             raw.icon ?? 'home',
-    colorBg:          raw.colorBg ?? SgateColors.goldPale,
-    colorIcon:        raw.colorIcon ?? SgateColors.goldDeep,
+    id:                raw.id,
+    name:              raw.name ?? '',
+    timing:            raw.timings ?? raw.timing ?? '',
+    maxCapacity:       raw.maxCapacity ?? raw.capacity ?? 0,
     slotDurationHours: raw.slotDurationHours ?? 1,
-    rules:            raw.rules ?? [],
+    rules:             raw.rules ?? [],
+    icon:      theme.icon,
+    colorBg:   theme.colorBg,
+    colorIcon: theme.colorIcon,
   };
 }
 
@@ -96,8 +117,9 @@ export default function AmenitiesScreen() {
           <Feather name="arrow-left" size={22} color={SgateColors.t1} />
         </TouchableOpacity>
         <Text style={S.headerTitle}>Amenities</Text>
-        <TouchableOpacity onPress={() => router.push('/(resident)/amenities/my-bookings' as any)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="bookmark" size={20} color={SgateColors.t1} />
+        <TouchableOpacity onPress={() => router.push('/(resident)/amenities/my-bookings' as any)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={S.myBookingsBtn}>
+          <Feather name="bookmark" size={14} color={SgateColors.goldDeep} />
+          <Text style={S.myBookingsBtnText}>My Bookings</Text>
         </TouchableOpacity>
       </View>
       {/* Grid */}
@@ -191,5 +213,21 @@ const S = StyleSheet.create({
     fontSize: 11,
     fontFamily: SgateFonts.regular,
     color: SgateColors.t4,
+  },
+  myBookingsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: SgateColors.goldPale,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: SgateColors.gold,
+  },
+  myBookingsBtnText: {
+    fontSize: 12,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.goldDeep,
   },
 });

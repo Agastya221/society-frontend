@@ -190,8 +190,9 @@ export default function CommunicationDetailScreen() {
         api.get(`/resident/posts/${id}/comments`),
       ]);
       setPost(normalisePost(postRes.data?.data ?? postRes.data));
-      const rawComments: any[] = commentsRes.data?.data ?? commentsRes.data ?? [];
-      setComments((Array.isArray(rawComments) ? rawComments : []).map(normaliseComment));
+      const d = commentsRes.data?.data ?? commentsRes.data;
+      const rawComments: any[] = Array.isArray(d) ? d : (d?.items ?? d?.comments ?? d?.data ?? []);
+      setComments(rawComments.map(normaliseComment));
     } catch (err) {
       console.error('Failed to fetch post:', err);
       Alert.alert('Error', 'Could not load this post.');

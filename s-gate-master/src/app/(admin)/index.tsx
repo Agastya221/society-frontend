@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -10,243 +11,481 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOutLeft, FadeOutRight } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+
+import {
+    SgateBrandMark,
+    SgateQuickAction,
+    SgateSecurityBanner,
+} from '@/components/Sgate';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Avatar } from '@/components/ui/Avatar';
-import { SgateBrandMark } from '@/components/Sgate/SgateBrandMark';
+import { ApprovalCard } from '@/components/visitors/ApprovalCard';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
+import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useGateStore } from '@/store/useGateStore';
+import { useNotificationStore } from '@/store/useNotificationStore';
+import type { Entry } from '@/types/api';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function greeting(): string {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+}
+
+function timeAgo(iso: string): string {
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (diff < 1) return 'just now';
+    if (diff === 1) return '1 min ago';
+    if (diff < 60) return `${diff} min ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+    return `${Math.floor(diff / 1440)}d ago`;
+}
+
+type PillStatus = 'active' | 'pending' | 'approved' | 'denied' | 'expired';
+
+function entryStatusToPill(status: Entry['status']): { pill: PillStatus; label: string } {
+    switch (status) {
+        case 'CHECKED_IN':  return { pill: 'active',   label: 'Inside' };
+        case 'CHECKED_OUT': return { pill: 'expired',  label: 'Left' };
+        case 'APPROVED':    return { pill: 'approved', label: 'Approved' };
+        case 'REJECTED':    return { pill: 'denied',   label: 'Denied' };
+        default:            return { pill: 'pending',  label: 'Pending' };
+    }
+}
+
+function formatType(raw: string): string {
+    if (!raw) return 'Guest';
+    return raw
+        .split('_')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+}
+
 interface DashboardStats {
     totalFlats: number;
     occupiedFlats: number;
     activeResidents: number;
     todayEntries: number;
     pendingComplaints: number;
+    pendingGatePasses?: number;
 }
 
-// ─── Quick Action data ───────────────────────────────────────────────────────
-const QUICK_ACTIONS = [
-    { title: 'Gate Passes',  icon: 'check-circle' as const, route: '/(admin)/gate-passes',          bg: SgateColors.goldPale,  iconColor: SgateColors.goldDeep },
-    { title: 'Residents',    icon: 'users'        as const, route: '/(admin)/onboarding-requests',   bg: SgateColors.blueBg,    iconColor: SgateColors.blue },
-    { title: 'Guards',       icon: 'shield'       as const, route: '/(admin)/guards',                bg: SgateColors.greenBg,   iconColor: SgateColors.green },
-    { title: 'Complaints',   icon: 'alert-circle' as const, route: '/(admin)/complaints',            bg: SgateColors.redBg,     iconColor: SgateColors.red },
-    { title: 'Notices',      icon: 'bell'         as const, route: '/(admin)/notices',               bg: SgateColors.surface,   iconColor: SgateColors.t2 },
-    { title: 'Profile',      icon: 'user'         as const, route: '/(admin)/profile',               bg: SgateColors.goldPale,  iconColor: SgateColors.goldDeep },
-];
-
-// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Screen ───────────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
-    const { user } = useAuthStore();
+    const { user, role } = useAuthStore();
 
-    const [stats, setStats]       = useState<DashboardStats | null>(null);
-    const [loading, setLoading]   = useState(true);
+    // Store states (same as resident home)
+    const {
+        pendingRequests,
+        entries,
+        isLoading: gateLoading,
+        fetchPendingRequests,
+        fetchEntries,
+        approveRequest,
+        rejectRequest,
+    } = useGateStore();
+
+    const { unreadCount, fetchUnreadCount } = useNotificationStore();
+
+    // Admin Dashboard stats
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [showPreApprove, setShowPreApprove] = useState(false);
+    const [pendingSocietyPasses, setPendingSocietyPasses] = useState<any[]>([]);
 
-    const fetchDashboard = async () => {
+    // Track array element exit direction
+    const [exitDir, setExitDir] = useState<Record<string, 'left' | 'right'>>({});
+
+    const fetchAllAdmin = async () => {
+        if (role !== 'ADMIN' && role !== 'SUPER_ADMIN') return;
         try {
-            const res = await api.get('/admin/reports/dashboard');
-            setStats(res.data?.data ?? null);
-        } catch (err) {
-            console.error('Dashboard fetch error:', err);
+            // Parallel fetch for stats and society-level pending passes
+            const [dashRes, passesRes] = await Promise.all([
+                api.get('/admin/reports/dashboard'),
+                api.get('/gate/passes', { params: { status: 'PENDING' } })
+            ]);
+
+            if (dashRes.status === 200) {
+                setStats(dashRes.data?.data ?? null);
+            }
+
+            // Correct access based on common API patterns in this repo
+            const rawPasses = passesRes.data?.data || passesRes.data || [];
+            // Filter only for types that need admin eyes (Material/Moving)
+            const societyPasses = Array.isArray(rawPasses) 
+                ? rawPasses.filter((p: any) => p.type.includes('MATERIAL') || p.type.includes('MOVE')) 
+                : [];
+            setPendingSocietyPasses(societyPasses);
+
+        } catch (error) {
+            console.error('Admin Dashboard fetch failed:', error);
             setStats({ totalFlats: 0, occupiedFlats: 0, activeResidents: 0, todayEntries: 0, pendingComplaints: 0 });
         } finally {
             setLoading(false);
-            setRefreshing(false);
         }
     };
 
-    useFocusEffect(useCallback(() => { fetchDashboard(); }, []));
+    useFocusEffect(useCallback(() => {
+        fetchAllAdmin();
+        fetchPendingRequests();
+        fetchUnreadCount();
+        fetchEntries({ status: 'CHECKED_IN' });
+    }, [role]));
 
-    const onRefresh = () => { setRefreshing(true); fetchDashboard(); };
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await Promise.allSettled([
+            fetchAllAdmin(),
+            fetchPendingRequests(),
+            fetchUnreadCount(),
+            fetchEntries({ status: 'CHECKED_IN' }),
+        ]);
+        setRefreshing(false);
+    };
+
+    // ── Actions ──────────────────────────────────────────────────────────────
+    const handleApprovePass = async (id: string) => {
+        setExitDir(prev => ({ ...prev, [id]: 'right' }));
+        try {
+            const { approveGatePass } = await import('@/services/gatePass');
+            await approveGatePass(id);
+            // Refresh to ensure sync
+            fetchAllAdmin();
+        } catch {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
+    };
+
+    const handleApprove = async (id: string) => {
+        setExitDir(prev => ({ ...prev, [id]: 'right' }));
+        try {
+            await approveRequest(id);
+        } catch {
+            // handle error
+        }
+    };
+
+    const handleDeny = async (id: string) => {
+        setExitDir(prev => ({ ...prev, [id]: 'left' }));
+        try {
+            await rejectRequest(id);
+        } catch {
+            // handle error
+        }
+    };
+
+    const nav = (route: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push(route as any);
+    };
 
     const firstName   = user?.name?.split(' ')[0] ?? 'Admin';
     const societyName = user?.society?.name ?? 'Your Society';
-    const displayVal  = (v: number | undefined) => loading ? '—' : String(v ?? 0);
-
-    function greeting(): string {
-        const h = new Date().getHours();
-        if (h < 12) return 'Good morning';
-        if (h < 17) return 'Good afternoon';
-        return 'Good evening';
-    }
 
     return (
         <View style={styles.root}>
             <ScrollView
                 style={styles.scroll}
-                contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 14 }]}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh}
-                        tintColor={SgateColors.gold} colors={[SgateColors.gold]} />
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        tintColor={SgateColors.gold}
+                        colors={[SgateColors.gold]}
+                    />
                 }
             >
-                {/* ── Header ──────────────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.headerArea}>
-                    <View style={styles.headerRow}>
-                        <View style={styles.headerLeft}>
+                {/* ══ WHITE HEADER ══════════════════════════════════════════ */}
+                <View style={[styles.headerArea, { paddingTop: insets.top + 14 }]}>
+                    <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.greetingRow}>
+                        <View style={styles.greetingLeft}>
                             <SgateBrandMark size={42} />
-                            <View style={styles.headerTexts}>
+                            <View style={styles.greetingTexts}>
                                 <Text style={styles.greetingLine}>{greeting()}, {firstName}</Text>
                                 <Text style={styles.societyLine} numberOfLines={1}>{societyName}</Text>
                             </View>
                         </View>
-                        <TouchableOpacity
-                            onPress={() => router.push('/(admin)/profile')}
-                            style={styles.profileBtn}
-                        >
-                            <Avatar name={user?.name ?? 'A'} size={40} />
-                        </TouchableOpacity>
-                    </View>
-                </Animated.View>
+                        <View style={styles.headerRight}>
+                            <TouchableOpacity style={styles.bellBtn} onPress={() => nav('/(admin)/notifications')}>
+                                <Feather name="bell" size={21} color={SgateColors.t1} />
+                                {unreadCount > 0 && (
+                                    <View style={styles.badge}>
+                                        <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => nav('/(admin)/profile')}>
+                                <Avatar name={user?.name ?? 'A'} size={40} />
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
 
-                {/* ── Stats grid ──────────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(100).springify()} style={styles.statsGrid}>
-                    <StatCard label="Total Flats" value={displayVal(stats?.totalFlats)} icon="home" accent={SgateColors.blue} />
-                    <StatCard label="Residents" value={displayVal(stats?.activeResidents)} icon="users" accent={SgateColors.green} />
-                    <StatCard label="Entries Today" value={displayVal(stats?.todayEntries)} icon="activity" accent={SgateColors.goldDeep} />
-                    <StatCard label="Complaints" value={displayVal(stats?.pendingComplaints)} icon="alert-circle" accent={SgateColors.red} />
-                </Animated.View>
+                    <Animated.View entering={FadeInDown.delay(80).springify()}>
+                        <SgateSecurityBanner />
+                    </Animated.View>
+                </View>
 
-                {/* ── Quick actions ────────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(200).springify()}>
-                    <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
-                    <View style={styles.actionsGrid}>
-                        {/* Pre-Approve tile — only if admin has a flat */}
-                        {user?.flatId && (
-                            <QuickActionTile
-                                title="Pre-Approve"
-                                icon="user-check"
-                                bg={SgateColors.goldPale}
-                                iconColor={SgateColors.goldDeep}
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    setShowPreApprove(true);
-                                }}
+                {/* ══ BG CONTENT AREA ═══════════════════════════════════════ */}
+                <View style={styles.contentArea}>
+
+                    {/* ── Admin Stats Grid ──────────────────────────────────── */}
+                    <Animated.View entering={FadeInDown.delay(120).springify()} style={styles.statsWrap}>
+                        <View style={styles.statsGrid}>
+                            <StatCard label="Total Flats" value={stats?.totalFlats ?? 0} icon="home" color={SgateColors.blue} bg={SgateColors.blueBg} loading={loading} />
+                            <StatCard label="Residents" value={stats?.activeResidents ?? 0} icon="users" color={SgateColors.green} bg={SgateColors.greenBg} loading={loading} />
+                            <StatCard label="Entries Today" value={stats?.todayEntries ?? 0} icon="activity" color={SgateColors.goldDeep} bg={SgateColors.goldPale} loading={loading} />
+                            <StatCard label="Open Complaints" value={stats?.pendingComplaints ?? 0} icon="alert-circle" color={SgateColors.red} bg={SgateColors.redBg} loading={loading} />
+                        </View>
+                    </Animated.View>
+
+                    {/* ── Quick Actions ──────────────────────────── */}
+                    <Animated.View entering={FadeInDown.delay(160).springify()} style={[styles.quickRow, { marginBottom: 0 }]}>
+                        <SgateQuickAction icon="user-check" label={'Pre-\nApprove'} bgColor={SgateColors.goldPale} iconColor={SgateColors.goldDeep} onPress={() => setShowPreApprove(true)} />
+                        <SgateQuickAction icon="credit-card" label={'My\nPasses'} bgColor={SgateColors.blueBg} iconColor={SgateColors.blue} onPress={() => nav('/(admin)/my-home/my-passes')} />
+                        <SgateQuickAction icon="dollar-sign" label={'My\nDues'} bgColor={SgateColors.surface} iconColor={SgateColors.t2} onPress={() => nav('/(admin)/my-home/dues')} />
+                        <SgateQuickAction icon="alert-triangle" label={'SOS\nAlert'} bgColor={SgateColors.redBg} iconColor={SgateColors.red} onPress={() => nav('/(admin)/emergencies')} />
+                    </Animated.View>
+
+                    <Animated.View entering={FadeInDown.delay(200).springify()} style={[styles.quickRow, { marginTop: 18, marginBottom: 28 }]}>
+                        <SgateQuickAction icon="check-circle" label={'Gate\nPasses'} bgColor={SgateColors.goldPale} iconColor={SgateColors.goldDeep} onPress={() => nav('/(admin)/gate-passes')} />
+                        <SgateQuickAction icon="users" label={'Residents'} bgColor={SgateColors.blueBg} iconColor={SgateColors.blue} onPress={() => nav('/(admin)/onboarding-requests')} />
+                        <SgateQuickAction icon="shield" label={'Guards'} bgColor={SgateColors.greenBg} iconColor={SgateColors.green} onPress={() => nav('/(admin)/guards')} />
+                        <SgateQuickAction icon="grid" label={'All\nTools'} bgColor={SgateColors.surface} iconColor={SgateColors.t2} onPress={() => nav('/(admin)/all-tools')} />
+                    </Animated.View>
+
+                    {/* ── Society Approvals (Admin Power) ────────────────────── */}
+                    {pendingSocietyPasses.length > 0 && (
+                        <Animated.View entering={FadeInDown.delay(220).springify()} style={styles.section}>
+                            <SectionHeader
+                                title="Action Required"
+                                rightPill={{ text: `${pendingSocietyPasses.length} Society`, color: SgateColors.red, bg: SgateColors.redBg }}
                             />
+                            {pendingSocietyPasses.map((pass, index) => (
+                                <Animated.View key={pass.id} entering={FadeInDown.delay(index * 70).springify()}
+                                    exiting={exitDir[pass.id] === 'right' ? FadeOutRight.duration(260) : FadeOutLeft.duration(260)}
+                                    style={styles.cardWrap}>
+                                    <ApprovalCard
+                                        name={pass.title || pass.type.replace('_', ' ')}
+                                        type={pass.flat?.flatNumber ? `Flat ${pass.flat.flatNumber}` : 'Society'}
+                                        time={timeAgo(pass.createdAt)}
+                                        gate={pass.requestedBy?.name || 'Admin Request'}
+                                        onApprove={() => handleApprovePass(pass.id)}
+                                        onDeny={() => nav('/(admin)/gate-passes')} // Redirect to full view for rejections with reasons
+                                    />
+                                </Animated.View>
+                            ))}
+                        </Animated.View>
+                    )}
+
+                    {/* ── Waiting at Gate (Personal) ─────────────────────────── */}
+                    <Animated.View entering={FadeInDown.delay(240).springify()} style={styles.section}>
+                        <SectionHeader
+                            title="My Visitors"
+                            rightPill={pendingRequests.length > 0 ? { text: `${pendingRequests.length} new`, color: SgateColors.goldDeep, bg: SgateColors.goldPale } : undefined}
+                        />
+
+                        {gateLoading && pendingRequests.length === 0 ? (
+                            <GateSkeleton />
+                        ) : pendingRequests.length === 0 ? (
+                            <GateEmpty />
+                        ) : (
+                            pendingRequests.map((req, index) => (
+                                <Animated.View key={req.id} entering={FadeInDown.delay(index * 70).springify()}
+                                    exiting={exitDir[req.id] === 'right' ? FadeOutRight.duration(260) : FadeOutLeft.duration(260)}
+                                    style={styles.cardWrap}>
+                                    <ApprovalCard
+                                        name={req.visitorName}
+                                        type={formatType(req.type)}
+                                        time={timeAgo(req.createdAt)}
+                                        gate={req.gate ?? 'Gate A'}
+                                        onApprove={() => handleApprove(req.id)}
+                                        onDeny={() => handleDeny(req.id)}
+                                    />
+                                </Animated.View>
+                            ))
                         )}
-                        {QUICK_ACTIONS.map((action) => (
-                            <QuickActionTile
-                                key={action.title}
-                                title={action.title}
-                                icon={action.icon}
-                                bg={action.bg}
-                                iconColor={action.iconColor}
-                                onPress={() => {
-                                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    router.push(action.route as any);
-                                }}
-                                badge={action.title === 'Complaints' && stats?.pendingComplaints ? stats.pendingComplaints : undefined}
-                            />
-                        ))}
-                    </View>
-                </Animated.View>
+                    </Animated.View>
 
-                <View style={{ height: 40 }} />
+                    {/* ── Today's Activity ──────────────────────────────────── */}
+                    <Animated.View entering={FadeInDown.delay(280).springify()} style={styles.section}>
+                        <SectionHeader title="Today's Activity" rightLabel="See all" onRightPress={() => nav('/(resident)/approvals')} />
+
+                        {entries.length === 0 ? (
+                            <ActivityEmpty />
+                        ) : (
+                            <View style={styles.activityCard}>
+                                {entries.map((entry, index) => (
+                                    <ActivityRow key={entry.id} entry={entry} isLast={index === entries.length - 1} />
+                                ))}
+                            </View>
+                        )}
+                    </Animated.View>
+
+                </View>
             </ScrollView>
 
-            <PreApproveSheet
-                visible={showPreApprove}
-                onClose={() => setShowPreApprove(false)}
-            />
+            <PreApproveSheet visible={showPreApprove} onClose={() => setShowPreApprove(false)} />
         </View>
     );
 }
 
-// ─── Stat card ───────────────────────────────────────────────────────────────
-function StatCard({ label, value, icon, accent }: {
-    label: string; value: string; icon: keyof typeof Feather.glyphMap; accent: string;
-}) {
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function StatCard({ label, value, icon, color, bg, loading }: any) {
     return (
         <View style={styles.statCard}>
-            <View style={[styles.statIconWrap, { backgroundColor: accent + '14' }]}>
-                <Feather name={icon} size={17} color={accent} />
+            <View style={[styles.statIconWrap, { backgroundColor: bg }]}>
+                 <Feather name={icon} size={16} color={color} />
             </View>
-            <Text style={styles.statValue}>{value}</Text>
-            <Text style={styles.statLabel}>{label}</Text>
+            <Text style={styles.statValue}>{loading ? '—' : value}</Text>
+            <Text style={styles.statLabel}>{label.toUpperCase()}</Text>
         </View>
     );
 }
 
-// ─── Quick action tile ───────────────────────────────────────────────────────
-function QuickActionTile({ title, icon, bg, iconColor, onPress, badge }: {
-    title: string; icon: keyof typeof Feather.glyphMap; bg: string;
-    iconColor: string; onPress: () => void; badge?: number;
-}) {
+function LargeAction({ title, sub, icon, bg, color, onPress }: any) {
     return (
-        <TouchableOpacity style={styles.actionTile} onPress={onPress} activeOpacity={0.75}>
-            <View style={[styles.actionIconWrap, { backgroundColor: bg }]}>
-                <Feather name={icon} size={22} color={iconColor} />
+        <TouchableOpacity style={styles.largeTile} onPress={onPress}>
+            <View style={[styles.largeTileIcon, { backgroundColor: bg }]}>
+                <Feather name={icon} size={22} color={color} />
             </View>
-            <Text style={styles.actionTitle}>{title}</Text>
-            <Text style={styles.actionSub}>Manage</Text>
-            {badge ? (
-                <View style={styles.actionBadge}>
-                    <Text style={styles.actionBadgeText}>{badge}</Text>
-                </View>
-            ) : null}
+            <Text style={styles.largeTileTitle}>{title}</Text>
+            <Text style={styles.largeTileSub}>{sub}</Text>
         </TouchableOpacity>
+    );
+}
+
+function ActivityRow({ entry, isLast }: { entry: Entry; isLast: boolean }) {
+    const { pill, label } = entryStatusToPill(entry.status);
+    return (
+        <View style={[styles.activityRow, !isLast && styles.activityDivider]}>
+            <Avatar name={entry.visitorName} size={36} />
+            <View style={styles.activityInfo}>
+                <Text style={styles.activityName} numberOfLines={1}>{entry.visitorName}</Text>
+                <Text style={styles.activityTime}>{timeAgo(entry.createdAt)}</Text>
+            </View>
+            <ActivityPill status={pill} label={label} />
+        </View>
+    );
+}
+
+function ActivityPill({ status, label }: { status: PillStatus; label: string }) {
+    const { bg, text } = ACTIVITY_PILL_COLORS[status];
+    return (
+        <View style={[styles.actPill, { backgroundColor: bg }]}>
+            <Text style={[styles.actPillText, { color: text }]}>{label}</Text>
+        </View>
+    );
+}
+
+const ACTIVITY_PILL_COLORS: Record<PillStatus, { bg: string; text: string }> = {
+    active:   { bg: SgateColors.greenBg,  text: SgateColors.green },
+    approved: { bg: SgateColors.greenBg,  text: SgateColors.green },
+    pending:  { bg: SgateColors.goldPale, text: SgateColors.goldDeep },
+    denied:   { bg: SgateColors.redBg,    text: SgateColors.red },
+    expired:  { bg: SgateColors.surface,  text: SgateColors.t3 },
+};
+
+function GateEmpty() {
+    return (
+        <View style={styles.emptyWrap}>
+            <View style={styles.emptyIcon}>
+                <Feather name="check-circle" size={26} color={SgateColors.green} />
+            </View>
+            <Text style={styles.emptyTitle}>All clear!</Text>
+            <Text style={styles.emptySub}>No one is waiting at the gate</Text>
+        </View>
+    );
+}
+
+function GateSkeleton() {
+    return (
+        <View style={styles.skeletonCard}>
+            <View style={styles.skeletonRow}>
+                <View style={styles.skeletonCircle} />
+                <View style={styles.skeletonLines}>
+                    <View style={[styles.skeletonLine, { width: '60%' }]} />
+                    <View style={[styles.skeletonLine, { width: '40%', marginTop: 6 }]} />
+                </View>
+            </View>
+        </View>
+    );
+}
+
+function ActivityEmpty() {
+    return (
+        <View style={styles.activityEmptyWrap}>
+            <Feather name="clock" size={20} color={SgateColors.t4} />
+            <Text style={styles.activityEmptyText}>No activity yet today</Text>
+        </View>
     );
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-    root: {
-        flex: 1,
-        backgroundColor: SgateColors.card,
-    },
+    root: { flex: 1, backgroundColor: SgateColors.card },
     scroll: { flex: 1 },
-    scrollContent: {
-        paddingBottom: 40,
-    },
+    scrollContent: { paddingBottom: 40 },
 
     // Header
     headerArea: {
+        backgroundColor: SgateColors.card,
         paddingHorizontal: 20,
-        paddingBottom: 24,
+        paddingBottom: 20,
+        gap: 16,
     },
-    headerRow: {
+    greetingRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
     },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        flex: 1,
+    greetingLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+    greetingTexts: { flex: 1 },
+    greetingLine: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    societyLine: { fontSize: 18, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    bellBtn: {
+        width: 44, height: 44, borderRadius: 22,
+        backgroundColor: SgateColors.surface,
+        alignItems: 'center', justifyContent: 'center',
     },
-    headerTexts: { flex: 1 },
-    greetingLine: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
+    badge: {
+        position: 'absolute', top: 7, right: 7,
+        minWidth: 16, height: 16, borderRadius: 8,
+        backgroundColor: SgateColors.gold,
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1.5, borderColor: SgateColors.card,
     },
-    societyLine: {
-        fontSize: 18,
-        fontFamily: SgateFonts.extrabold,
-        color: SgateColors.t1,
-        letterSpacing: -0.5,
-    },
-    profileBtn: {},
+    badgeText: { fontSize: 9, fontFamily: SgateFonts.bold, color: SgateColors.black },
 
-    // Stats
+    // Content area
+    contentArea: {
+        backgroundColor: SgateColors.bg,
+        paddingHorizontal: 20,
+        paddingTop: 20,
+    },
+
+    statsWrap: { marginBottom: 28 },
     statsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        paddingHorizontal: 20,
-        gap: 10,
-        marginBottom: 28,
+        justifyContent: 'space-between',
+        rowGap: 12,
     },
     statCard: {
-        width: '47%',
+        width: '48%',
         backgroundColor: SgateColors.card,
         borderRadius: 20,
         borderWidth: 1,
@@ -254,83 +493,67 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     statIconWrap: {
-        width: 36,
-        height: 36,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
+        width: 32, height: 32, borderRadius: 10,
+        alignItems: 'center', justifyContent: 'center',
         marginBottom: 12,
     },
-    statValue: {
-        fontSize: 28,
-        fontFamily: SgateFonts.extrabold,
-        color: SgateColors.t1,
-        letterSpacing: -1,
-        marginBottom: 2,
-    },
-    statLabel: {
-        ...SgateTypography.microLabel,
-        color: SgateColors.t3,
-    },
+    statValue: { fontSize: 24, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, marginBottom: 2 },
+    statLabel: { fontSize: 10, fontFamily: SgateFonts.semibold, color: SgateColors.t3, letterSpacing: 0.5 },
 
-    // Quick actions
-    sectionLabel: {
-        ...SgateTypography.microLabel,
-        color: SgateColors.t3,
-        paddingHorizontal: 21,
-        marginBottom: 14,
-    },
-    actionsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        paddingHorizontal: 20,
-        gap: 10,
-    },
-    actionTile: {
-        width: '47%',
+    // Section
+    section: { marginBottom: 28 },
+    cardWrap: { marginBottom: 12 },
+    quickRow: { flexDirection: 'row', gap: 10 },
+
+    // Large Quick Row (Admin tools)
+    largeQuickRowWrap: { gap: 12 },
+    largeQuickRow: { flexDirection: 'row', gap: 12 },
+    largeTile: {
+        flex: 1,
         backgroundColor: SgateColors.card,
         borderRadius: 20,
         borderWidth: 1,
         borderColor: SgateColors.borderSoft,
         padding: 16,
-        justifyContent: 'space-between',
-        minHeight: 130,
-        position: 'relative',
+        minHeight: 120,
     },
-    actionIconWrap: {
-        width: 48,
-        height: 48,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 14,
+    largeTileIcon: {
+        width: 44, height: 44, borderRadius: 14,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 12,
     },
-    actionTitle: {
-        fontSize: 15,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
+    largeTileTitle: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    largeTileSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 2 },
+
+    // Activity card
+    activityCard: {
+        backgroundColor: SgateColors.card,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+        paddingHorizontal: 16,
+        overflow: 'hidden',
     },
-    actionSub: {
-        fontSize: 12,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t4,
-        marginTop: 2,
-    },
-    actionBadge: {
-        position: 'absolute',
-        top: 12,
-        right: 12,
-        backgroundColor: SgateColors.red,
-        minWidth: 20,
-        height: 20,
-        borderRadius: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 5,
-    },
-    actionBadgeText: {
-        fontSize: 10,
-        fontFamily: SgateFonts.bold,
-        color: '#FFFFFF',
-    },
+    activityRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13, gap: 12 },
+    activityDivider: { borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+    activityInfo: { flex: 1 },
+    activityName: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    activityTime: { marginTop: 2, fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    actPill: { borderRadius: 20, paddingHorizontal: 9, paddingVertical: 3 },
+    actPillText: { fontSize: 11, fontFamily: SgateFonts.semibold },
+
+    // Empty/Skeleton
+    emptyWrap: { alignItems: 'center', paddingVertical: 28 },
+    emptyIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: SgateColors.greenBg, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+    emptyTitle: { fontSize: 17, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, marginBottom: 4 },
+    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    
+    skeletonCard: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 16, marginBottom: 12 },
+    skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    skeletonCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: SgateColors.surface },
+    skeletonLines: { flex: 1 },
+    skeletonLine: { height: 12, borderRadius: 6, backgroundColor: SgateColors.surface },
+    
+    activityEmptyWrap: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 24, backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft },
+    activityEmptyText: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 });

@@ -9,21 +9,39 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 
-type BookingStatus = 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'PENDING';
+type BookingStatus = 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 interface MyBooking {
   id: string; amenityName: string; amenityIcon: string;
   date: string; timeSlot: string; members: number; status: BookingStatus;
 }
 
 function normalise(raw: any): MyBooking {
+  // Strip time portion from ISO dates: '2026-04-05T10:00:00Z' → '2026-04-05'
+  const rawDate = raw.date ?? raw.bookingDate ?? raw.slotDate ?? '';
+  const date = rawDate.split('T')[0];
+
+  // Handle slot time as combined string or separate start/end fields
+  const slot = raw.slot ?? {};
+  const timeSlot =
+    raw.timeSlot ??
+    slot.label ??
+    slot.time ??
+    (slot.startTime
+      ? `${slot.startTime}${slot.endTime ? ` – ${slot.endTime}` : ''}`
+      : null) ??
+    (raw.startTime
+      ? `${raw.startTime}${raw.endTime ? ` – ${raw.endTime}` : ''}`
+      : null) ??
+    '';
+
   return {
-    id:           raw.id,
-    amenityName:  raw.amenity?.name ?? raw.amenityName ?? '',
-    amenityIcon:  raw.amenity?.icon ?? raw.amenityIcon ?? 'home',
-    date:         raw.date ?? raw.bookingDate ?? '',
-    timeSlot:     raw.timeSlot ?? raw.slot?.time ?? '',
-    members:      raw.membersCount ?? raw.members ?? 1,
-    status:       raw.status ?? 'CONFIRMED',
+    id:          raw.id,
+    amenityName: raw.amenity?.name ?? raw.amenityName ?? '',
+    amenityIcon: raw.amenity?.icon ?? raw.amenityIcon ?? 'home',
+    date,
+    timeSlot,
+    members:     raw.membersCount ?? raw.members ?? 1,
+    status:      (raw.status?.toUpperCase() ?? 'CONFIRMED') as BookingStatus,
   };
 }
 
@@ -140,11 +158,13 @@ export default function MyBookingsScreen() {
   const [loading, setLoading]   = useState(true);
 
   useFocusEffect(useCallback(() => {
+    setLoading(true);
     (async () => {
       try {
         const res = await api.get('/resident/amenities/my-bookings');
-        const list: any[] = res.data?.data ?? res.data ?? [];
-        setBookings((Array.isArray(list) ? list : []).map(normalise));
+        const data = res.data?.data ?? res.data;
+        const list: any[] = Array.isArray(data) ? data : (data?.bookings ?? data?.items ?? []);
+        setBookings(list.map(normalise));
       } catch (err) {
         console.error('Failed to fetch bookings:', err);
       } finally { setLoading(false); }
@@ -152,15 +172,15 @@ export default function MyBookingsScreen() {
   }, []));
 
   const filtered = tab === 'UPCOMING'
-    ? bookings.filter(b => b.status === 'CONFIRMED' || b.status === 'PENDING')
-    : bookings.filter(b => b.status !== 'CONFIRMED' && b.status !== 'PENDING');
+    ? bookings.filter(b => b.status === 'CONFIRMED')
+    : bookings.filter(b => b.status !== 'CONFIRMED');
 
   const handleCancel = (id: string) => {
     Alert.alert('Cancel Booking', 'Are you sure you want to cancel?', [
       { text: 'Keep It', style: 'cancel' },
       { text: 'Cancel Booking', style: 'destructive', onPress: async () => {
         try {
-          await api.delete(`/resident/amenities/bookings/${id}`);
+          await api.patch(`/resident/amenities/bookings/${id}/cancel`, { reason: 'Plans changed' });
           setBookings(bs => bs.map(b => b.id === id ? { ...b, status: 'CANCELLED' as BookingStatus } : b));
         } catch {
           Alert.alert('Error', 'Could not cancel booking. Please try again.');
@@ -216,28 +236,34 @@ export default function MyBookingsScreen() {
       </View>
 
       {/* List */}
-      <FlatList
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={
-          filtered.length === 0 ? S.emptyContainer : S.listContent
-        }
-        renderItem={({ item, index }) => (
-          <BookingCard booking={item} index={index} onCancel={handleCancel} />
-        )}
-        ListEmptyComponent={
-          <View style={S.emptyInner}>
-            <Feather name="bookmark" size={40} color={SgateColors.t4} />
-            <Text style={S.emptyTitle}>No bookings</Text>
-            <Text style={S.emptySubtitle}>
-              {tab === 'UPCOMING'
-                ? 'You have no upcoming bookings.'
-                : 'No past bookings to show.'}
-            </Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={S.loadingContainer}>
+          <ActivityIndicator size="large" color={SgateColors.gold} />
+        </View>
+      ) : (
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={
+            filtered.length === 0 ? S.emptyContainer : S.listContent
+          }
+          renderItem={({ item, index }) => (
+            <BookingCard booking={item} index={index} onCancel={handleCancel} />
+          )}
+          ListEmptyComponent={
+            <View style={S.emptyInner}>
+              <Feather name="bookmark" size={40} color={SgateColors.t4} />
+              <Text style={S.emptyTitle}>No bookings</Text>
+              <Text style={S.emptySubtitle}>
+                {tab === 'UPCOMING'
+                  ? 'You have no upcoming bookings.'
+                  : 'No past bookings to show.'}
+              </Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -297,6 +323,12 @@ const S = StyleSheet.create({
   },
   tabBtnTextActive: {
     color: SgateColors.card,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // List

@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
+import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
 import {
     ActivityIndicator,
     Alert,
@@ -11,14 +12,12 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import {
     cancelPreApproved,
     deletePreApproved,
     getPreApprovedList,
-    getRepeatTemplate,
 } from '../../../services/gate.service';
 import type {
     PreApprovedEntry,
@@ -66,11 +65,11 @@ export default function PreApprovalsScreen() {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // QR modal
-    const [qrEntry, setQrEntry] = useState<PreApprovedEntry | null>(null);
-
     // 3-dot action menu
     const [menuEntry, setMenuEntry] = useState<PreApprovedEntry | null>(null);
+
+    // Pre-approve sheet
+    const [sheetVisible, setSheetVisible] = useState(false);
 
     const fetchEntries = async () => {
         try {
@@ -136,17 +135,9 @@ export default function PreApprovalsScreen() {
     };
 
     // ── Repeat ───────────────────────────────────────────────────────────────
-    const handleRepeat = async (entry: PreApprovedEntry) => {
+    const handleRepeat = (_entry: PreApprovedEntry) => {
         setMenuEntry(null);
-        try {
-            const template = await getRepeatTemplate(entry.id);
-            router.push({
-                pathname: '/(resident)/pre-approvals/create',
-                params: { prefill: JSON.stringify(template) },
-            });
-        } catch {
-            router.push('/(resident)/pre-approvals/create');
-        }
+        setSheetVisible(true);
     };
 
     // ── Render item ──────────────────────────────────────────────────────────
@@ -229,17 +220,6 @@ export default function PreApprovalsScreen() {
                     </View>
                 )}
 
-                {/* Active footer */}
-                {isActive && !!item.qrToken && (
-                    <TouchableOpacity
-                        style={styles.qrBtn}
-                        onPress={() => setQrEntry(item)}
-                        activeOpacity={0.8}
-                    >
-                        <Feather name="maximize" size={14} color={SgateColors.t1} style={{ marginRight: 6 }} />
-                        <Text style={styles.qrBtnText}>View QR Code</Text>
-                    </TouchableOpacity>
-                )}
             </View>
         );
     };
@@ -296,7 +276,7 @@ export default function PreApprovalsScreen() {
                 <Text style={styles.headerTitle}>Pre-Approvals</Text>
                 <TouchableOpacity
                     style={styles.addBtn}
-                    onPress={() => router.push('/(resident)/pre-approvals/create')}
+                    onPress={() => setSheetVisible(true)}
                 >
                     <Feather name="plus" size={20} color={SgateColors.card} />
                 </TouchableOpacity>
@@ -319,42 +299,13 @@ export default function PreApprovalsScreen() {
                         </Text>
                         <TouchableOpacity
                             style={styles.emptyBtn}
-                            onPress={() => router.push('/(resident)/pre-approvals/create')}
+                            onPress={() => setSheetVisible(true)}
                         >
                             <Text style={styles.emptyBtnText}>Create Pre-Approval</Text>
                         </TouchableOpacity>
                     </View>
                 }
             />
-
-            {/* ── QR Modal ─────────────────────────────────────────────────── */}
-            <Modal
-                visible={!!qrEntry}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setQrEntry(null)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.qrModal}>
-                        <Text style={styles.qrModalTitle}>Gate Pass QR</Text>
-                        <Text style={styles.qrModalSub}>
-                            {qrEntry?.meta.visitorName ?? TYPE_CONFIG[qrEntry?.type ?? 'CAB']?.label}
-                        </Text>
-                        <View style={styles.qrBox}>
-                            {qrEntry?.qrToken && (
-                                <QRCode value={qrEntry.qrToken} size={200} />
-                            )}
-                        </View>
-                        <TouchableOpacity
-                            style={styles.qrCloseBtn}
-                            onPress={() => setQrEntry(null)}
-                            activeOpacity={0.85}
-                        >
-                            <Text style={styles.qrCloseBtnText}>Close</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
 
             {/* ── 3-dot Action Menu Modal ──────────────────────────────────── */}
             <Modal
@@ -373,20 +324,6 @@ export default function PreApprovalsScreen() {
                         <Text style={styles.actionSheetTitle} numberOfLines={1}>
                             {menuEntry?.meta.visitorName ?? TYPE_CONFIG[menuEntry?.type ?? 'CAB']?.label}
                         </Text>
-
-                        {/* View QR */}
-                        {menuEntry?.status === 'ACTIVE' && menuEntry.qrToken && (
-                            <TouchableOpacity
-                                style={styles.actionItem}
-                                onPress={() => { setQrEntry(menuEntry); setMenuEntry(null); }}
-                            >
-                                <View style={[styles.actionIcon, { backgroundColor: SgateColors.surface }]}>
-                                    <Feather name="maximize" size={18} color={SgateColors.t2} />
-                                </View>
-                                <Text style={styles.actionLabel}>View QR Code</Text>
-                                <Feather name="chevron-right" size={16} color={SgateColors.t4} />
-                            </TouchableOpacity>
-                        )}
 
                         {/* Repeat */}
                         <TouchableOpacity
@@ -437,6 +374,12 @@ export default function PreApprovalsScreen() {
                     </View>
                 </TouchableOpacity>
             </Modal>
+
+            <PreApproveSheet
+                visible={sheetVisible}
+                onClose={() => setSheetVisible(false)}
+                onSuccess={() => { setSheetVisible(false); fetchEntries(); }}
+            />
         </SafeAreaView>
     );
 }
@@ -595,21 +538,6 @@ const styles = StyleSheet.create({
         color: SgateColors.t3,
         textTransform: 'capitalize',
     },
-    qrBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderTopWidth: 1,
-        borderTopColor: SgateColors.borderSoft,
-        paddingVertical: 11,
-        backgroundColor: SgateColors.surface,
-    },
-    qrBtnText: {
-        fontSize: 13,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.t1,
-    },
-
     // ── Empty ────────────────────────────────────────────────────────────────
     empty: {
         flex: 1,
@@ -652,46 +580,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
-    },
-    qrModal: {
-        backgroundColor: SgateColors.card,
-        borderRadius: 24,
-        padding: 24,
-        alignItems: 'center',
-        width: '100%',
-        maxWidth: 320,
-    },
-    qrModalTitle: {
-        fontSize: 16,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        marginBottom: 4,
-    },
-    qrModalSub: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-        marginBottom: 20,
-    },
-    qrBox: {
-        padding: 16,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: SgateColors.border,
-        marginBottom: 20,
-        backgroundColor: '#FFFFFF',
-    },
-    qrCloseBtn: {
-        width: '100%',
-        backgroundColor: SgateColors.black,
-        borderRadius: 14,
-        paddingVertical: 14,
-        alignItems: 'center',
-    },
-    qrCloseBtnText: {
-        fontSize: 14,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.card,
     },
 
     actionSheet: {

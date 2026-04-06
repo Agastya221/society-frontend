@@ -5,9 +5,9 @@ import React, { useEffect, useRef } from 'react';
 import { AppState, Vibration, View } from 'react-native';
 import { EmergencyOverlay } from '../../components/emergency/EmergencyOverlay';
 import { SgateTabBar } from '../../components/Sgate';
-import { useActiveEmergency } from '../../hooks/useActiveEmergency';
+import { EmergencyProvider, useActiveEmergency } from '../../context/EmergencyContext';
 
-export default function ResidentLayout() {
+function ResidentLayoutInner() {
   const { hasActiveEmergency, activeEmergency, dismissAlert } = useActiveEmergency();
   const soundRef            = useRef<Audio.Sound | null>(null);
   const vibrationInterval   = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -163,14 +163,21 @@ export default function ResidentLayout() {
         <Tabs.Screen name="complaints"  options={{ href: null }} />
         <Tabs.Screen name="emergency"   options={{ href: null }} />
         <Tabs.Screen name="family"      options={{ href: null }} />
-        <Tabs.Screen name="gate-passes" options={{ href: null }} />
         <Tabs.Screen name="pre-approvals" options={{ href: null }} />
         <Tabs.Screen name="staff"       options={{ href: null }} />
         <Tabs.Screen name="pre-approve" options={{ href: null }} />
-        <Tabs.Screen name="gate-pass"   options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
         <Tabs.Screen name="expect-delivery" options={{ href: null }} />
+        <Tabs.Screen name="my-passes"       options={{ href: null }} />
       </Tabs>
     </View>
+  );
+}
+
+export default function ResidentLayout() {
+  return (
+    <EmergencyProvider>
+      <ResidentLayoutInner />
+    </EmergencyProvider>
   );
 }

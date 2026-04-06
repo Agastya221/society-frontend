@@ -14,6 +14,17 @@ import { useAuthStore } from "../store/useAuthStore";
 import { SgateColors } from "../constants/Sgate-theme";
 import api from "../services/api";
 
+// Show notifications while app is in foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
 const ONBOARDING_SEEN_KEY = "onboarding_seen";
 
 SplashScreen.preventAutoHideAsync();
@@ -31,7 +42,7 @@ export default function RootLayout() {
     loadToken();
   }, []);
 
-  // Register FCM push token right after authentication
+  // Register native FCM token right after authentication
   useEffect(() => {
     if (!isAuthenticated || !role) return;
     if (role !== 'RESIDENT' && role !== 'ADMIN' && role !== 'SUPER_ADMIN') return;
@@ -39,13 +50,10 @@ export default function RootLayout() {
       try {
         const { status } = await Notifications.requestPermissionsAsync();
         if (status !== 'granted') return;
-        const tokenData = await Notifications.getExpoPushTokenAsync();
-        const fcmToken = tokenData.data;
-        const endpoint =
-          role === 'RESIDENT'
-            ? '/users/resident-app/fcm-token'
-            : '/users/resident-app/fcm-token'; // admin uses same endpoint
-        await api.patch(endpoint, {
+        // Use native device token so the backend can send directly via FCM
+        const tokenData = await Notifications.getDevicePushTokenAsync();
+        const fcmToken = tokenData.data as string;
+        await api.patch('/users/resident-app/fcm-token', {
           fcmToken,
           deviceType: Platform.OS,
         });
@@ -56,6 +64,28 @@ export default function RootLayout() {
       }
     })();
   }, [isAuthenticated, role]);
+
+  // Navigate to approvals when a GATE_REQUEST notification is tapped
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as Record<string, any>;
+      if (data?.type === 'GATE_REQUEST') {
+        router.push('/(resident)/approvals' as any);
+      }
+    });
+    return () => sub.remove();
+  }, [router]);
+
+  // Auto-navigate to approvals when a GATE_REQUEST arrives in foreground
+  useEffect(() => {
+    const sub = Notifications.addNotificationReceivedListener((notification) => {
+      const data = notification.request.content.data as Record<string, any>;
+      if (data?.type === 'GATE_REQUEST' && isAuthenticated) {
+        router.push('/(resident)/approvals' as any);
+      }
+    });
+    return () => sub.remove();
+  }, [router, isAuthenticated]);
 
   // Check if user has seen the onboarding splash
   useEffect(() => {

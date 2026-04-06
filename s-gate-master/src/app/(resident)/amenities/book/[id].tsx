@@ -4,14 +4,17 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
-import { AMENITIES } from '../../../../mocks/amenities';
+import api from '../../../../services/api';
+import { useAuthStore } from '../../../../store/useAuthStore';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -34,93 +37,67 @@ function formatReadableDate(dateStr: string): string {
 
 export default function BookAmenityScreen() {
   const router = useRouter();
-  const { id, slotId: _slotId, slotTime, date } = useLocalSearchParams<{
-    id: string;
-    slotId: string;
-    slotTime: string;
-    date: string;
-  }>();
+  const { user } = useAuthStore();
+  const { id, slotId, slotTime, date, amenityName, maxCapacity, rules: rulesParam } =
+    useLocalSearchParams<{
+      id: string; slotId: string; slotTime: string; date: string;
+      amenityName: string; maxCapacity: string; rules: string;
+    }>();
 
-  const [members, setMembers] = useState(1);
+  const [purpose, setPurpose]   = useState('');
   const [showRules, setShowRules] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const amenity = AMENITIES.find((a) => a.id === id);
-
-  if (!amenity) {
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={S.root}>
-        <View style={S.notFound}>
-          <Text style={S.notFoundText}>Not found</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
+  const name        = amenityName ?? '';
+  const capacity    = parseInt(maxCapacity ?? '1', 10) || 1;
+  const rules: string[] = (() => { try { return JSON.parse(rulesParam ?? '[]'); } catch { return []; } })();
+  const flatLabel   = user?.flat ? `${user.flat.block?.name ? user.flat.block.name + ' ' : ''}${user.flat.number}` : '—';
   const readableDate = date ? formatReadableDate(date) : '';
 
-  const handleConfirm = () => {
-    Alert.alert(
-      'Confirm Booking',
-      `Book ${amenity.name} on ${readableDate} at ${slotTime}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: () => {
-            Alert.alert(
-              'Booking Confirmed!',
-              'Your slot has been booked. Check My Bookings for details.',
-              [
-                {
-                  text: 'OK',
-                  onPress: () =>
-                    router.push('/(resident)/amenities' as any),
-                },
-              ],
-            );
-          },
-        },
-      ],
-    );
+  const handleConfirm = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await api.post(`/resident/amenities/${id}/book`, {
+        slotId,
+        date,
+        ...(purpose.trim() ? { purpose: purpose.trim() } : {}),
+      });
+      Alert.alert(
+        'Booking Confirmed!',
+        'Your slot has been booked.',
+        [{ text: 'OK', onPress: () => router.push('/(resident)/amenities' as any) }],
+      );
+    } catch (err: any) {
+      Alert.alert('Failed', err?.response?.data?.message ?? 'Could not confirm booking. Try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={S.root}>
       {/* Header */}
       <View style={S.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
+        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Feather name="arrow-left" size={22} color={SgateColors.t1} />
         </TouchableOpacity>
         <Text style={S.headerTitle}>Confirm Booking</Text>
         <View style={S.headerSpacer} />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={S.scrollContent}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.scrollContent}>
         {/* Summary card */}
         <View style={S.summaryCard}>
           <Text style={S.summaryCardLabel}>Booking Summary</Text>
 
-          {/* Amenity row */}
           <View style={S.amenityRow}>
-            <View
-              style={[S.amenityIconBubble, { backgroundColor: amenity.colorBg }]}
-            >
-              <Feather
-                name={amenity.icon as any}
-                size={22}
-                color={amenity.colorIcon}
-              />
+            <View style={[S.amenityIconBubble, { backgroundColor: SgateColors.goldPale }]}>
+              <Feather name="home" size={22} color={SgateColors.goldDeep} />
             </View>
-            <Text style={S.amenityName}>{amenity.name}</Text>
+            <Text style={S.amenityName}>{name}</Text>
           </View>
 
-          {/* Detail rows */}
           <View style={S.detailRow}>
             <Feather name="calendar" size={14} color={SgateColors.t3} />
             <Text style={S.detailLabel}>Date</Text>
@@ -136,80 +113,56 @@ export default function BookAmenityScreen() {
           <View style={[S.detailRow, { marginTop: 8 }]}>
             <Feather name="home" size={14} color={SgateColors.t3} />
             <Text style={S.detailLabel}>Flat</Text>
-            <Text style={S.detailValue}>B-204</Text>
+            <Text style={S.detailValue}>{flatLabel}</Text>
           </View>
 
           <View style={S.divider} />
 
-          {/* Members stepper */}
-          <View style={S.stepperRow}>
-            <Text style={S.stepperLabel}>Members</Text>
-
-            <TouchableOpacity
-              activeOpacity={0.75}
-              onPress={() => setMembers((m) => Math.max(1, m - 1))}
-            >
-              <View style={S.stepperBtn}>
-                <Feather name="minus" size={16} color={SgateColors.t2} />
-              </View>
-            </TouchableOpacity>
-
-            <Text style={S.stepperCount}>{members}</Text>
-
-            <TouchableOpacity
-              activeOpacity={0.75}
-              onPress={() =>
-                setMembers((m) => Math.min(amenity.maxCapacity, m + 1))
-              }
-            >
-              <View style={[S.stepperBtn, S.stepperBtnPlus]}>
-                <Feather name="plus" size={16} color={SgateColors.black} />
-              </View>
-            </TouchableOpacity>
+          {/* Purpose input */}
+          <View style={S.purposeRow}>
+            <Text style={S.purposeLabel}>Purpose <Text style={S.purposeOptional}>(optional)</Text></Text>
+            <TextInput
+              style={S.purposeInput}
+              placeholder="e.g. Morning workout, Family swim…"
+              placeholderTextColor={SgateColors.t4}
+              value={purpose}
+              onChangeText={setPurpose}
+              maxLength={100}
+              returnKeyType="done"
+            />
           </View>
         </View>
 
         {/* Rules card */}
-        <View style={S.rulesCard}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={S.rulesToggleRow}
-            onPress={() => setShowRules((v) => !v)}
-          >
-            <Text style={S.rulesToggleLabel}>Rules & Guidelines</Text>
-            <View style={{ flex: 1 }} />
-            <Feather
-              name={showRules ? 'chevron-up' : 'chevron-down'}
-              size={18}
-              color={SgateColors.t2}
-            />
-          </TouchableOpacity>
-
-          {showRules &&
-            amenity.rules.map((rule, idx) => (
+        {rules.length > 0 && (
+          <View style={S.rulesCard}>
+            <TouchableOpacity activeOpacity={0.7} style={S.rulesToggleRow} onPress={() => setShowRules(v => !v)}>
+              <Text style={S.rulesToggleLabel}>Rules & Guidelines</Text>
+              <View style={{ flex: 1 }} />
+              <Feather name={showRules ? 'chevron-up' : 'chevron-down'} size={18} color={SgateColors.t2} />
+            </TouchableOpacity>
+            {showRules && rules.map((rule, idx) => (
               <View key={idx} style={S.ruleRow}>
                 <View style={S.ruleDot} />
                 <Text style={S.ruleText}>{rule}</Text>
               </View>
             ))}
-        </View>
+          </View>
+        )}
 
         {/* Note card */}
         <View style={S.noteCard}>
           <Feather name="info" size={16} color={SgateColors.goldDeep} />
-          <Text style={S.noteText}>
-            Cancellations must be made at least 2 hours before the slot.
-          </Text>
+          <Text style={S.noteText}>Cancellations must be made at least 2 hours before the slot.</Text>
         </View>
 
         {/* Confirm button */}
         <View style={S.buttonContainer}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={S.confirmButton}
-            onPress={handleConfirm}
-          >
-            <Text style={S.confirmButtonText}>Confirm Booking</Text>
+          <TouchableOpacity activeOpacity={0.8} style={S.confirmButton} onPress={handleConfirm} disabled={submitting}>
+            {submitting
+              ? <ActivityIndicator color={SgateColors.black} />
+              : <Text style={S.confirmButtonText}>Confirm Booking</Text>
+            }
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -315,34 +268,30 @@ const S = StyleSheet.create({
     backgroundColor: SgateColors.borderSoft,
   },
 
-  // Members stepper
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // Purpose input
+  purposeRow: {
+    gap: 8,
   },
-  stepperLabel: {
+  purposeLabel: {
     fontSize: 14,
     fontFamily: SgateFonts.semibold,
     color: SgateColors.t1,
-    flex: 1,
   },
-  stepperBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+  purposeOptional: {
+    fontSize: 12,
+    fontFamily: SgateFonts.regular,
+    color: SgateColors.t3,
+  },
+  purposeInput: {
     backgroundColor: SgateColors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stepperBtnPlus: {
-    backgroundColor: SgateColors.gold,
-  },
-  stepperCount: {
-    fontSize: 18,
-    fontFamily: SgateFonts.bold,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    fontFamily: SgateFonts.regular,
     color: SgateColors.t1,
-    width: 36,
-    textAlign: 'center',
+    borderWidth: 1,
+    borderColor: SgateColors.borderSoft,
   },
 
   // Rules card

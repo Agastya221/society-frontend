@@ -1,10 +1,23 @@
 import { useAuthStore } from '@/store/useAuthStore';
+import * as Notifications from 'expo-notifications';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import 'react-native-reanimated';
 import '../global.css';
+import api from '@/services/api';
+
+// Show notifications while app is in foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 export default function RootLayout() {
   const router = useRouter();
@@ -15,6 +28,37 @@ export default function RootLayout() {
   useEffect(() => {
     loadToken();
   }, []);
+
+  // Register native FCM token after authentication
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    (async () => {
+      try {
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status !== 'granted') return;
+        const tokenData = await Notifications.getDevicePushTokenAsync();
+        const fcmToken = tokenData.data as string;
+        await api.patch('/users/guard-app/fcm-token', {
+          fcmToken,
+          deviceType: Platform.OS,
+        });
+        console.log('📲 Guard FCM token registered');
+      } catch (err) {
+        console.log('Guard FCM token registration skipped:', err);
+      }
+    })();
+  }, [isAuthenticated]);
+
+  // Navigate to approvals when an approval-related notification is tapped
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as Record<string, any>;
+      if (data?.type === 'GATE_APPROVED' || data?.type === 'GATE_DENIED') {
+        router.push('/approvals');
+      }
+    });
+    return () => sub.remove();
+  }, [router]);
 
   // Handle authentication-based navigation
   useEffect(() => {
@@ -86,11 +130,19 @@ export default function RootLayout() {
             headerTitleStyle: { fontWeight: '700' },
           }} 
         />
-        <Stack.Screen 
-          name="emergencies" 
-          options={{ 
+        <Stack.Screen
+          name="scan-verify"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="entry-waiting"
+          options={{ headerShown: false, gestureEnabled: false }}
+        />
+        <Stack.Screen
+          name="emergencies"
+          options={{
             headerShown: false,
-          }} 
+          }}
         />
         <Stack.Screen 
           name="profile" 

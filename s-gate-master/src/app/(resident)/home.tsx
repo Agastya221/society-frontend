@@ -212,11 +212,11 @@ export default function ResidentHomeScreen() {
                             onPress={() => setShowPreApprove(true)}
                         />
                         <SgateQuickAction
-                            icon="hash"
-                            label={'Gate\nPass'}
+                            icon="credit-card"
+                            label={'My\nPasses'}
                             bgColor={SgateColors.blueBg}
                             iconColor={SgateColors.blue}
-                            onPress={() => router.push('/gate-pass-create' as any)}
+                            onPress={() => router.push('/(resident)/my-passes' as any)}
                         />
                         <SgateQuickAction
                             icon="package"

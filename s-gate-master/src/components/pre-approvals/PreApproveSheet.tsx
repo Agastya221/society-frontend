@@ -536,8 +536,26 @@ function GuestFrequently({ state }: { state: FormState }) {
 
 // ─── Standing Frequently (Cab / Delivery / Service) ──────────────────────────
 function StandingFrequently({ state }: { state: FormState }) {
+    const VIOLET = '#7C3AED';
+    const VIOLET_BG = '#EDE9FE';
     return (
         <View style={S.formBody}>
+            {state.inviteType === 'CAB' && (
+                <CheckCard
+                    checked={state.safeMode}
+                    onToggle={() => state.setSafeMode(!state.safeMode)}
+                    title="Safe Pickup Mode"
+                    desc="No need to share flat details with the cab driver or guard."
+                    rightIcon="shield"
+                    rightIconBg={state.safeMode ? VIOLET + '22' : SgateColors.surface}
+                    rightIconColor={state.safeMode ? VIOLET : SgateColors.t3}
+                    recommended
+                    activeBg={VIOLET_BG}
+                    activeCheckColor={VIOLET}
+                    cardStyle={[S.checkCardBordered, { marginBottom: 16 }]}
+                />
+            )}
+
             <Text style={S.fieldLabel}>SELECT DAYS OF WEEK</Text>
             <Dropdown value={state.selectedDays} options={DAYS_OPTS}
                 onSelect={state.setSelectedDays} title="Days of Week" />
@@ -565,7 +583,35 @@ function StandingFrequently({ state }: { state: FormState }) {
             <Dropdown value={state.entriesLabel} options={ENTRIES}
                 onSelect={state.setEntriesLabel} title="Entries Per Day" />
 
-            {(state.inviteType === 'DELIVERY') && (
+            {state.inviteType === 'CAB' && (
+                <>
+                    <Text style={[S.fieldLabel, { color: state.safeMode ? VIOLET : SgateColors.ink }]}>
+                        ADD LAST 4-DIGITS OF VEHICLE NO.
+                    </Text>
+                    <View style={S.digitRow}>
+                        {state.digits.map((d, i) => (
+                            <TextInput
+                                key={i}
+                                ref={r => { state.digitRefs.current[i] = r; }}
+                                style={[S.digitBox, d ? S.digitBoxFilled : null]}
+                                value={d}
+                                onChangeText={v => state.onDigit(i, v)}
+                                maxLength={1}
+                                autoCapitalize="characters"
+                                textAlign="center"
+                                keyboardType="default"
+                            />
+                        ))}
+                    </View>
+                    <Text style={[S.checkDesc, { color: state.safeMode ? VIOLET : SgateColors.t3, marginBottom: 8 }]}>
+                        {state.safeMode
+                            ? 'Vehicle number will be used for Safe Pickup verification at the gate.'
+                            : 'Vehicle number is required for cab verification at the gate.'}
+                    </Text>
+                </>
+            )}
+
+            {state.inviteType === 'DELIVERY' && (
                 <>
                     <Text style={S.fieldLabel}>COMPANY NAME</Text>
                     <Dropdown value={state.company || 'Select company'}
@@ -596,6 +642,7 @@ interface FormState {
     timeUntil: string; setTimeUntil: (v: string) => void;
     serviceCategory: HelpCategory | null; setServiceCategory: (v: HelpCategory | null) => void;
     nativeScrollRef: React.RefObject<any>;
+    scrollOffset: SharedValue<number>;
 }
 
 // ─── Form panel wrapper ───────────────────────────────────────────────────────
@@ -643,6 +690,8 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                     bounces={false}
+                    scrollEventThrottle={16}
+                    onScroll={(e) => { state.scrollOffset.value = e.nativeEvent.contentOffset.y; }}
                 >
                     {renderContent()}
                 </ScrollView>
@@ -1261,6 +1310,8 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     const successOp    = useSharedValue(0);
     const successSc    = useSharedValue(0.85);
 
+    const scrollOffset = useSharedValue(0);
+
     const isClosing       = useRef(false);
     const nativeScrollRef = useRef<any>(null);
     const onCloseRef      = useRef(onClose);
@@ -1392,13 +1443,13 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
         .failOffsetX([-20, 20])
         .activeOffsetY([-10, 10])
         .onUpdate((e) => {
-            // Only drag the sheet down (never up — leave upward motion to the scroll view)
-            if (e.translationY > 0) {
+            // Only drag down, and only when the scroll view is at the top
+            if (e.translationY > 0 && scrollOffset.value <= 0) {
                 sheetY.value = e.translationY;
             }
         })
         .onEnd((e) => {
-            if (e.translationY > 90 || e.velocityY > 500) {
+            if (scrollOffset.value <= 0 && (e.translationY > 90 || e.velocityY > 500)) {
                 runOnJS(handleClose)();
             } else {
                 sheetY.value = withTiming(0, { duration: 220, easing: EO });
@@ -1408,6 +1459,18 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     [handleClose]);
 
     // ── Step transitions ──────────────────────────────────────────────────────
+    const handleTabChange = (newTab: FreqTab) => {
+        setTab(newTab);
+        scrollOffset.value = 0;
+        if (inviteType === 'CAB' && newTab === 'frequently') {
+            sheetH.value = withSpring(SH * 0.92, SPRING_SMOOTH);
+        } else if (inviteType === 'GUEST') {
+            sheetH.value = withSpring(H_GUEST_FORM, SPRING_SMOOTH);
+        } else {
+            sheetH.value = withSpring(H_FORM, SPRING_SMOOTH);
+        }
+    };
+
     const goToForm = (type: InviteType) => {
         setInviteType(type);
         setTab('once');
@@ -1776,7 +1839,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
         selectedDays, setSelectedDays, entriesLabel, setEntriesLabel,
         company, setCompany, timeFrom, setTimeFrom, timeUntil, setTimeUntil,
         serviceCategory, setServiceCategory,
-        nativeScrollRef,
+        nativeScrollRef, scrollOffset,
     };
 
     // The floating icon should be visible on any step that shows a sub-panel
@@ -1945,7 +2008,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                         <Animated.View style={[S.stepLayer, formAnimStyle]} pointerEvents={step === 'form' ? 'auto' : 'none'}>
                             <FormPanel
                                 inviteType={inviteType}
-                                tab={tab} setTab={setTab}
+                                tab={tab} setTab={handleTabChange}
                                 onBack={goBack}
                                 state={formState}
                                 submitting={submitting}

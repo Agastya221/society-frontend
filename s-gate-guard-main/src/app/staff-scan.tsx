@@ -1,6 +1,7 @@
 import api from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
@@ -15,6 +16,7 @@ import {
 } from 'react-native';
 
 export default function StaffScanScreen() {
+    const router = useRouter();
     const [staffIdInput, setStaffIdInput] = useState('');
     const [scanning, setScanning] = useState(false);
     const [scanned, setScanned] = useState(false);
@@ -62,8 +64,20 @@ export default function StaffScanScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Staff Attendance</Text>
-                <Text style={styles.headerSubtitle}>Manually verify staff ID card to mark IN/OUT</Text>
+                <Text style={styles.headerSubtitle}>Enter staff ID manually or scan their QR code</Text>
             </View>
+
+            {/* QR Scan shortcut */}
+            <Pressable style={styles.qrShortcut} onPress={() => router.push('/scan-verify' as any)}>
+                <View style={styles.qrShortcutIcon}>
+                    <Ionicons name="qr-code-outline" size={22} color="#8B5CF6" />
+                </View>
+                <View style={styles.qrShortcutText}>
+                    <Text style={styles.qrShortcutTitle}>Scan QR Code</Text>
+                    <Text style={styles.qrShortcutSub}>Use camera to verify any pass instantly</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#C4B5FD" />
+            </Pressable>
 
             {/* Manual Entry Form */}
             <View style={styles.inputContainer}>
@@ -152,6 +166,39 @@ const styles = StyleSheet.create({
         fontSize: 15,
         fontWeight: '600',
         color: '#6B7280',
+    },
+    qrShortcut: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        backgroundColor: '#F5F3FF',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: '#DDD6FE',
+    },
+    qrShortcutIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        backgroundColor: '#EDE9FE',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    qrShortcutText: {
+        flex: 1,
+    },
+    qrShortcutTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#5B21B6',
+        marginBottom: 2,
+    },
+    qrShortcutSub: {
+        fontSize: 12,
+        fontWeight: '500',
+        color: '#7C3AED',
     },
     inputContainer: {
         backgroundColor: '#FFFFFF',

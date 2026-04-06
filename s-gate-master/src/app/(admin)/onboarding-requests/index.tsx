@@ -5,6 +5,7 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
+    Image,
     Modal,
     RefreshControl,
     ScrollView,
@@ -65,6 +66,13 @@ export default function OnboardingRequestsScreen() {
     const [actionType, setActionType]           = useState<'reject' | 'resubmit' | null>(null);
     const [reason, setReason]                   = useState('');
     const [actionSubmitting, setActionSubmitting] = useState(false);
+    const [selectedDocsForResubmit, setSelectedDocsForResubmit] = useState<string[]>([]);
+
+    // Image Viewer
+    const [viewerVisible, setViewerVisible]     = useState(false);
+    const [viewerUrl, setViewerUrl]             = useState('');
+
+    const IMAGE_BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
 
     useFocusEffect(useCallback(() => { fetchRequests(activeTab); }, [activeTab]));
 
@@ -85,7 +93,7 @@ export default function OnboardingRequestsScreen() {
 
     const handleRefresh  = () => { setRefreshing(true); fetchRequests(activeTab); };
     const handleTabChange = (tab: StatusTab) => { setActiveTab(tab); setLoading(true); fetchRequests(tab); };
-    const openDetail     = (req: OnboardingRequest) => { setSelectedRequest(req); setDetailVisible(true); };
+    const openDetail     = (req: OnboardingRequest) => { setSelectedRequest(req); setDetailVisible(true); setActionType(null); setSelectedDocsForResubmit([]); };
 
     const handleApprove = (req: OnboardingRequest) => {
         Alert.alert('Approve Request', `Approve ${req.user.name}'s request to join?`, [
@@ -106,10 +114,18 @@ export default function OnboardingRequestsScreen() {
         ]);
     };
 
-    const openActionModal = (type: 'reject' | 'resubmit') => { setActionType(type); setReason(''); };
+    const openActionModal = (type: 'reject' | 'resubmit') => { 
+        setActionType(type); 
+        setReason(''); 
+        setSelectedDocsForResubmit(type === 'resubmit' && selectedRequest ? selectedRequest.documents.map(d => d.type) : []);
+    };
 
     const handleActionSubmit = async () => {
         if (!reason.trim()) { Alert.alert('Error', 'Please provide a reason'); return; }
+        if (actionType === 'resubmit' && selectedDocsForResubmit.length === 0) {
+            Alert.alert('Error', 'Please select at least one document to resubmit');
+            return;
+        }
         if (!selectedRequest) return;
         setActionSubmitting(true);
         try {
@@ -118,7 +134,7 @@ export default function OnboardingRequestsScreen() {
             } else {
                 await api.patch(`/resident/onboarding/admin/${selectedRequest.id}/request-resubmit`, {
                     reason: reason.trim(),
-                    documentsToResubmit: selectedRequest.documents.map(d => d.type),
+                    documentsToResubmit: selectedDocsForResubmit,
                 });
             }
             setRequests(prev => prev.filter(r => r.id !== selectedRequest.id));
@@ -130,6 +146,18 @@ export default function OnboardingRequestsScreen() {
         } finally {
             setActionSubmitting(false);
         }
+    };
+
+    const toggleDocSelection = (type: string) => {
+        setSelectedDocsForResubmit(prev => 
+            prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+        );
+    };
+
+    const openDocument = (s3Key: string) => {
+        const url = s3Key.startsWith('http') ? s3Key : `${IMAGE_BASE_URL}/${s3Key}`;
+        setViewerUrl(url);
+        setViewerVisible(true);
     };
 
     const formatDate = (dateStr: string) => {
@@ -248,17 +276,39 @@ export default function OnboardingRequestsScreen() {
                             {/* Documents */}
                             <Text style={styles.sectionLabel}>DOCUMENTS</Text>
                             <View style={styles.detailCard}>
-                                {selectedRequest.documents.map((doc, i) => (
-                                    <View key={i} style={[styles.docRow, i < selectedRequest.documents.length - 1 && styles.docBorder]}>
-                                        <View style={styles.docIcon}>
-                                            <Feather name="file-text" size={15} color={SgateColors.gold} />
+                                {selectedRequest.documents.map((doc, i) => {
+                                    const isSelected = selectedDocsForResubmit.includes(doc.type);
+                                    return (
+                                        <View key={i} style={[styles.docRow, i < selectedRequest.documents.length - 1 && styles.docBorder]}>
+                                            <TouchableOpacity 
+                                                style={styles.docIcon} 
+                                                onPress={() => openDocument(doc.s3Key)}
+                                            >
+                                                <Feather name="image" size={15} color={SgateColors.gold} />
+                                            </TouchableOpacity>
+                                            
+                                            <TouchableOpacity 
+                                                style={{ flex: 1 }} 
+                                                onPress={() => openDocument(doc.s3Key)}
+                                            >
+                                                <Text style={styles.docName}>{formatDocType(doc.type)}</Text>
+                                            </TouchableOpacity>
+                                            
+                                            {actionType === 'resubmit' ? (
+                                                <TouchableOpacity 
+                                                    style={[styles.checkbox, isSelected && styles.checkboxActive]}
+                                                    onPress={() => toggleDocSelection(doc.type)}
+                                                >
+                                                    {isSelected && <Feather name="check" size={14} color="#FFF" />}
+                                                </TouchableOpacity>
+                                            ) : (
+                                                <View style={styles.docBadge}>
+                                                    <Text style={styles.docBadgeText}>Uploaded</Text>
+                                                </View>
+                                            )}
                                         </View>
-                                        <Text style={styles.docName}>{formatDocType(doc.type)}</Text>
-                                        <View style={styles.docBadge}>
-                                            <Text style={styles.docBadgeText}>Uploaded</Text>
-                                        </View>
-                                    </View>
-                                ))}
+                                    );
+                                })}
                             </View>
 
                             {/* Actions - only for pending */}
@@ -267,12 +317,14 @@ export default function OnboardingRequestsScreen() {
                                     <TouchableOpacity style={styles.approveBtn} onPress={() => handleApprove(selectedRequest)}>
                                         <Text style={styles.approveBtnText}>Approve</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity style={styles.rejectBtn} onPress={() => openActionModal('reject')}>
-                                        <Text style={styles.rejectBtnText}>Reject</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity style={styles.resubmitBtn} onPress={() => openActionModal('resubmit')}>
-                                        <Text style={styles.resubmitBtnText}>Request Resubmit</Text>
-                                    </TouchableOpacity>
+                                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                                        <TouchableOpacity style={[styles.rejectBtn, { flex: 1 }]} onPress={() => openActionModal('reject')}>
+                                            <Text style={styles.rejectBtnText}>Reject</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={[styles.resubmitBtn, { flex: 1.5 }]} onPress={() => openActionModal('resubmit')}>
+                                            <Text style={styles.resubmitBtnText}>Request Resubmit</Text>
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
                             )}
 
@@ -282,6 +334,11 @@ export default function OnboardingRequestsScreen() {
                                     <Text style={styles.reasonTitle}>
                                         {actionType === 'reject' ? 'Rejection Reason' : 'Resubmission Reason'}
                                     </Text>
+                                    {actionType === 'resubmit' && (
+                                        <Text style={{ fontSize: 13, color: SgateColors.t3, marginBottom: 10 }}>
+                                            Select the specific documents above that need to be resubmitted.
+                                        </Text>
+                                    )}
                                     <TextInput style={styles.reasonInput} multiline textAlignVertical="top"
                                         placeholder={actionType === 'reject' ? 'Why is this request being rejected?' : 'What needs to be corrected?'}
                                         value={reason} onChangeText={setReason} placeholderTextColor={SgateColors.t4} />
@@ -302,6 +359,20 @@ export default function OnboardingRequestsScreen() {
                         </ScrollView>
                     )}
                 </SafeAreaView>
+            </Modal>
+
+            {/* Document Viewer Modal */}
+            <Modal visible={viewerVisible} transparent animationType="fade" onRequestClose={() => setViewerVisible(false)}>
+                <View style={styles.viewerWrapper}>
+                    <TouchableOpacity style={styles.viewerClose} onPress={() => setViewerVisible(false)}>
+                        <Feather name="x" size={28} color="#FFF" />
+                    </TouchableOpacity>
+                    {viewerUrl ? (
+                        <Image source={{ uri: viewerUrl }} style={styles.viewerImage} resizeMode="contain" />
+                    ) : (
+                        <ActivityIndicator size="large" color="#FFF" />
+                    )}
+                </View>
             </Modal>
         </SafeAreaView>
     );
@@ -398,4 +469,11 @@ const styles = StyleSheet.create({
     reasonCancelText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
     reasonSubmitBtn: { flex: 1, backgroundColor: SgateColors.black, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
     reasonSubmitText: { fontSize: 14, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+
+    checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: SgateColors.border, alignItems: 'center', justifyContent: 'center' },
+    checkboxActive: { backgroundColor: SgateColors.black, borderColor: SgateColors.black },
+
+    viewerWrapper: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+    viewerClose: { position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20 },
+    viewerImage: { width: '100%', height: '80%' },
 });

@@ -1,0 +1,10 @@
+e2e/flows/auth.e2e.ts(62,32): error TS2339: Property 'placeholder' does not exist on type 'ByFacade'.
+e2e/flows/auth.e2e.ts(63,24): error TS2339: Property 'placeholder' does not exist on type 'ByFacade'.
+e2e/flows/auth.e2e.ts(64,24): error TS2339: Property 'placeholder' does not exist on type 'ByFacade'.
+e2e/flows/auth.e2e.ts(65,31): error TS2339: Property 'placeholder' does not exist on type 'ByFacade'.
+e2e/flows/auth.e2e.ts(69,32): error TS2339: Property 'placeholder' does not exist on type 'ByFacade'.
+e2e/flows/auth.e2e.ts(70,24): error TS2339: Property 'placeholder' does not exist on type 'ByFacade'.
+e2e/flows/auth.e2e.ts(71,24): error TS2339: Property 'placeholder' does not exist on type 'ByFacade'.
+e2e/flows/auth.e2e.ts(83,32): error TS2339: Property 'placeholder' does not exist on type 'ByFacade'.
+e2e/flows/auth.e2e.ts(84,24): error TS2339: Property 'placeholder' does not exist on type 'ByFacade'.
+e2e/flows/auth.e2e.ts(85,24): error TS2339: Property 'placeholder' does not exist on type 'ByFacade'.

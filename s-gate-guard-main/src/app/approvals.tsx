@@ -19,7 +19,7 @@ import {
 interface PendingEntry {
     id: string;
     visitorName: string;
-    visitorType: string;
+    type: string;
     flat?: { flatNumber: string; resident?: { name: string } };
     flatNumber?: string;
     purpose?: string;
@@ -40,7 +40,7 @@ export default function ApprovalsScreen() {
 
     const fetchPending = useCallback(async () => {
         try {
-            const res = await api.get('/api/v1/gate/requests');
+            const res = await api.get('/api/v1/gate/entry-requests?status=PENDING');
             setEntries(res.data?.data?.entries ?? res.data?.data ?? []);
         } catch (err: any) {
             console.error('Failed to fetch pending approvals:', err);
@@ -56,7 +56,7 @@ export default function ApprovalsScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setActioning(id + '_approve');
         try {
-            await api.patch(`/api/v1/gate/requests/${id}/approve`);
+            await api.patch(`/api/v1/gate/entry-requests/${id}/approve`);
             setEntries((prev) => prev.filter((e) => e.id !== id));
         } catch (err: any) {
             Alert.alert('Error', err?.response?.data?.message ?? 'Failed to approve.');
@@ -73,7 +73,7 @@ export default function ApprovalsScreen() {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                     setActioning(id + '_reject');
                     try {
-                        await api.patch(`/api/v1/gate/requests/${id}/reject`);
+                        await api.patch(`/api/v1/gate/entry-requests/${id}/reject`);
                         setEntries((prev) => prev.filter((e) => e.id !== id));
                     } catch (err: any) {
                         Alert.alert('Error', err?.response?.data?.message ?? 'Failed to reject.');
@@ -132,7 +132,7 @@ function ApprovalCard({ entry, index, isApproving, isRejecting, onApprove, onRej
     isApproving: boolean; isRejecting: boolean;
     onApprove: () => void; onReject: () => void;
 }) {
-    const color = TYPE_COLORS[entry.visitorType] ?? '#6B7280';
+    const color = TYPE_COLORS[entry.type] ?? '#6B7280';
     const fadeAnim = React.useRef(new Animated.Value(0)).current;
     const slideAnim = React.useRef(new Animated.Value(30)).current;
     const flatLabel = entry.flat?.flatNumber ?? entry.flatNumber ?? '—';
@@ -151,14 +151,14 @@ function ApprovalCard({ entry, index, isApproving, isRejecting, onApprove, onRej
             <View style={styles.cardHeader}>
                 <View style={[styles.typeIcon, { backgroundColor: color + '18' }]}>
                     <Ionicons
-                        name={entry.visitorType === 'GUEST' ? 'person' : entry.visitorType === 'DELIVERY' ? 'cube' : entry.visitorType === 'WORKER' ? 'construct' : 'car'}
+                        name={entry.type === 'GUEST' ? 'person' : entry.type?.includes('DELIVERY') ? 'cube' : entry.type?.includes('SERVICE') ? 'construct' : 'car'}
                         size={20} color={color}
                     />
                 </View>
                 <View style={styles.cardHeaderText}>
-                    <Text style={styles.visitorName}>{entry.visitorName}</Text>
+                    <Text style={styles.visitorName}>{entry.visitorName || entry.type?.replace(/_/g, ' ')}</Text>
                     <Text style={styles.visitorDetails}>
-                        {entry.visitorType} • Flat {flatLabel}
+                        {entry.type?.replace(/_/g, ' ')} • Flat {flatLabel}
                         {residentName ? ` (${residentName})` : ''}
                     </Text>
                     {entry.purpose ? <Text style={styles.purposeText}>{entry.purpose}</Text> : null}

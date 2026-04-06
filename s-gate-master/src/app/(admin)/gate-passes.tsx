@@ -96,20 +96,9 @@ export default function GatePassesScreen() {
             }}
         >
             <View>
-                <TouchableOpacity onPress={() => router.back()} className="flex-row items-center mb-2">
-                    <Feather name="arrow-left" size={16} color="#64748b" />
-                    <Text className="text-slate-500 font-medium ml-1">Back</Text>
-                </TouchableOpacity>
                 <Text className="text-3xl font-bold text-slate-900 tracking-tight">Gate Passes</Text>
                 <Text className="text-slate-500 font-medium mt-1">Manage entry approvals</Text>
             </View>
-            <TouchableOpacity 
-                onPress={() => router.push('/(admin)/gate-pass/create' as any)}
-                className="bg-indigo-600 px-5 py-2.5 rounded-full shadow-lg shadow-indigo-200 flex-row items-center gap-2 active:scale-95 transform duration-100"
-            >
-                <Feather name="plus" size={18} color="white" />
-                <Text className="text-white font-bold text-sm">Create New</Text>
-            </TouchableOpacity>
         </Animated.View>
     );
 

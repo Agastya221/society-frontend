@@ -8,7 +8,26 @@ import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 
-interface TimeSlot { id: string; time: string; startTime: string; endTime: string; isBooked: boolean; availableCapacity: number; }
+const AMENITY_THEMES: { keywords: string[]; icon: string; colorBg: string; colorIcon: string }[] = [
+  { keywords: ['swim', 'pool'],                     icon: 'droplet',    colorBg: '#DBEEFF', colorIcon: '#1A7FD4' },
+  { keywords: ['gym', 'fitness', 'workout'],        icon: 'activity',   colorBg: '#FFE8E8', colorIcon: '#D94040' },
+  { keywords: ['club', 'hall', 'lounge', 'party'],  icon: 'home',       colorBg: SgateColors.goldPale, colorIcon: SgateColors.goldDeep },
+  { keywords: ['badminton', 'tennis', 'squash'],    icon: 'target',     colorBg: '#E8FFE8', colorIcon: '#2E9E4F' },
+  { keywords: ['basket', 'cricket', 'football'],    icon: 'circle',     colorBg: '#FFF0DB', colorIcon: '#E07B00' },
+  { keywords: ['kids', 'play', 'children'],         icon: 'smile',      colorBg: '#FFF8DB', colorIcon: '#D4A000' },
+  { keywords: ['garden', 'terrace', 'park', 'lawn'],icon: 'sun',        colorBg: '#E8FFE8', colorIcon: '#2E9E4F' },
+  { keywords: ['yoga', 'meditation', 'aerobic'],    icon: 'wind',       colorBg: '#EDE9FE', colorIcon: '#7C3AED' },
+  { keywords: ['library', 'reading', 'study'],      icon: 'book-open',  colorBg: '#EDE9FE', colorIcon: '#5B21B6' },
+  { keywords: ['parking', 'car', 'vehicle'],        icon: 'truck',      colorBg: '#F0F0F0', colorIcon: '#555555' },
+];
+
+function resolveTheme(name: string) {
+  const lower = name.toLowerCase();
+  const match = AMENITY_THEMES.find(t => t.keywords.some(k => lower.includes(k)));
+  return match ?? { icon: 'home', colorBg: SgateColors.goldPale, colorIcon: SgateColors.goldDeep };
+}
+
+interface TimeSlot { id: string; label: string; startTime: string; endTime: string; status: 'AVAILABLE' | 'BOOKED' | 'PAST'; isBookable: boolean; }
 interface Amenity { id: string; name: string; timing: string; maxCapacity: number; slotDurationHours: number; rules: string[]; icon: string; colorBg: string; colorIcon: string; slots: TimeSlot[]; }
 
 const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
@@ -49,12 +68,12 @@ export default function AmenityDetailScreen() {
       try {
         const res = await api.get(`/resident/amenities/${id}`);
         const raw = res.data?.data ?? res.data;
+        const theme = resolveTheme(raw.name ?? '');
         setAmenity({
           id: raw.id, name: raw.name ?? '', timing: raw.timings ?? raw.timing ?? '',
           maxCapacity: raw.maxCapacity ?? 0, slotDurationHours: raw.slotDurationHours ?? 1,
-          rules: raw.rules ?? [], icon: raw.icon ?? 'home',
-          colorBg: raw.colorBg ?? SgateColors.goldPale, colorIcon: raw.colorIcon ?? SgateColors.goldDeep,
-          slots: [],
+          rules: raw.rules ?? [], slots: [],
+          icon: theme.icon, colorBg: theme.colorBg, colorIcon: theme.colorIcon,
         });
       } catch { /* shown below */ } finally { setLoading(false); }
     })();
@@ -69,10 +88,12 @@ export default function AmenityDetailScreen() {
       const res = await api.get(`/resident/amenities/${id}/slots`, { params: { date: key } });
       const rawSlots: any[] = res.data?.data ?? res.data ?? [];
       setAmenity(a => a ? { ...a, slots: rawSlots.map(s => ({
-        id: s.id, time: s.time ?? `${s.startTime}–${s.endTime}`,
-        startTime: s.startTime, endTime: s.endTime,
-        isBooked: s.isBooked ?? s.status === 'BOOKED',
-        availableCapacity: s.availableCapacity ?? 0,
+        id: s.id,
+        label: s.label ?? `${s.startTime} – ${s.endTime}`,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        status: (s.status ?? 'AVAILABLE') as TimeSlot['status'],
+        isBookable: s.isBookable ?? s.status === 'AVAILABLE',
       })) } : a);
     } catch { /* silently fail */ } finally { setSlotsLoading(false); }
   };
@@ -80,7 +101,13 @@ export default function AmenityDetailScreen() {
   const handleBookSlot = () => {
     if (!selectedSlot || !selectedDate || !amenity) return;
     router.push({ pathname: '/(resident)/amenities/book/[id]' as any, params: {
-      id: amenity.id, slotId: selectedSlot.id, slotTime: selectedSlot.time, date: selectedDate,
+      id: amenity.id,
+      slotId: selectedSlot.id,
+      slotTime: selectedSlot.label,
+      date: selectedDate,
+      amenityName: amenity.name,
+      maxCapacity: String(amenity.maxCapacity),
+      rules: JSON.stringify(amenity.rules),
     }});
   };
 
@@ -224,28 +251,31 @@ export default function AmenityDetailScreen() {
             <View style={S.slotGrid}>
               {amenity.slots.map((slot) => {
                 const isSelected = selectedSlot?.id === slot.id;
-                const chipStyle = slot.isBooked
-                  ? S.slotChipBooked
-                  : isSelected
-                  ? S.slotChipSelected
-                  : S.slotChipAvailable;
-                const textStyle = slot.isBooked
-                  ? S.slotTimeBooked
-                  : isSelected
-                  ? S.slotTimeSelected
-                  : S.slotTimeDefault;
+                const chipStyle =
+                  slot.status === 'BOOKED' ? S.slotChipBooked
+                  : slot.status === 'PAST'  ? S.slotChipPast
+                  : isSelected              ? S.slotChipSelected
+                  :                           S.slotChipAvailable;
+                const textStyle =
+                  slot.status === 'BOOKED' ? S.slotTimeBooked
+                  : slot.status === 'PAST'  ? S.slotTimePast
+                  : isSelected              ? S.slotTimeSelected
+                  :                           S.slotTimeDefault;
 
                 return (
                   <TouchableOpacity
                     key={slot.id}
-                    disabled={slot.isBooked}
+                    disabled={!slot.isBookable}
                     activeOpacity={0.75}
                     style={[S.slotChip, chipStyle]}
                     onPress={() => setSelectedSlot(slot)}
                   >
-                    <Text style={textStyle}>{slot.time}</Text>
-                    {slot.isBooked && (
-                      <Text style={S.slotBookedLabel}>Booked</Text>
+                    <Text style={textStyle}>{slot.label}</Text>
+                    {slot.status === 'BOOKED' && (
+                      <Text style={S.slotStatusLabel}>Booked</Text>
+                    )}
+                    {slot.status === 'PAST' && (
+                      <Text style={S.slotStatusLabel}>Past</Text>
                     )}
                   </TouchableOpacity>
                 );
@@ -465,20 +495,39 @@ const S = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
+  // AVAILABLE — green tint
+  slotChipAvailable: {
+    backgroundColor: '#F0FFF4',
+    borderColor: '#86EFAC',
+  },
+  // BOOKED — red tint, disabled
   slotChipBooked: {
+    backgroundColor: SgateColors.redBg,
+    borderColor: '#FCA5A5',
+    opacity: 0.7,
+  },
+  // PAST — grey, disabled
+  slotChipPast: {
     backgroundColor: SgateColors.surface,
     borderColor: SgateColors.border,
     opacity: 0.5,
   },
+  // SELECTED — gold
   slotChipSelected: {
     backgroundColor: SgateColors.gold,
     borderColor: SgateColors.goldDeep,
   },
-  slotChipAvailable: {
-    backgroundColor: SgateColors.card,
-    borderColor: SgateColors.borderSoft,
+  slotTimeDefault: {
+    fontSize: 12,
+    fontFamily: SgateFonts.medium,
+    color: '#16A34A',
   },
   slotTimeBooked: {
+    fontSize: 12,
+    fontFamily: SgateFonts.regular,
+    color: SgateColors.red,
+  },
+  slotTimePast: {
     fontSize: 12,
     fontFamily: SgateFonts.regular,
     color: SgateColors.t4,
@@ -488,12 +537,7 @@ const S = StyleSheet.create({
     fontFamily: SgateFonts.semibold,
     color: SgateColors.black,
   },
-  slotTimeDefault: {
-    fontSize: 12,
-    fontFamily: SgateFonts.medium,
-    color: SgateColors.t1,
-  },
-  slotBookedLabel: {
+  slotStatusLabel: {
     fontSize: 10,
     fontFamily: SgateFonts.regular,
     color: SgateColors.t4,

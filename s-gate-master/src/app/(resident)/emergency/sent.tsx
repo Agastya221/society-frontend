@@ -17,7 +17,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
-import { useActiveEmergency } from '../../../hooks/useActiveEmergency';
+import { useActiveEmergency } from '../../../context/EmergencyContext';
 import api from '../../../services/api';
 
 const TYPE_ICONS: Record<string, string> = {

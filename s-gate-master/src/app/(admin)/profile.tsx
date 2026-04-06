@@ -71,7 +71,7 @@ export default function AdminProfile() {
     const displaySocietyAddress = profile?.society
         ? `${profile.society.address}, ${profile.society.city}` : '';
     const displayFlat = profile?.flat
-        ? `${profile.flat.block.name} - ${profile.flat.number}`
+        ? `${profile.flat.block?.name ?? ''} - ${profile.flat.number}`.trim().replace(/^-\s*/, '')
         : authUser?.flat
             ? `${authUser.flat.block?.name ?? ''} - ${authUser.flat.number}`
             : '';

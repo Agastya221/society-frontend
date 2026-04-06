@@ -80,7 +80,6 @@ export interface PreApprovedEntry {
     schedule: PreApprovedSchedule;
     meta: PreApprovedMeta;
     isPrivate?: boolean;
-    qrToken?: string;
     createdAt: string;
     flat?: { number: string; block?: { name: string } };
     user?: { name: string };
@@ -188,6 +187,8 @@ export type GatePassStatus =
     | 'USED'
     | 'EXPIRED';
 
+export type NoticePriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+
 export type EmergencyType =
     | 'MEDICAL'
     | 'FIRE'
@@ -261,7 +262,6 @@ export interface PreApproval {
     status: PreApprovalStatus;
     validFrom: string;
     validUntil: string;
-    qrToken?: string;
     flatId: string;
 }
 
@@ -271,10 +271,6 @@ export interface InvitePass {
     status: InvitePassStatus;
     visitorName?: string;
     visitorPhone?: string;
-    purpose?: string;
-    vehicleNumber?: string;
-    companyName?: string;
-    companies?: string[];
     allowedDays?: string[];
     timeFrom?: string;
     timeUntil?: string;
@@ -285,7 +281,6 @@ export interface InvitePass {
     usedCount: number;
     createdAt: string;
     isPrivate?: boolean;
-    safePickup?: boolean;
 }
 
 export interface Entry {
@@ -315,7 +310,6 @@ export interface GatePass {
     status: GatePassStatus;
     validFrom: string;
     validUntil: string;
-    qrToken?: string;
     details?: string;
 }
 
