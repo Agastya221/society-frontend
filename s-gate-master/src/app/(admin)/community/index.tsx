@@ -106,23 +106,15 @@ export default function AdminCommunityScreen() {
         try {
             const params: any = {};
             if (activeCategory !== 'ALL') params.category = activeCategory;
-            // Admin uses the same posts endpoint but can moderate
-            const res = await api.get('/admin/posts', { params });
+            const res = await api.get('/resident/posts', { params });
             const raw = res.data?.data ?? res.data;
             const list: any[] = Array.isArray(raw) ? raw : (raw?.posts ?? []);
             const normalised = list.map(normalisePost);
             normalised.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
             setPosts(normalised);
-        } catch {
-            // Fallback to resident endpoint
-            try {
-                const params: any = {};
-                if (activeCategory !== 'ALL') params.category = activeCategory;
-                const res = await api.get('/resident/posts', { params });
-                const raw = res.data?.data ?? res.data;
-                const list: any[] = Array.isArray(raw) ? raw : (raw?.posts ?? []);
-                setPosts(list.map(normalisePost));
-            } catch {}
+        } catch (err) {
+            console.error('Failed to fetch community posts:', err);
+            setPosts([]);
         } finally {
             if (!silent) setLoading(false);
             setRefreshing(false);
@@ -139,7 +131,7 @@ export default function AdminCommunityScreen() {
             prev.map((p) => (p.id === post.id ? { ...p, isPinned: !p.isPinned } : p))
         );
         try {
-            await api.patch(`/admin/posts/${post.id}/pin`, { isPinned: !prevPinned });
+            await api.patch(`/resident/posts/${post.id}/pin`, { isPinned: !prevPinned });
         } catch {
             setPosts((prev) =>
                 prev.map((p) => (p.id === post.id ? { ...p, isPinned: prevPinned } : p))
@@ -160,7 +152,7 @@ export default function AdminCommunityScreen() {
                     onPress: async () => {
                         setPosts((prev) => prev.filter((p) => p.id !== post.id));
                         try {
-                            await api.delete(`/admin/posts/${post.id}`);
+                            await api.delete(`/resident/posts/${post.id}`);
                         } catch {
                             fetchPosts(true);
                             Alert.alert('Error', 'Failed to delete post');
@@ -178,7 +170,7 @@ export default function AdminCommunityScreen() {
         }
         setSubmitting(true);
         try {
-            await api.post('/admin/posts', {
+            await api.post('/resident/posts', {
                 title: createTitle.trim(),
                 content: createBody.trim(),
                 category: createCategory,
