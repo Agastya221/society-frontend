@@ -37,20 +37,6 @@ interface FlatDue {
     paymentRef?: string;
 }
 
-// ─── Mock data (replace fetchDues body when backend is ready) ─────────────────
-const MOCK_DUES: FlatDue[] = [
-    { id: '1',  flatNumber: '101', block: 'A', residentName: 'Rajesh Kumar',   amount: 2500, status: 'PAID',    dueDate: '2026-04-10', month: 'Apr 2026', paidAt: '2026-04-06', paymentRef: 'PAY_001' },
-    { id: '2',  flatNumber: '102', block: 'A', residentName: 'Priya Sharma',   amount: 2500, status: 'PENDING', dueDate: '2026-04-10', month: 'Apr 2026' },
-    { id: '3',  flatNumber: '201', block: 'A', residentName: 'Anil Mehta',     amount: 2500, status: 'OVERDUE', dueDate: '2026-03-10', month: 'Mar 2026' },
-    { id: '4',  flatNumber: '202', block: 'A', residentName: 'Sunita Patel',   amount: 2500, status: 'PAID',    dueDate: '2026-04-10', month: 'Apr 2026', paidAt: '2026-04-05' },
-    { id: '5',  flatNumber: '101', block: 'B', residentName: 'Vikram Singh',   amount: 3000, status: 'PENDING', dueDate: '2026-04-10', month: 'Apr 2026' },
-    { id: '6',  flatNumber: '102', block: 'B', residentName: 'Deepa Nair',     amount: 3000, status: 'OVERDUE', dueDate: '2026-02-10', month: 'Feb 2026' },
-    { id: '7',  flatNumber: '201', block: 'B', residentName: 'Suresh Reddy',   amount: 3000, status: 'PAID',    dueDate: '2026-04-10', month: 'Apr 2026', paidAt: '2026-04-03' },
-    { id: '8',  flatNumber: '301', block: 'A', residentName: 'Kavitha Iyer',   amount: 2500, status: 'PENDING', dueDate: '2026-04-10', month: 'Apr 2026' },
-    { id: '9',  flatNumber: '302', block: 'A', residentName: 'Mohit Agarwal',  amount: 2500, status: 'OVERDUE', dueDate: '2026-01-10', month: 'Jan 2026' },
-    { id: '10', flatNumber: '401', block: 'C', residentName: 'Neeha Gupta',    amount: 3500, status: 'PAID',    dueDate: '2026-04-10', month: 'Apr 2026', paidAt: '2026-04-07' },
-];
-
 const STATUS_CONFIG: Record<DueStatus, { label: string; color: string; bg: string }> = {
     PAID:    { label: 'Paid',    color: SgateColors.green,    bg: SgateColors.greenBg  },
     PENDING: { label: 'Pending', color: SgateColors.goldDeep, bg: SgateColors.goldPale },
@@ -82,10 +68,8 @@ export default function PaymentsScreen() {
             const res = await api.get('/admin/dues');
             const data: FlatDue[] = res.data?.data ?? [];
             setDues(data);
-            setIsMock(false);
         } catch {
-            setDues(MOCK_DUES);
-            setIsMock(true);
+            setDues([]);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -136,6 +120,39 @@ export default function PaymentsScreen() {
                 {
                     text: 'Send', onPress: () => {
                         Alert.alert('Reminder Sent', `Notification sent to ${due.residentName}`);
+                    }
+                },
+            ]
+        );
+    };
+
+    const handleMarkPaid = async (due: FlatDue) => {
+        try {
+            await billingService.markInvoicePaid(due.id);
+            Alert.alert('Success', 'Invoice marked as paid.');
+            setSelectedDue(null);
+            fetchDues();
+        } catch {
+            Alert.alert('Error', 'Failed to mark invoice as paid.');
+        }
+    };
+
+    const handleWaive = async (due: FlatDue) => {
+        Alert.alert(
+            'Waive Invoice',
+            `Are you sure you want to waive this invoice for ${due.residentName}?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Waive', onPress: async () => {
+                        try {
+                            await billingService.waiveInvoice(due.id);
+                            Alert.alert('Success', 'Invoice waived.');
+                            setSelectedDue(null);
+                            fetchDues();
+                        } catch {
+                            Alert.alert('Error', 'Failed to waive invoice.');
+                        }
                     }
                 },
             ]
@@ -276,7 +293,20 @@ export default function PaymentsScreen() {
                                 </View>
 
                                 {selectedDue.status !== 'PAID' && (
-                                    <TouchableOpacity style={styles.reminderBtn} onPress={() => handleSendReminder(selectedDue)}>
+                                    <View style={{ gap: 8, flexDirection: 'row', marginTop: 12 }}>
+                                        <TouchableOpacity style={[styles.reminderBtn, { flex: 1 }]} onPress={() => handleMarkPaid(selectedDue)}>
+                                            <Feather name="check" size={16} color={SgateColors.card} style={{ marginRight: 8 }} />
+                                            <Text style={styles.reminderBtnText}>Mark Paid</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={[styles.reminderBtn, { flex: 1, backgroundColor: SgateColors.red }]} onPress={() => handleWaive(selectedDue)}>
+                                            <Feather name="trash-2" size={16} color={SgateColors.card} style={{ marginRight: 8 }} />
+                                            <Text style={styles.reminderBtnText}>Waive</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                                
+                                {selectedDue.status !== 'PAID' && (
+                                    <TouchableOpacity style={[styles.reminderBtn, { marginTop: 8 }]} onPress={() => handleSendReminder(selectedDue)}>
                                         <Feather name="bell" size={16} color={SgateColors.card} style={{ marginRight: 8 }} />
                                         <Text style={styles.reminderBtnText}>Send Reminder</Text>
                                     </TouchableOpacity>

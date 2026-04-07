@@ -45,8 +45,7 @@ api.interceptors.response.use(
         const requestUrl: string = originalRequest.url ?? '';
         const shouldSkip =
             requestUrl.includes('/resident/onboarding') ||
-            requestUrl.includes('/society-registration') ||
-            requestUrl.includes('/users/resident-app/fcm-token');
+            requestUrl.includes('/society-registration');
 
         if (error.response?.status === 401 && !originalRequest._retry && !shouldSkip) {
             // If already refreshing, queue this request until we get a new token

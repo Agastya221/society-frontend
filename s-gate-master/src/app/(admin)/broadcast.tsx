@@ -8,6 +8,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import { Avatar } from '@/components/ui/Avatar';
+import api from '@/services/api';
 
 // Mock data for intercom directory
 const MOCK_INTERCOM = [
@@ -33,19 +34,23 @@ export default function BroadcastAndIntercomScreen() {
     // Intercom State
     const [searchQuery, setSearchQuery] = useState('');
 
-    const handleBroadcast = () => {
+    const handleBroadcast = async () => {
         if (!title.trim() || !message.trim()) {
             Alert.alert('Error', 'Please enter a title and message.');
             return;
         }
         setSubmitting(true);
-        setTimeout(() => {
-            setSubmitting(false);
+        try {
+            await api.post('/admin/broadcast', { title, message, isEmergency, target });
             Alert.alert('Success', `Broadcast sent to ${target.replace('_', ' ')} successfully.`);
             setTitle('');
             setMessage('');
             setIsEmergency(false);
-        }, 1200);
+        } catch {
+            Alert.alert('Error', 'Failed to send broadcast.');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handleCall = (phone: string) => {

@@ -39,8 +39,8 @@ export default function MyHomeScreen() {
     const handleAction = (id: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         if (id === 'pre-approve') { setShowPreApprove(true); return; }
-        if (id === 'my-passes')  { router.push('/(admin)/my-home/my-passes'); return; }
-        if (id === 'dues')       { router.push('/(admin)/my-home/dues'); return; }
+        if (id === 'my-passes')  { router.push('/(admin)/my-passes'); return; }
+        if (id === 'dues')       { router.push('/(admin)/my-dues'); return; }
         if (id === 'sos')        { /* future */ return; }
     };
 

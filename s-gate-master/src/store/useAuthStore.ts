@@ -84,7 +84,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         try {
             // Using plain fetch to avoid axios interceptor loop
-            const response = await fetch('https://society-gate-backend-gsrq.onrender.com/api/v1/auth/refresh-token', {
+            const response = await fetch('https://society-gate-backend-gsrq.onrender.com/api/v1/users/refresh-token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refreshToken }),

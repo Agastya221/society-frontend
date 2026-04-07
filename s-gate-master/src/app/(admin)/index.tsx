@@ -253,8 +253,8 @@ export default function AdminDashboard() {
                     {/* ── Quick Actions ──────────────────────────── */}
                     <Animated.View entering={FadeInDown.delay(160).springify()} style={[styles.quickRow, { marginBottom: 0 }]}>
                         <SgateQuickAction icon="user-check" label={'Pre-\nApprove'} bgColor={SgateColors.goldPale} iconColor={SgateColors.goldDeep} onPress={() => setShowPreApprove(true)} />
-                        <SgateQuickAction icon="credit-card" label={'My\nPasses'} bgColor={SgateColors.blueBg} iconColor={SgateColors.blue} onPress={() => nav('/(admin)/my-home/my-passes')} />
-                        <SgateQuickAction icon="dollar-sign" label={'My\nDues'} bgColor={SgateColors.surface} iconColor={SgateColors.t2} onPress={() => nav('/(admin)/my-home/dues')} />
+                        <SgateQuickAction icon="credit-card" label={'My\nPasses'} bgColor={SgateColors.blueBg} iconColor={SgateColors.blue} onPress={() => nav('/(admin)/my-passes')} />
+                        <SgateQuickAction icon="dollar-sign" label={'My\nDues'} bgColor={SgateColors.surface} iconColor={SgateColors.t2} onPress={() => nav('/(admin)/my-dues')} />
                         <SgateQuickAction icon="alert-triangle" label={'SOS\nAlert'} bgColor={SgateColors.redBg} iconColor={SgateColors.red} onPress={() => nav('/(admin)/emergencies')} />
                     </Animated.View>
 

@@ -8,22 +8,21 @@ export interface BillingInvoice {
 }
 
 export const generateBulkInvoices = async (month: string, amountPerFlat: number): Promise<boolean> => {
-    try {
-        await api.post('/admin/billing/generate', { month, amountPerFlat });
-        return true;
-    } catch (err) {
-        // Mock successful generation for now
-        console.warn('Backend /admin/billing/generate failed, mocking success.');
-        return new Promise(resolve => setTimeout(() => resolve(true), 1500));
-    }
+    await api.post('/admin/billing/generate', { month, amountPerFlat });
+    return true;
 };
 
 export const applyLatePenalty = async (amount: number): Promise<boolean> => {
-    try {
-        await api.post('/admin/billing/penalty', { amount });
-        return true;
-    } catch (err) {
-        console.warn('Backend /admin/billing/penalty failed, mocking success.');
-        return new Promise(resolve => setTimeout(() => resolve(true), 1200));
-    }
+    await api.post('/admin/billing/penalty', { amount });
+    return true;
+};
+
+export const markInvoicePaid = async (id: string): Promise<boolean> => {
+    await api.patch(`/admin/billing/invoices/${id}/paid`);
+    return true;
+};
+
+export const waiveInvoice = async (id: string): Promise<boolean> => {
+    await api.patch(`/admin/billing/invoices/${id}/waive`);
+    return true;
 };

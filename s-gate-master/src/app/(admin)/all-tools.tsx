@@ -29,8 +29,8 @@ export default function AllToolsScreen() {
 
     const personalTools = [
         { icon: 'user-check' as const,     title: 'Pre-Approve',     bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: 'MODAL' },
-        { icon: 'shield' as const,         title: 'My Passes',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/my-home/my-passes' },
-        { icon: 'dollar-sign' as const,    title: 'My Dues',         bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(admin)/my-home/dues' },
+        { icon: 'shield' as const,         title: 'My Passes',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/my-passes' },
+        { icon: 'dollar-sign' as const,    title: 'My Dues',         bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(admin)/my-dues' },
         { icon: 'package' as const,        title: 'Expect Delivery', bg: SgateColors.surface,   color: SgateColors.t2,       route: '/expect-delivery' },
         { icon: 'truck' as const,          title: 'My Vehicles',     bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/my-home/vehicles' },
         { icon: 'coffee' as const,         title: 'My Amenities',    bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/my-home/amenities' },
