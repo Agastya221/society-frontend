@@ -240,25 +240,18 @@ export default function ResidentHomeScreen() {
                         style={[styles.quickRow, { marginTop: -18 }]}
                     >
                         <SgateQuickAction
-                            icon="book-open"
-                            label={'Local\nDirectory'}
-                            bgColor={SgateColors.surface}
-                            iconColor={SgateColors.t2}
-                            onPress={() => router.push('/(resident)/local-directory' as any)}
+                            icon="credit-card"
+                            label={'Society\nDues'}
+                            bgColor={SgateColors.greenBg}
+                            iconColor={SgateColors.green}
+                            onPress={() => router.push('/(resident)/society-dues' as any)}
                         />
                         <SgateQuickAction
                             icon="users"
                             label={'Daily\nHelp'}
-                            bgColor={SgateColors.greenBg}
-                            iconColor={SgateColors.green}
+                            bgColor={SgateColors.surface}
+                            iconColor={SgateColors.t2}
                             onPress={() => router.push('/(resident)/daily-help' as any)}
-                        />
-                        <SgateQuickAction
-                            icon="credit-card"
-                            label={'Society\nDues'}
-                            bgColor={SgateColors.redBg}
-                            iconColor={SgateColors.red}
-                            onPress={() => router.push('/(resident)/society-dues' as any)}
                         />
                         <SgateQuickAction
                             icon="message-circle"
@@ -267,40 +260,12 @@ export default function ResidentHomeScreen() {
                             iconColor={SgateColors.blue}
                             onPress={() => router.push('/(resident)/communication' as any)}
                         />
-                    </Animated.View>
-
-                    {/* ── Poll & Elections row ────────────────────────────── */}
-                    <Animated.View
-                        entering={FadeInDown.delay(220).springify()}
-                        style={[styles.quickRow, { marginTop: -18 }]}
-                    >
                         <SgateQuickAction
-                            icon="bar-chart-2"
-                            label={'Polls'}
-                            bgColor={SgateColors.goldPale}
-                            iconColor={SgateColors.goldDeep}
-                            onPress={() => router.push('/(resident)/elections' as any)}
-                        />
-                        <SgateQuickAction
-                            icon="calendar"
-                            label={'Amenities'}
-                            bgColor={SgateColors.blueBg}
-                            iconColor={SgateColors.blue}
-                            onPress={() => router.push('/(resident)/amenities' as any)}
-                        />
-                        <SgateQuickAction
-                            icon="truck"
-                            label={'My\nVehicles'}
-                            bgColor={SgateColors.surface}
-                            iconColor={SgateColors.t2}
-                            onPress={() => router.push('/(resident)/vehicles' as any)}
-                        />
-                        <SgateQuickAction
-                            icon="folder"
-                            label={'Documents'}
-                            bgColor={SgateColors.goldPale}
-                            iconColor={SgateColors.goldDeep}
-                            onPress={() => router.push('/(resident)/documents' as any)}
+                            icon="grid"
+                            label={'See\nAll'}
+                            bgColor={SgateColors.black}
+                            iconColor={'#FFFFFF'}
+                            onPress={() => router.push('/(resident)/all-tools' as any)}
                         />
                     </Animated.View>
 
