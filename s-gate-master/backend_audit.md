@@ -177,6 +177,9 @@ These features are in the UI but lack a corresponding backend strategy.
     *   *Needed:* `POST /admin/residents` to manually register a resident without the onboarding flow.
 2.  **Staff Editing:**
     *   Endpoint needed for updating salary, roles, and shift timings for individual staff members.
+3.  **Vehicle Entry & Parking Enforcement:**
+    *   *Needed:* `GET /admin/vehicles?q={plate}` to lookup vehicles by license plate or sticker across the society.
+    *   *Needed:* `POST /admin/vehicles/{id}/violations` to issue a parking ticket or clamp vehicle (penalty).
 
 ---
 

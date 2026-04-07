@@ -232,7 +232,8 @@ function EntryCard({
         statusDot = '#F59E0B';
     }
 
-    const flatLabel = entry.flat?.flatNumber ?? entry.flatNumber ?? '—';
+    const rawFlat = entry.flat?.flatNumber ?? entry.flatNumber ?? '—';
+    const flatLabel = rawFlat === 'OFFICE' ? 'Admin Office' : rawFlat;
     const residentName = entry.flat?.resident?.name;
 
     React.useEffect(() => {

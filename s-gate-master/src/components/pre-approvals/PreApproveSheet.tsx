@@ -1230,7 +1230,7 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
 
 
 export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheetProps) {
-    const { user } = useAuthStore();
+    const { user, role } = useAuthStore();
     
     // Nested sheet state
     const [guestSheetConfig, setGuestSheetConfig] = useState<any>();
@@ -1670,10 +1670,10 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
 
     // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
-        if (!user?.flatId) { Alert.alert('Error', 'Your flat is not set up.'); return; }
+        if (!user?.flatId && role !== 'ADMIN' && role !== 'SUPER_ADMIN') { Alert.alert('Error', 'Your flat is not set up.'); return; }
         setSubmitting(true);
         try {
-            const flatId = user.flatId;
+            const flatId = user?.flatId || user?.societyId || '';
 
             const durationHours = (() => {
                 const n = parseInt(duration); return isNaN(n) ? 1 : n;
@@ -1906,11 +1906,11 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                                     note={partyThemeData.note}
                                     onBack={goBackFromPartyForm}
                                     onSubmit={async (data) => {
-                                        if (!user?.flatId) { Alert.alert('Error', 'Your flat is not set up.'); return; }
+                                        if (!user?.flatId && role !== 'ADMIN' && role !== 'SUPER_ADMIN') { Alert.alert('Error', 'Your flat is not set up.'); return; }
                                         setSubmitting(true);
                                         try {
                                             const result = await createPartyInvite({
-                                                hostName: user.name ?? 'Resident',
+                                                hostName: user?.name ?? 'Resident',
                                                 validFrom: data.validFrom,
                                                 validUntil: data.validUntil,
                                                 venue: data.venue,
@@ -1968,7 +1968,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                                                 // Build a clean, explicit payload — only fields the backend accepts
                                                 const payload: Parameters<typeof createInvitePass>[0] = {
                                                     type: guestSheetConfig?.type ?? 'QUICK',
-                                                    flatId: guestSheetConfig?.flatId ?? user!.flatId!,
+                                                    flatId: guestSheetConfig?.flatId ?? (user?.flatId || user?.societyId || ''),
                                                     visitorName: g.name,
                                                     visitorPhone: g.phone,
                                                     validFrom: guestSheetConfig?.validFrom,

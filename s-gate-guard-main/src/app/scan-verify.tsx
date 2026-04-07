@@ -104,7 +104,9 @@ function ResultCard({
                         <View style={S.resultRow}>
                             <Ionicons name="home-outline" size={16} color="#6B7280" />
                             <Text style={S.resultRowLabel}>Flat</Text>
-                            <Text style={S.resultRowValue}>{result.flatNumber}</Text>
+                            <Text style={S.resultRowValue}>
+                                {result.flatNumber === 'OFFICE' ? 'Admin Office' : result.flatNumber}
+                            </Text>
                         </View>
                     )}
                     {!!typeLabel && (

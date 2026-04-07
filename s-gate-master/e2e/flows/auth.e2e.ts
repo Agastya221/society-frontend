@@ -59,16 +59,16 @@ describe('Auth Flow — Resident Login', () => {
     });
 
     it('accepts a valid 10-digit phone number', async () => {
-      await waitFor(element(by.placeholder('00000 00000'))).toBeVisible().withTimeout(8000);
-      await element(by.placeholder('00000 00000')).tap();
-      await element(by.placeholder('00000 00000')).typeText(TEST_PHONE);
-      await expect(element(by.placeholder('00000 00000'))).toHaveText(TEST_PHONE);
+      await waitFor(element(by.id('phone-input'))).toBeVisible().withTimeout(8000);
+      await element(by.id('phone-input')).tap();
+      await element(by.id('phone-input')).typeText(TEST_PHONE);
+      await expect(element(by.id('phone-input'))).toHaveText(TEST_PHONE);
     });
 
     it('sends OTP and shows OTP screen', async () => {
-      await waitFor(element(by.placeholder('00000 00000'))).toBeVisible().withTimeout(8000);
-      await element(by.placeholder('00000 00000')).tap();
-      await element(by.placeholder('00000 00000')).typeText(TEST_PHONE);
+      await waitFor(element(by.id('phone-input'))).toBeVisible().withTimeout(8000);
+      await element(by.id('phone-input')).tap();
+      await element(by.id('phone-input')).typeText(TEST_PHONE);
       await element(by.text('Send OTP')).tap();
 
       // Wait for OTP screen — either the heading or "6-DIGIT CODE" label
@@ -80,9 +80,9 @@ describe('Auth Flow — Resident Login', () => {
   describe('OTP step', () => {
     beforeEach(async () => {
       // Navigate to OTP screen first
-      await waitFor(element(by.placeholder('00000 00000'))).toBeVisible().withTimeout(8000);
-      await element(by.placeholder('00000 00000')).tap();
-      await element(by.placeholder('00000 00000')).typeText(TEST_PHONE);
+      await waitFor(element(by.id('phone-input'))).toBeVisible().withTimeout(8000);
+      await element(by.id('phone-input')).tap();
+      await element(by.id('phone-input')).typeText(TEST_PHONE);
       await element(by.text('Send OTP')).tap();
       await waitFor(element(by.text('6-DIGIT CODE'))).toBeVisible().withTimeout(15000);
     });

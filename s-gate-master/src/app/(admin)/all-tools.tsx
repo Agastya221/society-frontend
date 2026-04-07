@@ -24,6 +24,7 @@ export default function AllToolsScreen() {
         { icon: 'bell' as const,           title: 'Notices',         bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(admin)/notices' },
         { icon: 'credit-card' as const,    title: 'Payments',        bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(admin)/payments' },
         { icon: 'home' as const,           title: 'Flats',           bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/flats' },
+        { icon: 'truck' as const,          title: 'Vehicles',        bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/vehicles' },
         { icon: 'settings' as const,       title: 'Settings',        bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(admin)/settings' },
     ];
 

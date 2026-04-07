@@ -453,6 +453,7 @@ export default function NewEntryScreen() {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function flatLabel(f: FlatResult): string {
+    if (f.flatNumber === 'OFFICE') return 'Admin Office';
     const block = f.block?.name ? `${f.block.name}-` : '';
     return `${block}${f.flatNumber}`;
 }

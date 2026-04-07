@@ -48,6 +48,13 @@ api.interceptors.response.use(
             requestUrl.includes('/society-registration');
 
         if (error.response?.status === 401 && !originalRequest._retry && !shouldSkip) {
+            const { isAuthenticated, refreshToken, refreshAccessToken, logout } = useAuthStore.getState();
+
+            // Already logged out — don't attempt refresh, silently reject
+            if (!isAuthenticated || !refreshToken) {
+                return Promise.reject(error);
+            }
+
             // If already refreshing, queue this request until we get a new token
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
@@ -63,15 +70,6 @@ api.interceptors.response.use(
 
             originalRequest._retry = true;
             isRefreshing = true;
-
-            const { refreshToken, refreshAccessToken, logout } = useAuthStore.getState();
-
-            if (!refreshToken) {
-                isRefreshing = false;
-                await logout();
-                router.replace('/login');
-                return Promise.reject(error);
-            }
 
             try {
                 // Call refresh endpoint stored in zustand

@@ -111,7 +111,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
             return newAccessToken;
         } catch (error) {
-            await logout();
+            // Do NOT call logout() here — the interceptor owns that responsibility.
+            // Calling it here causes a double-logout and cascading 401 errors.
             throw error;
         }
     },

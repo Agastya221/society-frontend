@@ -135,7 +135,8 @@ function ApprovalCard({ entry, index, isApproving, isRejecting, onApprove, onRej
     const color = TYPE_COLORS[entry.type] ?? '#6B7280';
     const fadeAnim = React.useRef(new Animated.Value(0)).current;
     const slideAnim = React.useRef(new Animated.Value(30)).current;
-    const flatLabel = entry.flat?.flatNumber ?? entry.flatNumber ?? '—';
+    const rawFlat = entry.flat?.flatNumber ?? entry.flatNumber ?? '—';
+    const flatLabel = rawFlat === 'OFFICE' ? 'Admin Office' : rawFlat;
     const residentName = entry.flat?.resident?.name;
 
     React.useEffect(() => {
