@@ -140,6 +140,48 @@ export default function ResidentHomeScreen() {
 
     return (
         <View style={styles.root}>
+            {/* ══ FIXED HEADER AREA ════════════════════════════════════ */}
+            <View style={[styles.headerArea, { paddingTop: insets.top + 14 }]}>
+                {/* Greeting row */}
+                <Animated.View
+                    entering={FadeInDown.delay(0).springify()}
+                    style={styles.greetingRow}
+                >
+                    <View style={styles.greetingLeft}>
+                        <SgateBrandMark size={42} />
+                        <View style={styles.greetingTexts}>
+                            <Text style={styles.greetingLine}>
+                                {greeting()}, {firstName}
+                            </Text>
+                            <Text style={styles.societyLine} numberOfLines={1}>
+                                {societyName}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Bell */}
+                    <TouchableOpacity
+                        style={styles.bellBtn}
+                        onPress={() => router.push('/notifications' as any)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                        <Feather name="bell" size={21} color={'#E5A500'} />
+                        {unreadCount > 0 && (
+                            <View style={styles.badge}>
+                                <Text style={styles.badgeText}>
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                </Animated.View>
+
+                {/* Security banner */}
+                <Animated.View entering={FadeInDown.delay(80).springify()}>
+                    <SgateSecurityBanner />
+                </Animated.View>
+            </View>
+
             <ScrollView
                 style={styles.scroll}
                 contentContainerStyle={styles.scrollContent}
@@ -153,49 +195,6 @@ export default function ResidentHomeScreen() {
                     />
                 }
             >
-                {/* ══ WHITE HEADER AREA ════════════════════════════════════ */}
-                <View style={[styles.headerArea, { paddingTop: insets.top + 14 }]}>
-
-                    {/* Greeting row */}
-                    <Animated.View
-                        entering={FadeInDown.delay(0).springify()}
-                        style={styles.greetingRow}
-                    >
-                        <View style={styles.greetingLeft}>
-                            <SgateBrandMark size={42} />
-                            <View style={styles.greetingTexts}>
-                                <Text style={styles.greetingLine}>
-                                    {greeting()}, {firstName}
-                                </Text>
-                                <Text style={styles.societyLine} numberOfLines={1}>
-                                    {societyName}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Bell */}
-                        <TouchableOpacity
-                            style={styles.bellBtn}
-                            onPress={() => router.push('/notifications' as any)}
-                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                            <Feather name="bell" size={21} color={SgateColors.t1} />
-                            {unreadCount > 0 && (
-                                <View style={styles.badge}>
-                                    <Text style={styles.badgeText}>
-                                        {unreadCount > 9 ? '9+' : unreadCount}
-                                    </Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                    </Animated.View>
-
-                    {/* Security banner */}
-                    <Animated.View entering={FadeInDown.delay(80).springify()}>
-                        <SgateSecurityBanner />
-                    </Animated.View>
-                </View>
-
                 {/* ══ BG CONTENT AREA ══════════════════════════════════════ */}
                 <View style={styles.contentArea}>
 
@@ -516,7 +515,7 @@ const styles = StyleSheet.create({
     societyLine: {
         fontSize: 18,
         fontFamily: SgateFonts.extrabold,
-        color: SgateColors.t1,
+        color: '#E5A500', // Replaced blue with yellow/gold
     },
     bellBtn: {
         width: 44,

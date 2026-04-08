@@ -37,24 +37,24 @@ export function SgateSecurityBanner({
 
   return (
     <View style={styles.wrapper}>
-      {/* Gold accent line at top */}
+      {/* Light accent line at top for glassmorphism/modern feel */}
       <LinearGradient
-        colors={['transparent', 'rgba(255,184,0,0.6)', 'transparent']}
+        colors={['transparent', 'rgba(255,255,255,0.4)', 'transparent']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={styles.accentLine}
       />
 
-      {/* Main gradient background */}
+      {/* Modern vibrant yellow/gold gradient instead of blue */}
       <LinearGradient
-        colors={[SgateColors.black, SgateColors.charcoal]}
+        colors={['#FFC72C', '#F9A01B']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
       >
-        {/* Shield icon bubble */}
+        {/* Shield icon bubble with softer background */}
         <View style={styles.iconBubble}>
-          <Feather name="shield" size={22} color={SgateColors.gold} />
+          <Feather name="shield" size={22} color="#FFFFFF" />
         </View>
 
         {/* Text block */}
@@ -76,6 +76,11 @@ const styles = StyleSheet.create({
   wrapper: {
     borderRadius: 20,
     overflow: 'hidden',
+    shadowColor: '#F9A01B',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 4,
   },
   accentLine: {
     height: 2,
@@ -92,7 +97,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 14,
-    backgroundColor: 'rgba(255,184,0,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -113,12 +118,12 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: SgateColors.green,
+    backgroundColor: '#FFFFFF',
   },
   subtitle: {
     marginTop: 3,
     fontSize: 13,
     fontFamily: SgateFonts.regular,
-    color: SgateColors.t4,
+    color: 'rgba(255,255,255,0.85)',
   },
 });
