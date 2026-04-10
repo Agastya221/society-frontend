@@ -1,13 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 type BookingStatus = 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 interface MyBooking {
@@ -90,7 +89,7 @@ function BookingCard({
   onCancel: (id: string) => void;
 }) {
   const handleCancel = () => {
-    Alert.alert(
+    AppAlert.show(
       'Cancel Booking',
       'Are you sure you want to cancel this booking?',
       [
@@ -176,14 +175,14 @@ export default function MyBookingsScreen() {
     : bookings.filter(b => b.status !== 'CONFIRMED');
 
   const handleCancel = (id: string) => {
-    Alert.alert('Cancel Booking', 'Are you sure you want to cancel?', [
+    AppAlert.show('Cancel Booking', 'Are you sure you want to cancel?', [
       { text: 'Keep It', style: 'cancel' },
       { text: 'Cancel Booking', style: 'destructive', onPress: async () => {
         try {
           await api.patch(`/resident/amenities/bookings/${id}/cancel`, { reason: 'Plans changed' });
           setBookings(bs => bs.map(b => b.id === id ? { ...b, status: 'CANCELLED' as BookingStatus } : b));
         } catch {
-          Alert.alert('Error', 'Could not cancel booking. Please try again.');
+          AppAlert.show('Error', 'Could not cancel booking. Please try again.');
         }
       }},
     ]);

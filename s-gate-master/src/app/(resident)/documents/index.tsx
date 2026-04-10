@@ -1,13 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -87,9 +86,9 @@ function FileIconBubble({ fileType, size = 44 }: { fileType: SocietyDocument['fi
 function AdminDocCard({ doc, index }: { doc: SocietyDocument; index: number }) {
   const handleDownload = () => {
     if (doc.fileUrl) {
-      Alert.alert('Opening...', `${doc.name}`);
+      AppAlert.show('Opening...', `${doc.name}`);
     } else {
-      Alert.alert('Unavailable', 'Download link is not available yet.');
+      AppAlert.show('Unavailable', 'Download link is not available yet.');
     }
   };
   return (
@@ -114,7 +113,7 @@ function AdminDocCard({ doc, index }: { doc: SocietyDocument; index: number }) {
 
 function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: number; onDelete: (id: string) => void }) {
   const handleDelete = () => {
-    Alert.alert('Delete Document', 'Are you sure?', [
+    AppAlert.show('Delete Document', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => onDelete(doc.id) },
     ]);
@@ -133,7 +132,7 @@ function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: numb
         <Text style={styles.dateText}>{formatDate(doc.uploadedAt)}</Text>
       </View>
       <View style={styles.myDocActions}>
-        <TouchableOpacity onPress={() => Alert.alert('Opening...', doc.name)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity onPress={() => AppAlert.show('Opening...', doc.name)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Feather name="download" size={18} color={SgateColors.t3} />
         </TouchableOpacity>
         <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.deleteBtn}>
@@ -174,12 +173,12 @@ export default function DocumentsScreen() {
       await api.delete(`/resident/documents/${id}`);
       setMyDocs(ds => ds.filter(d => d.id !== id));
     } catch (err) {
-      Alert.alert('Error', 'Could not delete document. Please try again.');
+      AppAlert.show('Error', 'Could not delete document. Please try again.');
     }
   };
 
   const handleUpload = () => {
-    Alert.alert('Upload Document', 'Camera and gallery upload coming soon.');
+    AppAlert.show('Upload Document', 'Camera and gallery upload coming soon.');
   };
 
   return (

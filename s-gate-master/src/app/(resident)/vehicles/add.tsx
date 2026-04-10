@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
-  Alert, KeyboardAvoidingView, Platform, ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Type card config ─────────────────────────────────────────────────────────
 
@@ -85,14 +83,14 @@ export default function AddVehicleScreen() {
         color:         color.trim(),
       });
 
-      Alert.alert(
+      AppAlert.show(
         'Vehicle Submitted ✅',
         'Your vehicle registration has been submitted. It will be visible once approved by the admin.',
         [{ text: 'OK', onPress: () => router.back() }],
       );
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? 'Could not register vehicle. Please try again.';
-      Alert.alert('Registration Failed', msg);
+      AppAlert.show('Registration Failed', msg);
     } finally {
       setSubmitting(false);
     }

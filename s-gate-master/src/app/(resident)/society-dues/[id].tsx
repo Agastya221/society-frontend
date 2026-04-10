@@ -1,16 +1,14 @@
 import React, { useState } from 'react';
-import {
-  View,
+import { View,
   Text,
   ScrollView,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-} from 'react-native';
+  StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Local types ─────────────────────────────────────────────────────────────
 type DueStatus = 'PAID' | 'PENDING' | 'OVERDUE';
@@ -176,7 +174,7 @@ export default function SocietyDueDetailScreen() {
   // ── Payment handler ────────────────────────────────────────────────────────
   function handlePay() {
     const amountStr = formatAmount(due!.totalAmount);
-    Alert.alert(
+    AppAlert.show(
       'Confirm Payment',
       `Pay ${amountStr} for ${due!.month} ${due!.year}?`,
       [
@@ -194,7 +192,7 @@ export default function SocietyDueDetailScreen() {
                   }
                 : null,
             );
-            Alert.alert(
+            AppAlert.show(
               'Payment Successful',
               `Your payment of ${amountStr} was successful!`,
             );
@@ -205,7 +203,7 @@ export default function SocietyDueDetailScreen() {
   }
 
   function handleDownloadReceipt() {
-    Alert.alert('Download', 'Receipt download will be available soon.');
+    AppAlert.show('Download', 'Receipt download will be available soon.');
   }
 
   const isPaid = due.status === 'PAID';

@@ -1,13 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,13 +65,13 @@ function VehicleCard({ vehicle, index, onDelete }: { vehicle: Vehicle; index: nu
   const stickerIssued = !!vehicle.stickerNumber;
 
   const handleMenuPress = () => {
-    Alert.alert(
+    AppAlert.show(
       vehicle.vehicleNumber,
       'What would you like to do?',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete Vehicle', style: 'destructive', onPress: () =>
-          Alert.alert('Delete Vehicle', 'Are you sure?', [
+          AppAlert.show('Delete Vehicle', 'Are you sure?', [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Delete', style: 'destructive', onPress: () => onDelete(vehicle.id) },
           ]),
@@ -161,7 +160,7 @@ export default function MyVehiclesScreen() {
       await api.delete(`/resident/vehicles/${id}`);
       setVehicles(vs => vs.filter(v => v.id !== id));
     } catch (err) {
-      Alert.alert('Error', 'Could not delete vehicle. Please try again.');
+      AppAlert.show('Error', 'Could not delete vehicle. Please try again.');
     }
   };
 

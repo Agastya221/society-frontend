@@ -2,16 +2,13 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
-import {
-    ActivityIndicator,
-    Alert,
+import { ActivityIndicator,
     FlatList,
     Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
-} from 'react-native';
+    View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import {
@@ -19,6 +16,7 @@ import {
     deletePreApproved,
     getPreApprovedList,
 } from '../../../services/gate.service';
+import { AppAlert } from '../../../components/ui/AppAlert';
 import type {
     PreApprovedEntry,
     PreApprovedMode,
@@ -91,7 +89,7 @@ export default function PreApprovalsScreen() {
     // ── Cancel ───────────────────────────────────────────────────────────────
     const handleCancel = (entry: PreApprovedEntry) => {
         setMenuEntry(null);
-        Alert.alert(
+        AppAlert.show(
             'Cancel Pre-Approval?',
             'The QR code will stop working. You can delete it afterwards.',
             [
@@ -103,7 +101,7 @@ export default function PreApprovalsScreen() {
                             const updated = await cancelPreApproved(entry.id);
                             setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, status: 'CANCELLED' } : e));
                         } catch (err: any) {
-                            Alert.alert('Error', err?.response?.data?.message ?? 'Failed to cancel');
+                            AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to cancel');
                         }
                     },
                 },
@@ -114,7 +112,7 @@ export default function PreApprovalsScreen() {
     // ── Delete ───────────────────────────────────────────────────────────────
     const handleDelete = (entry: PreApprovedEntry) => {
         setMenuEntry(null);
-        Alert.alert(
+        AppAlert.show(
             'Delete Entry?',
             'This will permanently remove this pre-approval.',
             [
@@ -126,7 +124,7 @@ export default function PreApprovalsScreen() {
                             await deletePreApproved(entry.id);
                             setEntries(prev => prev.filter(e => e.id !== entry.id));
                         } catch (err: any) {
-                            Alert.alert('Error', err?.response?.data?.message ?? 'Failed to delete');
+                            AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to delete');
                         }
                     },
                 },

@@ -1,12 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -204,7 +203,7 @@ export default function ElectionDetailScreen() {
   const handleCastVote = () => {
     if (!selectedCandidate) return;
     const name = candidates.find(c => c.id === selectedCandidate)?.name ?? '';
-    Alert.alert('Confirm Vote', `Vote for ${name}? This cannot be changed.`, [
+    AppAlert.show('Confirm Vote', `Vote for ${name}? This cannot be changed.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Cast Vote', onPress: async () => {
         try {
@@ -212,7 +211,7 @@ export default function ElectionDetailScreen() {
           await api.post(`/resident/polls/${id}/vote`, { optionId: selectedCandidate });
           setHasVoted(true);
         } catch (err) {
-          Alert.alert('Error', 'Could not submit vote. Please try again.');
+          AppAlert.show('Error', 'Could not submit vote. Please try again.');
         } finally {
           setSubmitting(false);
         }
@@ -222,7 +221,7 @@ export default function ElectionDetailScreen() {
 
   const handleSubmitSurvey = () => {
     if (selectedOptions.length === 0) return;
-    Alert.alert('Submit Survey', 'Submit your response? This cannot be changed.', [
+    AppAlert.show('Submit Survey', 'Submit your response? This cannot be changed.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Submit', onPress: async () => {
         try {
@@ -232,7 +231,7 @@ export default function ElectionDetailScreen() {
           await api.post(`/resident/polls/${id}/vote`, { optionId: selectedOptions[0] });
           setHasVoted(true);
         } catch (err) {
-          Alert.alert('Error', 'Could not submit response. Please try again.');
+          AppAlert.show('Error', 'Could not submit response. Please try again.');
         } finally {
           setSubmitting(false);
         }

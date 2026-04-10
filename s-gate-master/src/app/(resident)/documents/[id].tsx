@@ -1,13 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, Alert,
-  Share, ScrollView, ActivityIndicator, Linking,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet,
+  Share, ScrollView, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 const CATEGORY_LABELS: Record<string, string> = {
   RULES_AND_BYLAWS: 'Rules & Regulations', MEETING_MINUTES: 'Minutes of Meeting',
@@ -63,8 +62,8 @@ export default function DocumentDetailScreen() {
       const res = await api.get(`/resident/documents/${id}/view-url`);
       const url: string = res.data?.data?.url ?? res.data?.url ?? res.data;
       if (url) await Linking.openURL(url);
-      else Alert.alert('Error', 'Could not get document URL.');
-    } catch { Alert.alert('Error', 'Could not open document.'); }
+      else AppAlert.show('Error', 'Could not get document URL.');
+    } catch { AppAlert.show('Error', 'Could not open document.'); }
     finally { setOpening(false); }
   };
 

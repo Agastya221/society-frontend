@@ -4,9 +4,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
+import { ActivityIndicator,
     FlatList,
     Modal,
     ScrollView,
@@ -15,13 +13,13 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View,
-} from 'react-native';
+    View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../../components/ui/Card';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 import { ComplaintCategory, ComplaintUrgency, createComplaint } from '../../../services/complaints';
 import { uploadImage } from '../../../services/uploadService';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 const SgateColors = {
     black: '#0D0F14', gold: '#FFB800', goldDeep: '#E5A500', goldPale: '#FFF8E1',
@@ -93,7 +91,7 @@ export default function CreateComplaintScreen() {
 
         const stillUploading = images.some(img => img.uploading);
         if (stillUploading) {
-            Alert.alert('Please Wait', 'Images are still uploading...');
+            AppAlert.show('Please Wait', 'Images are still uploading...');
             setIsLoading(false);
             return;
         }
@@ -112,7 +110,7 @@ export default function CreateComplaintScreen() {
             };
 
             const result = await createComplaint(payload);
-            Alert.alert(
+            AppAlert.show(
                 'Complaint Submitted',
                 `Your complaint has been registered successfully.\n\nTicket Number: ${result.ticketNumber}`,
                 [{ text: 'OK', onPress: () => router.back() }]
@@ -125,10 +123,10 @@ export default function CreateComplaintScreen() {
     };
 
     const pickImageFromCamera = async () => {
-        if (images.length >= 5) { Alert.alert('Limit Reached', 'You can add a maximum of 5 photos'); return; }
+        if (images.length >= 5) { AppAlert.show('Limit Reached', 'You can add a maximum of 5 photos'); return; }
         try {
             const permission = await ImagePicker.requestCameraPermissionsAsync();
-            if (!permission.granted) { Alert.alert('Permission Required', 'Please allow camera access'); return; }
+            if (!permission.granted) { AppAlert.show('Permission Required', 'Please allow camera access'); return; }
             const result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8,
                 cameraType: ImagePicker.CameraType.back,
@@ -142,17 +140,17 @@ export default function CreateComplaintScreen() {
                     setImages(prev => prev.map(img => img.localUri === localUri ? { ...img, s3Key, uploading: false } : img));
                 } catch {
                     setImages(prev => prev.filter(img => img.localUri !== localUri));
-                    Alert.alert('Upload Failed', 'Failed to upload image.');
+                    AppAlert.show('Upload Failed', 'Failed to upload image.');
                 }
             }
-        } catch { Alert.alert('Error', 'Failed to take photo.'); }
+        } catch { AppAlert.show('Error', 'Failed to take photo.'); }
     };
 
     const pickImageFromGallery = async () => {
-        if (images.length >= 5) { Alert.alert('Limit Reached', 'You can add a maximum of 5 photos'); return; }
+        if (images.length >= 5) { AppAlert.show('Limit Reached', 'You can add a maximum of 5 photos'); return; }
         try {
             const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (!permission.granted) { Alert.alert('Permission Required', 'Please allow gallery access'); return; }
+            if (!permission.granted) { AppAlert.show('Permission Required', 'Please allow gallery access'); return; }
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8,
             });
@@ -165,14 +163,14 @@ export default function CreateComplaintScreen() {
                     setImages(prev => prev.map(img => img.localUri === localUri ? { ...img, s3Key, uploading: false } : img));
                 } catch {
                     setImages(prev => prev.filter(img => img.localUri !== localUri));
-                    Alert.alert('Upload Failed', 'Failed to upload image.');
+                    AppAlert.show('Upload Failed', 'Failed to upload image.');
                 }
             }
-        } catch { Alert.alert('Error', 'Failed to select image.'); }
+        } catch { AppAlert.show('Error', 'Failed to select image.'); }
     };
 
     const showImagePickerOptions = () => {
-        Alert.alert('Add Photo', 'Choose an option', [
+        AppAlert.show('Add Photo', 'Choose an option', [
             { text: 'Take Photo', onPress: pickImageFromCamera },
             { text: 'Choose from Gallery', onPress: pickImageFromGallery },
             { text: 'Cancel', style: 'cancel' },

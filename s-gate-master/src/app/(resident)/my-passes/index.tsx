@@ -1,17 +1,14 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
+import { ActivityIndicator,
     FlatList,
     Modal,
     RefreshControl,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
-} from 'react-native';
+    View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
@@ -28,6 +25,7 @@ import {
     type PartyInvite,
     type PartyInviteStatus,
 } from '../../../services/gate.service';
+import { AppAlert } from '../../../components/ui/AppAlert';
 import type {
     InvitePass,
     InvitePassStatus,
@@ -131,7 +129,7 @@ export default function PassesScreen() {
             const res = await getPreApprovedList({ limit: 50 });
             setPaEntries(res.entries);
         } catch {
-            Alert.alert('Error', 'Failed to load pre-approvals');
+            AppAlert.show('Error', 'Failed to load pre-approvals');
         } finally {
             setPaLoading(false);
             setPaRefreshing(false);
@@ -148,7 +146,7 @@ export default function PassesScreen() {
             if (guestRes.status === 'fulfilled') setInvites(guestRes.value);
             if (partyRes.status === 'fulfilled') setPartyInvites(partyRes.value);
         } catch {
-            Alert.alert('Error', 'Failed to load invites');
+            AppAlert.show('Error', 'Failed to load invites');
         } finally {
             setInvLoading(false);
             setInvRefreshing(false);
@@ -171,7 +169,7 @@ export default function PassesScreen() {
 
     const handlePaCancel = (entry: PreApprovedEntry) => {
         setPaMenuEntry(null);
-        Alert.alert('Cancel Pre-Approval?', 'The QR code will stop working.', [
+        AppAlert.show('Cancel Pre-Approval?', 'The QR code will stop working.', [
             { text: 'Keep', style: 'cancel' },
             {
                 text: 'Cancel It', style: 'destructive',
@@ -180,7 +178,7 @@ export default function PassesScreen() {
                         await cancelPreApproved(entry.id);
                         setPaEntries(prev => prev.map(e => e.id === entry.id ? { ...e, status: 'CANCELLED' } : e));
                     } catch (err: any) {
-                        Alert.alert('Error', err?.response?.data?.message ?? 'Failed to cancel');
+                        AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to cancel');
                     }
                 },
             },
@@ -189,7 +187,7 @@ export default function PassesScreen() {
 
     const handlePaDelete = (entry: PreApprovedEntry) => {
         setPaMenuEntry(null);
-        Alert.alert('Delete Entry?', 'This will permanently remove this pre-approval.', [
+        AppAlert.show('Delete Entry?', 'This will permanently remove this pre-approval.', [
             { text: 'Keep', style: 'cancel' },
             {
                 text: 'Delete', style: 'destructive',
@@ -198,7 +196,7 @@ export default function PassesScreen() {
                         await deletePreApproved(entry.id);
                         setPaEntries(prev => prev.filter(e => e.id !== entry.id));
                     } catch (err: any) {
-                        Alert.alert('Error', err?.response?.data?.message ?? 'Failed to delete');
+                        AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to delete');
                     }
                 },
             },
@@ -209,7 +207,7 @@ export default function PassesScreen() {
 
     const handleInvRevoke = (invite: InvitePass) => {
         setInvMenuEntry(null);
-        Alert.alert('Revoke Invite?', 'This pass will stop working immediately.', [
+        AppAlert.show('Revoke Invite?', 'This pass will stop working immediately.', [
             { text: 'Keep', style: 'cancel' },
             {
                 text: 'Revoke', style: 'destructive',
@@ -218,7 +216,7 @@ export default function PassesScreen() {
                         await revokeInvitePass(invite.id);
                         setInvites(prev => prev.map(i => i.id === invite.id ? { ...i, status: 'REVOKED' } : i));
                     } catch (err: any) {
-                        Alert.alert('Error', err?.response?.data?.message ?? 'Failed to revoke');
+                        AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to revoke');
                     }
                 },
             },
@@ -227,7 +225,7 @@ export default function PassesScreen() {
 
     const handleInvDelete = (invite: InvitePass) => {
         setInvMenuEntry(null);
-        Alert.alert('Delete Invite?', 'This will permanently remove this invite pass.', [
+        AppAlert.show('Delete Invite?', 'This will permanently remove this invite pass.', [
             { text: 'Keep', style: 'cancel' },
             {
                 text: 'Delete', style: 'destructive',
@@ -236,7 +234,7 @@ export default function PassesScreen() {
                         await deleteInvitePass(invite.id);
                         setInvites(prev => prev.filter(i => i.id !== invite.id));
                     } catch (err: any) {
-                        Alert.alert('Error', err?.response?.data?.message ?? 'Failed to delete');
+                        AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to delete');
                     }
                 },
             },
@@ -247,7 +245,7 @@ export default function PassesScreen() {
 
     const handlePartyCancel = (party: PartyInvite) => {
         setPartyMenuEntry(null);
-        Alert.alert('Cancel Party Invite?', 'All guest codes will stop working.', [
+        AppAlert.show('Cancel Party Invite?', 'All guest codes will stop working.', [
             { text: 'Keep', style: 'cancel' },
             {
                 text: 'Cancel', style: 'destructive',
@@ -256,7 +254,7 @@ export default function PassesScreen() {
                         await cancelPartyInvite(party.id);
                         setPartyInvites(prev => prev.map(p => p.id === party.id ? { ...p, status: 'CANCELLED' } : p));
                     } catch (err: any) {
-                        Alert.alert('Error', err?.response?.data?.message ?? 'Failed to cancel');
+                        AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to cancel');
                     }
                 },
             },

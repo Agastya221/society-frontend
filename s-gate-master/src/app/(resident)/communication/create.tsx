@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
-  Switch, Alert, ActivityIndicator,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
+  Switch, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Types — match exact backend PostCategory enum values ────────────────────
 type PostCategory =
@@ -57,12 +56,12 @@ export default function CreatePostScreen() {
         category:    category,
         isAnonymous: isAnonymous,
       });
-      Alert.alert('Posted! 🎉', 'Your post has been shared with the community.', [
+      AppAlert.show('Posted! 🎉', 'Your post has been shared with the community.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? 'Could not create post. Please try again.';
-      Alert.alert('Error', msg);
+      AppAlert.show('Error', msg);
     } finally {
       setSubmitting(false);
     }

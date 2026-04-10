@@ -3,15 +3,12 @@ import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
+import { ActivityIndicator,
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
   Vibration,
-  View,
-} from 'react-native';
+  View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -21,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 const TYPE_ICONS: Record<string, string> = {
   MEDICAL: 'medkit',
@@ -113,11 +111,11 @@ export default function CreateEmergencyScreen() {
     const status = err?.response?.status;
     const message = err?.response?.data?.message;
     if (status === 401) { router.replace('/login' as any); return; }
-    if (status === 403) { Alert.alert('Error', 'Your account is inactive. Contact your admin.'); return; }
-    if (status === 500) { Alert.alert('Error', 'SOS failed — please call security directly'); return; }
-    if (status === 400) { Alert.alert('Error', message || 'Something went wrong, please try again'); return; }
-    if (!err?.response) { Alert.alert('Error', 'No connection. Please try again.'); return; }
-    Alert.alert('Error', message || 'Something went wrong, please try again');
+    if (status === 403) { AppAlert.show('Error', 'Your account is inactive. Contact your admin.'); return; }
+    if (status === 500) { AppAlert.show('Error', 'SOS failed — please call security directly'); return; }
+    if (status === 400) { AppAlert.show('Error', message || 'Something went wrong, please try again'); return; }
+    if (!err?.response) { AppAlert.show('Error', 'No connection. Please try again.'); return; }
+    AppAlert.show('Error', message || 'Something went wrong, please try again');
   };
 
   const handleTilePress = async (type: string) => {

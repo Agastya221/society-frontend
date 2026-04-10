@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../../../components/ui/Card';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 interface FamilyMember {
     id: string;
@@ -54,7 +55,7 @@ export default function FamilyScreen() {
 
     const handleInvite = async () => {
         if (!inviteName.trim()) {
-            Alert.alert('Validation Error', 'A name is required to invite family.');
+            AppAlert.show('Validation Error', 'A name is required to invite family.');
             return;
         }
 
@@ -89,7 +90,7 @@ export default function FamilyScreen() {
 
         } catch (err: any) {
             console.error(err);
-            Alert.alert('Invite Failed', err?.response?.data?.message || 'Could not send invitation.');
+            AppAlert.show('Invite Failed', err?.response?.data?.message || 'Could not send invitation.');
         } finally {
             setInviting(false);
         }

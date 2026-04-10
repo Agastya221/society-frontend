@@ -2,10 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
 import { Complaint, ComplaintStatus, deleteComplaint, fetchComplaints } from '../../../services/complaints';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 export default function ComplaintsScreen() {
     const router = useRouter();
@@ -53,7 +54,7 @@ export default function ComplaintsScreen() {
     // Delete complaint handler
     const handleDeleteComplaint = (complaint: Complaint) => {
         // Show confirmation alert
-        Alert.alert(
+        AppAlert.show(
             'Delete Complaint',
             'Are you sure you want to delete this complaint?',
             [
@@ -75,10 +76,10 @@ export default function ComplaintsScreen() {
                             setComplaints(prev => prev.filter(c => c.id !== complaint.id));
                             
                             // Show success alert
-                            Alert.alert('Success', message || 'Complaint deleted successfully');
+                            AppAlert.show('Success', message || 'Complaint deleted successfully');
                         } catch (err: any) {
                             console.error('Failed to delete complaint:', err);
-                            Alert.alert('Error', err.message || 'Failed to delete complaint');
+                            AppAlert.show('Error', err.message || 'Failed to delete complaint');
                         } finally {
                             setDeletingId(null);
                         }

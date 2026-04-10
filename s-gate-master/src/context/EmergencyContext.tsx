@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import { getMyEmergencies } from '../services/emergency';
 
 interface ActiveEmergency {
@@ -11,12 +12,14 @@ interface EmergencyContextValue {
   hasActiveEmergency: boolean;
   activeEmergency: ActiveEmergency | null;
   dismissAlert: (id?: string) => void;
+  refreshEmergencies: () => void;
 }
 
 const EmergencyContext = createContext<EmergencyContextValue>({
   hasActiveEmergency: false,
   activeEmergency: null,
   dismissAlert: () => {},
+  refreshEmergencies: () => {},
 });
 
 const dismissedIds = new Set<string>();
@@ -25,6 +28,7 @@ export function EmergencyProvider({ children }: { children: React.ReactNode }) {
   const [activeEmergency, setActiveEmergency] = useState<ActiveEmergency | null>(null);
   const [hasActiveEmergency, setHasActiveEmergency] = useState(false);
   const dismissedRef = useRef(dismissedIds);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   const dismissAlert = useCallback((id?: string) => {
     const targetId = id ?? activeEmergency?.id;
@@ -36,46 +40,47 @@ export function EmergencyProvider({ children }: { children: React.ReactNode }) {
     setActiveEmergency(null);
   }, [activeEmergency?.id]);
 
-  useEffect(() => {
-    let isMounted = true;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  const checkEmergencies = useCallback(async () => {
+    try {
+      const emergencies = await getMyEmergencies();
 
-    const checkEmergencies = async () => {
-      try {
-        const emergencies = await getMyEmergencies();
-        if (!isMounted) return;
+      const active = emergencies.find(
+        (e) =>
+          (e.status === 'TRIGGERED' || e.status === 'ACKNOWLEDGED' || e.status === 'ACTIVE') &&
+          !dismissedRef.current.has(e.id)
+      );
 
-        const active = emergencies.find(
-          (e) =>
-            (e.status === 'TRIGGERED' || e.status === 'ACKNOWLEDGED' || e.status === 'ACTIVE') &&
-            !dismissedRef.current.has(e.id)
-        );
-
-        if (active) {
-          setActiveEmergency({ id: active.id, type: active.type, status: active.status });
-          setHasActiveEmergency(true);
-        } else {
-          setActiveEmergency(null);
-          setHasActiveEmergency(false);
-        }
-
-        timeoutId = setTimeout(checkEmergencies, 15000);
-      } catch {
-        if (!isMounted) return;
-        timeoutId = setTimeout(checkEmergencies, 30000);
+      if (active) {
+        setActiveEmergency({ id: active.id, type: active.type, status: active.status });
+        setHasActiveEmergency(true);
+      } else {
+        setActiveEmergency(null);
+        setHasActiveEmergency(false);
       }
-    };
-
-    checkEmergencies();
-
-    return () => {
-      isMounted = false;
-      if (timeoutId) clearTimeout(timeoutId);
-    };
+    } catch {
+      // Silent — don't spam retries. Will re-check on next foreground.
+    }
   }, []);
 
+  useEffect(() => {
+    // Check once on mount
+    checkEmergencies();
+
+    // Re-check only when app returns to foreground (no polling)
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
+        checkEmergencies();
+      }
+      appStateRef.current = nextState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [checkEmergencies]);
+
   return (
-    <EmergencyContext.Provider value={{ hasActiveEmergency, activeEmergency, dismissAlert }}>
+    <EmergencyContext.Provider value={{ hasActiveEmergency, activeEmergency, dismissAlert, refreshEmergencies: checkEmergencies }}>
       {children}
     </EmergencyContext.Provider>
   );

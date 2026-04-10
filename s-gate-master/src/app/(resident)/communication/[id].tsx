@@ -1,13 +1,12 @@
 import React, { useCallback, useState, useRef } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
-  TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet,
+  TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -195,7 +194,7 @@ export default function CommunicationDetailScreen() {
       setComments(rawComments.map(normaliseComment));
     } catch (err) {
       console.error('Failed to fetch post:', err);
-      Alert.alert('Error', 'Could not load this post.');
+      AppAlert.show('Error', 'Could not load this post.');
     } finally {
       setLoading(false);
     }
@@ -228,7 +227,7 @@ export default function CommunicationDetailScreen() {
       setPost(p => p ? { ...p, commentCount: p.commentCount + 1 } : null);
       setCommentText('');
     } catch (err) {
-      Alert.alert('Error', 'Could not post comment. Please try again.');
+      AppAlert.show('Error', 'Could not post comment. Please try again.');
     } finally {
       setSending(false);
     }

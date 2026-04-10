@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
-import { router } from 'expo-router';
+import { logApiRequest, logApiResponse, logApiError } from '../logger/apiLogger';
 
 const BASE_URL = 'https://society-gate-backend-gsrq.onrender.com/api/v1';
 
@@ -10,21 +10,24 @@ const api: AxiosInstance = axios.create({
     timeout: 60000,
 });
 
-// ── Request: attach access token ─────────────────────────────────────────────
+// ── Request: attach access token + log ───────────────────────────────────────
 api.interceptors.request.use(
     (config) => {
         const accessToken = useAuthStore.getState().accessToken;
         if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
-        console.log('🚀 API Request:', config.method?.toUpperCase(), `${BASE_URL}${config.url}`);
-        if (config.data) {
-            console.log('📦 Request Body:', JSON.stringify(config.data, null, 2));
-        }
+
+        logApiRequest(
+            config.method ?? 'GET',
+            `${BASE_URL}${config.url}`,
+            config.data
+        );
+
         return config;
     },
     (error) => Promise.reject(error)
 );
 
-// ── Response: silent token refresh on 401 ────────────────────────────────────
+// ── Response: silent token refresh on 401 + structured logging ───────────────
 let isRefreshing = false;
 let pendingQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
 
@@ -35,14 +38,19 @@ const drainQueue = (token: string | null, error?: any) => {
 
 api.interceptors.response.use(
     (response) => {
-        console.log('✅ API Response:', response.status, response.config.url);
+        logApiResponse(
+            response.config.method ?? 'GET',
+            `${BASE_URL}${response.config.url}`,
+            response.status,
+            response.data
+        );
         return response;
     },
     async (error) => {
         const originalRequest = error.config;
 
         // Skip token refresh for endpoints that may legitimately 401 during onboarding
-        const requestUrl: string = originalRequest.url ?? '';
+        const requestUrl: string = originalRequest?.url ?? '';
         const shouldSkip =
             requestUrl.includes('/resident/onboarding') ||
             requestUrl.includes('/society-registration');
@@ -82,15 +90,21 @@ api.interceptors.response.use(
             } catch (refreshError) {
                 drainQueue(null, refreshError);
                 await logout();
-                router.replace('/login');
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
             }
         }
 
-        console.error('❌ API Error:', error.response?.status, error.config?.url, error.response?.data?.message);
-        console.error('❌ Full Error Body:', JSON.stringify(error.response?.data, null, 2));
+        // ── Log error via centralized logger ─────────────────────────────
+        logApiError(
+            originalRequest?.method ?? 'UNKNOWN',
+            `${BASE_URL}${requestUrl}`,
+            error.response?.status,
+            error.response?.data,
+            error.response?.data?.message ?? error.message
+        );
+
         return Promise.reject(error);
     }
 );

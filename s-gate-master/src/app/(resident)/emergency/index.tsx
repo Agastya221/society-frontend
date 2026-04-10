@@ -1,19 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
+import { ActivityIndicator,
   FlatList,
   RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-} from 'react-native';
+  View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 const TYPE_ICONS: Record<string, string> = {
   MEDICAL: 'medkit',
@@ -104,18 +102,18 @@ export default function EmergencyListScreen() {
       return;
     }
     if (status === 403) {
-      Alert.alert('Error', 'Your account is inactive. Contact your admin.');
+      AppAlert.show('Error', 'Your account is inactive. Contact your admin.');
       return;
     }
     if (status === 500) {
-      Alert.alert('Error', 'SOS failed — please call security directly');
+      AppAlert.show('Error', 'SOS failed — please call security directly');
       return;
     }
     if (!err?.response) {
-      Alert.alert('Error', 'No connection. Please try again.');
+      AppAlert.show('Error', 'No connection. Please try again.');
       return;
     }
-    Alert.alert('Error', message || 'Something went wrong, please try again');
+    AppAlert.show('Error', message || 'Something went wrong, please try again');
   };
 
   const fetchEmergencies = useCallback(async () => {

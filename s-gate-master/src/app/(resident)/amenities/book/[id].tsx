@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
-import {
-  View,
+import { View,
   Text,
   ScrollView,
   TouchableOpacity,
   TextInput,
   StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+  ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
 import api from '../../../../services/api';
 import { useAuthStore } from '../../../../store/useAuthStore';
+import { AppAlert } from '../../../../components/ui/AppAlert';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -63,13 +61,13 @@ export default function BookAmenityScreen() {
         date,
         ...(purpose.trim() ? { purpose: purpose.trim() } : {}),
       });
-      Alert.alert(
+      AppAlert.show(
         'Booking Confirmed!',
         'Your slot has been booked.',
         [{ text: 'OK', onPress: () => router.push('/(resident)/amenities' as any) }],
       );
     } catch (err: any) {
-      Alert.alert('Failed', err?.response?.data?.message ?? 'Could not confirm booking. Try again.');
+      AppAlert.show('Failed', err?.response?.data?.message ?? 'Could not confirm booking. Try again.');
     } finally {
       setSubmitting(false);
     }

@@ -3,9 +3,7 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { getEntryRequestPhoto } from '@/services/gate.service';
-import {
-    ActivityIndicator,
-    Alert,
+import { ActivityIndicator,
     AppState,
     FlatList,
     Modal,
@@ -14,12 +12,12 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View,
-} from 'react-native';
+    View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface EntryRequest {
@@ -141,7 +139,7 @@ export default function ApprovalsScreen() {
             await api.patch(`/gate/entry-requests/${item.id}/approve`);
         } catch (err: any) {
             setRequests(previous);
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to approve request');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to approve request');
         } finally {
             setActioning(null);
         }
@@ -160,7 +158,7 @@ export default function ApprovalsScreen() {
             await api.patch(`/gate/entry-requests/${item.id}/reject`, { reason });
         } catch (err: any) {
             setRequests(previous);
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to reject request');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to reject request');
         } finally {
             setActioning(null);
         }

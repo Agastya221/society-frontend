@@ -226,9 +226,14 @@ export interface CreateExpectedDeliveryPayload {
 }
 
 export const getExpectedDeliveries = async (): Promise<unknown[]> => {
-    const res = await api.get('/gate/deliveries/expected');
-    const data = res.data?.data;
-    return Array.isArray(data) ? data : (data?.deliveries ?? []);
+    try {
+        const res = await api.get('/gate/deliveries/expected');
+        const data = res.data?.data;
+        return Array.isArray(data) ? data : (data?.deliveries ?? []);
+    } catch (err: any) {
+        console.warn('⚠️ [Gate Service] Expected deliveries endpoint missing or failed:', err?.response?.status);
+        return []; // Suppress 404 HTML errors
+    }
 };
 
 export const createExpectedDelivery = async (
@@ -239,9 +244,14 @@ export const createExpectedDelivery = async (
 };
 
 export const getAutoApproveRules = async (): Promise<unknown[]> => {
-    const res = await api.get('/gate/deliveries/auto-approve');
-    const data = res.data?.data;
-    return Array.isArray(data) ? data : (data?.rules ?? []);
+    try {
+        const res = await api.get('/gate/deliveries/auto-approve');
+        const data = res.data?.data;
+        return Array.isArray(data) ? data : (data?.rules ?? []);
+    } catch (err: any) {
+        console.warn('⚠️ [Gate Service] Auto-approve deliveries endpoint missing or failed:', err?.response?.status);
+        return []; // Suppress 404 HTML errors
+    }
 };
 
 export const createAutoApproveRule = async (data: {
@@ -380,4 +390,48 @@ export const getGatePassQR = async (
 ): Promise<{ qrToken: string }> => {
     const res = await api.get(`/gate/passes/${id}/qr`);
     return res.data.data;
+};
+
+export const getGatePassById = async (
+    id: string
+): Promise<GatePass> => {
+    const res = await api.get<{ success: boolean; data: GatePass }>(`/gate/passes/${id}`);
+    return res.data.data;
+};
+
+export const cancelGatePass = async (id: string): Promise<void> => {
+    await api.delete(`/gate/passes/${id}`);
+};
+
+// ─── Entry Pending Count / Approvals ─────────────────────────────────────────
+
+export const getPendingEntryCount = async (): Promise<number> => {
+    const res = await api.get<{ success: boolean; data: { pendingCount: number } }>(
+        '/gate/requests/pending-count'
+    );
+    return res.data.data?.pendingCount ?? 0;
+};
+
+export const getPendingApprovals = async (): Promise<Entry[]> => {
+    const res = await api.get('/gate/entries/pending');
+    const data = res.data?.data;
+    return Array.isArray(data) ? data : (data?.entries ?? []);
+};
+
+export const checkoutEntry = async (id: string): Promise<void> => {
+    await api.patch(`/gate/entries/${id}/checkout`);
+};
+
+// ─── Auto-Approve Rule Management ────────────────────────────────────────────
+
+export const toggleAutoApproveRule = async (
+    id: string,
+    isActive: boolean
+): Promise<unknown> => {
+    const res = await api.patch(`/gate/deliveries/auto-approve/${id}`, { isActive });
+    return res.data.data;
+};
+
+export const deleteAutoApproveRule = async (id: string): Promise<void> => {
+    await api.delete(`/gate/deliveries/auto-approve/${id}`);
 };

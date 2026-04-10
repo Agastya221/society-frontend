@@ -1,15 +1,12 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-    Alert,
-    RefreshControl,
+import { RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
-} from 'react-native';
+    View } from 'react-native';
 import Animated, {
     FadeInDown,
     FadeOutLeft,
@@ -33,6 +30,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useGateStore } from '../../store/useGateStore';
 import { useNotificationStore } from '../../store/useNotificationStore';
 import type { Entry } from '../../types/api';
+import { AppAlert } from '../../components/ui/AppAlert';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -114,7 +112,7 @@ export default function ResidentHomeScreen() {
         try {
             await approveRequest(id);
         } catch {
-            Alert.alert('Error', 'Failed to approve. Please try again.');
+            AppAlert.show('Error', 'Failed to approve. Please try again.');
         } finally {
             setActioningId(null);
         }
@@ -126,7 +124,7 @@ export default function ResidentHomeScreen() {
         try {
             await rejectRequest(id);
         } catch {
-            Alert.alert('Error', 'Failed to deny. Please try again.');
+            AppAlert.show('Error', 'Failed to deny. Please try again.');
         } finally {
             setActioningId(null);
         }

@@ -1,20 +1,18 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo } from 'react';
-import {
-    Alert,
-    FlatList,
+import { FlatList,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
-} from 'react-native';
+    View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { SgateBrandMark, SgateHeader } from '../../components/Sgate';
 import { SgateColors, SgateFonts, SgateTypography } from '../../constants/Sgate-theme';
 import type { Notification, NotificationType } from '../../types/api';
 import { useNotificationStore } from '../../store/useNotificationStore';
+import { AppAlert } from '../../components/ui/AppAlert';
 
 // ─── Icon / colour mapping ───────────────────────────────────────────────────
 
@@ -106,7 +104,7 @@ export default function NotificationsScreen() {
                     router.push('/(resident)/deliveries');
                     break;
                 case 'EMERGENCY_ALERT':
-                    Alert.alert('Emergency', n.body);
+                    AppAlert.show('Emergency', n.body);
                     break;
                 default:
                     break;

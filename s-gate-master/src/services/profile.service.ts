@@ -44,3 +44,14 @@ export const inviteFamilyMember = async (
 export const removeFamilyMember = async (id: string): Promise<void> => {
     await api.delete(`/resident/family/${id}`);
 };
+
+export const updateFamilyRole = async (
+    memberId: string,
+    familyRole: FamilyRole
+): Promise<FamilyMember> => {
+    const res = await api.patch<{ success: boolean; data: FamilyMember }>(
+        `/resident/family/${memberId}/role`,
+        { familyRole }
+    );
+    return res.data.data;
+};

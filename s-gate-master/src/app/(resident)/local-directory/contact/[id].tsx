@@ -1,13 +1,12 @@
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
-import {
-  Alert, Clipboard, Linking, ScrollView, Share, StyleSheet,
-  Text, TouchableOpacity, View, ActivityIndicator,
-} from "react-native";
+import { Clipboard, Linking, ScrollView, Share, StyleSheet,
+  Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SgateColors, SgateFonts } from "../../../../constants/Sgate-theme";
 import api from "../../../../services/api";
+import { AppAlert } from '../../../../components/ui/AppAlert';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Contact {
@@ -96,7 +95,7 @@ export default function ContactProfile() {
   const handleCopy = () => {
     if (!contact) return;
     Clipboard.setString(contact.phone);
-    Alert.alert("Copied", "Phone number copied to clipboard");
+    AppAlert.show("Copied", "Phone number copied to clipboard");
   };
   const handleShare = async () => {
     if (!contact) return;

@@ -1,13 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, Alert,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 type DueStatus = 'PAID' | 'PENDING' | 'OVERDUE';
 
@@ -175,7 +174,7 @@ export default function SocietyDuesScreen() {
   }, []));
 
   function handlePayOutstanding() {
-    Alert.alert('Pay Outstanding', 'Redirecting to payment gateway...', [{ text: 'OK' }]);
+    AppAlert.show('Pay Outstanding', 'Redirecting to payment gateway...', [{ text: 'OK' }]);
   }
 
   const ListHeader = (

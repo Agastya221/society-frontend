@@ -13,6 +13,7 @@ import { useSoraFonts } from "../hooks/useFonts";
 import { useAuthStore } from "../store/useAuthStore";
 import { SgateColors } from "../constants/Sgate-theme";
 import api from "../services/api";
+import { AppAlertProvider } from "../components/ui/AppAlert";
 
 // Show notifications while app is in foreground
 Notifications.setNotificationHandler({
@@ -195,7 +196,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <Slot />
+        <AppAlertProvider>
+          <Slot />
+        </AppAlertProvider>
         <StatusBar style="dark" />
       </SafeAreaProvider>
     </GestureHandlerRootView>

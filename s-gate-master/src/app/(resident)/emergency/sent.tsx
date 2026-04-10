@@ -2,13 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
-  Alert,
   BackHandler,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-} from 'react-native';
+  View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -19,6 +17,7 @@ import Animated, {
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import { useActiveEmergency } from '../../../context/EmergencyContext';
 import api from '../../../services/api';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 const TYPE_ICONS: Record<string, string> = {
   MEDICAL: 'medkit',
@@ -79,19 +78,19 @@ export default function EmergencySentScreen() {
       const status = err?.response?.status;
       if (status === 401) { router.replace('/login' as any); return; }
       if (status === 403) {
-        Alert.alert('Not Allowed', 'Only the reporter or an admin can cancel this alert.');
+        AppAlert.show('Not Allowed', 'Only the reporter or an admin can cancel this alert.');
         return;
       }
       if (!err?.response) {
-        Alert.alert('Error', 'No connection. Please try again.');
+        AppAlert.show('Error', 'No connection. Please try again.');
         return;
       }
-      Alert.alert('Error', err?.response?.data?.message || 'Could not cancel. Try again.');
+      AppAlert.show('Error', err?.response?.data?.message || 'Could not cancel. Try again.');
     }
   };
 
   const confirmFalseAlarm = () => {
-    Alert.alert(
+    AppAlert.show(
       'Cancel Emergency?',
       'Only cancel if this was a mistake. Guards will receive an all-clear notification.',
       [

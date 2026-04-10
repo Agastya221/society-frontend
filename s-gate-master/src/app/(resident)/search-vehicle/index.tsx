@@ -1,8 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Linking, FlatList, Modal
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Linking, FlatList, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -10,6 +8,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import * as Haptics from 'expo-haptics';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface VehicleResult {
@@ -83,7 +82,7 @@ export default function SearchVehicleScreen() {
       if (err?.response?.status === 404) {
         setNotFound(true);
       } else {
-        Alert.alert('Error', 'Could not search. Please try again.');
+        AppAlert.show('Error', 'Could not search. Please try again.');
         setNotFound(true);
       }
     } finally {
@@ -117,12 +116,12 @@ export default function SearchVehicleScreen() {
         type: rType,
         description: rDesc.trim()
       });
-      Alert.alert('Submitted', 'Your complaint has been sent to the admin/guard.');
+      AppAlert.show('Submitted', 'Your complaint has been sent to the admin/guard.');
       setReportTarget(null); setRDesc(''); setRType('WRONG_PARKING');
       setTab('MY_REPORTS');
       fetchMyComplaints();
     } catch (err: any) {
-      Alert.alert('Error', err?.response?.data?.message || 'Failed to submit complaint.');
+      AppAlert.show('Error', err?.response?.data?.message || 'Failed to submit complaint.');
     } finally {
       setSubmitting(false);
     }

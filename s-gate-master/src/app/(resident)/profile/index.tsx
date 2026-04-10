@@ -2,70 +2,132 @@ import React, { useCallback, useState } from 'react';
 import {
     Alert,
     Modal,
+    Platform,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
     Text,
     TextInput,
+    ToastAndroid,
     TouchableOpacity,
     View,
-    Image,
-    StyleSheet
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Ionicons, Feather } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
-import { useAuthStore } from '../../../store/useAuthStore';
-import * as profileService from '../../../services/profile.service';
-import { MainLayout } from '../../../layouts/MainLayout';
 import * as Haptics from 'expo-haptics';
+import * as Linking from 'expo-linking';
+import { Share } from 'react-native';
 
-function getInitials(name: string): string {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 0 || !parts[0]) return '?';
-    if (parts.length === 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+import { SgateColors, SgateFonts, SgateRadius } from '../../../constants/Sgate-theme';
+import { useAuthStore } from '../../../store/useAuthStore';
+import { useProfileStore } from '../../../store/useProfileStore';
+import * as profileService from '../../../services/profile.service';
+
+// Components
+import { ProfileHeader } from './_components/ProfileHeader';
+import { ProfileCompletion, calcCompletion } from './_components/ProfileCompletion';
+import { HouseholdGrid } from './_components/HouseholdGrid';
+import { AddressCard } from './_components/AddressCard';
+import { SettingRow } from './_components/SettingRow';
+import { ProfileHeaderSkeleton, SectionSkeleton } from './_components/SectionSkeleton';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function showToast(message: string) {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (Platform.OS === 'android') {
+        ToastAndroid.show(message, ToastAndroid.SHORT);
+    }
 }
 
-export default function ProfileScreen() {
+function safePush(router: any, route: string) {
+    try {
+        router.push(route as any);
+    } catch {
+        Alert.alert('Navigation Error', 'This screen is not available yet.');
+    }
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
+export default function SettingsScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { user, logout } = useAuthStore();
 
-    const [profile, setProfile] = useState<any>(null);
-    const [familyCount, setFamilyCount] = useState(0);
-
-    // Stats
-    const [stats, setStats] = useState({ visitors: 0, deliveries: 0, alerts: 0 });
+    // Store
+    const {
+        profile,
+        familyMembers,
+        staffList,
+        vehicles,
+        loading,
+        errors,
+        fetchAll,
+        fetchSection,
+    } = useProfileStore();
 
     // Edit modal
     const [editModal, setEditModal] = useState(false);
     const [editData, setEditData] = useState({ name: '', email: '' });
     const [saving, setSaving] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
+    // ── Data loading ──────────────────────────────────────────────────────
     useFocusEffect(
         useCallback(() => {
-            let cancelled = false;
-            (async () => {
-                const [profileRes, familyRes] = await Promise.allSettled([
-                    profileService.getProfile(),
-                    profileService.getFamilyMembers(),
-                ]);
-                if (cancelled) return;
-                if (profileRes.status === 'fulfilled') setProfile(profileRes.value);
-                if (familyRes.status === 'fulfilled')
-                    setFamilyCount(familyRes.value.length);
-            })();
-            return () => {
-                cancelled = true;
-            };
-        }, []),
+            fetchAll(); // respects stale check
+        }, [fetchAll]),
     );
 
-    const displayUser = profile ?? user ?? ({} as any);
-    const flatInfo = displayUser.flat?.number
-        ? `${displayUser.flat.block?.name ?? ''}${displayUser.flat.block?.name ? '-' : ''}${displayUser.flat.number}${displayUser.society?.name ? ', ' + displayUser.society.name : ''}`
-        : displayUser.society?.name ?? 'No flat assigned';
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchAll(true); // force refresh
+        setRefreshing(false);
+    }, [fetchAll]);
 
+    // ── Derived data ──────────────────────────────────────────────────────
+    const displayUser = profile ?? user ?? ({} as any);
+    const completionPct = calcCompletion(displayUser, {
+        familyCount: familyMembers.length,
+        vehicleCount: vehicles.length,
+    });
+
+    const flatInfo = displayUser.flat?.number
+        ? `${displayUser.flat.block?.name ?? ''} ${displayUser.flat.number}`.trim()
+        : null;
+
+    const firstStaffName = staffList.length > 0 ? staffList[0].name : null;
+
+    // ── Edit profile ──────────────────────────────────────────────────────
+    const openEditModal = () => {
+        setEditData({
+            name: displayUser.name ?? '',
+            email: displayUser.email ?? '',
+        });
+        setEditModal(true);
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            await profileService.updateProfile({
+                name: editData.name.trim() || undefined,
+                email: editData.email.trim() || undefined,
+            });
+            useProfileStore.getState().invalidate();
+            await fetchAll(true);
+            setEditModal(false);
+            showToast('Profile updated');
+        } catch (err: any) {
+            Alert.alert('Error', err?.response?.data?.message ?? 'Failed to update profile');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // ── Logout ────────────────────────────────────────────────────────────
     const handleLogout = () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -74,127 +136,196 @@ export default function ProfileScreen() {
         ]);
     };
 
-    const handleSave = async () => {
-        setSaving(true);
-        try {
-            const updated = await profileService.updateProfile({
-                name: editData.name.trim() || undefined,
-                email: editData.email.trim() || undefined,
-            });
-            setProfile(updated);
-            setEditModal(false);
-        } catch (err: any) {
-            Alert.alert(
-                'Error',
-                err?.response?.data?.message ?? 'Failed to update profile',
-            );
-        } finally {
-            setSaving(false);
+    // ── Navigation ────────────────────────────────────────────────────────
+    const handleNavigate = (target: 'family' | 'staff' | 'vehicles' | 'pets') => {
+        switch (target) {
+            case 'family':   safePush(router, '/(resident)/family'); break;
+            case 'staff':    safePush(router, '/(resident)/staff'); break;
+            case 'vehicles': safePush(router, '/(resident)/vehicles'); break;
+            case 'pets':
+                Alert.alert('Coming Soon', 'Pets management will be available in a future update.');
+                break;
         }
     };
 
+    const handleRetry = (section: 'family' | 'staff' | 'vehicles') => {
+        fetchSection(section);
+    };
+
+    const handleShareApp = async () => {
+        try {
+            await Share.share({
+                message: 'Check out S-Gate — the smart society management app! Download now.',
+            });
+        } catch { /* cancelled */ }
+    };
+
+    // ── Skeleton while first load ─────────────────────────────────────────
+    const isFirstLoad = loading && !profile && !user;
+
     return (
-        <View style={{ flex: 1, backgroundColor: '#F4F5F7' }}>
-            <MainLayout
-                headerProps={{
-                    variant: 'rapido',
-                    title: 'Profile'
-                }}
-                backgroundColor="#F4F5F7"
+        <View style={styles.root}>
+            {/* ── Header Bar ──────────────────────────────────────────── */}
+            <View style={[styles.headerBar, { paddingTop: insets.top + 14 }]}>
+                <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                </TouchableOpacity>
+                <Text style={styles.headerBarTitle}>Profile</Text>
+                <TouchableOpacity hitSlop={8}>
+                    <Feather name="help-circle" size={22} color={SgateColors.t2} />
+                </TouchableOpacity>
+            </View>
+
+            {/* ── Content ─────────────────────────────────────────────── */}
+            <ScrollView
+                style={styles.scroll}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={SgateColors.gold}
+                        colors={[SgateColors.gold]}
+                    />
+                }
             >
-                <View className="px-4 pt-6 pb-10">
-                    {/* Main Avatar Card */}
-                    <View className="bg-white rounded-[32px] p-6 items-center shadow-sm mb-6" style={{ shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 15, elevation: 3 }}>
-                        <View className="relative mb-4">
-                            <View className="w-[100px] h-[100px] rounded-full border-[3px] border-[#F9C900] bg-gray-100 items-center justify-center">
-                                <Text className="text-[32px] font-bold text-black">{getInitials(displayUser.name ?? 'U')}</Text>
-                                {/* Uncomment if avatar images are available
-                                <Image source={{ uri: 'https://i.pravatar.cc/150?img=47' }} className="w-full h-full rounded-full absolute" />
-                                */}
-                            </View>
-                            <TouchableOpacity 
-                                className="absolute bottom-0 right-0 w-8 h-8 bg-black rounded-full items-center justify-center border-2 border-white"
-                                onPress={() => {
-                                    setEditData({
-                                        name: displayUser.name ?? '',
-                                        email: displayUser.email ?? '',
-                                    });
-                                    setEditModal(true);
-                                }}
-                            >
-                                <Ionicons name="pencil" size={14} color="#F9C900" />
-                            </TouchableOpacity>
-                        </View>
+                {/* ── Profile Header ──────────────────────────────────── */}
+                {isFirstLoad ? (
+                    <ProfileHeaderSkeleton />
+                ) : (
+                    <ProfileHeader user={displayUser} onEditPress={openEditModal} />
+                )}
 
-                        <Text className="text-[26px] font-bold text-[#1A1A1A] mb-1">{displayUser.name ?? 'Resident'}</Text>
-                        <Text className="text-[14px] font-medium text-[#6B7280] mb-4 text-center px-4">{flatInfo}</Text>
+                {/* ── Profile Completion ──────────────────────────────── */}
+                {!isFirstLoad && (
+                    <ProfileCompletion percentage={completionPct} onViewProfile={openEditModal} />
+                )}
 
-                        <View className="bg-[#FFF8D6] px-4 py-2 rounded-full flex-row items-center">
-                            <Ionicons name="checkmark-circle" size={16} color="#000" className="mr-1.5" />
-                            <Text className="ml-1.5 text-black text-[12px] font-bold tracking-wider">PREMIUM RESIDENT</Text>
-                        </View>
+                {/* ── Divider ─────────────────────────────────────────── */}
+                <View style={styles.divider} />
+
+                {/* ── Household ───────────────────────────────────────── */}
+                {isFirstLoad ? (
+                    <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+                        <SectionSkeleton hasGrid />
                     </View>
+                ) : (
+                    <HouseholdGrid
+                        familyCount={familyMembers.length}
+                        firstStaffName={firstStaffName}
+                        vehicleCount={vehicles.length}
+                        errors={errors}
+                        onNavigate={handleNavigate}
+                        onRetry={handleRetry}
+                    />
+                )}
 
-                    {/* Stats Row */}
-                    <View className="flex-row justify-between mb-8">
-                        <StatBox value={stats.visitors.toString().padStart(2, '0')} label="VISITORS" color="#1A1A1A" />
-                        <StatBox value={stats.deliveries.toString().padStart(2, '0')} label="DELIVERIES" color="#1A1A1A" />
-                        <StatBox value={stats.alerts.toString().padStart(2, '0')} label="ALERTS" color="#E11D48" />
-                    </View>
+                {/* ── Address Card ────────────────────────────────────── */}
+                <AddressCard
+                    flatNumber={displayUser.flat?.number}
+                    blockName={displayUser.flat?.block?.name}
+                    societyName={displayUser.society?.name}
+                    societyAddress={displayUser.society?.address}
+                />
 
-                    {/* Preferences Section */}
-                    <Text className="text-[12px] font-bold text-[#9CA3AF] tracking-widest mb-4 ml-2 mt-2">PREFERENCES</Text>
+                {/* ── Divider ─────────────────────────────────────────── */}
+                <View style={styles.divider} />
 
-                    <PreferenceItem
-                        icon="person-outline"
-                        title="Account Info"
-                        subtitle="Personal details and info"
-                        onPress={() => {
-                            setEditData({
-                                name: displayUser.name ?? '',
-                                email: displayUser.email ?? '',
-                            });
-                            setEditModal(true);
-                        }}
-                    />
-                    <PreferenceItem
-                        icon="shield-checkmark-outline"
-                        title="Security Settings"
-                        subtitle="Passwords and biometrics"
-                        onPress={() => {}}
-                    />
-                    <PreferenceItem
-                        icon="notifications-outline"
-                        title="Notifications"
-                        subtitle="Alerts & push settings"
-                        onPress={() => router.push('/(resident)/notifications' as any)}
-                    />
-                    <PreferenceItem
-                        icon="people-outline"
-                        title="Family Members"
-                        subtitle={`${familyCount} member${familyCount !== 1 ? 's' : ''}`}
-                        onPress={() => router.push('/(resident)/family' as any)}
-                    />
-                    <PreferenceItem
-                        icon="time-outline"
-                        title="Activity History"
-                        subtitle="Visitor & entry log"
-                        onPress={() => router.push('/(resident)/visitors' as any)}
-                    />
-                    <PreferenceItem
-                        icon="log-out-outline"
-                        title="Sign Out"
-                        subtitle="Logout from device"
-                        onPress={handleLogout}
-                        iconColor="#E11D48"
-                        textColor="#E11D48"
-                        bgColor="#FFE4E6"
-                    />
+                {/* ── Security & Notifications ────────────────────────── */}
+                <Text style={styles.sectionTitle}>Security & Notifications</Text>
 
+                <View style={styles.notifBanner}>
+                    <Text style={styles.notifBannerText}>Not Getting Notifications ?</Text>
+                    <TouchableOpacity
+                        style={styles.notifBannerBtn}
+                        activeOpacity={0.7}
+                        onPress={() => safePush(router, '/(resident)/notifications')}
+                    >
+                        <Text style={styles.notifBannerBtnText}>Test Now</Text>
+                        <Feather name="chevron-right" size={14} color={SgateColors.t1} />
+                    </TouchableOpacity>
                 </View>
-            </MainLayout>
 
-            {/* Edit Profile Modal */}
+                <View style={styles.card}>
+                    <SettingRow
+                        icon="bell"
+                        title="Notification Preferences"
+                        onPress={() => safePush(router, '/(resident)/notifications')}
+                    />
+                    <SettingRow
+                        icon="shield"
+                        title="Security Alert List"
+                        showDivider={false}
+                        onPress={() => safePush(router, '/(resident)/visitors')}
+                    />
+                </View>
+
+                {/* ── Divider ─────────────────────────────────────────── */}
+                <View style={styles.divider} />
+
+                {/* ── Manage Flats ────────────────────────────────────── */}
+                <Text style={styles.sectionTitle}>Manage Flats</Text>
+                <View style={styles.card}>
+                    <SettingRow
+                        icon="home"
+                        title={flatInfo ?? 'No flat assigned'}
+                        subtitle={displayUser.society?.name}
+                        badge={flatInfo ? { label: 'Active', color: SgateColors.green, bg: SgateColors.greenBg } : undefined}
+                        showChevron={false}
+                    />
+                    <SettingRow
+                        icon="plus-circle"
+                        title="Add Flat/Villa/Office"
+                        showDivider={false}
+                        showChevron={false}
+                        onPress={() => Alert.alert('Coming Soon', 'Multi-flat management will be available soon.')}
+                    />
+                </View>
+
+                {/* ── Divider ─────────────────────────────────────────── */}
+                <View style={styles.divider} />
+
+                {/* ── General Settings ────────────────────────────────── */}
+                <Text style={styles.sectionTitle}>General Settings</Text>
+                <View style={styles.card}>
+                    <SettingRow
+                        icon="help-circle"
+                        title="Support & Feedback"
+                        onPress={() => Linking.openURL('mailto:support@sgate.app')}
+                    />
+                    <SettingRow
+                        icon="share-2"
+                        title="Tell a friend about S-Gate"
+                        onPress={handleShareApp}
+                    />
+                    <SettingRow
+                        icon="user"
+                        title="Account Information"
+                        onPress={openEditModal}
+                    />
+                    <SettingRow
+                        icon="log-out"
+                        title="Logout"
+                        danger
+                        showDivider={false}
+                        onPress={handleLogout}
+                    />
+                </View>
+
+                {/* ── Footer ──────────────────────────────────────────── */}
+                <View style={styles.footer}>
+                    <Text style={styles.footerBrand}>s-gate</Text>
+                    <View style={styles.footerLinks}>
+                        <Text style={styles.footerLink}>Terms & Conditions</Text>
+                        <Text style={styles.footerSep}> | </Text>
+                        <Text style={styles.footerLink}>Privacy Policy</Text>
+                    </View>
+                    <Text style={styles.footerVersion}>Version 1.0.0</Text>
+                </View>
+            </ScrollView>
+
+            {/* ── Edit Profile Modal ──────────────────────────────────── */}
             <Modal
                 visible={editModal}
                 transparent
@@ -246,40 +377,130 @@ export default function ProfileScreen() {
     );
 }
 
-// Inline Components
-function StatBox({ value, label, color }: { value: string, label: string, color: string }) {
-    return (
-        <View
-            className="bg-white flex-1 mx-1.5 rounded-[24px] py-6 px-1 items-center justify-center shadow-sm"
-            style={{ shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 10, elevation: 1 }}
-        >
-            <Text className="text-[32px] font-bold mb-1" style={{ color }}>{value}</Text>
-            <Text className="text-[11px] font-bold text-[#6B7280] tracking-wider text-center" numberOfLines={1}>{label}</Text>
-        </View>
-    );
-}
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
-function PreferenceItem({ icon, title, subtitle, onPress, iconColor = "#1A1A1A", textColor = "#1A1A1A", bgColor = "#FFF8D6" }: any) {
-    return (
-        <TouchableOpacity 
-            className="bg-white flex-row items-center p-5 rounded-[24px] mb-3 shadow-sm active:bg-gray-50" 
-            style={{ shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 10, elevation: 1 }}
-            onPress={onPress}
-        >
-            <View className="w-12 h-12 rounded-full items-center justify-center mr-4" style={{ backgroundColor: bgColor }}>
-                <Ionicons name={icon} size={22} color={iconColor} />
-            </View>
-            <View className="flex-1 justify-center">
-                <Text className="text-[16px] font-bold mb-0.5" style={{ color: textColor }}>{title}</Text>
-                <Text className="text-[13px] text-[#6B7280]">{subtitle}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-        </TouchableOpacity>
-    );
-}
-
-// Modal Styles
 const styles = StyleSheet.create({
+    root: {
+        flex: 1,
+        backgroundColor: SgateColors.bg,
+    },
+
+    // Header bar
+    headerBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingBottom: 14,
+        backgroundColor: SgateColors.card,
+        borderBottomWidth: 1,
+        borderBottomColor: SgateColors.borderSoft,
+    },
+    headerBarTitle: {
+        fontSize: 18,
+        fontFamily: SgateFonts.extrabold,
+        color: SgateColors.t1,
+    },
+
+    // Scroll
+    scroll: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingBottom: 40,
+    },
+
+    // Dividers
+    divider: {
+        height: 8,
+        backgroundColor: SgateColors.bg,
+    },
+
+    // Section titles
+    sectionTitle: {
+        fontSize: 13,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t3,
+        paddingHorizontal: 20,
+        paddingTop: 16,
+        paddingBottom: 8,
+    },
+
+    // Card wrapper for grouped rows
+    card: {
+        backgroundColor: SgateColors.card,
+        marginHorizontal: 16,
+        borderRadius: SgateRadius.sm,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+        overflow: 'hidden',
+    },
+
+    // Notification banner
+    notifBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginHorizontal: 16,
+        marginBottom: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        backgroundColor: '#F0EDE6',
+        borderRadius: SgateRadius.sm,
+    },
+    notifBannerText: {
+        fontSize: 13,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t1,
+        flex: 1,
+    },
+    notifBannerBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    notifBannerBtnText: {
+        fontSize: 13,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        marginRight: 2,
+    },
+
+    // Footer
+    footer: {
+        alignItems: 'center',
+        paddingVertical: 32,
+        paddingHorizontal: 20,
+    },
+    footerBrand: {
+        fontSize: 22,
+        fontFamily: SgateFonts.extrabold,
+        color: SgateColors.t1,
+        marginBottom: 8,
+        letterSpacing: -0.5,
+    },
+    footerLinks: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    footerLink: {
+        fontSize: 13,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.blue,
+        textDecorationLine: 'underline',
+    },
+    footerSep: {
+        fontSize: 13,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+    },
+    footerVersion: {
+        fontSize: 12,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+    },
+
+    // Modal
     modalOverlay: {
         flex: 1,
         justifyContent: 'flex-end',
@@ -332,7 +553,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     saveBtn: {
-        backgroundColor: '#F9C900',
+        backgroundColor: SgateColors.gold,
         borderRadius: 14,
         paddingVertical: 16,
         alignItems: 'center',
@@ -344,6 +565,6 @@ const styles = StyleSheet.create({
     saveBtnText: {
         fontSize: 16,
         fontFamily: SgateFonts.bold,
-        color: '#000',
+        color: SgateColors.black,
     },
 });
