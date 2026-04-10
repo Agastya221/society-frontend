@@ -101,6 +101,7 @@ function ResidentLayoutInner() {
 
       <Tabs
         tabBar={(props) => <SgateTabBar {...props} />}
+        backBehavior="history"
         screenOptions={{
           headerShown: false,
           animation: 'fade',

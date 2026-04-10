@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../../../components/ui/Card';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
@@ -19,6 +19,7 @@ const ROLES = ['SPOUSE', 'CHILD', 'PARENT', 'SIBLING', 'OTHER'];
 
 export default function FamilyScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [family, setFamily] = useState<FamilyMember[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -97,41 +98,38 @@ export default function FamilyScreen() {
     };
 
     const renderItem = ({ item }: { item: FamilyMember }) => (
-        <Card className="mb-3 p-4 flex-row items-center gap-4">
-             <View className="h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 items-center justify-center">
-                 <Text className="text-xl font-bold text-indigo-600 dark:text-indigo-400">{item.name[0]}</Text>
+        <View className="mb-3 p-4 flex-row items-center gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm" style={{ shadowOpacity: 0.02, shadowRadius: 8 }}>
+             <View className="h-12 w-12 rounded-full bg-indigo-100  items-center justify-center">
+                 <Text className="text-xl font-bold text-indigo-600 ">{item.name[0]}</Text>
             </View>
             <View className="flex-1">
                 <View className="flex-row items-center gap-2">
-                    <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{item.name}</Text>
+                    <Text className="text-lg font-bold text-gray-900 ">{item.name}</Text>
                     {item.isActive && (
-                        <View className="bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded flex-row items-center gap-1 border border-emerald-200">
+                        <View className="bg-emerald-100  px-1.5 py-0.5 rounded flex-row items-center gap-1 border border-emerald-200">
                             <View className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <Text className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase">Active</Text>
+                            <Text className="text-[10px] font-bold text-emerald-700  uppercase">Active</Text>
                         </View>
                     )}
                 </View>
-                <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold capitalize mt-0.5">{item.role.toLowerCase()}</Text>
+                <Text className="text-gray-500  text-xs font-semibold capitalize mt-0.5">{item.role ? item.role.toLowerCase() : 'Family Member'}</Text>
                 {item.phone ? (
                     <Text className="text-gray-400 text-xs mt-1 font-medium tracking-wider">{item.phone}</Text>
                 )  : null}
             </View>
-            <TouchableOpacity className="p-2">
-                <Ionicons name="settings-outline" size={20} color="#9ca3af" />
-            </TouchableOpacity>
-        </Card>
+        </View>
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-black" edges={['top']}>
-            <View className="px-5 py-4 flex-row items-center justify-between bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800">
+        <View className="flex-1 bg-gray-50 ">
+            <View style={{ paddingTop: insets.top + 12, paddingBottom: 16 }} className="px-5 flex-row items-center justify-between bg-white  border-b border-gray-100 ">
                 <View className="flex-row items-center gap-3">
-                    <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800">
-                        <Ionicons name="arrow-back" size={24} className="text-gray-700 dark:text-gray-300" />
+                    <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 ">
+                        <Ionicons name="arrow-back" size={24} className="text-gray-700 " />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">My Family</Text>
+                    <Text className="text-xl font-bold text-gray-900 ">My Family</Text>
                 </View>
-                <TouchableOpacity onPress={() => setInviteModalVisible(true)} className="bg-indigo-600 h-9 w-9 rounded-full items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-none bg-indigo-600 active:bg-indigo-700">
+                <TouchableOpacity onPress={() => setInviteModalVisible(true)} className="bg-indigo-600 h-9 w-9 rounded-full items-center justify-center shadow-lg shadow-indigo-200  bg-indigo-600 active:bg-indigo-700">
                     <Ionicons name="person-add" size={18} color="white" />
                 </TouchableOpacity>
             </View>
@@ -156,12 +154,12 @@ export default function FamilyScreen() {
                     }
                     ListFooterComponent={
                         family.length > 0 ? (
-                            <View className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-500/30">
+                            <View className="mt-4 p-4 bg-indigo-50  rounded-xl border border-indigo-100 ">
                                 <View className="flex-row gap-3 mb-2">
-                                    <Ionicons name="information-circle" size={24} className="text-indigo-600 dark:text-indigo-400" />
-                                    <Text className="font-bold text-indigo-900 dark:text-indigo-200 flex-1">Did you know?</Text>
+                                    <Ionicons name="information-circle" size={24} className="text-indigo-600 " />
+                                    <Text className="font-bold text-indigo-900  flex-1">Did you know?</Text>
                                 </View>
-                                <Text className="text-indigo-800 dark:text-indigo-300 text-sm leading-5">
+                                <Text className="text-indigo-800  text-sm leading-5">
                                     Family members can approve gate entries and get notifications. Add them by tapping the + button above.
                                 </Text>
                             </View>
@@ -241,6 +239,6 @@ export default function FamilyScreen() {
                     </View>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }

@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -136,6 +136,7 @@ function VehicleCard({ vehicle, index, onDelete }: { vehicle: Vehicle; index: nu
 
 export default function MyVehiclesScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading]   = useState(true);
 
@@ -165,8 +166,8 @@ export default function MyVehiclesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.header}>
+    <View style={styles.safeArea}>
+      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Feather name="arrow-left" size={22} color={SgateColors.t1} />
         </TouchableOpacity>
@@ -200,7 +201,7 @@ export default function MyVehiclesScreen() {
           )}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -2,8 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Image, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card } from '../../../components/ui/Card';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../../services/api';
 
 interface StaffMember {
@@ -20,6 +19,7 @@ interface StaffMember {
 
 export default function StaffScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [staff, setStaff] = useState<StaffMember[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -53,8 +53,8 @@ export default function StaffScreen() {
 
     const renderItem = ({ item }: { item: StaffMember }) => {
         return (
-            <Card className="mb-4 p-4 flex-row items-center gap-4">
-                 <View className="h-14 w-14 rounded-full bg-gray-100 dark:bg-zinc-800 items-center justify-center overflow-hidden border border-gray-200">
+            <View className="mb-4 p-4 flex-row items-center gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm" style={{ shadowOpacity: 0.02, shadowRadius: 8 }}>
+                 <View className="h-14 w-14 rounded-full bg-gray-100  items-center justify-center overflow-hidden border border-gray-200">
                     {item.photoUrl ? (
                         <Image source={{ uri: item.photoUrl }} className="h-full w-full" />
                     ) : (
@@ -63,12 +63,12 @@ export default function StaffScreen() {
                 </View>
                 <View className="flex-1">
                     <View className="flex-row items-center gap-2 mb-1">
-                        <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">{item.name}</Text>
+                        <Text className="text-lg font-bold text-gray-900 ">{item.name}</Text>
                         {item.isVerified && <Ionicons name="checkmark-circle" size={16} color="#3b82f6" />}
                     </View>
 
                     <View className="flex-row items-center gap-2">
-                        <Text className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                        <Text className="text-gray-500  text-xs font-semibold uppercase tracking-wider">
                             {formatStaffType(item.staffType)}
                         </Text>
                         {item.overallRating ? (
@@ -86,24 +86,24 @@ export default function StaffScreen() {
                     )}
                 </View>
                 
-                <View className="items-center justify-center bg-gray-50 dark:bg-zinc-900 px-3 py-1.5 rounded-full border border-gray-200 dark:border-zinc-800 flex-row gap-1.5">
+                <View className="items-center justify-center bg-gray-50  px-3 py-1.5 rounded-full border border-gray-200  flex-row gap-1.5">
                     <View className={`w-2 h-2 rounded-full ${item.status === 'INSIDE' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                    <Text className={`text-xs font-bold ${item.status === 'INSIDE' ? 'text-green-700 dark:text-green-500' : 'text-gray-500'}`}>
+                    <Text className={`text-xs font-bold ${item.status === 'INSIDE' ? 'text-green-700 ' : 'text-gray-500'}`}>
                         {item.status}
                     </Text>
                 </View>
 
-            </Card>
+            </View>
         );
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-black" edges={['top']}>
-            <View className="px-5 py-4 flex-row items-center gap-3 bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800">
-                <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800">
-                    <Ionicons name="arrow-back" size={24} className="text-gray-700 dark:text-gray-300" />
+        <View className="flex-1 bg-gray-50 ">
+            <View style={{ paddingTop: insets.top + 12, paddingBottom: 16 }} className="px-5 flex-row items-center gap-3 bg-white  border-b border-gray-100 ">
+                <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 ">
+                    <Ionicons name="arrow-back" size={24} className="text-gray-700 " />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">My House Help</Text>
+                <Text className="text-xl font-bold text-gray-900 ">My House Help</Text>
             </View>
 
             {loading ? (
@@ -126,6 +126,6 @@ export default function StaffScreen() {
                     }
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 }
