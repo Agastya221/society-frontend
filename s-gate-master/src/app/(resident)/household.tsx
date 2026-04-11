@@ -86,11 +86,11 @@ const VEHICLE_STATUS: Record<string, { bg: string; text: string; label: string }
 
 function SectionHeader({ title, onAdd }: { title: string; onAdd?: () => void }) {
     return (
-        <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-[17px] font-bold text-gray-900">{title}</Text>
+        <View className="flex-row items-center justify-between mb-4">
+            <Text className="text-[17px] font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>{title}</Text>
             {onAdd && (
-                <TouchableOpacity onPress={onAdd} activeOpacity={0.7}>
-                    <Text className="text-[13px] font-semibold text-yellow-600">+ Add</Text>
+                <TouchableOpacity onPress={onAdd} activeOpacity={0.7} className="flex-row items-center">
+                    <Text className="text-[13px] font-bold text-yellow-600" style={{ fontFamily: 'Sora-Bold' }}>+ Add</Text>
                 </TouchableOpacity>
             )}
         </View>
@@ -102,14 +102,21 @@ function SectionHeader({ title, onAdd }: { title: string; onAdd?: () => void }) 
 function EmptyCard({ icon, label, onAdd }: { icon: React.ReactNode; label: string; onAdd: () => void }) {
     return (
         <TouchableOpacity
-            className="flex-row items-center bg-white rounded-2xl border border-dashed border-gray-200 px-4 py-5"
+            className="w-36 aspect-square bg-transparent rounded-[24px]"
+            style={{
+                borderWidth: 1.5,
+                borderColor: '#E5E7EB',
+                borderStyle: 'dashed',
+                alignItems: 'center',
+                justifyContent: 'center',
+            }}
             onPress={onAdd}
-            activeOpacity={0.7}
+            activeOpacity={0.6}
         >
-            <View className="w-14 h-14 rounded-xl bg-gray-50 border border-dashed border-gray-200 items-center justify-center mr-4">
-                {icon}
+            <View className="w-10 h-10 rounded-full border-2 border-yellow-600 items-center justify-center">
+                <Ionicons name="add" size={24} color="#ca8a04" />
             </View>
-            <Text className="text-[14px] font-semibold text-yellow-600">{label}</Text>
+            {/* label is optional in some contexts but we focus on the + button in the square for 'Add' */}
         </TouchableOpacity>
     );
 }
@@ -252,7 +259,7 @@ export default function HouseholdScreen() {
                     <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
                         <Ionicons name="arrow-back" size={24} color="#374151" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold text-gray-900">Household</Text>
+                    <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Household</Text>
                 </View>
             </View>
 
@@ -263,73 +270,66 @@ export default function HouseholdScreen() {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ca8a04" colors={['#ca8a04']} />}
             >
                 {/* ── Me Card ──────────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(0).springify()} className="bg-white rounded-2xl border border-gray-100 p-4 mb-6 shadow-sm">
-                    <View className="flex-row items-center mb-3">
+                <Animated.View entering={FadeInDown.delay(0).springify()} className="bg-white rounded-[24px] border border-gray-100 overflow-hidden mb-6 shadow-sm">
+                    <View className="flex-row items-center p-4 py-5">
                         <View className="w-14 h-14 rounded-full bg-gray-200 items-center justify-center mr-4">
                             <Ionicons name="person" size={28} color="#9ca3af" />
                         </View>
-                        <View>
-                            <Text className="text-[16px] font-bold text-gray-900">{displayUser?.name ?? 'Resident'} (Me)</Text>
+                        <View className="flex-1">
+                            <Text className="text-[16px] font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>{displayUser?.name ?? 'Resident'} (Me)</Text>
                             <View className="bg-blue-100 rounded-full px-3 py-0.5 mt-1 self-start">
-                                <Text className="text-[12px] font-semibold text-blue-700">{gateId}</Text>
+                                <Text className="text-[11px] font-bold text-blue-700">{gateId}</Text>
                             </View>
                         </View>
                     </View>
                     <TouchableOpacity
-                        className="flex-row items-center border-t border-gray-100 pt-3"
+                        className="flex-row items-center border-t border-gray-100 p-4 py-3"
                         onPress={() => Share.share({ message: fullAddress })}
                         activeOpacity={0.7}
                     >
-                        <Ionicons name="navigate" size={16} color="#6b7280" />
-                        <Text className="text-[14px] font-medium text-gray-600 ml-2">Share My Address</Text>
+                        <View className="w-7 h-7 rounded-full bg-gray-100 items-center justify-center mr-3">
+                            <Ionicons name="navigate-outline" size={14} color="#6b7280" />
+                        </View>
+                        <Text className="text-[14px] font-semibold text-gray-600" style={{ fontFamily: 'Sora-SemiBold' }}>Share My Address</Text>
                     </TouchableOpacity>
                 </Animated.View>
 
                 {/* ── My Family ────────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(60).springify()} className="mb-6">
+                <Animated.View entering={FadeInDown.delay(60).springify()} className="mb-8">
                     <SectionHeader title="My Family" onAdd={openInvite} />
-                    {family.length === 0 ? (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                        {family.map((member) => (
+                            <TouchableOpacity
+                                key={member.id}
+                                className="bg-white rounded-[24px] border border-gray-100 w-36 overflow-hidden shadow-sm"
+                                onPress={() => router.push('/(resident)/family' as any)}
+                                activeOpacity={0.8}
+                            >
+                                <View className="items-center pt-5 pb-3 px-3">
+                                    <View className="w-14 h-14 rounded-full bg-yellow-100 items-center justify-center mb-3">
+                                        <Text className="text-2xl font-bold text-yellow-700" style={{ fontFamily: 'Sora-Bold' }}>{member.name[0]}</Text>
+                                    </View>
+                                    <Text className="text-[13px] font-bold text-gray-900 text-center mb-1" numberOfLines={1} style={{ fontFamily: 'Sora-Bold' }}>{member.name}</Text>
+                                    <View className="bg-blue-100 rounded-full px-2 py-0.5">
+                                        <Text className="text-[10px] font-bold text-blue-700">{formatGateId(member.id)}</Text>
+                                    </View>
+                                </View>
+                                <View className="border-t border-gray-100 py-3 items-center">
+                                    <Ionicons name="call-outline" size={18} color="#10b981" />
+                                </View>
+                            </TouchableOpacity>
+                        ))}
                         <EmptyCard
                             icon={<Ionicons name="people-outline" size={28} color="#9ca3af" />}
                             label="+ Add Family Member"
                             onAdd={openInvite}
                         />
-                    ) : (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-                            {family.map((member) => (
-                                <TouchableOpacity
-                                    key={member.id}
-                                    className="bg-white rounded-2xl border border-gray-100 p-4 items-center w-36 shadow-sm"
-                                    onPress={() => router.push('/(resident)/family' as any)}
-                                    activeOpacity={0.8}
-                                >
-                                    <View className="w-14 h-14 rounded-full bg-yellow-100 items-center justify-center mb-2">
-                                        <Text className="text-2xl font-bold text-yellow-700">{member.name[0]}</Text>
-                                    </View>
-                                    <Text className="text-[13px] font-semibold text-gray-900 text-center" numberOfLines={1}>{member.name}</Text>
-                                    <View className="bg-blue-100 rounded-full px-2 py-0.5 mt-1">
-                                        <Text className="text-[10px] font-semibold text-blue-700">{formatGateId(member.id)}</Text>
-                                    </View>
-                                    {member.phone ? (
-                                        <Feather name="phone" size={15} color="#10b981" style={{ marginTop: 6 }} />
-                                    ) : null}
-                                </TouchableOpacity>
-                            ))}
-                            {/* Add tile */}
-                            <TouchableOpacity
-                                className="bg-white rounded-2xl border border-dashed border-gray-200 w-36 items-center justify-center py-6 shadow-sm"
-                                onPress={openInvite}
-                                activeOpacity={0.7}
-                            >
-                                <Ionicons name="add-circle-outline" size={32} color="#ca8a04" />
-                            </TouchableOpacity>
-                        </ScrollView>
-                    )}
+                    </ScrollView>
                 </Animated.View>
 
                 {/* ── My Pets ──────────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(100).springify()} className="mb-6">
-                    <SectionHeader title="My Pets" />
+                <Animated.View entering={FadeInDown.delay(100).springify()} className="mb-8">
+                    <SectionHeader title="My Pets" onAdd={() => AppAlert.show('Coming Soon', 'Pet management will be available soon.')} />
                     <EmptyCard
                         icon={<MaterialCommunityIcons name="paw" size={28} color="#9ca3af" />}
                         label="+ Add Pet"
@@ -338,102 +338,87 @@ export default function HouseholdScreen() {
                 </Animated.View>
 
                 {/* ── My Daily Help ─────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(140).springify()} className="mb-6">
+                <Animated.View entering={FadeInDown.delay(140).springify()} className="mb-8">
                     <SectionHeader title="My Daily Help" onAdd={() => router.push('/(resident)/staff' as any)} />
-                    {staff.length === 0 ? (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                        {staff.map((member) => {
+                            const tc = STAFF_TYPE_COLORS[member.staffType] ?? STAFF_TYPE_COLORS.OTHER;
+                            return (
+                                <TouchableOpacity
+                                    key={member.id}
+                                    className="bg-white rounded-[24px] border border-gray-100 w-36 overflow-hidden shadow-sm"
+                                    onPress={() => router.push('/(resident)/staff' as any)}
+                                    activeOpacity={0.8}
+                                >
+                                    <View className="items-center pt-5 pb-3 px-3">
+                                        <Avatar name={member.name} size={56} />
+                                        <Text className="text-[13px] font-bold text-gray-900 text-center mt-3 mb-1" numberOfLines={1} style={{ fontFamily: 'Sora-Bold' }}>{member.name}</Text>
+                                        <View className={`rounded-full px-2 py-0.5 ${tc.bg}`}>
+                                            <Text className={`text-[9px] font-bold ${tc.text}`}>{formatStaffType(member.staffType).toUpperCase()}</Text>
+                                        </View>
+                                    </View>
+                                    <View className="border-t border-gray-100 py-3 px-3 flex-row justify-around items-center">
+                                        <Ionicons name="call-outline" size={16} color="#10b981" />
+                                        <Ionicons name="notifications-outline" size={16} color="#6b7280" />
+                                        <Ionicons name="star-outline" size={16} color="#ca8a04" />
+                                    </View>
+                                </TouchableOpacity>
+                            );
+                        })}
                         <EmptyCard
                             icon={<MaterialCommunityIcons name="briefcase-account" size={28} color="#9ca3af" />}
                             label="+ Add Daily Helper"
                             onAdd={() => router.push('/(resident)/staff' as any)}
                         />
-                    ) : (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-                            {staff.map((member) => {
-                                const tc = STAFF_TYPE_COLORS[member.staffType] ?? STAFF_TYPE_COLORS.OTHER;
-                                return (
-                                    <TouchableOpacity
-                                        key={member.id}
-                                        className="bg-white rounded-2xl border border-gray-100 p-4 items-center w-36 shadow-sm"
-                                        onPress={() => router.push('/(resident)/staff' as any)}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Avatar name={member.name} size={56} />
-                                        <Text className="text-[13px] font-semibold text-gray-900 text-center mt-2" numberOfLines={1}>{member.name}</Text>
-                                        <View className={`rounded-full px-2 py-0.5 mt-1 ${tc.bg}`}>
-                                            <Text className={`text-[10px] font-semibold ${tc.text}`}>{formatStaffType(member.staffType)}</Text>
-                                        </View>
-                                        <View className="flex-row mt-2 gap-3">
-                                            <Feather name="phone" size={16} color="#10b981" />
-                                            <Feather name="bell" size={16} color="#6b7280" />
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                            <TouchableOpacity
-                                className="bg-white rounded-2xl border border-dashed border-gray-200 w-36 items-center justify-center py-6 shadow-sm"
-                                onPress={() => router.push('/(resident)/staff' as any)}
-                                activeOpacity={0.7}
-                            >
-                                <Ionicons name="add-circle-outline" size={32} color="#ca8a04" />
-                            </TouchableOpacity>
-                        </ScrollView>
-                    )}
+                    </ScrollView>
                 </Animated.View>
 
                 {/* ── My Vehicles ──────────────────────────────────────── */}
-                <Animated.View entering={FadeInDown.delay(180).springify()} className="mb-6">
+                <Animated.View entering={FadeInDown.delay(180).springify()} className="mb-8">
                     <SectionHeader title="My Vehicles" onAdd={() => router.push('/(resident)/vehicles' as any)} />
-                    {vehicles.length === 0 ? (
-                        <EmptyCard
-                            icon={<MaterialCommunityIcons name="car-outline" size={28} color="#9ca3af" />}
-                            label="+ Add Vehicle"
-                            onAdd={() => router.push('/(resident)/vehicles' as any)}
-                        />
-                    ) : (
-                        <View className="gap-3">
-                            {vehicles.map((v) => {
-                                const sc = VEHICLE_STATUS[v.status] ?? VEHICLE_STATUS.PENDING;
-                                return (
-                                    <TouchableOpacity
-                                        key={v.id}
-                                        className="bg-white rounded-2xl border border-gray-100 p-4 flex-row items-center shadow-sm"
-                                        onPress={() => router.push('/(resident)/vehicles' as any)}
-                                        activeOpacity={0.8}
-                                    >
-                                        <View className="w-12 h-12 rounded-xl bg-blue-50 items-center justify-center mr-4">
-                                            <MaterialCommunityIcons
-                                                name={v.vehicleType.toUpperCase() === 'BIKE' ? 'motorbike' : 'car'}
-                                                size={26}
-                                                color="#3b82f6"
-                                            />
-                                        </View>
-                                        <View className="flex-1">
-                                            <Text className="text-[15px] font-bold text-gray-900">{v.vehicleNumber}</Text>
-                                            <Text className="text-xs text-gray-500 mt-0.5">{v.model}{v.color ? ` · ${v.color}` : ''}</Text>
-                                            {v.parkingSlot && (
-                                                <Text className="text-[11px] text-gray-400 mt-0.5">Slot {v.parkingSlot}</Text>
-                                            )}
-                                        </View>
-                                        <View className={`px-2.5 py-1 rounded-full ${sc.bg}`}>
-                                            <Text className={`text-[10px] font-bold uppercase ${sc.text}`}>{sc.label}</Text>
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                            <TouchableOpacity
-                                className="bg-white rounded-2xl border border-dashed border-gray-200 py-4 items-center"
-                                onPress={() => router.push('/(resident)/vehicles' as any)}
-                                activeOpacity={0.7}
-                            >
-                                <Text className="text-[13px] font-semibold text-yellow-600">+ Add Vehicle</Text>
-                            </TouchableOpacity>
+                    <View className="gap-3">
+                        {vehicles.map((v) => {
+                            const sc = VEHICLE_STATUS[v.status] ?? VEHICLE_STATUS.PENDING;
+                            return (
+                                <TouchableOpacity
+                                    key={v.id}
+                                    className="bg-white rounded-[20px] border border-gray-100 p-4 flex-row items-center shadow-sm"
+                                    onPress={() => router.push('/(resident)/vehicles' as any)}
+                                    activeOpacity={0.8}
+                                >
+                                    <View className="w-12 h-12 rounded-xl bg-blue-50 items-center justify-center mr-4">
+                                        <MaterialCommunityIcons
+                                            name={v.vehicleType.toUpperCase() === 'BIKE' ? 'motorbike' : 'car'}
+                                            size={26}
+                                            color="#3b82f6"
+                                        />
+                                    </View>
+                                    <View className="flex-1">
+                                        <Text className="text-[15px] font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>{v.vehicleNumber}</Text>
+                                        <Text className="text-xs text-gray-500 mt-0.5" style={{ fontFamily: 'Sora-Medium' }}>{v.model}{v.color ? ` · ${v.color}` : ''}</Text>
+                                        {v.parkingSlot && (
+                                            <Text className="text-[11px] text-gray-400 mt-0.5">Slot {v.parkingSlot}</Text>
+                                        )}
+                                    </View>
+                                    <View className={`px-2.5 py-1 rounded-full ${sc.bg}`}>
+                                        <Text className={`text-[10px] font-bold uppercase ${sc.text}`}>{sc.label}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            );
+                        })}
+                        <View className="flex-row gap-3">
+                            <EmptyCard
+                                icon={<MaterialCommunityIcons name="car-outline" size={28} color="#9ca3af" />}
+                                label="Add Vehicle"
+                                onAdd={() => router.push('/(resident)/vehicles' as any)}
+                            />
                         </View>
-                    )}
+                    </View>
                 </Animated.View>
 
                 {/* ── Frequent Guests ──────────────────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(220).springify()} className="mb-6">
-                    <SectionHeader title="Frequent Guests" />
+                    <SectionHeader title="Frequent Guests" onAdd={() => undefined} />
                     <EmptyCard
                         icon={<Ionicons name="person-add-outline" size={28} color="#9ca3af" />}
                         label="+ Add Guest"
