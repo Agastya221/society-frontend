@@ -13,7 +13,7 @@ import {
     View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
@@ -243,18 +243,18 @@ export default function SettingsScreen() {
                         onPress={() => safePush(router, '/(resident)/notifications')}
                     >
                         <Text style={styles.notifBannerBtnText}>Test Now</Text>
-                        <Feather name="chevron-right" size={14} color={SgateColors.t1} />
+                        <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t1} />
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.card}>
                     <SettingRow
-                        icon="bell"
+                        icon="bell-outline"
                         title="Notification Preferences"
                         onPress={() => safePush(router, '/(resident)/notifications')}
                     />
                     <SettingRow
-                        icon="shield"
+                        icon="shield-check-outline"
                         title="Security Alert List"
                         showDivider={false}
                         onPress={() => safePush(router, '/(resident)/visitors')}
@@ -268,14 +268,14 @@ export default function SettingsScreen() {
                 <Text style={styles.sectionTitle}>Manage Flats</Text>
                 <View style={styles.card}>
                     <SettingRow
-                        icon="home"
+                        icon="home-city-outline"
                         title={flatInfo ?? 'No flat assigned'}
                         subtitle={displayUser.society?.name}
                         badge={flatInfo ? { label: 'Active', color: SgateColors.green, bg: SgateColors.greenBg } : undefined}
                         showChevron={false}
                     />
                     <SettingRow
-                        icon="plus-circle"
+                        icon="plus-circle-outline"
                         title="Add Flat/Villa/Office"
                         showDivider={false}
                         showChevron={false}
@@ -290,22 +290,22 @@ export default function SettingsScreen() {
                 <Text style={styles.sectionTitle}>General Settings</Text>
                 <View style={styles.card}>
                     <SettingRow
-                        icon="help-circle"
+                        icon="lifebuoy"
                         title="Support & Feedback"
                         onPress={() => Linking.openURL('mailto:support@sgate.app')}
                     />
                     <SettingRow
-                        icon="share-2"
+                        icon="share-variant-outline"
                         title="Tell a friend about S-Gate"
                         onPress={handleShareApp}
                     />
                     <SettingRow
-                        icon="user"
+                        icon="account-outline"
                         title="Account Information"
                         onPress={openEditModal}
                     />
                     <SettingRow
-                        icon="log-out"
+                        icon="logout"
                         title="Logout"
                         danger
                         showDivider={false}
@@ -337,7 +337,7 @@ export default function SettingsScreen() {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Edit Profile</Text>
                             <TouchableOpacity onPress={() => setEditModal(false)} style={styles.modalClose} hitSlop={8}>
-                                <Feather name="x" size={20} color={SgateColors.t2} />
+                                <MaterialCommunityIcons name="close" size={22} color={SgateColors.t2} />
                             </TouchableOpacity>
                         </View>
 

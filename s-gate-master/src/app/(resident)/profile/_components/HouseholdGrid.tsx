@@ -1,6 +1,6 @@
 import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SgateColors, SgateFonts, SgateRadius } from '../../../../constants/Sgate-theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -23,7 +23,7 @@ interface HouseholdGridProps {
 interface TileProps {
     title: string;
     subtitle: string;
-    iconName: React.ComponentProps<typeof Feather>['name'];
+    iconName: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
     iconBg: string;
     iconColor: string;
     error: string | null;
@@ -40,7 +40,7 @@ function Tile({ title, subtitle, iconName, iconBg, iconColor, error, onPress, on
                     <Text style={styles.tileError}>Tap to retry</Text>
                 </View>
                 <View style={[styles.tileIcon, { backgroundColor: SgateColors.redBg }]}>
-                    <Feather name="refresh-cw" size={18} color={SgateColors.red} />
+                    <MaterialCommunityIcons name="refresh" size={18} color={SgateColors.red} />
                 </View>
             </TouchableOpacity>
         );
@@ -53,9 +53,9 @@ function Tile({ title, subtitle, iconName, iconBg, iconColor, error, onPress, on
                 <Text style={styles.tileSubtitle} numberOfLines={1}>{subtitle}</Text>
             </View>
             <View style={[styles.tileIcon, { backgroundColor: iconBg }]}>
-                <Feather name={iconName} size={18} color={iconColor} />
+                <MaterialCommunityIcons name={iconName} size={22} color={iconColor} />
                 <View style={styles.addBadge}>
-                    <Feather name="plus" size={10} color={SgateColors.card} />
+                    <MaterialCommunityIcons name="plus" size={12} color={SgateColors.card} />
                 </View>
             </View>
         </TouchableOpacity>
@@ -87,13 +87,13 @@ export function HouseholdGrid({
             {/* Section Header */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <Feather name="users" size={16} color={SgateColors.t2} />
+                    <MaterialCommunityIcons name="home-group" size={18} color={SgateColors.t2} />
                     <Text style={styles.headerTitle}>Household</Text>
                 </View>
                 <TouchableOpacity onPress={() => onNavigate('family')} activeOpacity={0.7}>
                     <View style={styles.manageBtn}>
                         <Text style={styles.manageText}>Manage</Text>
-                        <Feather name="chevron-right" size={14} color={SgateColors.t2} />
+                        <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t2} />
                     </View>
                 </TouchableOpacity>
             </View>
@@ -104,7 +104,7 @@ export function HouseholdGrid({
                     <Tile
                         title="Family"
                         subtitle={familySub}
-                        iconName="users"
+                        iconName="account-group"
                         iconBg={SgateColors.goldPale}
                         iconColor={SgateColors.goldDeep}
                         error={errors.family}
@@ -114,7 +114,7 @@ export function HouseholdGrid({
                     <Tile
                         title="Daily Help"
                         subtitle={staffSub}
-                        iconName="briefcase"
+                        iconName="briefcase-account"
                         iconBg={SgateColors.blueBg}
                         iconColor={SgateColors.blue}
                         error={errors.staff}
@@ -126,7 +126,7 @@ export function HouseholdGrid({
                     <Tile
                         title="Vehicles"
                         subtitle={vehicleSub}
-                        iconName="truck"
+                        iconName="car-multiple"
                         iconBg={SgateColors.greenBg}
                         iconColor={SgateColors.green}
                         error={errors.vehicles}
@@ -136,7 +136,7 @@ export function HouseholdGrid({
                     <Tile
                         title="Pets"
                         subtitle="+ Add"
-                        iconName="heart"
+                        iconName="paw"
                         iconBg="#FFF0E5"
                         iconColor="#F97316"
                         error={null}

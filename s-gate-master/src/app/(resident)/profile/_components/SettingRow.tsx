@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -12,7 +12,7 @@ interface Badge {
 }
 
 interface SettingRowProps {
-    icon: React.ComponentProps<typeof Feather>['name'];
+    icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
     title: string;
     subtitle?: string;
     badge?: Badge;
@@ -48,7 +48,7 @@ export function SettingRow({
             disabled={!onPress}
         >
             <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
-                <Feather name={icon} size={18} color={iconColor} />
+                <MaterialCommunityIcons name={icon} size={20} color={iconColor} />
             </View>
 
             <View style={styles.body}>
@@ -67,7 +67,7 @@ export function SettingRow({
             {rightElement}
 
             {showChevron ? (
-                <Feather name="chevron-right" size={18} color={SgateColors.t4} style={styles.chevron} />
+                <MaterialCommunityIcons name="chevron-right" size={20} color={SgateColors.t4} style={styles.chevron} />
             ) : null}
         </TouchableOpacity>
     );
