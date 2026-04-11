@@ -3,6 +3,7 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
 import type { User } from '../../../../types/api';
+import { AppAlert } from '../../../../components/ui/AppAlert';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -58,7 +59,11 @@ export function ProfileHeader({ user, onEditPress, onQrPress }: ProfileHeaderPro
                     <View style={styles.idPill}>
                         <Text style={styles.idLabel}>s-gate ID </Text>
                         <Text style={styles.idValue}>{gateId}</Text>
-                        <TouchableOpacity hitSlop={8} style={styles.idInfoBtn}>
+                        <TouchableOpacity 
+                            hitSlop={8} 
+                            style={styles.idInfoBtn}
+                            onPress={() => AppAlert.show('About s-gate ID', 'This is your unique residential identifier used by security. Show this to the guards for fast-track entry to the society.')}
+                        >
                             <Feather name="info" size={12} color={SgateColors.t3} />
                         </TouchableOpacity>
                     </View>

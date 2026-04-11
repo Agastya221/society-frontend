@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import {
-    Alert,
     Modal,
     Platform,
     RefreshControl,
@@ -23,6 +22,7 @@ import { SgateColors, SgateFonts, SgateRadius } from '../../../constants/Sgate-t
 import { useAuthStore } from '../../../store/useAuthStore';
 import { useProfileStore } from '../../../store/useProfileStore';
 import * as profileService from '../../../services/profile.service';
+import { AppAlert } from '../../../components/ui/AppAlert';
 
 // Components
 import { ProfileHeader } from './_components/ProfileHeader';
@@ -45,7 +45,7 @@ function safePush(router: any, route: string) {
     try {
         router.push(route as any);
     } catch {
-        Alert.alert('Navigation Error', 'This screen is not available yet.');
+        AppAlert.show('Navigation Error', 'This screen is not available yet.');
     }
 }
 
@@ -121,7 +121,7 @@ export default function SettingsScreen() {
             setEditModal(false);
             showToast('Profile updated');
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message ?? 'Failed to update profile');
+            AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to update profile');
         } finally {
             setSaving(false);
         }
@@ -130,7 +130,7 @@ export default function SettingsScreen() {
     // ── Logout ────────────────────────────────────────────────────────────
     const handleLogout = () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+        AppAlert.show('Sign Out', 'Are you sure you want to sign out?', [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Sign Out', style: 'destructive', onPress: () => logout() },
         ]);
@@ -143,7 +143,7 @@ export default function SettingsScreen() {
             case 'staff':    safePush(router, '/(resident)/staff'); break;
             case 'vehicles': safePush(router, '/(resident)/vehicles'); break;
             case 'pets':
-                Alert.alert('Coming Soon', 'Pets management will be available in a future update.');
+                AppAlert.show('Coming Soon', 'Pets management will be available in a future update.');
                 break;
         }
     };
@@ -194,7 +194,11 @@ export default function SettingsScreen() {
                 {isFirstLoad ? (
                     <ProfileHeaderSkeleton />
                 ) : (
-                    <ProfileHeader user={displayUser} onEditPress={openEditModal} />
+                    <ProfileHeader 
+                        user={displayUser} 
+                        onEditPress={openEditModal} 
+                        onQrPress={() => AppAlert.show('Personal QR Pass', 'Your digital QR code is being generated. Guards will soon be able to scan this to instantly verify your residency.')}
+                    />
                 )}
 
                 {/* ── Profile Completion ──────────────────────────────── */}
@@ -279,7 +283,7 @@ export default function SettingsScreen() {
                         title="Add Flat/Villa/Office"
                         showDivider={false}
                         showChevron={false}
-                        onPress={() => Alert.alert('Coming Soon', 'Multi-flat management will be available soon.')}
+                        onPress={() => AppAlert.show('Coming Soon', 'Multi-flat management will be available soon.')}
                     />
                 </View>
 
