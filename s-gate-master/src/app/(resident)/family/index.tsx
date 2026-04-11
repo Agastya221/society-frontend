@@ -99,8 +99,8 @@ export default function FamilyScreen() {
 
     const renderItem = ({ item }: { item: FamilyMember }) => (
         <View className="mb-3 p-4 flex-row items-center gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm" style={{ shadowOpacity: 0.02, shadowRadius: 8 }}>
-             <View className="h-12 w-12 rounded-full bg-indigo-100  items-center justify-center">
-                 <Text className="text-xl font-bold text-indigo-600 ">{item.name[0]}</Text>
+             <View className="h-12 w-12 rounded-full bg-yellow-100  items-center justify-center">
+                 <Text className="text-xl font-bold text-yellow-700 ">{item.name[0]}</Text>
             </View>
             <View className="flex-1">
                 <View className="flex-row items-center gap-2">
@@ -129,8 +129,8 @@ export default function FamilyScreen() {
                     </TouchableOpacity>
                     <Text className="text-xl font-bold text-gray-900 ">My Family</Text>
                 </View>
-                <TouchableOpacity onPress={() => setInviteModalVisible(true)} className="bg-indigo-600 h-9 w-9 rounded-full items-center justify-center shadow-lg shadow-indigo-200  bg-indigo-600 active:bg-indigo-700">
-                    <Ionicons name="person-add" size={18} color="white" />
+                <TouchableOpacity onPress={() => setInviteModalVisible(true)} className="bg-yellow-400 h-9 w-9 rounded-full items-center justify-center shadow-lg shadow-yellow-200 active:bg-yellow-500">
+                    <Ionicons name="person-add" size={18} color="black" />
                 </TouchableOpacity>
             </View>
 
@@ -154,12 +154,12 @@ export default function FamilyScreen() {
                     }
                     ListFooterComponent={
                         family.length > 0 ? (
-                            <View className="mt-4 p-4 bg-indigo-50  rounded-xl border border-indigo-100 ">
+                            <View className="mt-4 p-4 bg-yellow-50  rounded-xl border border-yellow-100 ">
                                 <View className="flex-row gap-3 mb-2">
-                                    <Ionicons name="information-circle" size={24} className="text-indigo-600 " />
-                                    <Text className="font-bold text-indigo-900  flex-1">Did you know?</Text>
+                                    <Ionicons name="information-circle" size={24} color="#ca8a04" />
+                                    <Text className="font-bold text-yellow-900  flex-1">Did you know?</Text>
                                 </View>
-                                <Text className="text-indigo-800  text-sm leading-5">
+                                <Text className="text-yellow-800  text-sm leading-5">
                                     Family members can approve gate entries and get notifications. Add them by tapping the + button above.
                                 </Text>
                             </View>
@@ -212,12 +212,12 @@ export default function FamilyScreen() {
                                         onPress={() => setInviteRole(r)}
                                         className={`px-4 py-2 rounded-xl border-2 ${
                                             isSelected
-                                                ? 'bg-indigo-50 border-indigo-600' 
+                                                ? 'bg-yellow-50 border-yellow-400' 
                                                 : 'bg-white border-gray-200'
                                         }`}
                                     >
                                         <Text className={`text-sm font-bold ${
-                                            isSelected ? 'text-indigo-700' : 'text-gray-600'
+                                            isSelected ? 'text-yellow-800' : 'text-gray-600'
                                         }`}>
                                             {r.charAt(0) + r.slice(1).toLowerCase()}
                                         </Text>
@@ -229,10 +229,10 @@ export default function FamilyScreen() {
                         <TouchableOpacity
                             onPress={handleInvite}
                             disabled={inviting || !inviteName.trim()}
-                            className={`py-4 rounded-xl items-center shadow-sm flex-row justify-center gap-2 ${inviting || !inviteName.trim() ? 'bg-indigo-300' : 'bg-indigo-600'}`}
+                            className={`py-4 rounded-xl items-center shadow-sm flex-row justify-center gap-2 ${inviting || !inviteName.trim() ? 'bg-gray-300' : 'bg-yellow-400'}`}
                         >
-                            {inviting ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="paper-plane" size={18} color="white" />}
-                            <Text className="font-bold text-white text-base">
+                            {inviting ? <ActivityIndicator size="small" color="#000" /> : <Ionicons name="paper-plane" size={18} color="black" />}
+                            <Text className={`font-bold text-base ${inviting || !inviteName.trim() ? 'text-gray-500' : 'text-black'}`}>
                                 {inviting ? 'Sending Invite...' : 'Send Invitation'}
                             </Text>
                         </TouchableOpacity>
