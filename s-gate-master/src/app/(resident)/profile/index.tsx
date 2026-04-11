@@ -171,8 +171,8 @@ export default function SettingsScreen() {
                     <Feather name="arrow-left" size={22} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerBarTitle}>Profile</Text>
-                <TouchableOpacity hitSlop={8}>
-                    <Feather name="help-circle" size={22} color={SgateColors.t2} />
+                <TouchableOpacity onPress={() => Linking.openURL('mailto:support@sgate.app')} hitSlop={8}>
+                    <Feather name="headphones" size={22} color={SgateColors.t2} />
                 </TouchableOpacity>
             </View>
 
@@ -290,7 +290,7 @@ export default function SettingsScreen() {
                 <Text style={styles.sectionTitle}>General Settings</Text>
                 <View style={styles.card}>
                     <SettingRow
-                        icon="lifebuoy"
+                        icon="headphones"
                         title="Support & Feedback"
                         onPress={() => Linking.openURL('mailto:support@sgate.app')}
                     />
