@@ -20,7 +20,7 @@ interface TypeCardCfg {
 const TYPE_CARDS: TypeCardCfg[] = [
   { type: 'Car',   iconName: 'truck',  label: 'Four Wheeler' },
   { type: 'Bike',  iconName: 'zap',    label: 'Two Wheeler' },
-  { type: 'Other', iconName: 'circle', label: 'Other/EV' },
+  { type: 'Other', iconName: 'circle', label: 'Other' },
 ];
 
 export default function AddVehicleScreen() {
@@ -89,16 +89,16 @@ export default function AddVehicleScreen() {
                     onPress={() => setVehicleType(cfg.type)}
                     activeOpacity={0.7}
                     className={`flex-1 rounded-2xl items-center py-4 border-2 ${
-                      isSelected ? 'bg-indigo-50 border-indigo-600' : 'bg-white border-gray-100 shadow-sm'
+                      isSelected ? 'bg-yellow-50 border-yellow-400' : 'bg-white border-gray-100 shadow-sm'
                     }`}
                   >
                     <View className={`w-10 h-10 rounded-full items-center justify-center mb-2 ${
-                      isSelected ? 'bg-indigo-600' : 'bg-gray-100'
+                      isSelected ? 'bg-yellow-400' : 'bg-gray-100'
                     }`}>
-                      <Feather name={cfg.iconName} size={18} color={isSelected ? 'white' : '#6b7280'} />
+                      <Feather name={cfg.iconName} size={18} color={isSelected ? 'black' : '#6b7280'} />
                     </View>
                     <Text className={`text-[13px] font-bold ${
-                      isSelected ? 'text-indigo-700' : 'text-gray-600'
+                      isSelected ? 'text-yellow-800' : 'text-gray-600'
                     }`}>
                       {cfg.label}
                     </Text>
@@ -142,29 +142,29 @@ export default function AddVehicleScreen() {
           </View>
 
           {/* ── Notice ────────────────────────────────────────────────────── */}
-          <View className="flex-row items-start gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-8">
+          <View className="flex-row items-start gap-3 bg-yellow-50 border border-yellow-100 rounded-2xl p-4 mb-8">
             <View className="mt-0.5">
-              <Ionicons name="information-circle" size={20} color="#4f46e5" />
+              <Ionicons name="information-circle" size={20} color="#ca8a04" />
             </View>
-            <Text className="flex-1 text-sm text-indigo-900 leading-5">
+            <Text className="flex-1 text-sm text-yellow-900 leading-5">
               Your vehicle will be marked as <Text className="font-bold">Pending Approval</Text> until administration verifies it and assigns your official sticker.
             </Text>
           </View>
 
           {/* ── Submit Button ─────────────────────────────────────────────── */}
           <TouchableOpacity
-            style={{ shadowColor: '#4f46e5', shadowOpacity: submitting || isDisabled ? 0 : 0.25, shadowRadius: 10, elevation: 2 }}
-            className={`py-4 rounded-xl items-center flex-row justify-center gap-2 ${isDisabled || submitting ? 'bg-gray-300' : 'bg-indigo-600'}`}
+            style={{ shadowColor: '#eab308', shadowOpacity: submitting || isDisabled ? 0 : 0.25, shadowRadius: 10, elevation: 2 }}
+            className={`py-4 rounded-xl items-center flex-row justify-center gap-2 ${isDisabled || submitting ? 'bg-gray-300' : 'bg-yellow-400'}`}
             onPress={handleSubmit}
             disabled={isDisabled || submitting}
             activeOpacity={0.8}
           >
             {submitting ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color="#000" />
             ) : (
-              <Ionicons name="shield-checkmark" size={20} color={isDisabled ? '#9ca3af' : 'white'} />
+              <Ionicons name="shield-checkmark" size={20} color={isDisabled ? '#9ca3af' : 'black'} />
             )}
-            <Text className={`text-base font-bold ${isDisabled ? 'text-gray-500' : 'text-white'}`}>
+            <Text className={`text-base font-bold ${isDisabled ? 'text-gray-500' : 'text-black'}`}>
               {submitting ? 'Submitting...' : 'Submit Registration'}
             </Text>
           </TouchableOpacity>
