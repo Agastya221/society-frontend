@@ -438,9 +438,17 @@ export default function HouseholdScreen() {
                 animationType="slide"
                 onRequestClose={() => setInviteVisible(false)}
             >
-                <View className="flex-1 justify-end bg-black/50">
-                    <TouchableOpacity className="absolute inset-0" activeOpacity={1} onPress={() => setInviteVisible(false)} />
-                    <View className="bg-white rounded-t-3xl p-6 pb-10 shadow-2xl">
+                <View className="flex-1 justify-end">
+                    <View
+                        className="bg-white rounded-t-3xl p-6 pb-10"
+                        style={{
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: -4 },
+                            shadowOpacity: 0.08,
+                            shadowRadius: 20,
+                            elevation: 20,
+                        }}
+                    >
                         {/* Modal header */}
                         <View className="flex-row justify-between items-center mb-6">
                             <Text className="text-xl font-bold text-gray-900">Invite Family Member</Text>
