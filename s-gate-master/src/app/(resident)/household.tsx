@@ -3,10 +3,12 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
+    Modal,
     RefreshControl,
     ScrollView,
     Share,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -15,6 +17,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Avatar } from '../../components/ui/Avatar';
+import { AppAlert } from '../../components/ui/AppAlert';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -47,6 +50,8 @@ interface Vehicle {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const ROLES = ['SPOUSE', 'CHILD', 'PARENT', 'SIBLING', 'OTHER'];
 
 function formatGateId(id: string): string {
     const clean = id.replace(/-/g, '').slice(-6);
@@ -121,6 +126,14 @@ export default function HouseholdScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
+    // ── Invite modal state ─────────────────────────────────────────────────
+    const [inviteVisible, setInviteVisible] = useState(false);
+    const [inviteName, setInviteName] = useState('');
+    const [invitePhone, setInvitePhone] = useState('');
+    const [inviteRole, setInviteRole] = useState('SPOUSE');
+    const [inviting, setInviting] = useState(false);
+
+    // ── Fetch all data ─────────────────────────────────────────────────────
     const fetchAll = useCallback(async () => {
         try {
             const [familyRes, staffRes, vehicleRes] = await Promise.allSettled([
@@ -167,6 +180,42 @@ export default function HouseholdScreen() {
 
     const onRefresh = () => { setRefreshing(true); fetchAll(); };
 
+    // ── Invite handler ─────────────────────────────────────────────────────
+    const openInvite = () => {
+        setInviteName('');
+        setInvitePhone('');
+        setInviteRole('SPOUSE');
+        setInviteVisible(true);
+    };
+
+    const handleInvite = async () => {
+        if (!inviteName.trim()) {
+            AppAlert.show('Validation Error', 'A name is required to invite a family member.');
+            return;
+        }
+        setInviting(true);
+        try {
+            let processedPhone = '';
+            if (invitePhone.trim()) {
+                const cleaned = invitePhone.replace(/\D/g, '');
+                if (cleaned.length === 10) processedPhone = `+91${cleaned}`;
+                else if (cleaned.startsWith('91') && cleaned.length > 10) processedPhone = `+${cleaned}`;
+                else processedPhone = `+91${cleaned}`;
+            }
+            const payload: any = { name: inviteName.trim(), role: inviteRole };
+            if (processedPhone) payload.phone = processedPhone;
+
+            await api.post('/resident/family/invite', payload);
+            setInviteVisible(false);
+            AppAlert.show('Invitation Sent ✓', `${inviteName.trim()} has been added to your family.`);
+            fetchAll();
+        } catch (err: any) {
+            AppAlert.show('Invite Failed', err?.response?.data?.message || 'Could not send invitation.');
+        } finally {
+            setInviting(false);
+        }
+    };
+
     const displayUser = user as any;
     const flatInfo = displayUser?.flat
         ? `${displayUser.flat.number}, ${displayUser.flat.block?.name || 'Block'}`
@@ -205,7 +254,7 @@ export default function HouseholdScreen() {
                 {/* ── Me Card ──────────────────────────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(0).springify()} className="bg-white rounded-2xl border border-gray-100 p-4 mb-6 shadow-sm">
                     <View className="flex-row items-center mb-3">
-                        <View className="w-14 h-14 rounded-full bg-gray-300 items-center justify-center mr-4">
+                        <View className="w-14 h-14 rounded-full bg-gray-200 items-center justify-center mr-4">
                             <Ionicons name="person" size={28} color="#9ca3af" />
                         </View>
                         <View>
@@ -227,38 +276,38 @@ export default function HouseholdScreen() {
 
                 {/* ── My Family ────────────────────────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(60).springify()} className="mb-6">
-                    <SectionHeader title="My Family" onAdd={() => router.push('/(resident)/family' as any)} />
+                    <SectionHeader title="My Family" onAdd={openInvite} />
                     {family.length === 0 ? (
                         <EmptyCard
                             icon={<Ionicons name="people-outline" size={28} color="#9ca3af" />}
                             label="+ Add Family Member"
-                            onAdd={() => router.push('/(resident)/family' as any)}
+                            onAdd={openInvite}
                         />
                     ) : (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-                            {family.map((member, index) => (
+                            {family.map((member) => (
                                 <TouchableOpacity
                                     key={member.id}
                                     className="bg-white rounded-2xl border border-gray-100 p-4 items-center w-36 shadow-sm"
                                     onPress={() => router.push('/(resident)/family' as any)}
                                     activeOpacity={0.8}
                                 >
-                                    <View className="w-14 h-14 rounded-full bg-gray-200 items-center justify-center mb-2">
-                                        <Ionicons name="people" size={28} color="#9ca3af" />
+                                    <View className="w-14 h-14 rounded-full bg-yellow-100 items-center justify-center mb-2">
+                                        <Text className="text-2xl font-bold text-yellow-700">{member.name[0]}</Text>
                                     </View>
                                     <Text className="text-[13px] font-semibold text-gray-900 text-center" numberOfLines={1}>{member.name}</Text>
                                     <View className="bg-blue-100 rounded-full px-2 py-0.5 mt-1">
                                         <Text className="text-[10px] font-semibold text-blue-700">{formatGateId(member.id)}</Text>
                                     </View>
                                     {member.phone ? (
-                                        <Feather name="phone" size={16} color="#10b981" className="mt-2" />
+                                        <Feather name="phone" size={15} color="#10b981" style={{ marginTop: 6 }} />
                                     ) : null}
                                 </TouchableOpacity>
                             ))}
-                            {/* Add button tile */}
+                            {/* Add tile */}
                             <TouchableOpacity
                                 className="bg-white rounded-2xl border border-dashed border-gray-200 w-36 items-center justify-center py-6 shadow-sm"
-                                onPress={() => router.push('/(resident)/family' as any)}
+                                onPress={openInvite}
                                 activeOpacity={0.7}
                             >
                                 <Ionicons name="add-circle-outline" size={32} color="#ca8a04" />
@@ -269,14 +318,11 @@ export default function HouseholdScreen() {
 
                 {/* ── My Pets ──────────────────────────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(100).springify()} className="mb-6">
-                    <SectionHeader
-                        title="My Pets"
-                        onAdd={() => undefined}
-                    />
+                    <SectionHeader title="My Pets" />
                     <EmptyCard
                         icon={<MaterialCommunityIcons name="paw" size={28} color="#9ca3af" />}
                         label="+ Add Pet"
-                        onAdd={() => undefined}
+                        onAdd={() => AppAlert.show('Coming Soon', 'Pet management will be available soon.')}
                     />
                 </Animated.View>
 
@@ -352,7 +398,7 @@ export default function HouseholdScreen() {
                                         </View>
                                         <View className="flex-1">
                                             <Text className="text-[15px] font-bold text-gray-900">{v.vehicleNumber}</Text>
-                                            <Text className="text-xs text-gray-500 mt-0.5">{v.model} · {v.color}</Text>
+                                            <Text className="text-xs text-gray-500 mt-0.5">{v.model}{v.color ? ` · ${v.color}` : ''}</Text>
                                             {v.parkingSlot && (
                                                 <Text className="text-[11px] text-gray-400 mt-0.5">Slot {v.parkingSlot}</Text>
                                             )}
@@ -374,17 +420,95 @@ export default function HouseholdScreen() {
                     )}
                 </Animated.View>
 
-                {/* ── Frequent Guests (placeholder) ────────────────────── */}
+                {/* ── Frequent Guests ──────────────────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(220).springify()} className="mb-6">
-                    <SectionHeader title="Frequent Guests" onAdd={() => undefined} />
+                    <SectionHeader title="Frequent Guests" />
                     <EmptyCard
                         icon={<Ionicons name="person-add-outline" size={28} color="#9ca3af" />}
                         label="+ Add Guest"
-                        onAdd={() => undefined}
+                        onAdd={() => AppAlert.show('Coming Soon', 'Frequent guest management will be available soon.')}
                     />
                 </Animated.View>
-
             </ScrollView>
+
+            {/* ── Add Family Member Modal ─────────────────────────────── */}
+            <Modal
+                visible={inviteVisible}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setInviteVisible(false)}
+            >
+                <View className="flex-1 justify-end bg-black/50">
+                    <TouchableOpacity className="absolute inset-0" activeOpacity={1} onPress={() => setInviteVisible(false)} />
+                    <View className="bg-white rounded-t-3xl p-6 pb-10 shadow-2xl">
+                        {/* Modal header */}
+                        <View className="flex-row justify-between items-center mb-6">
+                            <Text className="text-xl font-bold text-gray-900">Invite Family Member</Text>
+                            <TouchableOpacity onPress={() => setInviteVisible(false)} className="p-2 bg-gray-100 rounded-full">
+                                <Ionicons name="close" size={20} color="#4b5563" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Name */}
+                        <Text className="text-xs font-bold text-gray-500 uppercase mb-2 ml-1">Name *</Text>
+                        <TextInput
+                            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4 font-medium text-gray-900 text-base"
+                            value={inviteName}
+                            onChangeText={setInviteName}
+                            placeholder="e.g. Anjali Sharma"
+                            autoCapitalize="words"
+                            placeholderTextColor="#9ca3af"
+                        />
+
+                        {/* Phone */}
+                        <Text className="text-xs font-bold text-gray-500 uppercase mb-2 ml-1">Phone Number (Optional)</Text>
+                        <TextInput
+                            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4 font-medium text-gray-900 text-base tracking-widest"
+                            value={invitePhone}
+                            onChangeText={setInvitePhone}
+                            placeholder="10-digit mobile"
+                            keyboardType="phone-pad"
+                            placeholderTextColor="#9ca3af"
+                        />
+
+                        {/* Role chips */}
+                        <Text className="text-xs font-bold text-gray-500 uppercase mb-2 ml-1">Relationship</Text>
+                        <View className="flex-row flex-wrap gap-2 mb-7">
+                            {ROLES.map((r) => {
+                                const selected = inviteRole === r;
+                                return (
+                                    <TouchableOpacity
+                                        key={r}
+                                        onPress={() => setInviteRole(r)}
+                                        className={`px-4 py-2 rounded-xl border-2 ${selected ? 'bg-yellow-50 border-yellow-400' : 'bg-white border-gray-200'}`}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text className={`text-sm font-bold ${selected ? 'text-yellow-800' : 'text-gray-600'}`}>
+                                            {r.charAt(0) + r.slice(1).toLowerCase()}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+
+                        {/* Submit */}
+                        <TouchableOpacity
+                            onPress={handleInvite}
+                            disabled={inviting || !inviteName.trim()}
+                            className={`py-4 rounded-xl items-center flex-row justify-center gap-2 ${inviting || !inviteName.trim() ? 'bg-gray-200' : 'bg-yellow-400'}`}
+                            activeOpacity={0.8}
+                        >
+                            {inviting
+                                ? <ActivityIndicator size="small" color="#000" />
+                                : <Ionicons name="paper-plane" size={18} color={inviteName.trim() ? 'black' : '#9ca3af'} />
+                            }
+                            <Text className={`font-bold text-base ${inviting || !inviteName.trim() ? 'text-gray-400' : 'text-black'}`}>
+                                {inviting ? 'Sending Invite…' : 'Send Invitation'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
