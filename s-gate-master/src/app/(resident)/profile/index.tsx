@@ -263,10 +263,15 @@ export default function SettingsScreen() {
                         onPress={() => safePush(router, '/(resident)/notifications')}
                     />
                     <SettingRow
-                        icon="shield-check-outline"
+                        icon="clipboard-text-clock-outline"
                         title="Visitor List"
-                        showDivider={false}
                         onPress={() => safePush(router, '/(resident)/visitors')}
+                    />
+                    <SettingRow
+                        icon="shield-alert-outline"
+                        title="Security Alert List"
+                        showDivider={false}
+                        onPress={() => safePush(router, '/(resident)/emergency')}
                     />
                 </View>
 
