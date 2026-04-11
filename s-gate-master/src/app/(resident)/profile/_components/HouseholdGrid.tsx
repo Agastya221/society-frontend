@@ -14,7 +14,7 @@ interface HouseholdGridProps {
         staff: string | null;
         vehicles: string | null;
     };
-    onNavigate: (target: 'family' | 'staff' | 'vehicles' | 'pets') => void;
+    onNavigate: (target: 'family' | 'staff' | 'vehicles' | 'pets' | 'household') => void;
     onRetry: (section: 'family' | 'staff' | 'vehicles') => void;
 }
 
@@ -90,7 +90,7 @@ export function HouseholdGrid({
                     <MaterialCommunityIcons name="home-group" size={18} color={SgateColors.t2} />
                     <Text style={styles.headerTitle}>Household</Text>
                 </View>
-                <TouchableOpacity onPress={() => onNavigate('family')} activeOpacity={0.7}>
+                <TouchableOpacity onPress={() => onNavigate('household')} activeOpacity={0.7}>
                     <View style={styles.manageBtn}>
                         <Text style={styles.manageText}>Manage</Text>
                         <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t2} />

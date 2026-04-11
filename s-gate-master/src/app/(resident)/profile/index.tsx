@@ -139,8 +139,9 @@ export default function SettingsScreen() {
     };
 
     // ── Navigation ────────────────────────────────────────────────────────
-    const handleNavigate = (target: 'family' | 'staff' | 'vehicles' | 'pets') => {
+    const handleNavigate = (target: 'family' | 'staff' | 'vehicles' | 'pets' | 'household') => {
         switch (target) {
+            case 'household': safePush(router, '/(resident)/household'); break;
             case 'family':   safePush(router, '/(resident)/family'); break;
             case 'staff':    safePush(router, '/(resident)/staff'); break;
             case 'vehicles': safePush(router, '/(resident)/vehicles'); break;

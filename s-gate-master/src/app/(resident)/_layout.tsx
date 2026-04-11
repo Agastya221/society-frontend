@@ -170,6 +170,7 @@ function ResidentLayoutInner() {
         <Tabs.Screen name="notifications" options={{ href: null }} />
         <Tabs.Screen name="expect-delivery" options={{ href: null }} />
         <Tabs.Screen name="my-passes"       options={{ href: null }} />
+        <Tabs.Screen name="household"     options={{ href: null }} />
       </Tabs>
     </View>
   );
