@@ -1,23 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { ActivityIndicator, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 
 const TYPE_ICONS: Record<string, string> = {
   MEDICAL: 'medkit',
   FIRE: 'flame',
-  SECURITY: 'shield',
-  LIFT_STUCK: 'git-merge-outline',
+  SECURITY: 'shield-half',
+  LIFT_STUCK: 'arrow-up-circle-outline',
   ANIMAL_THREAT: 'paw',
   THEFT: 'bag-remove-outline',
   VIOLENCE: 'person-remove-outline',
@@ -54,41 +48,42 @@ function getStatusStyle(status: string) {
     case 'TRIGGERED':
     case 'ACKNOWLEDGED':
       return {
-        bg: SgateColors.redBg,
-        text: SgateColors.red,
+        bg: 'bg-red-500',
+        text: 'text-white',
         label: 'Active',
-        iconBg: SgateColors.red,
-        iconColor: '#FFFFFF',
+        iconBg: 'bg-red-50',
+        iconColor: '#ef4444',
       };
     case 'RESOLVED':
       return {
-        bg: SgateColors.greenBg,
-        text: SgateColors.green,
+        bg: 'bg-emerald-100',
+        text: 'text-emerald-700',
         label: 'Resolved',
-        iconBg: SgateColors.greenBg,
-        iconColor: SgateColors.green,
+        iconBg: 'bg-emerald-50',
+        iconColor: '#10b981',
       };
     case 'FALSE_ALARM':
       return {
-        bg: SgateColors.surface,
-        text: SgateColors.t3,
+        bg: 'bg-gray-100',
+        text: 'text-gray-600',
         label: 'Cancelled',
-        iconBg: SgateColors.surface,
-        iconColor: SgateColors.t3,
+        iconBg: 'bg-gray-100',
+        iconColor: '#6b7280',
       };
     default:
       return {
-        bg: SgateColors.surface,
-        text: SgateColors.t3,
+        bg: 'bg-gray-100',
+        text: 'text-gray-600',
         label: status,
-        iconBg: SgateColors.surface,
-        iconColor: SgateColors.t3,
+        iconBg: 'bg-gray-100',
+        iconColor: '#6b7280',
       };
   }
 }
 
 export default function EmergencyListScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [emergencies, setEmergencies] = useState<Emergency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -140,321 +135,131 @@ export default function EmergencyListScreen() {
     fetchEmergencies();
   };
 
-  const renderItem = ({ item }: { item: Emergency }) => {
+  const renderItem = ({ item, index }: { item: Emergency; index: number }) => {
     const statusInfo = getStatusStyle(item.status);
     const iconName = TYPE_ICONS[item.type] || 'ellipsis-horizontal';
     const typeLabel = TYPE_LABELS[item.type] || item.type;
 
     return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() =>
-          router.push(`/(resident)/emergency/${item.id}` as any)
-        }
-        activeOpacity={0.7}
-      >
-        <View
-          style={[
-            styles.cardIconCircle,
-            { backgroundColor: statusInfo.iconBg },
-          ]}
+      <Animated.View entering={FadeInDown.delay(Math.min(index, 10) * 50).springify()}>
+        <TouchableOpacity
+          className="bg-white border border-gray-100 p-4 rounded-2xl mb-3 flex-row items-center shadow-sm"
+          onPress={() => router.push(`/(resident)/emergency/${item.id}` as any)}
+          activeOpacity={0.7}
         >
-          <Ionicons
-            name={iconName as any}
-            size={22}
-            color={statusInfo.iconColor}
-          />
-        </View>
-
-        <View style={styles.cardContent}>
-          <Text style={styles.cardType}>{typeLabel}</Text>
-          <Text style={styles.cardDate}>
-            {new Date(item.createdAt).toLocaleDateString('en-IN', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-            })}
-          </Text>
-          {item.respondedBy && (
-            <Text style={styles.cardResponder}>
-              Responded by {item.respondedBy.name}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.cardRight}>
-          <View
-            style={[styles.statusPill, { backgroundColor: statusInfo.bg }]}
-          >
-            <Text style={[styles.statusPillText, { color: statusInfo.text }]}>
-              {statusInfo.label}
-            </Text>
+          <View className={`w-12 h-12 rounded-full items-center justify-center ${statusInfo.iconBg}`}>
+            <Ionicons name={iconName as any} size={22} color={statusInfo.iconColor} />
           </View>
-          <Ionicons
-            name="chevron-forward"
-            size={16}
-            color={SgateColors.t4}
-            style={styles.chevron}
-          />
-        </View>
-      </TouchableOpacity>
+
+          <View className="flex-1 ml-3">
+            <Text className="text-[15px] font-bold text-gray-900">{typeLabel}</Text>
+            <Text className="text-xs font-medium text-gray-400 mt-0.5">
+              {new Date(item.createdAt).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </Text>
+            {item.respondedBy && (
+              <Text className="text-[11px] font-medium text-emerald-600 mt-1">
+                Responded by {item.respondedBy.name}
+              </Text>
+            )}
+          </View>
+
+          <View className="items-end pl-2">
+            <View className={`px-2.5 py-1 rounded-full ${statusInfo.bg}`}>
+              <Text className={`text-[10px] font-bold uppercase tracking-wide ${statusInfo.text}`}>
+                {statusInfo.label}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} className="text-gray-400 mt-2" />
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
     );
   };
 
   const renderHeader = () => (
-    <View style={styles.banner}>
-      <View style={styles.bannerContent}>
-        <View style={styles.bannerLeft}>
-          <Text style={styles.bannerTitle}>Need Urgent Help?</Text>
-          <Text style={styles.bannerSubtitle}>
-            Tap below — guards notified instantly
-          </Text>
-          <TouchableOpacity
-            style={styles.bannerButton}
-            onPress={() =>
-              router.push('/(resident)/emergency/create' as any)
-            }
-            activeOpacity={0.8}
-          >
-            <Text style={styles.bannerButtonText}>Raise Emergency</Text>
-          </TouchableOpacity>
-        </View>
-        <Ionicons
-          name="megaphone"
-          size={36}
-          color="#FFFFFF"
-          style={styles.bannerIcon}
-        />
+    <View className="bg-red-500 rounded-2xl p-5 mb-5 flex-row items-center overflow-hidden">
+      {/* Background decoration */}
+      <View className="absolute -right-6 -bottom-6 opacity-20">
+        <Ionicons name="warning" size={120} color="#FFFFFF" />
+      </View>
+
+      <View className="flex-1 z-10">
+        <Text className="text-[17px] font-bold text-white tracking-wide">Emergency Assistance</Text>
+        <Text className="text-sm font-medium text-red-100 mt-1 mb-4">
+          Tap below to instantly alert guards and send an SOS beacon.
+        </Text>
+        <TouchableOpacity
+          className="bg-white rounded-xl px-5 py-2.5 self-start shadow-sm flex-row items-center"
+          onPress={() => router.push('/(resident)/emergency/create' as any)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="alert-circle" size={18} color="#ef4444" className="mr-2" />
+          <Text className="text-[13px] font-bold text-red-600">Raise SOS Alert</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 
   const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Ionicons
-        name="checkmark-circle-outline"
-        size={56}
-        color={SgateColors.t4}
-      />
-      <Text style={styles.emptyTitle}>No Emergencies</Text>
-      <Text style={styles.emptySubtitle}>
-        All your SOS history will appear here
+    <View className="flex-1 justify-center items-center py-20 opacity-70">
+      <Ionicons name="shield-checkmark-outline" size={64} className="text-gray-300 mb-4" />
+      <Text className="text-lg font-bold text-gray-700">No Emergencies</Text>
+      <Text className="text-gray-500 text-sm mt-1 text-center px-10 leading-5">
+        Your SOS and security alert history will appear here.
       </Text>
     </View>
   );
 
-  if (isLoading && !isRefreshing) {
-    return (
-      <SafeAreaView style={styles.loadingContainer} edges={['top']}>
-        <ActivityIndicator size="large" color={SgateColors.red} />
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="arrow-back" size={22} color={SgateColors.t1} />
+    <View className="flex-1 bg-gray-50">
+      {/* Standard Header matching Family screen */}
+      <View 
+        className="px-5 flex-row items-center justify-between bg-white border-b border-gray-100"
+        style={{ paddingTop: insets.top + 12, paddingBottom: 16 }}
+      >
+        <View className="flex-row items-center gap-3">
+          <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+            <Ionicons name="arrow-back" size={24} className="text-gray-700" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Emergencies</Text>
+          <Text className="text-xl font-bold text-gray-900">My Emergencies</Text>
         </View>
-        <TouchableOpacity
-          style={styles.headerRight}
-          onPress={() =>
-            router.push('/(resident)/emergency/create' as any)
-          }
-          activeOpacity={0.7}
+        <TouchableOpacity 
+          onPress={() => router.push('/(resident)/emergency/create' as any)} 
+          className="h-10 w-10 items-center justify-center rounded-full bg-red-100"
         >
-          <Ionicons name="warning" size={18} color="#FFFFFF" />
+          <Ionicons name="warning" size={20} className="text-red-500" />
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={emergencies}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={renderEmpty}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={onRefresh}
-            tintColor={SgateColors.red}
-          />
-        }
-      />
-    </SafeAreaView>
+      {isLoading && !isRefreshing ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#ef4444" />
+        </View>
+      ) : (
+        <FlatList
+          data={emergencies}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={renderEmpty}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor="#ef4444"
+              colors={['#ef4444']}
+            />
+          }
+        />
+      )}
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: SgateColors.bg,
-  },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: SgateColors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: SgateColors.card,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: SgateColors.borderSoft,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: SgateColors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-  },
-  headerRight: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: SgateColors.red,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listContent: {
-    padding: 20,
-  },
-  banner: {
-    backgroundColor: SgateColors.red,
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 20,
-  },
-  bannerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  bannerLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  bannerTitle: {
-    fontSize: 15,
-    fontFamily: SgateFonts.extrabold,
-    color: '#FFFFFF',
-  },
-  bannerSubtitle: {
-    fontSize: 12,
-    fontFamily: SgateFonts.regular,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 2,
-  },
-  bannerButton: {
-    backgroundColor: SgateColors.gold,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    alignSelf: 'flex-start',
-    marginTop: 10,
-  },
-  bannerButtonText: {
-    fontSize: 13,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.black,
-  },
-  bannerIcon: {
-    opacity: 0.8,
-  },
-  card: {
-    backgroundColor: SgateColors.card,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: SgateColors.borderSoft,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cardIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  cardType: {
-    fontSize: 15,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-  },
-  cardDate: {
-    fontSize: 12,
-    fontFamily: SgateFonts.regular,
-    color: SgateColors.t3,
-    marginTop: 2,
-  },
-  cardResponder: {
-    fontSize: 11,
-    fontFamily: SgateFonts.medium,
-    color: SgateColors.green,
-    marginTop: 4,
-  },
-  cardRight: {
-    alignItems: 'flex-end',
-    gap: 6,
-  },
-  statusPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  statusPillText: {
-    fontSize: 11,
-    fontFamily: SgateFonts.semibold,
-  },
-  chevron: {
-    marginTop: 2,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-    marginTop: 12,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    fontFamily: SgateFonts.regular,
-    color: SgateColors.t3,
-    marginTop: 4,
-  },
-});
