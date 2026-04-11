@@ -31,6 +31,7 @@ import { HouseholdGrid } from './_components/HouseholdGrid';
 import { AddressCard } from './_components/AddressCard';
 import { SettingRow } from './_components/SettingRow';
 import { ProfileHeaderSkeleton, SectionSkeleton } from './_components/SectionSkeleton';
+import { ProfileQrModal } from './_components/ProfileQrModal';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -69,10 +70,11 @@ export default function SettingsScreen() {
     } = useProfileStore();
 
     // Edit modal
-    const [editModal, setEditModal] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const [isEditModalVisible, setEditModalVisible] = useState(false);
+    const [isQrModalVisible, setQrModalVisible] = useState(false);
     const [editData, setEditData] = useState({ name: '', email: '' });
     const [saving, setSaving] = useState(false);
-    const [refreshing, setRefreshing] = useState(false);
 
     // ── Data loading ──────────────────────────────────────────────────────
     useFocusEffect(
@@ -106,7 +108,7 @@ export default function SettingsScreen() {
             name: displayUser.name ?? '',
             email: displayUser.email ?? '',
         });
-        setEditModal(true);
+        setEditModalVisible(true);
     };
 
     const handleSave = async () => {
@@ -118,7 +120,7 @@ export default function SettingsScreen() {
             });
             useProfileStore.getState().invalidate();
             await fetchAll(true);
-            setEditModal(false);
+            setEditModalVisible(false);
             showToast('Profile updated');
         } catch (err: any) {
             AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to update profile');
@@ -202,7 +204,7 @@ export default function SettingsScreen() {
                     <ProfileHeader 
                         user={displayUser} 
                         onEditPress={openEditModal} 
-                        onQrPress={() => AppAlert.show('Personal QR Pass', 'Your digital QR code is being generated. Guards will soon be able to scan this to instantly verify your residency.')}
+                        onQrPress={() => setQrModalVisible(true)}
                     />
                 )}
 
@@ -341,16 +343,16 @@ export default function SettingsScreen() {
 
             {/* ── Edit Profile Modal ──────────────────────────────────── */}
             <Modal
-                visible={editModal}
+                visible={isEditModalVisible}
                 transparent
                 animationType="slide"
-                onRequestClose={() => setEditModal(false)}
+                onRequestClose={() => setEditModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
                     <View style={[styles.modalSheet, { paddingBottom: insets.bottom + 20 }]}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Edit Profile</Text>
-                            <TouchableOpacity onPress={() => setEditModal(false)} style={styles.modalClose} hitSlop={8}>
+                            <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.modalClose} hitSlop={8}>
                                 <MaterialCommunityIcons name="close" size={22} color={SgateColors.t2} />
                             </TouchableOpacity>
                         </View>
@@ -387,6 +389,15 @@ export default function SettingsScreen() {
                     </View>
                 </View>
             </Modal>
+
+            {/* ── QR Pass Modal ───────────────────────────────────────── */}
+            {displayUser && (
+                <ProfileQrModal
+                    visible={isQrModalVisible}
+                    onClose={() => setQrModalVisible(false)}
+                    user={displayUser as any}
+                />
+            )}
         </View>
     );
 }

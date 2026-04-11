@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
 import type { User } from '../../../../types/api';
 import { AppAlert } from '../../../../components/ui/AppAlert';
@@ -69,7 +69,7 @@ export function ProfileHeader({ user, onEditPress, onQrPress }: ProfileHeaderPro
                     </View>
 
                     <TouchableOpacity onPress={onQrPress} style={styles.qrBtn} activeOpacity={0.7}>
-                        <Feather name="maximize" size={20} color={SgateColors.t1} />
+                        <MaterialCommunityIcons name="qrcode-scan" size={20} color={SgateColors.t1} />
                     </TouchableOpacity>
                 </View>
             </View>
