@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
@@ -13,14 +13,14 @@ type VehicleType = 'Car' | 'Bike' | 'Other';
 
 interface TypeCardCfg {
   type: VehicleType;
-  iconName: React.ComponentProps<typeof Feather>['name'];
+  iconName: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
   label: string;
 }
 
 const TYPE_CARDS: TypeCardCfg[] = [
-  { type: 'Car',   iconName: 'truck',  label: 'Four Wheeler' },
-  { type: 'Bike',  iconName: 'zap',    label: 'Two Wheeler' },
-  { type: 'Other', iconName: 'circle', label: 'Other' },
+  { type: 'Car',   iconName: 'car',  label: 'Four Wheeler' },
+  { type: 'Bike',  iconName: 'motorbike',    label: 'Two Wheeler' },
+  { type: 'Other', iconName: 'view-grid-plus', label: 'Other' },
 ];
 
 export default function AddVehicleScreen() {
@@ -95,7 +95,7 @@ export default function AddVehicleScreen() {
                     <View className={`w-10 h-10 rounded-full items-center justify-center mb-2 ${
                       isSelected ? 'bg-yellow-400' : 'bg-gray-100'
                     }`}>
-                      <Feather name={cfg.iconName} size={18} color={isSelected ? 'black' : '#6b7280'} />
+                      <MaterialCommunityIcons name={cfg.iconName} size={22} color={isSelected ? 'black' : '#6b7280'} />
                     </View>
                     <Text className={`text-[13px] font-bold ${
                       isSelected ? 'text-yellow-800' : 'text-gray-600'
