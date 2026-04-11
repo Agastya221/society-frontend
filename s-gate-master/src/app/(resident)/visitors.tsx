@@ -1,9 +1,8 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
-    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
@@ -11,9 +10,10 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { Avatar } from '../../components/ui/Avatar';
-import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
+import { SgateColors } from '../../constants/Sgate-theme';
 import type { Entry, EntryType } from '../../types/api';
 import * as gateService from '../../services/gate.service';
 
@@ -29,12 +29,12 @@ const TYPE_LABELS: Record<EntryType, string> = {
     VENDOR: 'Vendor',
 };
 
-const TYPE_COLORS: Record<EntryType, { bg: string; fg: string }> = {
-    VISITOR:        { bg: SgateColors.goldPale, fg: SgateColors.goldDeep },
-    DELIVERY:       { bg: '#E8F0FE',           fg: '#3B82F6' },
-    DOMESTIC_STAFF: { bg: SgateColors.greenBg,  fg: SgateColors.green },
-    CAB:            { bg: '#FFF3E0',            fg: '#F57C00' },
-    VENDOR:         { bg: '#F3E5F5',            fg: '#8E24AA' },
+const TYPE_COLORS: Record<EntryType, string> = {
+    VISITOR:        'bg-yellow-100 text-yellow-800 border-yellow-200',
+    DELIVERY:       'bg-blue-50 text-blue-700 border-blue-100',
+    DOMESTIC_STAFF: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    CAB:            'bg-orange-50 text-orange-700 border-orange-100',
+    VENDOR:         'bg-purple-50 text-purple-700 border-purple-100',
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -67,6 +67,7 @@ type ListRow = SectionHeader | SectionItem;
 
 export default function VisitorsScreen() {
     const insets = useSafeAreaInsets();
+    const router = useRouter();
 
     const [entries, setEntries] = useState<Entry[]>([]);
     const [loading, setLoading] = useState(true);
@@ -156,68 +157,40 @@ export default function VisitorsScreen() {
     const renderItem = useCallback(
         ({ item, index }: { item: ListRow; index: number }) => {
             if (item.kind === 'header') {
-                return <Text style={styles.sectionTitle}>{item.title}</Text>;
+                return <Text className="text-[11px] font-bold text-gray-400 tracking-widest uppercase px-5 pt-6 pb-2">{item.title}</Text>;
             }
 
             const e = item.entry;
-            const typeColor = TYPE_COLORS[e.type] ?? TYPE_COLORS.VISITOR;
+            const bgClass = TYPE_COLORS[e.type] ?? TYPE_COLORS.VISITOR;
             const isInside = e.status === 'CHECKED_IN';
 
             return (
                 <Animated.View entering={FadeInDown.delay(Math.min(index, 12) * 40).springify()}>
-                    <View style={styles.row}>
+                    <View className="flex-row items-center px-4 py-3 bg-white border-b border-gray-100">
                         <Avatar name={e.visitorName} size={42} />
 
-                        <View style={styles.rowBody}>
-                            <View style={styles.rowTop}>
-                                <Text style={styles.rowName} numberOfLines={1}>
+                        <View className="flex-1 ml-3">
+                            <View className="flex-row items-center justify-between mb-1">
+                                <Text className="flex-1 text-[15px] font-semibold text-gray-900 mr-2" numberOfLines={1}>
                                     {e.visitorName}
                                 </Text>
-                                <Text style={styles.rowTime}>
+                                <Text className="text-xs font-medium text-gray-500">
                                     {timeOnly(e.createdAt)}
                                 </Text>
                             </View>
 
-                            <View style={styles.rowBottom}>
+                            <View className="flex-row items-center gap-3">
                                 {/* Type pill */}
-                                <View
-                                    style={[
-                                        styles.typePill,
-                                        { backgroundColor: typeColor.bg },
-                                    ]}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.typePillText,
-                                            { color: typeColor.fg },
-                                        ]}
-                                    >
+                                <View className={`px-2 py-[2px] rounded border ${bgClass}`}>
+                                    <Text className={`text-[10px] font-bold uppercase tracking-wider ${bgClass.split(' ')[1]}`}>
                                         {TYPE_LABELS[e.type] ?? e.type}
                                     </Text>
                                 </View>
 
                                 {/* Status */}
-                                <View style={styles.statusWrap}>
-                                    <View
-                                        style={[
-                                            styles.statusDot,
-                                            {
-                                                backgroundColor: isInside
-                                                    ? SgateColors.green
-                                                    : SgateColors.t3,
-                                            },
-                                        ]}
-                                    />
-                                    <Text
-                                        style={[
-                                            styles.statusText,
-                                            {
-                                                color: isInside
-                                                    ? SgateColors.green
-                                                    : SgateColors.t3,
-                                            },
-                                        ]}
-                                    >
+                                <View className="flex-row items-center gap-[4px]">
+                                    <View className={`w-1.5 h-1.5 rounded-full ${isInside ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                                    <Text className={`text-[11px] font-medium ${isInside ? 'text-emerald-600' : 'text-gray-500'}`}>
                                         {isInside ? 'Inside' : 'Left'}
                                     </Text>
                                 </View>
@@ -234,8 +207,8 @@ export default function VisitorsScreen() {
     const ListFooter = useMemo(() => {
         if (!loadingMore) return null;
         return (
-            <View style={styles.footer}>
-                <ActivityIndicator size="small" color={SgateColors.gold} />
+            <View className="py-5 items-center">
+                <ActivityIndicator size="small" color="#ca8a04" />
             </View>
         );
     }, [loadingMore]);
@@ -243,17 +216,15 @@ export default function VisitorsScreen() {
     // ── Empty ────────────────────────────────────────────────────────────
     const ListEmpty = useCallback(
         () => (
-            <View style={styles.empty}>
-                <View style={styles.emptyIcon}>
-                    <Feather name="user-check" size={32} color={SgateColors.t3} />
-                </View>
-                <Text style={styles.emptyTitle}>
+            <View className="flex-1 justify-center items-center py-24 opacity-70">
+                <Ionicons name="shield-checkmark-outline" size={64} className="text-gray-300 mb-4" />
+                <Text className="text-lg font-bold text-gray-700">
                     {search ? 'No matches' : 'No visitors yet'}
                 </Text>
-                <Text style={styles.emptySub}>
+                <Text className="text-gray-500 text-sm mt-1 text-center px-10 leading-5">
                     {search
-                        ? 'Try a different search term'
-                        : 'Visitor entries will appear here'}
+                        ? 'Try a different search term or check your spelling'
+                        : 'Gate entry records and visitor passes will appear here automatically.'}
                 </Text>
             </View>
         ),
@@ -263,40 +234,39 @@ export default function VisitorsScreen() {
     // ── Loading state ────────────────────────────────────────────────────
     if (loading) {
         return (
-            <View style={[styles.root, styles.center, { paddingTop: insets.top }]}>
-                <ActivityIndicator size="large" color={SgateColors.gold} />
+            <View className="flex-1 items-center justify-center bg-gray-50" style={{ paddingTop: insets.top }}>
+                <ActivityIndicator size="large" color="#ca8a04" />
             </View>
         );
     }
 
     // ── Render ────────────────────────────────────────────────────────────
     return (
-        <View style={[styles.root, { paddingTop: insets.top }]}>
+        <View className="flex-1 bg-gray-50">
             {/* ── Header ──────────────────────────────────────────────── */}
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Visitors</Text>
-                <Text style={styles.headerCount}>
+            <View 
+                className="px-5 flex-row items-center justify-between bg-white border-b border-gray-100"
+                style={{ paddingTop: insets.top + 12, paddingBottom: 16 }}
+            >
+                <View className="flex-row items-center gap-3">
+                    <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                        <Ionicons name="arrow-back" size={24} className="text-gray-700" />
+                    </TouchableOpacity>
+                    <Text className="text-xl font-bold text-gray-900">Visitors</Text>
+                </View>
+                <Text className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
                     {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
                 </Text>
             </View>
 
             {/* ── Search bar ──────────────────────────────────────────── */}
-            <View style={styles.searchWrap}>
-                <View
-                    style={[
-                        styles.searchBar,
-                        searchFocused && styles.searchBarFocused,
-                    ]}
-                >
-                    <Feather
-                        name="search"
-                        size={16}
-                        color={searchFocused ? SgateColors.gold : SgateColors.t3}
-                    />
+            <View className="px-4 pt-4 pb-2 bg-gray-50">
+                <View className={`flex-row items-center bg-white border rounded-xl px-3 h-12 gap-2 shadow-sm ${searchFocused ? 'border-yellow-400' : 'border-gray-100'}`}>
+                    <Feather name="search" size={18} color={searchFocused ? '#ca8a04' : '#9ca3af'} />
                     <TextInput
-                        style={styles.searchInput}
+                        className="flex-1 text-[15px] font-medium text-gray-900 h-full py-0"
                         placeholder="Search by name or flat…"
-                        placeholderTextColor={SgateColors.t4}
+                        placeholderTextColor="#9ca3af"
                         value={search}
                         onChangeText={setSearch}
                         onFocus={() => setSearchFocused(true)}
@@ -304,11 +274,8 @@ export default function VisitorsScreen() {
                         returnKeyType="search"
                     />
                     {search.length > 0 && (
-                        <TouchableOpacity
-                            onPress={() => setSearch('')}
-                            hitSlop={8}
-                        >
-                            <Feather name="x" size={16} color={SgateColors.t3} />
+                        <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
+                            <Feather name="x-circle" size={18} color="#9ca3af" />
                         </TouchableOpacity>
                     )}
                 </View>
@@ -322,7 +289,7 @@ export default function VisitorsScreen() {
                 ListEmptyComponent={ListEmpty}
                 ListFooterComponent={ListFooter}
                 contentContainerStyle={
-                    rows.length === 0 ? styles.emptyContainer : styles.listContent
+                    rows.length === 0 ? { flexGrow: 1, paddingBottom: 40 } : { paddingBottom: 40 }
                 }
                 refreshing={refreshing}
                 onRefresh={onRefresh}
@@ -333,187 +300,3 @@ export default function VisitorsScreen() {
         </View>
     );
 }
-
-// ─── Styles ──────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-    root: {
-        flex: 1,
-        backgroundColor: SgateColors.bg,
-    },
-    center: {
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-
-    // ── Header ──────────────────────────────────────────────────────────
-    header: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        backgroundColor: SgateColors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    },
-    headerTitle: {
-        fontSize: 17,
-        fontFamily: SgateFonts.extrabold,
-        color: SgateColors.t1,
-    },
-    headerCount: {
-        fontSize: 12,
-        fontFamily: SgateFonts.medium,
-        color: SgateColors.t3,
-    },
-
-    // ── Search ──────────────────────────────────────────────────────────
-    searchWrap: {
-        paddingHorizontal: 20,
-        paddingTop: 12,
-        paddingBottom: 4,
-    },
-    searchBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: SgateColors.surface,
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        height: 42,
-        borderWidth: 1.5,
-        borderColor: 'transparent',
-        gap: 8,
-    },
-    searchBarFocused: {
-        borderColor: SgateColors.gold,
-        backgroundColor: SgateColors.card,
-    },
-    searchInput: {
-        flex: 1,
-        fontSize: 14,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t1,
-        paddingVertical: 0,
-    },
-
-    // ── List ────────────────────────────────────────────────────────────
-    listContent: {
-        paddingBottom: 40,
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 32,
-    },
-
-    // ── Section header ──────────────────────────────────────────────────
-    sectionTitle: {
-        fontSize: 11,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t3,
-        letterSpacing: 1,
-        textTransform: 'uppercase',
-        paddingHorizontal: 20,
-        paddingTop: 18,
-        paddingBottom: 6,
-    },
-
-    // ── Row ─────────────────────────────────────────────────────────────
-    row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        backgroundColor: SgateColors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    },
-    rowBody: {
-        flex: 1,
-        marginLeft: 12,
-    },
-    rowTop: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 4,
-    },
-    rowName: {
-        flex: 1,
-        fontSize: 15,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.t1,
-        marginRight: 8,
-    },
-    rowTime: {
-        fontSize: 12,
-        fontFamily: SgateFonts.medium,
-        color: SgateColors.t3,
-    },
-    rowBottom: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-
-    // ── Type pill ───────────────────────────────────────────────────────
-    typePill: {
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 6,
-    },
-    typePillText: {
-        fontSize: 11,
-        fontFamily: SgateFonts.semibold,
-    },
-
-    // ── Status ──────────────────────────────────────────────────────────
-    statusWrap: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    statusDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-    },
-    statusText: {
-        fontSize: 11,
-        fontFamily: SgateFonts.medium,
-    },
-
-    // ── Footer ──────────────────────────────────────────────────────────
-    footer: {
-        paddingVertical: 20,
-        alignItems: 'center',
-    },
-
-    // ── Empty ───────────────────────────────────────────────────────────
-    empty: {
-        alignItems: 'center',
-        gap: 8,
-    },
-    emptyIcon: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-    },
-    emptyTitle: {
-        fontSize: 17,
-        fontFamily: SgateFonts.extrabold,
-        color: SgateColors.t1,
-    },
-    emptySub: {
-        fontSize: 14,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-        textAlign: 'center',
-    },
-});

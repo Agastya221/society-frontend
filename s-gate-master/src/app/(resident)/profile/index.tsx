@@ -12,7 +12,7 @@ import {
     View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Feather, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
@@ -166,13 +166,18 @@ export default function SettingsScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header Bar ──────────────────────────────────────────── */}
-            <View style={[styles.headerBar, { paddingTop: insets.top + 14 }]}>
-                <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerBarTitle}>Profile</Text>
-                <TouchableOpacity onPress={() => Linking.openURL('mailto:support@sgate.app')} hitSlop={8}>
-                    <Feather name="headphones" size={22} color={SgateColors.t2} />
+            <View 
+                className="px-5 flex-row items-center justify-between bg-white border-b border-gray-100"
+                style={{ paddingTop: insets.top + 12, paddingBottom: 16 }}
+            >
+                <View className="flex-row items-center gap-3">
+                    <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                        <Ionicons name="arrow-back" size={24} className="text-gray-700" />
+                    </TouchableOpacity>
+                    <Text className="text-xl font-bold text-gray-900">Profile</Text>
+                </View>
+                <TouchableOpacity onPress={() => Linking.openURL('mailto:support@sgate.app')} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100" hitSlop={8}>
+                    <Feather name="headphones" size={20} className="text-gray-700" />
                 </TouchableOpacity>
             </View>
 
@@ -389,22 +394,7 @@ const styles = StyleSheet.create({
         backgroundColor: SgateColors.bg,
     },
 
-    // Header bar
-    headerBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingBottom: 14,
-        backgroundColor: SgateColors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    },
-    headerBarTitle: {
-        fontSize: 18,
-        fontFamily: SgateFonts.extrabold,
-        color: SgateColors.t1,
-    },
+
 
     // Scroll
     scroll: {
