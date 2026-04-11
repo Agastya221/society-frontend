@@ -264,7 +264,7 @@ export default function SettingsScreen() {
                     />
                     <SettingRow
                         icon="shield-check-outline"
-                        title="Security Alert List"
+                        title="Visitor List"
                         showDivider={false}
                         onPress={() => safePush(router, '/(resident)/visitors')}
                     />
