@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useProfileStore } from '../../store/useProfileStore';
 import { Avatar } from '../../components/ui/Avatar';
 import { AppAlert } from '../../components/ui/AppAlert';
 
@@ -119,6 +120,7 @@ export default function HouseholdScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { user } = useAuthStore();
+    const { profile } = useProfileStore();
 
     const [family, setFamily] = useState<FamilyMember[]>([]);
     const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -216,10 +218,19 @@ export default function HouseholdScreen() {
         }
     };
 
-    const displayUser = user as any;
-    const flatInfo = displayUser?.flat
-        ? `${displayUser.flat.number}, ${displayUser.flat.block?.name || 'Block'}`
-        : 'Flat Details Pending';
+    // Use profile (same data source as the AddressCard in profile screen)
+    const displayUser = profile ?? user as any;
+    const flatNumber  = displayUser?.flat?.number;
+    const blockName   = displayUser?.flat?.block?.name;
+    const societyName = displayUser?.society?.name ?? displayUser?.flat?.block?.society?.name;
+    const societyAddress = displayUser?.society?.address ?? displayUser?.flat?.block?.society?.address;
+
+    const addressParts: string[] = [];
+    if (flatNumber) addressParts.push(blockName ? `${blockName} ${flatNumber}` : flatNumber);
+    if (societyName) addressParts.push(societyName);
+    if (societyAddress) addressParts.push(societyAddress);
+    const fullAddress = addressParts.join(', ') || 'No address available';
+
     const gateId = displayUser?.id ? formatGateId(displayUser.id) : '#------';
 
     if (loading) {
@@ -266,7 +277,7 @@ export default function HouseholdScreen() {
                     </View>
                     <TouchableOpacity
                         className="flex-row items-center border-t border-gray-100 pt-3"
-                        onPress={() => Share.share({ message: `My S-Gate ID: ${gateId}\nFlat: ${flatInfo}` })}
+                        onPress={() => Share.share({ message: fullAddress })}
                         activeOpacity={0.7}
                     >
                         <Ionicons name="navigate" size={16} color="#6b7280" />
