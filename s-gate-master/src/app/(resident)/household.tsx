@@ -349,7 +349,7 @@ export default function HouseholdScreen() {
 
                 {/* Vehicles */}
                 <Animated.View entering={FadeInDown.delay(180).springify()} className="mb-8">
-                    <SectionHeader title="My Vehicles" onAdd={() => router.push('/(resident)/vehicles' as any)} />
+                    <SectionHeader title="My Vehicles" onAdd={() => setAddVehicleVisible(true)} />
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
                         {vehicles.map((v, idx) => {
                             const sc = VEHICLE_STATUS[v.status] ?? VEHICLE_STATUS.PENDING;
