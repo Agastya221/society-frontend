@@ -298,10 +298,10 @@ export default function CreateEmergencyScreen() {
                     {/* Pulsing Light Aura */}
                     <Animated.View
                         style={[pulseStyle]}
-                        className="absolute w-72 h-72 rounded-full bg-red-500"
+                        className="absolute w-64 h-64 rounded-full bg-red-500"
                     />
 
-                    <View className="w-[220px] h-[220px] items-center justify-center">
+                    <View className="w-[190px] h-[190px] items-center justify-center">
                         <Pressable
                             onPressIn={startHold}
                             onPressOut={cancelHold}
@@ -314,14 +314,14 @@ export default function CreateEmergencyScreen() {
                         >
                             <Animated.View
                                 style={[sosButtonStyle]}
-                                className="w-[190px] h-[190px] rounded-full bg-red-500 items-center justify-center shadow-2xl shadow-red-400 border-[7px] border-white/90 overflow-hidden"
+                                className="w-[160px] h-[160px] rounded-full bg-red-500 items-center justify-center shadow-2xl shadow-red-400 border-[7px] border-white/90 overflow-hidden"
                             >
                                 <LinearGradient
                                     colors={['#ff7676', '#ef4444', '#dc2626']}
                                     className="absolute inset-0"
                                 />
                                 {/* Glass Gloss Overlays */}
-                                <View className="absolute top-2 left-6 w-36 h-14 bg-white/20 rounded-full rotate-[-15deg]" />
+                                <View className="absolute top-2 left-6 w-28 h-10 bg-white/20 rounded-full rotate-[-15deg]" />
                                 <View className="absolute bottom-4 right-10 w-20 h-8 bg-black/5 rounded-full rotate-[15deg] blur-md" />
 
                                 <MaterialCommunityIcons name="alert-decagram" size={32} color="white" style={{ opacity: 0.9, marginBottom: 4 }} />
@@ -332,9 +332,7 @@ export default function CreateEmergencyScreen() {
                             </Animated.View>
                         </Pressable>
 
-                        <View className="absolute bottom-[-15px] w-52 h-1.5 bg-gray-100 rounded-full overflow-hidden border border-white/50">
-                            <Animated.View style={progressStyle} className="h-full bg-red-500" />
-                        </View>
+                        {/* Progress line removed based on user feedback */}
                     </View>
                 </View>
 
