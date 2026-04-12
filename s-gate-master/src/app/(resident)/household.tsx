@@ -11,6 +11,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View,
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
@@ -397,34 +398,40 @@ export default function HouseholdScreen() {
 
             {/* Member Detail Pop-up */}
             <Modal visible={!!detailMember} transparent animationType="fade" onRequestClose={() => setDetailMember(null)}>
-                <View className="flex-1 bg-black/60 items-center justify-center px-6">
-                    <Animated.View entering={FadeIn.duration(300)} className="bg-white w-full rounded-[40px] overflow-hidden">
-                        <View className="flex-row justify-between p-6 pb-0">
-                            <TouchableOpacity onPress={() => setDetailMember(null)} className="p-2 bg-gray-100 rounded-full"><Ionicons name="close" size={20} color="#4b5563" /></TouchableOpacity>
-                            <TouchableOpacity onPress={() => setDetailMember(null)} className="p-2 bg-red-50 rounded-full"><Ionicons name="trash-outline" size={20} color="#ef4444" /></TouchableOpacity>
-                        </View>
-                        <View className="items-center px-6 pt-2 pb-8">
-                            <View className="w-32 h-32 rounded-full bg-gray-100 items-center justify-center mb-6"><Ionicons name="people" size={60} color="#9ca3af" /></View>
-                            <Text className="text-2xl font-bold text-gray-900 mb-2 text-center" style={{ fontFamily: 'Sora-Bold' }}>{detailMember?.name}</Text>
-                            <View className="flex-row items-center gap-2 mb-2">
-                                <View className="bg-blue-50 px-4 py-1.5 rounded-xl border border-blue-100"><Text className="text-lg font-bold text-blue-600 tracking-widest">{detailMember ? formatGateId(detailMember.id) : ''}</Text></View>
-                                <Ionicons name="help-circle-outline" size={18} color="#9ca3af" />
-                            </View>
-                            <Text className="text-gray-500 text-lg mb-1">{detailMember?.phone || 'No phone number'}</Text>
-                            <Text className="text-gray-400 font-bold uppercase tracking-widest text-[12px]">{detailMember?.role}</Text>
-                        </View>
-                        <TouchableOpacity onPress={() => detailMember?.phone && Linking.openURL(`tel:${detailMember.phone}`)} className="bg-yellow-400 flex-row items-center justify-center py-5 gap-3">
-                            <Ionicons name="call" size={24} color="black" />
-                            <Text className="text-xl font-bold text-black" style={{ fontFamily: 'Sora-Bold' }}>Call</Text>
-                        </TouchableOpacity>
-                    </Animated.View>
-                </View>
+                <TouchableWithoutFeedback onPress={() => setDetailMember(null)}>
+                    <View className="flex-1 bg-black/60 items-center justify-center px-6">
+                        <TouchableWithoutFeedback onPress={() => {}}>
+                            <Animated.View entering={FadeIn.duration(300)} className="bg-white w-full rounded-[40px] overflow-hidden">
+                                <View className="flex-row justify-between p-6 pb-0">
+                                    <TouchableOpacity onPress={() => setDetailMember(null)} className="p-2 bg-gray-100 rounded-full"><Ionicons name="close" size={20} color="#4b5563" /></TouchableOpacity>
+                                    <TouchableOpacity onPress={() => setDetailMember(null)} className="p-2 bg-red-50 rounded-full"><Ionicons name="trash-outline" size={20} color="#ef4444" /></TouchableOpacity>
+                                </View>
+                                <View className="items-center px-6 pt-2 pb-8">
+                                    <View className="w-32 h-32 rounded-full bg-gray-100 items-center justify-center mb-6"><Ionicons name="people" size={60} color="#9ca3af" /></View>
+                                    <Text className="text-2xl font-bold text-gray-900 mb-2 text-center" style={{ fontFamily: 'Sora-Bold' }}>{detailMember?.name}</Text>
+                                    <View className="flex-row items-center gap-2 mb-2">
+                                        <View className="bg-blue-50 px-4 py-1.5 rounded-xl border border-blue-100"><Text className="text-lg font-bold text-blue-600 tracking-widest">{detailMember ? formatGateId(detailMember.id) : ''}</Text></View>
+                                        <Ionicons name="help-circle-outline" size={18} color="#9ca3af" />
+                                    </View>
+                                    <Text className="text-gray-500 text-lg mb-1">{detailMember?.phone || 'No phone number'}</Text>
+                                    <Text className="text-gray-400 font-bold uppercase tracking-widest text-[12px]">{detailMember?.role}</Text>
+                                </View>
+                                <TouchableOpacity onPress={() => detailMember?.phone && Linking.openURL(`tel:${detailMember.phone}`)} className="bg-yellow-400 flex-row items-center justify-center py-5 gap-3">
+                                    <Ionicons name="call" size={24} color="black" />
+                                    <Text className="text-xl font-bold text-black" style={{ fontFamily: 'Sora-Bold' }}>Call</Text>
+                                </TouchableOpacity>
+                            </Animated.View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
             </Modal>
 
             {/* Vehicle Detail Pop-up */}
             <Modal visible={!!detailVehicle} transparent animationType="fade" onRequestClose={() => setDetailVehicle(null)}>
-                <View className="flex-1 bg-black/60 items-center justify-center px-6">
-                    <Animated.View entering={FadeIn.duration(300)} className="bg-white w-full rounded-[40px] overflow-hidden">
+                <TouchableWithoutFeedback onPress={() => setDetailVehicle(null)}>
+                    <View className="flex-1 bg-black/60 items-center justify-center px-6">
+                        <TouchableWithoutFeedback onPress={() => {}}>
+                            <Animated.View entering={FadeIn.duration(300)} className="bg-white w-full rounded-[40px] overflow-hidden">
                         <View className="flex-row justify-between p-6 pb-0">
                             <TouchableOpacity onPress={() => setDetailVehicle(null)} className="p-2 bg-gray-100 rounded-full"><Ionicons name="close" size={20} color="#4b5563" /></TouchableOpacity>
                             <TouchableOpacity onPress={() => { setDetailVehicle(null); router.push('/(resident)/vehicles' as any); }} className="p-2 bg-blue-50 rounded-full"><Ionicons name="settings-outline" size={20} color="#3b82f6" /></TouchableOpacity>
@@ -468,14 +475,18 @@ export default function HouseholdScreen() {
                             <Text className="text-xl font-bold text-black" style={{ fontFamily: 'Sora-Bold' }}>Manage Sticker</Text>
                         </TouchableOpacity>
                     </Animated.View>
-                </View>
-            </Modal>
+                </TouchableWithoutFeedback>
+            </View>
+        </TouchableWithoutFeedback>
+    </Modal>
 
             {/* Family Invite Modal - Redesigned to match screenshot */}
             <Modal visible={inviteVisible} transparent animationType="slide" onRequestClose={() => setInviteVisible(false)}>
-                <View className="flex-1 justify-end bg-black/40">
-                    <View className="bg-white rounded-t-[40px] p-6 pb-12 shadow-2xl">
-                        <View className="flex-row justify-between items-center mb-6">
+                <TouchableWithoutFeedback onPress={() => setInviteVisible(false)}>
+                    <View className="flex-1 justify-end bg-black/40">
+                        <TouchableWithoutFeedback onPress={() => {}}>
+                            <View className="bg-white rounded-t-[40px] p-6 shadow-2xl" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
+                                <View className="flex-row justify-between items-center mb-6">
                             <Text className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Invite Family Member</Text>
                             <TouchableOpacity onPress={() => setInviteVisible(false)} className="p-2 bg-gray-100 rounded-full">
                                 <Ionicons name="close" size={20} color="#4b5563" />
@@ -535,14 +546,18 @@ export default function HouseholdScreen() {
                             )}
                         </TouchableOpacity>
                     </View>
-                </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
             </Modal>
 
             {/* Add Vehicle Modal - Ported from add.tsx and matching screenshot */}
             <Modal visible={addVehicleVisible} transparent animationType="slide" onRequestClose={() => setAddVehicleVisible(false)}>
-                <View className="flex-1 justify-end bg-black/40">
-                    <View className="bg-white rounded-t-[40px] p-6 pb-12 shadow-2xl">
-                        <View className="flex-row justify-between items-center mb-6">
+                <TouchableWithoutFeedback onPress={() => setAddVehicleVisible(false)}>
+                    <View className="flex-1 justify-end bg-black/40">
+                        <TouchableWithoutFeedback onPress={() => {}}>
+                            <View className="bg-white rounded-t-[40px] p-6 shadow-2xl" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
+                                <View className="flex-row justify-between items-center mb-6">
                             <Text className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Add Vehicle</Text>
                             <TouchableOpacity onPress={() => setAddVehicleVisible(false)} className="p-2 bg-gray-100 rounded-full">
                                 <Ionicons name="close" size={20} color="#4b5563" />
@@ -630,8 +645,10 @@ export default function HouseholdScreen() {
                                 )}
                             </TouchableOpacity>
                         </ScrollView>
+                            </View>
+                        </TouchableWithoutFeedback>
                     </View>
-                </View>
+                </TouchableWithoutFeedback>
             </Modal>
         </View>
     );
