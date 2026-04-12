@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppAlert } from '../../components/ui/AppAlert';
 import { Avatar } from '../../components/ui/Avatar';
 import api from '../../services/api';
+import * as profileService from '../../services/profile.service';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useProfileStore } from '../../store/useProfileStore';
 
@@ -145,6 +146,28 @@ export default function HouseholdScreen() {
     const [inviteRole, setInviteRole] = useState('SPOUSE');
     const [inviting, setInviting] = useState(false);
     const [detailVehicle, setDetailVehicle] = useState<Vehicle | null>(null);
+
+    const handleInvite = async () => {
+        if (!inviteName.trim() || inviting) return;
+        setInviting(true);
+        try {
+            await profileService.inviteFamilyMember({
+                name: inviteName.trim(),
+                phone: invitePhone.trim(),
+                familyRole: inviteRole as any,
+            });
+            AppAlert.show('Success', `Invitation sent to ${inviteName}`);
+            setInviteVisible(false);
+            setInviteName('');
+            setInvitePhone('');
+            setInviteRole('SPOUSE');
+            fetchAll();
+        } catch (err: any) {
+            AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to send invitation');
+        } finally {
+            setInviting(false);
+        }
+    };
 
     const fetchAll = useCallback(async () => {
         try {
@@ -392,7 +415,7 @@ export default function HouseholdScreen() {
                                     <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Type</Text>
                                     <Text className="text-[13px] font-extrabold text-gray-900">{detailVehicle?.vehicleType}</Text>
                                 </View>
-                                {detailVehicle?.lastSeen && (
+                {detailVehicle?.lastSeen && (
                                     <View className="w-full bg-gray-50 p-4 rounded-3xl items-center border border-gray-100">
                                         <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Last Seen At Gate</Text>
                                         <Text className="text-[13px] font-extrabold text-gray-900">{detailVehicle.lastSeen}</Text>
@@ -408,14 +431,69 @@ export default function HouseholdScreen() {
                 </View>
             </Modal>
 
-            {/* Invite Modal */}
+            {/* Invite Modal - Redesigned to match screenshot */}
             <Modal visible={inviteVisible} transparent animationType="slide" onRequestClose={() => setInviteVisible(false)}>
                 <View className="flex-1 justify-end bg-black/40">
-                    <View className="bg-white rounded-t-[32px] p-6 pb-10 shadow-2xl">
-                        <View className="w-10 h-1 bg-gray-200 rounded-full self-center mb-6" />
-                        <Text className="text-xl font-bold mb-6">Invite Family Member</Text>
-                        <TextInput className="bg-gray-50 p-4 rounded-xl mb-4 font-bold" placeholder="Full Name" value={inviteName} onChangeText={setInviteName} />
-                        <TouchableOpacity onPress={() => setInviteVisible(false)} className="bg-yellow-400 py-4 rounded-xl items-center"><Text className="font-bold text-base">Send Invitation</Text></TouchableOpacity>
+                    <View className="bg-white rounded-t-[40px] p-6 pb-12 shadow-2xl">
+                        <View className="flex-row justify-between items-center mb-6">
+                            <Text className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Invite Family Member</Text>
+                            <TouchableOpacity onPress={() => setInviteVisible(false)} className="p-2 bg-gray-100 rounded-full">
+                                <Ionicons name="close" size={20} color="#4b5563" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Name *</Text>
+                        <TextInput 
+                            className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 mb-5 font-medium text-gray-900 text-[15px]" 
+                            placeholder="e.g. Anjali Sharma" 
+                            placeholderTextColor="#9ca3af"
+                            value={inviteName} 
+                            onChangeText={setInviteName} 
+                        />
+
+                        <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Phone Number (Optional)</Text>
+                        <TextInput 
+                            className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 mb-6 font-medium text-gray-900 text-[15px]" 
+                            placeholder="10-digit mobile" 
+                            placeholderTextColor="#9ca3af"
+                            keyboardType="phone-pad"
+                            maxLength={10}
+                            value={invitePhone} 
+                            onChangeText={setInvitePhone} 
+                        />
+
+                        <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Relationship Role *</Text>
+                        <View className="flex-row flex-wrap gap-2 mb-8">
+                            {ROLES.map((role) => {
+                                const isSelected = inviteRole === role;
+                                const label = role.charAt(0) + role.slice(1).toLowerCase();
+                                return (
+                                    <TouchableOpacity 
+                                        key={role} 
+                                        onPress={() => setInviteRole(role)}
+                                        className={`px-5 py-2.5 rounded-xl border ${isSelected ? 'bg-yellow-50 border-yellow-400' : 'bg-white border-gray-200'}`}
+                                    >
+                                        <Text className={`text-[13px] font-bold ${isSelected ? 'text-yellow-800' : 'text-gray-500'}`}>{label}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+
+                        <TouchableOpacity 
+                            onPress={handleInvite} 
+                            disabled={!inviteName.trim() || inviting}
+                            className={`py-4 rounded-2xl items-center flex-row justify-center gap-3 ${!inviteName.trim() || inviting ? 'bg-gray-200' : 'bg-yellow-400'}`}
+                            style={{ backgroundColor: !inviteName.trim() || inviting ? '#E5E7EB' : '#FACC15' }}
+                        >
+                            {inviting ? (
+                                <ActivityIndicator size="small" color="#4b5563" />
+                            ) : (
+                                <>
+                                    <Ionicons name="send" size={18} color="black" />
+                                    <Text className="font-bold text-base text-black">Send Invitation</Text>
+                                </>
+                            )}
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
