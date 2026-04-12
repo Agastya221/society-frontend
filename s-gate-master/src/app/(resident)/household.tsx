@@ -325,8 +325,8 @@ export default function HouseholdScreen() {
                                             <Text className={`text-[9px] font-bold ${sc.text} uppercase`}>{sc.label}</Text>
                                         </View>
                                         <View className="items-center">
-                                            <View className="w-20 h-20 rounded-full bg-blue-50 items-center justify-center mb-3 border-4 border-white shadow-sm">
-                                                <MaterialCommunityIcons name={isBike ? 'motorbike' : 'car'} size={40} color="#3b82f6" />
+                                            <View className="w-20 h-20 rounded-full bg-blue-50/80 items-center justify-center mb-3 border-[5px] border-white shadow-md">
+                                                <MaterialCommunityIcons name={isBike ? 'motorbike' : 'car-sports'} size={42} color="#2563eb" />
                                             </View>
                                             <Text className="text-[15px] font-bold text-gray-900 text-center mb-1" numberOfLines={1}>{v.vehicleNumber}</Text>
                                             <Text className="text-[11px] font-medium text-gray-400 text-center" numberOfLines={1}>{v.model || v.vehicleType}</Text>
@@ -340,8 +340,8 @@ export default function HouseholdScreen() {
                             );
                         })}
                         <TouchableOpacity className="w-44 h-52 border-2 border-dashed border-gray-200 rounded-[32px] items-center justify-center" onPress={() => router.push('/(resident)/vehicles' as any)}>
-                            <View className="w-12 h-12 rounded-full bg-blue-50 items-center justify-center mb-3">
-                                <Ionicons name="add" size={32} color="#3b82f6" />
+                            <View className="w-12 h-12 rounded-full bg-blue-50 items-center justify-center mb-3 shadow-inner">
+                                <Ionicons name="add-circle" size={32} color="#3b82f6" />
                             </View>
                             <Text className="text-[14px] font-bold text-gray-400">Add Vehicle</Text>
                         </TouchableOpacity>
@@ -390,8 +390,8 @@ export default function HouseholdScreen() {
                             <TouchableOpacity onPress={() => { setDetailVehicle(null); router.push('/(resident)/vehicles' as any); }} className="p-2 bg-blue-50 rounded-full"><Ionicons name="settings-outline" size={20} color="#3b82f6" /></TouchableOpacity>
                         </View>
                         <View className="items-center px-6 pt-2 pb-8">
-                            <View className="w-32 h-32 rounded-full bg-blue-50 items-center justify-center mb-6 border-4 border-white shadow-sm">
-                                <MaterialCommunityIcons name={detailVehicle?.vehicleType.toUpperCase() === 'BIKE' ? 'motorbike' : 'car'} size={64} color="#3b82f6" />
+                            <View className="w-32 h-32 rounded-full bg-blue-50/50 items-center justify-center mb-6 border-8 border-white shadow-xl">
+                                <MaterialCommunityIcons name={detailVehicle?.vehicleType.toUpperCase() === 'BIKE' ? 'motorbike' : 'car-sports'} size={64} color="#2563eb" />
                             </View>
                             <Text className="text-3xl font-bold text-gray-900 mb-1 text-center" style={{ fontFamily: 'Sora-Bold' }}>{detailVehicle?.vehicleNumber}</Text>
                             <Text className="text-lg font-bold text-gray-400 uppercase tracking-[2px] mb-6">
