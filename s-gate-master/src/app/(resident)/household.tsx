@@ -45,10 +45,13 @@ interface Vehicle {
     id: string;
     vehicleNumber: string;
     vehicleType: string;
+    make?: string;
     model: string;
     color: string;
     status: 'ACTIVE' | 'PENDING' | 'REJECTED';
     parkingSlot?: string;
+    stickerNumber?: string;
+    lastSeen?: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -148,7 +151,7 @@ export default function HouseholdScreen() {
             const [familyRes, staffRes, vehicleRes] = await Promise.allSettled([
                 api.get('/resident/family'),
                 api.get('/staff/domestic'),
-                api.get('/resident/vehicles'),
+                api.get('/resident/vehicles/my'),
             ]);
 
             if (familyRes.status === 'fulfilled') {
@@ -164,12 +167,15 @@ export default function HouseholdScreen() {
                 const raw = d?.data?.vehicles ?? d?.data ?? d ?? [];
                 setVehicles(Array.isArray(raw) ? raw.map((v: any) => ({
                     id: v.id,
-                    vehicleNumber: v.vehicleNumber ?? v.number ?? '',
+                    vehicleNumber: v.vehicleNumber ?? v.number ?? v.plateNumber ?? '',
                     vehicleType: v.vehicleType ?? v.type ?? 'Other',
+                    make: v.make ?? '',
                     model: v.model ?? '',
                     color: v.color ?? '',
                     status: v.status ?? 'PENDING',
                     parkingSlot: v.parkingSlot,
+                    stickerNumber: v.stickerNumber ?? v.sticker ?? undefined,
+                    lastSeen: v.lastSeen ?? undefined,
                 })) : []);
             }
         } catch (err) {
@@ -365,7 +371,9 @@ export default function HouseholdScreen() {
                                 <MaterialCommunityIcons name={detailVehicle?.vehicleType.toUpperCase() === 'BIKE' ? 'motorbike' : 'car'} size={64} color="#3b82f6" />
                             </View>
                             <Text className="text-3xl font-bold text-gray-900 mb-1 text-center" style={{ fontFamily: 'Sora-Bold' }}>{detailVehicle?.vehicleNumber}</Text>
-                            <Text className="text-lg font-bold text-gray-400 uppercase tracking-[2px] mb-6">{detailVehicle?.model} {detailVehicle?.color ? `• ${detailVehicle.color}` : ''}</Text>
+                            <Text className="text-lg font-bold text-gray-400 uppercase tracking-[2px] mb-6">
+                                {detailVehicle?.make ? `${detailVehicle.make} ` : ''}{detailVehicle?.model} {detailVehicle?.color ? `• ${detailVehicle.color}` : ''}
+                            </Text>
                             
                             <View className="w-full flex-row flex-wrap justify-between gap-y-4">
                                 <View className="w-[48%] bg-gray-50 p-4 rounded-3xl items-center border border-gray-100">
@@ -373,20 +381,23 @@ export default function HouseholdScreen() {
                                     <Text className={`text-[13px] font-extrabold ${detailVehicle ? (VEHICLE_STATUS[detailVehicle.status]?.text ?? 'text-gray-900') : ''}`}>{detailVehicle?.status}</Text>
                                 </View>
                                 <View className="w-[48%] bg-gray-50 p-4 rounded-3xl items-center border border-gray-100">
-                                    <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Type</Text>
-                                    <Text className="text-[13px] font-extrabold text-gray-900">{detailVehicle?.vehicleType}</Text>
+                                    <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Sticker</Text>
+                                    <Text className="text-[13px] font-extrabold text-blue-600">{detailVehicle?.stickerNumber || 'Pending'}</Text>
                                 </View>
                                 <View className="w-[48%] bg-gray-50 p-4 rounded-3xl items-center border border-gray-100">
                                     <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Parking Slot</Text>
                                     <Text className="text-[13px] font-extrabold text-orange-600">{detailVehicle?.parkingSlot || 'Not Assigned'}</Text>
                                 </View>
                                 <View className="w-[48%] bg-gray-50 p-4 rounded-3xl items-center border border-gray-100">
-                                    <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Color</Text>
-                                    <View className="flex-row items-center gap-2">
-                                        <View className="w-3 h-3 rounded-full border border-gray-200" style={{ backgroundColor: detailVehicle?.color?.toLowerCase() || '#CCC' }} />
-                                        <Text className="text-[13px] font-extrabold text-gray-900">{detailVehicle?.color || 'N/A'}</Text>
-                                    </View>
+                                    <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Type</Text>
+                                    <Text className="text-[13px] font-extrabold text-gray-900">{detailVehicle?.vehicleType}</Text>
                                 </View>
+                                {detailVehicle?.lastSeen && (
+                                    <View className="w-full bg-gray-50 p-4 rounded-3xl items-center border border-gray-100">
+                                        <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Last Seen At Gate</Text>
+                                        <Text className="text-[13px] font-extrabold text-gray-900">{detailVehicle.lastSeen}</Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
                         <TouchableOpacity onPress={() => { setDetailVehicle(null); router.push('/(resident)/vehicles' as any); }} className="bg-yellow-400 flex-row items-center justify-center py-5 gap-3">
