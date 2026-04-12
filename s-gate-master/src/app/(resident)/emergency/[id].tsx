@@ -49,98 +49,101 @@ export default function EmergencyDetailScreen() {
     }
 
     return (
-        <SafeAreaView className="flex-1 bg-white dark:bg-zinc-900" edges={['top']}>
-            <View className="px-5 py-4 flex-row items-center gap-3 border-b border-gray-100 dark:border-zinc-800">
-                <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800">
-                    <Ionicons name="arrow-back" size={24} className="text-gray-700 dark:text-gray-300" />
+        <View className="flex-1 bg-white" style={{ paddingTop: 0 }}>
+            <View className="px-5 py-4 flex-row items-center gap-3 border-b border-gray-100 bg-white">
+                <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                    <Ionicons name="arrow-back" size={24} color="#374151" />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">Emergency Details</Text>
+                <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Alert Details</Text>
             </View>
 
-            <ScrollView className="flex-1 p-5">
+            <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
                 {/* Header Card */}
-                <View className="bg-gray-50 dark:bg-zinc-800 p-5 rounded-2xl mb-6 border border-gray-100 dark:border-zinc-700">
-                    <View className="flex-row justify-between items-start mb-4">
-                        <View className="flex-row items-center gap-3">
-                            <View className={`h-12 w-12 rounded-full items-center justify-center ${
-                                emergency.type === 'MEDICAL' ? 'bg-red-500' :
-                                emergency.type === 'FIRE' ? 'bg-orange-500' :
-                                'bg-gray-500'
-                            }`}>
+                <View className="bg-red-50 p-6 rounded-[32px] mb-8 border border-red-100 shadow-sm shadow-red-100">
+                    <View className="flex-row justify-between items-start mb-6">
+                        <View className="flex-row items-center gap-4">
+                            <View className={`h-14 w-14 rounded-full items-center justify-center bg-red-500 shadow-md shadow-red-200`}>
                                 <Ionicons name={
                                     emergency.type === 'MEDICAL' ? 'medkit' :
                                     emergency.type === 'FIRE' ? 'flame' :
                                     'warning'
-                                } size={24} color="white" />
+                                } size={28} color="white" />
                             </View>
                             <View>
-                                <Text className="font-bold text-lg text-gray-900 dark:text-gray-100 uppercase tracking-wide">
+                                <Text className="font-bold text-xl text-red-900 uppercase tracking-tight" style={{ fontFamily: 'Sora-Bold' }}>
                                     {emergency.type.replace('_', ' ')}
                                 </Text>
-                                <Text className="text-xs text-gray-500">
-                                    {new Date(emergency.createdAt).toLocaleString()}
+                                <Text className="text-[12px] font-bold text-red-600/60 uppercase tracking-widest mt-0.5">
+                                    Type of Alert
                                 </Text>
                             </View>
                         </View>
-                        <StatusBadge status={emergency.status} />
                     </View>
                     
-                    <Text className="text-gray-700 dark:text-gray-300 text-base leading-relaxed font-medium">
-                        {emergency.description}
-                    </Text>
+                    <View className="bg-white/60 p-4 rounded-2xl border border-white/80">
+                      <Text className="text-red-900 text-[15px] leading-6 font-medium">
+                          {emergency.description || 'Instantly reported to gate security and emergency response teams.'}
+                      </Text>
+                    </View>
                 </View>
 
                 {/* Timeline / Updates */}
-                <Text className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-4 uppercase tracking-wider ml-1">
-                    Timeline & Response
+                <Text className="text-[12px] font-bold text-gray-400 mb-6 uppercase tracking-[3px] ml-1">
+                    Alert Timeline
                 </Text>
 
-                <View className="border-l-2 border-gray-100 dark:border-zinc-800 ml-4 pl-6 pb-2 space-y-8">
+                <View className="ml-2 pl-8 pb-10 border-l border-gray-100 space-y-10">
                     {/* Created Step */}
                     <View className="relative">
-                        <View className="absolute -left-[33px] top-0 h-4 w-4 rounded-full bg-blue-500 border-2 border-white dark:border-zinc-900" />
-                        <Text className="font-bold text-gray-900 dark:text-gray-100 text-sm">Alert Raised</Text>
-                        <Text className="text-xs text-gray-500 mt-1">
-                            By {emergency.sender.name} ({emergency.sender.flat})
+                        <View className="absolute -left-[37px] top-1 h-4 w-4 rounded-full bg-red-500 border-4 border-white shadow-sm" />
+                        <View className="flex-row justify-between items-center">
+                          <Text className="font-bold text-gray-900 text-[16px]" style={{ fontFamily: 'Sora-Bold' }}>Alert Raised</Text>
+                          <Text className="text-[11px] font-bold text-gray-400">{new Date(emergency.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                        </View>
+                        <Text className="text-xs text-gray-500 mt-1 font-medium">
+                            Sent from flat {emergency.sender.flat}
                         </Text>
                     </View>
 
                     {/* Response Step */}
                     {emergency.respondedBy ? (
                         <View className="relative">
-                            <View className="absolute -left-[33px] top-0 h-4 w-4 rounded-full bg-yellow-500 border-2 border-white dark:border-zinc-900" />
-                            <Text className="font-bold text-gray-900 dark:text-gray-100 text-sm">Responded</Text>
-                            <Text className="text-xs text-gray-500 mt-1">
-                                By {emergency.respondedBy.name} ({emergency.respondedBy.role})
+                            <View className="absolute -left-[37px] top-1 h-4 w-4 rounded-full bg-blue-500 border-4 border-white shadow-sm" />
+                            <View className="flex-row justify-between items-center">
+                              <Text className="font-bold text-gray-900 text-[16px]" style={{ fontFamily: 'Sora-Bold' }}>Security Acknowledged</Text>
+                              <Text className="text-[11px] font-bold text-gray-400">Response Active</Text>
+                            </View>
+                            <Text className="text-xs text-gray-500 mt-1 font-medium">
+                                Assigned to {emergency.respondedBy.name} ({emergency.respondedBy.role})
                             </Text>
                             {emergency.responseNote && (
-                                <View className="mt-2 bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg border border-yellow-100 dark:border-yellow-900/30">
-                                    <Text className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">"{emergency.responseNote}"</Text>
+                                <View className="mt-3 bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                                    <Text className="text-[13px] text-blue-800 font-bold">"{emergency.responseNote}"</Text>
                                 </View>
                             )}
                         </View>
                     ): (
-                        <View className="relative opacity-50">
-                            <View className="absolute -left-[33px] top-0 h-4 w-4 rounded-full bg-gray-300 dark:bg-zinc-700 border-2 border-white dark:border-zinc-900" />
-                            <Text className="font-bold text-gray-400 text-sm">Awaiting Response...</Text>
+                        <View className="relative opacity-40">
+                            <View className="absolute -left-[37px] top-1 h-4 w-4 rounded-full bg-gray-200 border-4 border-white shadow-sm" />
+                            <Text className="font-bold text-gray-400 text-[16px]" style={{ fontFamily: 'Sora-Bold' }}>Awaiting Security...</Text>
                         </View>
                     )}
 
                     {/* Resolution Step */}
-                    {emergency.status === 'RESOLVED' || emergency.status === 'FALSE_ALARM' ? (
+                    {(emergency.status === 'RESOLVED' || emergency.status === 'FALSE_ALARM') ? (
                         <View className="relative">
-                            <View className="absolute -left-[33px] top-0 h-4 w-4 rounded-full bg-green-500 border-2 border-white dark:border-zinc-900" />
-                            <Text className="font-bold text-gray-900 dark:text-gray-100 text-sm">
-                                {emergency.status === 'FALSE_ALARM' ? 'Marked as False Alarm' : 'Resolved'}
-                            </Text>
-                            {emergency.resolvedAt && (
-                                <Text className="text-xs text-gray-500 mt-1">
-                                    at {new Date(emergency.resolvedAt).toLocaleTimeString()}
-                                </Text>
-                            )}
+                            <View className={`absolute -left-[37px] top-1 h-4 w-4 rounded-full ${emergency.status === 'FALSE_ALARM' ? 'bg-orange-500' : 'bg-emerald-500'} border-4 border-white shadow-sm`} />
+                            <View className="flex-row justify-between items-center">
+                              <Text className="font-bold text-gray-900 text-[16px]" style={{ fontFamily: 'Sora-Bold' }}>
+                                  {emergency.status === 'FALSE_ALARM' ? 'Closed (False Alarm)' : 'Resolved'}
+                              </Text>
+                              {emergency.resolvedAt && (
+                                <Text className="text-[11px] font-bold text-gray-400">{new Date(emergency.resolvedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                              )}
+                            </View>
                             {emergency.resolutionNote && (
-                                <View className="mt-2 bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-100 dark:border-green-900/30">
-                                    <Text className="text-sm text-green-800 dark:text-green-200 font-medium">"{emergency.resolutionNote}"</Text>
+                                <View className={`mt-3 p-4 rounded-2xl border ${emergency.status === 'FALSE_ALARM' ? 'bg-orange-50 border-orange-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                                    <Text className={`text-[13px] font-bold ${emergency.status === 'FALSE_ALARM' ? 'text-orange-800' : 'text-emerald-800'}`}>"{emergency.resolutionNote}"</Text>
                                 </View>
                             )}
                         </View>
@@ -148,6 +151,6 @@ export default function EmergencyDetailScreen() {
                 </View>
 
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 }
