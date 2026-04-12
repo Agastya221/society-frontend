@@ -147,6 +147,14 @@ export default function HouseholdScreen() {
     const [inviting, setInviting] = useState(false);
     const [detailVehicle, setDetailVehicle] = useState<Vehicle | null>(null);
 
+    // Add Vehicle Form states
+    const [addVehicleVisible, setAddVehicleVisible] = useState(false);
+    const [newVehicleType, setNewVehicleType] = useState<'Car' | 'Bike' | 'Other' | null>(null);
+    const [newVehicleNumber, setNewVehicleNumber] = useState('');
+    const [newVehicleModel, setNewVehicleModel] = useState('');
+    const [newVehicleColor, setNewVehicleColor] = useState('');
+    const [vehicleSubmitting, setVehicleSubmitting] = useState(false);
+
     const handleInvite = async () => {
         if (!inviteName.trim() || inviting) return;
         setInviting(true);
@@ -208,6 +216,38 @@ export default function HouseholdScreen() {
             setRefreshing(false);
         }
     }, []);
+
+    const handleRegisterVehicle = async () => {
+        if (!newVehicleType || !newVehicleNumber.trim() || !newVehicleModel.trim() || !newVehicleColor.trim() || vehicleSubmitting) return;
+
+        const normalisedNumber = newVehicleNumber.trim().toUpperCase().replace(/\s+/g, '');
+        setVehicleSubmitting(true);
+        try {
+            await api.post('/resident/vehicles', {
+                vehicleNumber: normalisedNumber,
+                vehicleType: newVehicleType,
+                model: newVehicleModel.trim(),
+                color: newVehicleColor.trim(),
+            });
+
+            AppAlert.show(
+                'Success',
+                'Vehicle registration submitted for approval.',
+                [{ text: 'OK', onPress: () => {
+                    setAddVehicleVisible(false);
+                    setNewVehicleType(null);
+                    setNewVehicleNumber('');
+                    setNewVehicleModel('');
+                    setNewVehicleColor('');
+                    fetchAll();
+                }}]
+            );
+        } catch (err: any) {
+            AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to register vehicle');
+        } finally {
+            setVehicleSubmitting(false);
+        }
+    };
 
     useFocusEffect(useCallback(() => { fetchAll(); }, [fetchAll]));
 
@@ -339,7 +379,7 @@ export default function HouseholdScreen() {
                                 </Animated.View>
                             );
                         })}
-                        <TouchableOpacity className="w-44 h-52 border-2 border-dashed border-gray-200 rounded-[32px] items-center justify-center" onPress={() => router.push('/(resident)/vehicles' as any)}>
+                        <TouchableOpacity className="w-44 h-52 border-2 border-dashed border-gray-200 rounded-[32px] items-center justify-center" onPress={() => setAddVehicleVisible(true)}>
                             <View className="w-12 h-12 rounded-full bg-blue-50 items-center justify-center mb-3 shadow-inner">
                                 <Ionicons name="add-circle" size={32} color="#3b82f6" />
                             </View>
@@ -431,7 +471,7 @@ export default function HouseholdScreen() {
                 </View>
             </Modal>
 
-            {/* Invite Modal - Redesigned to match screenshot */}
+            {/* Family Invite Modal - Redesigned to match screenshot */}
             <Modal visible={inviteVisible} transparent animationType="slide" onRequestClose={() => setInviteVisible(false)}>
                 <View className="flex-1 justify-end bg-black/40">
                     <View className="bg-white rounded-t-[40px] p-6 pb-12 shadow-2xl">
@@ -494,6 +534,102 @@ export default function HouseholdScreen() {
                                 </>
                             )}
                         </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Add Vehicle Modal - Ported from add.tsx and matching screenshot */}
+            <Modal visible={addVehicleVisible} transparent animationType="slide" onRequestClose={() => setAddVehicleVisible(false)}>
+                <View className="flex-1 justify-end bg-black/40">
+                    <View className="bg-white rounded-t-[40px] p-6 pb-12 shadow-2xl">
+                        <View className="flex-row justify-between items-center mb-6">
+                            <Text className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Add Vehicle</Text>
+                            <TouchableOpacity onPress={() => setAddVehicleVisible(false)} className="p-2 bg-gray-100 rounded-full">
+                                <Ionicons name="close" size={20} color="#4b5563" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                            <Text className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-3 ml-1">Vehicle Type *</Text>
+                            <View className="flex-row gap-3 mb-8">
+                                {[
+                                    { type: 'Car' as const, icon: 'car', label: 'Four Wheeler' },
+                                    { type: 'Bike' as const, icon: 'motorbike', label: 'Two Wheeler' },
+                                    { type: 'Other' as const, icon: 'view-grid-plus', label: 'Other' },
+                                ].map((cfg) => {
+                                    const isSelected = newVehicleType === cfg.type;
+                                    return (
+                                        <TouchableOpacity
+                                            key={cfg.type}
+                                            onPress={() => setNewVehicleType(cfg.type)}
+                                            className={`flex-1 rounded-2xl items-center py-4 border-2 ${isSelected ? 'bg-yellow-50 border-yellow-400' : 'bg-white border-gray-100 shadow-sm'}`}
+                                        >
+                                            <View className={`w-10 h-10 rounded-full items-center justify-center mb-2 ${isSelected ? 'bg-yellow-400' : 'bg-gray-100'}`}>
+                                                <MaterialCommunityIcons name={cfg.icon as any} size={22} color={isSelected ? 'black' : '#6b7280'} />
+                                            </View>
+                                            <Text className={`text-[12px] font-bold ${isSelected ? 'text-yellow-800' : 'text-gray-600'}`}>{cfg.label}</Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+
+                            <View className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 mb-6">
+                                <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">License Plate Number *</Text>
+                                <TextInput
+                                    className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 mb-5 font-medium text-gray-900 text-[15px]"
+                                    placeholder="e.g. MH01AB1234"
+                                    placeholderTextColor="#9ca3af"
+                                    autoCapitalize="characters"
+                                    value={newVehicleNumber}
+                                    onChangeText={setNewVehicleNumber}
+                                />
+
+                                <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Make / Model *</Text>
+                                <TextInput
+                                    className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 mb-5 font-medium text-gray-900 text-[15px]"
+                                    placeholder="e.g. Honda City"
+                                    placeholderTextColor="#9ca3af"
+                                    autoCapitalize="words"
+                                    value={newVehicleModel}
+                                    onChangeText={setNewVehicleModel}
+                                />
+
+                                <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Vehicle Color *</Text>
+                                <TextInput
+                                    className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 font-medium text-gray-900 text-[15px]"
+                                    placeholder="e.g. Matte Black"
+                                    placeholderTextColor="#9ca3af"
+                                    autoCapitalize="words"
+                                    value={newVehicleColor}
+                                    onChangeText={setNewVehicleColor}
+                                />
+                            </View>
+
+                            <View className="flex-row items-start gap-4 bg-yellow-50 border border-yellow-100 rounded-3xl p-5 mb-8">
+                                <View className="mt-1">
+                                    <Ionicons name="information-circle" size={22} color="#ca8a04" />
+                                </View>
+                                <Text className="flex-1 text-[13px] text-yellow-900 leading-5">
+                                    Your vehicle will be marked as <Text className="font-bold">Pending Approval</Text> until administration verifies it and assigns your official sticker.
+                                </Text>
+                            </View>
+
+                            <TouchableOpacity
+                                onPress={handleRegisterVehicle}
+                                disabled={vehicleSubmitting || !newVehicleType || !newVehicleNumber.trim()}
+                                className={`py-4 rounded-3xl items-center flex-row justify-center gap-3 ${vehicleSubmitting || !newVehicleType || !newVehicleNumber.trim() ? 'bg-gray-200' : 'bg-gray-300'}`}
+                                style={{ backgroundColor: vehicleSubmitting || !newVehicleType || !newVehicleNumber.trim() ? '#E5E7EB' : '#D1D5DB' }}
+                            >
+                                {vehicleSubmitting ? (
+                                    <ActivityIndicator size="small" color="#4b5563" />
+                                ) : (
+                                    <>
+                                        <Ionicons name="shield-checkmark" size={20} color="#4b5563" />
+                                        <Text className="text-base font-bold text-gray-600">Submit Registration</Text>
+                                    </>
+                                )}
+                            </TouchableOpacity>
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
