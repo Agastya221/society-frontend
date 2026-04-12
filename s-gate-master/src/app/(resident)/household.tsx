@@ -1,4 +1,4 @@
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -12,13 +12,13 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AppAlert } from '../../components/ui/AppAlert';
+import { Avatar } from '../../components/ui/Avatar';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useProfileStore } from '../../store/useProfileStore';
-import { Avatar } from '../../components/ui/Avatar';
-import { AppAlert } from '../../components/ui/AppAlert';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -64,22 +64,22 @@ function formatStaffType(type: string): string {
 }
 
 const STAFF_TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-    MAID:           { bg: 'bg-blue-100',   text: 'text-blue-700' },
-    COOK:           { bg: 'bg-orange-100', text: 'text-orange-700' },
-    NANNY:          { bg: 'bg-pink-100',   text: 'text-pink-700' },
-    DRIVER:         { bg: 'bg-gray-200',   text: 'text-gray-700' },
-    CLEANER:        { bg: 'bg-cyan-100',   text: 'text-cyan-700' },
-    GARDENER:       { bg: 'bg-green-100',  text: 'text-green-700' },
-    LAUNDRY:        { bg: 'bg-purple-100', text: 'text-purple-700' },
-    CARETAKER:      { bg: 'bg-yellow-100', text: 'text-yellow-700' },
-    SECURITY_GUARD: { bg: 'bg-red-100',    text: 'text-red-700' },
-    OTHER:          { bg: 'bg-gray-100',   text: 'text-gray-600' },
+    MAID: { bg: 'bg-blue-100', text: 'text-blue-700' },
+    COOK: { bg: 'bg-orange-100', text: 'text-orange-700' },
+    NANNY: { bg: 'bg-pink-100', text: 'text-pink-700' },
+    DRIVER: { bg: 'bg-gray-200', text: 'text-gray-700' },
+    CLEANER: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
+    GARDENER: { bg: 'bg-green-100', text: 'text-green-700' },
+    LAUNDRY: { bg: 'bg-purple-100', text: 'text-purple-700' },
+    CARETAKER: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
+    SECURITY_GUARD: { bg: 'bg-red-100', text: 'text-red-700' },
+    OTHER: { bg: 'bg-gray-100', text: 'text-gray-600' },
 };
 
 const VEHICLE_STATUS: Record<string, { bg: string; text: string; label: string }> = {
-    ACTIVE:   { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Active' },
-    PENDING:  { bg: 'bg-yellow-100',  text: 'text-yellow-700',  label: 'Pending' },
-    REJECTED: { bg: 'bg-red-100',     text: 'text-red-600',     label: 'Rejected' },
+    ACTIVE: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Active' },
+    PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending' },
+    REJECTED: { bg: 'bg-red-100', text: 'text-red-600', label: 'Rejected' },
 };
 
 // ─── Section Header ───────────────────────────────────────────────────────────
@@ -87,36 +87,43 @@ const VEHICLE_STATUS: Record<string, { bg: string; text: string; label: string }
 function SectionHeader({ title, onAdd }: { title: string; onAdd?: () => void }) {
     return (
         <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-[17px] font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>{title}</Text>
+            <Text className="text-[20px] font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>{title}</Text>
             {onAdd && (
-                <TouchableOpacity onPress={onAdd} activeOpacity={0.7} className="flex-row items-center">
-                    <Text className="text-[13px] font-bold text-yellow-600" style={{ fontFamily: 'Sora-Bold' }}>+ Add</Text>
+                <TouchableOpacity
+                    onPress={onAdd}
+                    activeOpacity={0.7}
+                    className="bg-yellow-100 px-4 py-1.5 rounded-full"
+                >
+                    <Text className="text-[12px] font-bold text-yellow-800" style={{ fontFamily: 'Sora-Bold' }}>+ ADD</Text>
                 </TouchableOpacity>
             )}
         </View>
     );
 }
 
-// ─── Empty Card ───────────────────────────────────────────────────────────────
+// ─── Empty Card / Coming Soon ─────────────────────────────────────────────────
 
-function EmptyCard({ icon, label, onAdd }: { icon: React.ReactNode; label: string; onAdd: () => void }) {
+function EmptyCard({ icon, label, onAdd, comingSoon }: { icon: React.ReactNode; label: string; onAdd?: () => void, comingSoon?: boolean }) {
     return (
         <TouchableOpacity
-            className="w-36 aspect-square bg-transparent rounded-[24px]"
+            className={`w-full h-32 bg-gray-50/50 rounded-[24px] items-center justify-center ${comingSoon ? '' : 'border-dashed'}`}
             style={{
-                borderWidth: 1.5,
+                borderWidth: comingSoon ? 1 : 1.5,
                 borderColor: '#E5E7EB',
-                borderStyle: 'dashed',
-                alignItems: 'center',
-                justifyContent: 'center',
+                borderStyle: comingSoon ? 'solid' : 'dashed',
             }}
             onPress={onAdd}
-            activeOpacity={0.6}
+            activeOpacity={comingSoon ? 1 : 0.6}
+            disabled={comingSoon}
         >
-            <View className="w-10 h-10 rounded-full border-2 border-yellow-600 items-center justify-center">
-                <Ionicons name="add" size={24} color="#ca8a04" />
+            <View className="items-center">
+                <View className="w-10 h-10 rounded-full bg-white border border-gray-100 items-center justify-center mb-2 shadow-sm">
+                    {icon}
+                </View>
+                <Text className="text-[13px] font-bold text-gray-400 uppercase tracking-tight" style={{ fontFamily: 'Sora-Bold' }}>
+                    {comingSoon ? 'Coming Soon' : label}
+                </Text>
             </View>
-            {/* label is optional in some contexts but we focus on the + button in the square for 'Add' */}
         </TouchableOpacity>
     );
 }
@@ -135,14 +142,12 @@ export default function HouseholdScreen() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    // ── Invite modal state ─────────────────────────────────────────────────
     const [inviteVisible, setInviteVisible] = useState(false);
     const [inviteName, setInviteName] = useState('');
     const [invitePhone, setInvitePhone] = useState('');
     const [inviteRole, setInviteRole] = useState('SPOUSE');
     const [inviting, setInviting] = useState(false);
 
-    // ── Fetch all data ─────────────────────────────────────────────────────
     const fetchAll = useCallback(async () => {
         try {
             const [familyRes, staffRes, vehicleRes] = await Promise.allSettled([
@@ -189,7 +194,6 @@ export default function HouseholdScreen() {
 
     const onRefresh = () => { setRefreshing(true); fetchAll(); };
 
-    // ── Invite handler ─────────────────────────────────────────────────────
     const openInvite = () => {
         setInviteName('');
         setInvitePhone('');
@@ -225,10 +229,9 @@ export default function HouseholdScreen() {
         }
     };
 
-    // Use profile (same data source as the AddressCard in profile screen)
     const displayUser = profile ?? user as any;
-    const flatNumber  = displayUser?.flat?.number;
-    const blockName   = displayUser?.flat?.block?.name;
+    const flatNumber = displayUser?.flat?.number;
+    const blockName = displayUser?.flat?.block?.name;
     const societyName = displayUser?.society?.name ?? displayUser?.flat?.block?.society?.name;
     const societyAddress = displayUser?.society?.address ?? displayUser?.flat?.block?.society?.address;
 
@@ -250,7 +253,6 @@ export default function HouseholdScreen() {
 
     return (
         <View className="flex-1 bg-gray-50">
-            {/* ── Header ─────────────────────────────────────────────── */}
             <View
                 className="px-5 flex-row items-center justify-between bg-white border-b border-gray-100"
                 style={{ paddingTop: insets.top + 12, paddingBottom: 16 }}
@@ -269,7 +271,7 @@ export default function HouseholdScreen() {
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ca8a04" colors={['#ca8a04']} />}
             >
-                {/* ── Me Card ──────────────────────────────────────────── */}
+                {/* Me Card */}
                 <Animated.View entering={FadeInDown.delay(0).springify()} className="bg-white rounded-[24px] border border-gray-100 overflow-hidden mb-6 shadow-sm">
                     <View className="flex-row items-center p-4 py-5">
                         <View className="w-14 h-14 rounded-full bg-gray-200 items-center justify-center mr-4">
@@ -294,50 +296,54 @@ export default function HouseholdScreen() {
                     </TouchableOpacity>
                 </Animated.View>
 
-                {/* ── My Family ────────────────────────────────────────── */}
+                {/* My Family - Beautiful Unidimentional Cards */}
                 <Animated.View entering={FadeInDown.delay(60).springify()} className="mb-8">
                     <SectionHeader title="My Family" onAdd={openInvite} />
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
-                        {family.map((member) => (
-                            <TouchableOpacity
-                                key={member.id}
-                                className="bg-white rounded-[24px] border border-gray-100 w-36 overflow-hidden shadow-sm"
-                                onPress={() => router.push('/(resident)/family' as any)}
-                                activeOpacity={0.8}
-                            >
-                                <View className="items-center pt-5 pb-3 px-3">
-                                    <View className="w-14 h-14 rounded-full bg-yellow-100 items-center justify-center mb-3">
-                                        <Text className="text-2xl font-bold text-yellow-700" style={{ fontFamily: 'Sora-Bold' }}>{member.name[0]}</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingBottom: 4 }}>
+                        {family.map((member, idx) => (
+                            <Animated.View key={member.id} entering={FadeInRight.delay(idx * 100).springify()}>
+                                <TouchableOpacity
+                                    className="bg-white rounded-[32px] border border-gray-100 w-44 h-52 overflow-hidden shadow-sm p-5 justify-between"
+                                    onPress={() => router.push('/(resident)/family' as any)}
+                                    activeOpacity={0.8}
+                                >
+                                    <View className="bg-blue-50 self-start px-2 py-0.5 rounded-lg">
+                                        <Text className="text-[9px] font-bold text-blue-600 uppercase">{member.role}</Text>
                                     </View>
-                                    <Text className="text-[13px] font-bold text-gray-900 text-center mb-1" numberOfLines={1} style={{ fontFamily: 'Sora-Bold' }}>{member.name}</Text>
-                                    <View className="bg-blue-100 rounded-full px-2 py-0.5">
-                                        <Text className="text-[10px] font-bold text-blue-700">{formatGateId(member.id)}</Text>
+                                    <View className="items-center">
+                                        <View className="w-20 h-20 rounded-full bg-yellow-50 items-center justify-center mb-4 border-4 border-white shadow-sm">
+                                            <Text className="text-3xl font-bold text-yellow-700" style={{ fontFamily: 'Sora-Bold' }}>{member.name[0]}</Text>
+                                        </View>
+                                        <Text className="text-[15px] font-bold text-gray-900 text-center mb-1" numberOfLines={1} style={{ fontFamily: 'Sora-Bold' }}>{member.name}</Text>
+                                        <Text className="text-[11px] font-medium text-gray-400">{formatGateId(member.id).toUpperCase()}</Text>
                                     </View>
-                                </View>
-                                <View className="border-t border-gray-100 py-3 items-center">
-                                    <Ionicons name="call-outline" size={18} color="#10b981" />
-                                </View>
-                            </TouchableOpacity>
+                                </TouchableOpacity>
+                            </Animated.View>
                         ))}
-                        <EmptyCard
-                            icon={<Ionicons name="people-outline" size={28} color="#9ca3af" />}
-                            label="+ Add Family Member"
-                            onAdd={openInvite}
-                        />
+                        <TouchableOpacity
+                            className="w-44 h-52 border-2 border-dashed border-gray-200 rounded-[32px] items-center justify-center"
+                            onPress={openInvite}
+                            activeOpacity={0.6}
+                        >
+                            <View className="w-12 h-12 rounded-full bg-yellow-50 items-center justify-center mb-3">
+                                <Ionicons name="add" size={32} color="#ca8a04" />
+                            </View>
+                            <Text className="text-[14px] font-bold text-gray-400" style={{ fontFamily: 'Sora-Bold' }}>Add Member</Text>
+                        </TouchableOpacity>
                     </ScrollView>
                 </Animated.View>
 
-                {/* ── My Pets ──────────────────────────────────────────── */}
+                {/* My Pets - Coming Soon */}
                 <Animated.View entering={FadeInDown.delay(100).springify()} className="mb-8">
-                    <SectionHeader title="My Pets" onAdd={() => AppAlert.show('Coming Soon', 'Pet management will be available soon.')} />
+                    <SectionHeader title="My Pets" />
                     <EmptyCard
-                        icon={<MaterialCommunityIcons name="paw" size={28} color="#9ca3af" />}
-                        label="+ Add Pet"
-                        onAdd={() => AppAlert.show('Coming Soon', 'Pet management will be available soon.')}
+                        comingSoon
+                        icon={<MaterialCommunityIcons name="paw" size={24} color="#9ca3af" />}
+                        label="Add Pet"
                     />
                 </Animated.View>
 
-                {/* ── My Daily Help ─────────────────────────────────────── */}
+                {/* My Daily Help */}
                 <Animated.View entering={FadeInDown.delay(140).springify()} className="mb-8">
                     <SectionHeader title="My Daily Help" onAdd={() => router.push('/(resident)/staff' as any)} />
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
@@ -346,34 +352,33 @@ export default function HouseholdScreen() {
                             return (
                                 <TouchableOpacity
                                     key={member.id}
-                                    className="bg-white rounded-[24px] border border-gray-100 w-36 overflow-hidden shadow-sm"
+                                    className="bg-white rounded-[32px] border border-gray-100 w-40 h-52 overflow-hidden shadow-sm pt-6 pb-4 justify-between items-center px-3"
                                     onPress={() => router.push('/(resident)/staff' as any)}
                                     activeOpacity={0.8}
                                 >
-                                    <View className="items-center pt-5 pb-3 px-3">
-                                        <Avatar name={member.name} size={56} />
-                                        <Text className="text-[13px] font-bold text-gray-900 text-center mt-3 mb-1" numberOfLines={1} style={{ fontFamily: 'Sora-Bold' }}>{member.name}</Text>
-                                        <View className={`rounded-full px-2 py-0.5 ${tc.bg}`}>
-                                            <Text className={`text-[9px] font-bold ${tc.text}`}>{formatStaffType(member.staffType).toUpperCase()}</Text>
+                                    <Avatar name={member.name} size={64} />
+                                    <View className="items-center w-full">
+                                        <Text className="text-[15px] font-bold text-gray-900 text-center mb-1" numberOfLines={1} style={{ fontFamily: 'Sora-Bold' }}>{member.name}</Text>
+                                        <View className={`rounded-full px-3 py-1 mb-2 ${tc.bg}`}>
+                                            <Text className={`text-[10px] font-bold ${tc.text}`}>{formatStaffType(member.staffType).toUpperCase()}</Text>
                                         </View>
-                                    </View>
-                                    <View className="border-t border-gray-100 py-3 px-3 flex-row justify-around items-center">
-                                        <Ionicons name="call-outline" size={16} color="#10b981" />
-                                        <Ionicons name="notifications-outline" size={16} color="#6b7280" />
-                                        <Ionicons name="star-outline" size={16} color="#ca8a04" />
+                                        <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest" style={{ fontFamily: 'Sora-Bold' }}>Daily Helper</Text>
                                     </View>
                                 </TouchableOpacity>
                             );
                         })}
-                        <EmptyCard
-                            icon={<MaterialCommunityIcons name="briefcase-account" size={28} color="#9ca3af" />}
-                            label="+ Add Daily Helper"
-                            onAdd={() => router.push('/(resident)/staff' as any)}
-                        />
+                        <TouchableOpacity
+                            className="w-40 h-52 border-2 border-dashed border-gray-200 rounded-[32px] items-center justify-center"
+                            onPress={() => router.push('/(resident)/staff' as any)}
+                        >
+                            <View className="w-12 h-12 rounded-full border-2 border-yellow-500 items-center justify-center">
+                                <Ionicons name="add" size={28} color="#ca8a04" />
+                            </View>
+                        </TouchableOpacity>
                     </ScrollView>
                 </Animated.View>
 
-                {/* ── My Vehicles ──────────────────────────────────────── */}
+                {/* My Vehicles */}
                 <Animated.View entering={FadeInDown.delay(180).springify()} className="mb-8">
                     <SectionHeader title="My Vehicles" onAdd={() => router.push('/(resident)/vehicles' as any)} />
                     <View className="gap-3">
@@ -406,28 +411,27 @@ export default function HouseholdScreen() {
                                 </TouchableOpacity>
                             );
                         })}
-                        <View className="flex-row gap-3">
-                            <EmptyCard
-                                icon={<MaterialCommunityIcons name="car-outline" size={28} color="#9ca3af" />}
-                                label="Add Vehicle"
-                                onAdd={() => router.push('/(resident)/vehicles' as any)}
-                            />
-                        </View>
+                        <TouchableOpacity
+                            className="bg-gray-50/50 border border-gray-200 border-dashed rounded-[20px] p-4 flex-row items-center justify-center"
+                            onPress={() => router.push('/(resident)/vehicles' as any)}
+                        >
+                            <Ionicons name="add" size={20} color="#9ca3af" />
+                            <Text className="text-gray-400 font-bold ml-2">Add Vehicle</Text>
+                        </TouchableOpacity>
                     </View>
                 </Animated.View>
 
-                {/* ── Frequent Guests ──────────────────────────────────── */}
+                {/* Frequent Guests - Coming Soon */}
                 <Animated.View entering={FadeInDown.delay(220).springify()} className="mb-6">
-                    <SectionHeader title="Frequent Guests" onAdd={() => undefined} />
+                    <SectionHeader title="Frequent Guests" />
                     <EmptyCard
-                        icon={<Ionicons name="person-add-outline" size={28} color="#9ca3af" />}
-                        label="+ Add Guest"
-                        onAdd={() => AppAlert.show('Coming Soon', 'Frequent guest management will be available soon.')}
+                        comingSoon
+                        icon={<Ionicons name="people-outline" size={24} color="#9ca3af" />}
+                        label="Add Guest"
                     />
                 </Animated.View>
             </ScrollView>
 
-            {/* ── Add Family Member Modal ─────────────────────────────── */}
             <Modal
                 visible={inviteVisible}
                 transparent
@@ -436,16 +440,10 @@ export default function HouseholdScreen() {
             >
                 <View className="flex-1 justify-end">
                     <View
-                        className="bg-white rounded-t-3xl p-6 pb-10"
-                        style={{
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: -4 },
-                            shadowOpacity: 0.08,
-                            shadowRadius: 20,
-                            elevation: 20,
-                        }}
+                        className="bg-white rounded-t-[32px] p-6 pb-10 shadow-2xl"
+                        style={{ elevation: 20 }}
                     >
-                        {/* Modal header */}
+                        <View className="w-10 h-1 bg-gray-200 rounded-full self-center mb-6" />
                         <View className="flex-row justify-between items-center mb-6">
                             <Text className="text-xl font-bold text-gray-900">Invite Family Member</Text>
                             <TouchableOpacity onPress={() => setInviteVisible(false)} className="p-2 bg-gray-100 rounded-full">
@@ -453,7 +451,6 @@ export default function HouseholdScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        {/* Name */}
                         <Text className="text-xs font-bold text-gray-500 uppercase mb-2 ml-1">Name *</Text>
                         <TextInput
                             className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4 font-medium text-gray-900 text-base"
@@ -464,7 +461,6 @@ export default function HouseholdScreen() {
                             placeholderTextColor="#9ca3af"
                         />
 
-                        {/* Phone */}
                         <Text className="text-xs font-bold text-gray-500 uppercase mb-2 ml-1">Phone Number (Optional)</Text>
                         <TextInput
                             className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4 font-medium text-gray-900 text-base tracking-widest"
@@ -475,7 +471,6 @@ export default function HouseholdScreen() {
                             placeholderTextColor="#9ca3af"
                         />
 
-                        {/* Role chips */}
                         <Text className="text-xs font-bold text-gray-500 uppercase mb-2 ml-1">Relationship</Text>
                         <View className="flex-row flex-wrap gap-2 mb-7">
                             {ROLES.map((r) => {
@@ -495,7 +490,6 @@ export default function HouseholdScreen() {
                             })}
                         </View>
 
-                        {/* Submit */}
                         <TouchableOpacity
                             onPress={handleInvite}
                             disabled={inviting || !inviteName.trim()}
