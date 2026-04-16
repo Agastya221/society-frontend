@@ -97,10 +97,10 @@ function CategoryCard({
                     accessibilityLabel={`${label} emergency category`}
                     accessibilityHint={`Tap to report ${label} emergency`}
                 >
-                    <View className="mb-2">
-                        <MaterialCommunityIcons name={icon as any} size={32} color="#ef4444" />
+                    <View className="mb-3">
+                        <MaterialCommunityIcons name={icon as any} size={36} color="#ef4444" />
                     </View>
-                    <Text className="text-[10px] text-gray-700 uppercase tracking-widest text-center px-1 font-bold">
+                    <Text className="text-[11px] text-gray-700 uppercase tracking-[2px] text-center px-1 font-bold">
                         {label}
                     </Text>
                 </Pressable>
@@ -298,10 +298,10 @@ export default function CreateEmergencyScreen() {
                     {/* Pulsing Light Aura */}
                     <Animated.View
                         style={[pulseStyle]}
-                        className="absolute w-64 h-64 rounded-full bg-red-500"
+                        className="absolute w-56 h-56 rounded-full bg-red-500"
                     />
 
-                    <View className="w-[190px] h-[190px] items-center justify-center">
+                    <View className="w-[160px] h-[160px] items-center justify-center">
                         <Pressable
                             onPressIn={startHold}
                             onPressOut={cancelHold}
@@ -314,31 +314,28 @@ export default function CreateEmergencyScreen() {
                         >
                             <Animated.View
                                 style={[sosButtonStyle]}
-                                className="w-[160px] h-[160px] rounded-full bg-red-500 items-center justify-center shadow-2xl shadow-red-400 border-[7px] border-white/90 overflow-hidden"
+                                className="w-[125px] h-[125px] rounded-full bg-red-500 items-center justify-center shadow-2xl shadow-red-400 border-[6px] border-white/90 overflow-hidden"
                             >
                                 <LinearGradient
                                     colors={['#ff7676', '#ef4444', '#dc2626']}
                                     className="absolute inset-0"
                                 />
                                 {/* Glass Gloss Overlays */}
-                                <View className="absolute top-2 left-6 w-28 h-10 bg-white/20 rounded-full rotate-[-15deg]" />
-                                <View className="absolute bottom-4 right-10 w-20 h-8 bg-black/5 rounded-full rotate-[15deg] blur-md" />
-
-                                <MaterialCommunityIcons name="alert-decagram" size={32} color="white" style={{ opacity: 0.9, marginBottom: 4 }} />
-                                <Text className="text-white text-5xl font-black tracking-widest leading-none" style={{ fontFamily: SgateFonts.extrabold }}>SOS</Text>
-                                <Text className="text-white/80 text-[10px] font-bold mt-2 uppercase tracking-wider" style={{ fontFamily: SgateFonts.bold }}>
-                                    {state === 'holding' ? 'KEEP HOLDING' : '(Hold for 2 sec)'}
+                                <View className="absolute top-1.5 left-4 w-20 h-8 bg-white/20 rounded-full rotate-[-15deg]" />
+                                
+                                <MaterialCommunityIcons name="alert-decagram" size={24} color="white" style={{ opacity: 0.9, marginBottom: 2 }} />
+                                <Text className="text-white text-3xl font-black tracking-widest leading-none" style={{ fontFamily: SgateFonts.extrabold }}>SOS</Text>
+                                <Text className="text-white/80 text-[8px] font-bold mt-1.5 uppercase tracking-wider" style={{ fontFamily: SgateFonts.bold }}>
+                                    {state === 'holding' ? 'KEEP HOLDING' : 'HOLD 2 SEC'}
                                 </Text>
                             </Animated.View>
                         </Pressable>
-
-                        {/* Progress line removed based on user feedback */}
                     </View>
                 </View>
 
-                {/* Grid Section */}
-                <View className="flex-1 mt-6 px-4">
-                    <View className="flex-row flex-wrap">
+                {/* Grid Section - Increased spacing for clarity */}
+                <View className="flex-1 mt-4 px-3">
+                    <View className="flex-row flex-wrap justify-between">
                         {TILES.map((tile, index) => (
                             <CategoryCard
                                 key={tile.type}
