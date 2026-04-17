@@ -1,8 +1,7 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import Animated, {
     Easing,
     cancelAnimation,
@@ -33,12 +32,12 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: Props) {
     const [state, setState] = useState<'idle' | 'pressing' | 'success'>('idle');
-    
+
     // Animations
     const progress = useSharedValue(0); // 0 to 1
     const scale = useSharedValue(1);
     const ringOpacity = useSharedValue(0);
-    
+
     // Timers
     const holdTimer = useRef<NodeJS.Timeout | null>(null);
     const hapticInterval = useRef<NodeJS.Timeout | null>(null);
@@ -53,9 +52,9 @@ export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: 
 
     const handlePressIn = useCallback(() => {
         if (disabled || state === 'success') return;
-        
+
         setState('pressing');
-        
+
         // 1. Light vibration on start
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -74,7 +73,7 @@ export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: 
             if (hapticInterval.current) clearInterval(hapticInterval.current);
             handleSuccess();
         }, holdDuration);
-        
+
     }, [disabled, state, holdDuration]);
 
     const handlePressOut = useCallback(() => {
@@ -83,7 +82,7 @@ export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: 
         // Released early -> Cancel
         if (holdTimer.current) clearTimeout(holdTimer.current);
         if (hapticInterval.current) clearInterval(hapticInterval.current);
-        
+
         setState('idle');
 
         // Cancel animations and revert
@@ -98,10 +97,10 @@ export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: 
 
     const handleSuccess = useCallback(() => {
         setState('success');
-        
+
         // Strong vibration on success
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
+
         // Success animation
         scale.value = withSequence(
             withSpring(1.15),
@@ -178,18 +177,18 @@ export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: 
                         colors={state === 'success' ? ['#ef4444', '#b91c1c'] : ['#ff6b6b', '#ef4444', '#b91c1c']}
                         className="absolute inset-0"
                     />
-                    
+
                     {/* Glass Gloss Overlay */}
                     <View className="absolute top-0 left-2 w-24 h-10 bg-white/20 rounded-full rotate-[-15deg] opacity-60" />
-                    
-                    <Text 
-                        className="text-white text-3xl font-black tracking-widest leading-none mt-2" 
+
+                    <Text
+                        className="text-white text-3xl font-black tracking-widest leading-none mt-2"
                         style={{ fontFamily: SgateFonts.extrabold }}
                     >
                         SOS
                     </Text>
-                    <Text 
-                        className="text-white/90 text-[9px] font-bold mt-1 uppercase tracking-wider" 
+                    <Text
+                        className="text-white/90 text-[9px] font-bold mt-1 uppercase tracking-wider"
                         style={{ fontFamily: SgateFonts.bold }}
                     >
                         {state === 'success' ? 'TRIGGERED' : state === 'pressing' ? 'HOLDING...' : 'HOLD 2 SEC'}

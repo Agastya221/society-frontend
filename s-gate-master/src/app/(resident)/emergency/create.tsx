@@ -9,6 +9,7 @@ import {
     ActivityIndicator,
     Dimensions,
     Pressable,
+    ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -202,10 +203,10 @@ export default function CreateEmergencyScreen() {
         <View className="flex-1 bg-[#FAFAFA]">
             <LinearGradient
                 colors={['#FFFFFF', '#FAFAFA', '#FFF5F5']}
-                className="flex-1"
+                className="flex-1 relative"
                 style={{ paddingTop: insets.top }}
             >
-                {/* Status Indicator (Offline / Sending) */}
+                {/* Status Indicator (Offline / Sending) - Absolute so it floats over ScrollView */}
                 {(state === 'triggered' || isOffline) && (
                     <Animated.View entering={FadeInDown} className="absolute top-0 left-0 right-0 z-[60] py-4 bg-red-500 items-center shadow-lg">
                         <View className="flex-row items-center gap-3" style={{ marginTop: insets.top }}>
@@ -217,63 +218,72 @@ export default function CreateEmergencyScreen() {
                     </Animated.View>
                 )}
 
-                {/* Header Section */}
-                <View className="items-center mt-8 mb-8">
-                    <Animated.View style={sirenStyle} className="mb-3">
-                        <View className="w-12 h-12 rounded-full bg-red-50 items-center justify-center shadow-md shadow-red-100">
-                            <MaterialCommunityIcons name="alarm-light" size={28} color="#ef4444" />
-                        </View>
-                    </Animated.View>
-                    <Text className="text-2xl font-extrabold text-gray-900 tracking-tight" style={{ fontFamily: SgateFonts.bold }}>
-                        Emergency SOS
-                    </Text>
-                    <Text className="text-gray-500 text-xs mt-1 font-medium">Hold button or tap an emergency type</Text>
-                </View>
-
-                {/* Main SOS Button Hub */}
-                <View className="items-center justify-center py-6">
-                    <SOSButton 
-                        onTrigger={() => handleSOS('OTHER', true)} 
-                        disabled={state === 'triggered' || isOffline} 
-                        holdDuration={2000} 
-                    />
-                </View>
-
-                {/* Grid Section */}
-                <View className="flex-1 mt-6 px-3">
-                    <View className="flex-row flex-wrap justify-start">
-                        {TILES.map((tile, index) => (
-                            <CategoryCard
-                                key={tile.type}
-                                label={tile.label}
-                                icon={TYPE_ICONS[tile.type]}
-                                index={index}
-                                disabled={state === 'triggered' || isOffline}
-                                onPress={() => handleSOS(tile.type)}
-                            />
-                        ))}
-                    </View>
-                </View>
-
-                {/* Bottom Info Section - Safe App Padding */}
-                <View className="mt-auto items-center pt-2" style={{ paddingBottom: Math.max(insets.bottom + 24, 32) }}>
-                    <View className="flex-row items-center bg-red-50/90 px-4 py-2.5 rounded-full border border-red-100 shadow-sm shadow-red-100/50">
-                        <MaterialIcons name="my-location" size={16} color="#ef4444" />
-                        <Text className="text-red-700 text-[11px] font-bold ml-2 uppercase tracking-wide">
-                            Live location will be shared
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Safe Back / Close */}
+                {/* Safe Back / Close - Absolute so it floats over ScrollView */}
                 <TouchableOpacity
                     onPress={() => router.back()}
                     disabled={state === 'triggered'}
-                    className="absolute right-6 top-12 w-10 h-10 rounded-full bg-white/80 items-center justify-center border border-gray-100 shadow-sm"
+                    className="absolute right-6 top-6 w-10 h-10 rounded-full bg-white/80 items-center justify-center border border-gray-100 shadow-sm z-[55]"
                     accessibilityLabel="Close emergency screen"
+                    style={{ marginTop: insets.top }}
                 >
                     <Ionicons name="close" size={24} color="#374151" />
                 </TouchableOpacity>
+
+                {/* Scrollable Main Area guarantees zero overlap on smaller mobile displays */}
+                <ScrollView 
+                    className="flex-1" 
+                    contentContainerStyle={{ flexGrow: 1 }} 
+                    showsVerticalScrollIndicator={false}
+                    bounces={false}
+                >
+                    {/* Header Section */}
+                    <View className="items-center mt-8 mb-4">
+                        <Animated.View style={sirenStyle} className="mb-3">
+                            <View className="w-12 h-12 rounded-full bg-red-50 items-center justify-center shadow-md shadow-red-100">
+                                <MaterialCommunityIcons name="alarm-light" size={28} color="#ef4444" />
+                            </View>
+                        </Animated.View>
+                        <Text className="text-2xl font-extrabold text-gray-900 tracking-tight" style={{ fontFamily: SgateFonts.bold }}>
+                            Emergency SOS
+                        </Text>
+                        <Text className="text-gray-500 text-xs mt-1 font-medium">Hold button or tap an emergency type</Text>
+                    </View>
+
+                    {/* Main SOS Button Hub */}
+                    <View className="items-center justify-center py-6">
+                        <SOSButton 
+                            onTrigger={() => handleSOS('OTHER', true)} 
+                            disabled={state === 'triggered' || isOffline} 
+                            holdDuration={2000} 
+                        />
+                    </View>
+
+                    {/* Grid Section */}
+                    <View className="px-3" style={{ flexShrink: 0 }}>
+                        <View className="flex-row flex-wrap justify-start">
+                            {TILES.map((tile, index) => (
+                                <CategoryCard
+                                    key={tile.type}
+                                    label={tile.label}
+                                    icon={TYPE_ICONS[tile.type]}
+                                    index={index}
+                                    disabled={state === 'triggered' || isOffline}
+                                    onPress={() => handleSOS(tile.type)}
+                                />
+                            ))}
+                        </View>
+                    </View>
+
+                    {/* Bottom Info Section - Safe App Padding */}
+                    <View className="mt-auto items-center pt-8" style={{ paddingBottom: Math.max(insets.bottom + 24, 32) }}>
+                        <View className="flex-row items-center bg-red-50/90 px-4 py-2.5 rounded-full border border-red-100 shadow-sm shadow-red-100/50">
+                            <MaterialIcons name="my-location" size={16} color="#ef4444" />
+                            <Text className="text-red-700 text-[11px] font-bold ml-2 uppercase tracking-wide">
+                                Live location will be shared
+                            </Text>
+                        </View>
+                    </View>
+                </ScrollView>
             </LinearGradient>
         </View>
     );
