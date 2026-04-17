@@ -241,9 +241,16 @@ export default function DeliveriesScreen() {
 
     // ── Render ────────────────────────────────────────────────────────────
     return (
-        <View style={[styles.root, { paddingTop: insets.top }]}>
+        <View style={styles.root}>
             {/* ── Header ──────────────────────────────────────────────── */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity 
+                    onPress={() => router.push('/(resident)/home' as any)}
+                    style={styles.backButton}
+                    accessibilityLabel="Go back to Home"
+                >
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                </TouchableOpacity>
                 <Text style={styles.headerTitle}>Deliveries</Text>
             </View>
 
@@ -331,14 +338,19 @@ const styles = StyleSheet.create({
 
     // ── Header ──────────────────────────────────────────────────────────
     header: {
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingHorizontal: 20,
         paddingVertical: 16,
         backgroundColor: SgateColors.card,
         borderBottomWidth: 1,
         borderBottomColor: SgateColors.borderSoft,
     },
+    backButton: {
+        marginRight: 16,
+    },
     headerTitle: {
-        fontSize: 17,
+        fontSize: 18,
         fontFamily: SgateFonts.extrabold,
         color: SgateColors.t1,
     },

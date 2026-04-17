@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
     ActivityIndicator, Animated, Dimensions, FlatList,
@@ -172,8 +172,9 @@ function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () =>
     );
 }
 
-// ── Main Screen ────────────────────────────────────────────────────────────
 export default function NoticesScreen() {
+    const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [notices, setNotices]       = useState<Notice[]>([]);
     const [loading, setLoading]       = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -290,9 +291,18 @@ export default function NoticesScreen() {
     );
 
     return (
-        <SafeAreaView style={S.root} edges={['top']}>
-            <View style={S.header}>
-                <Text style={S.headerLabel}>RESIDENT HUB</Text>
+        <View style={S.root}>
+            <View style={[S.header, { paddingTop: insets.top + 10, paddingBottom: 20 }]}>
+                <View style={S.headerTopRow}>
+                    <TouchableOpacity 
+                        onPress={() => router.push('/(resident)/home' as any)}
+                        style={S.backButton}
+                        accessibilityLabel="Go back to Home"
+                    >
+                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <Text style={S.headerLabel}>RESIDENT HUB</Text>
+                </View>
                 <Text style={S.headerTitle}>Newsletter</Text>
                 <Text style={S.headerSub}>Stay informed about the latest happenings and security alerts.</Text>
             </View>
@@ -355,7 +365,7 @@ export default function NoticesScreen() {
                     onClose={() => setSelected(null)}
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -369,7 +379,9 @@ const S = StyleSheet.create({
         paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20,
         borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft,
     },
-    headerLabel: { fontSize: 11, fontFamily: SgateFonts.semibold, color: SgateColors.gold, letterSpacing: 1.3, marginBottom: 4 },
+    headerTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+    backButton: { marginRight: 12 },
+    headerLabel: { fontSize: 11, fontFamily: SgateFonts.semibold, color: SgateColors.gold, letterSpacing: 1.3, paddingTop: 2 },
     headerTitle: { fontSize: 24, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 6 },
     headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, lineHeight: 20 },
 
