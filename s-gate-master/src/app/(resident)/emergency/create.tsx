@@ -18,16 +18,15 @@ import {
 import Animated, {
     FadeIn,
     FadeInDown,
-    interpolate,
     useAnimatedStyle,
     useSharedValue,
     withRepeat,
     withSequence,
-    withSpring,
     withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppAlert } from '../../../components/ui/AppAlert';
+import { SOSButton } from '../../../components/ui/SOSButton';
 import { SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 
@@ -123,23 +122,9 @@ export default function CreateEmergencyScreen() {
     const locationRef = useRef<string | null>(null);
 
     // Animations
-    const pulseValue = useSharedValue(1);
     const sirenRotate = useSharedValue(0);
-    const holdProgress = useSharedValue(0);
-    const sosScale = useSharedValue(1);
-    const holdTimer = useRef<NodeJS.Timeout | null>(null);
-    const hapticInterval = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        // Continuous Pulse loop (Idle & Holding)
-        pulseValue.value = withRepeat(
-            withSequence(
-                withTiming(1.2, { duration: 1200 }),
-                withTiming(1, { duration: 1200 })
-            ),
-            -1
-        );
-
         // Siren rotation animation
         sirenRotate.value = withRepeat(
             withSequence(
@@ -159,16 +144,11 @@ export default function CreateEmergencyScreen() {
                 locationRef.current = `${loc.coords.latitude},${loc.coords.longitude}`;
             } catch { }
         })();
-
-        return () => {
-            if (holdTimer.current) clearTimeout(holdTimer.current);
-            if (hapticInterval.current) clearInterval(hapticInterval.current);
-        };
     }, []);
 
     // ─── Interaction Handlers ────────────────────────────────────────────────
 
-    const handleSOS = useCallback(async (type: string = 'OTHER') => {
+    const handleSOS = useCallback(async (type: string = 'OTHER', skipHaptic: boolean = false) => {
         const now = Date.now();
         if (now - lastTriggerTime < COOLDOWN_MS) {
             AppAlert.show('Slow Down', 'Please wait before sending another alert.');
@@ -178,9 +158,11 @@ export default function CreateEmergencyScreen() {
         setState('triggered');
         setLastTriggerTime(now);
         
-        // Single Heavy Haptic on Trigger Success
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Vibration.vibrate([0, 100, 50, 200]);
+        if (!skipHaptic) {
+            // Single Heavy Haptic on Trigger Success for tile grid (SOSButton handles its own)
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            Vibration.vibrate([0, 100, 50, 200]);
+        }
 
         try {
             const body: any = { type };
@@ -208,57 +190,7 @@ export default function CreateEmergencyScreen() {
         }
     }, [lastTriggerTime, router]);
 
-    const startHold = () => {
-        if (state === 'triggered') return;
-        
-        setState('holding');
-        sosScale.value = withSpring(0.92);
-        holdProgress.value = withTiming(100, { duration: 2000 });
-
-        // Tactile Haptic Pulses during hold (~500ms)
-        hapticInterval.current = setInterval(() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }, 500);
-
-        holdTimer.current = setTimeout(() => {
-            if (hapticInterval.current) clearInterval(hapticInterval.current);
-            handleSOS('OTHER');
-        }, 2000);
-    };
-
-    const cancelHold = () => {
-        if (state === 'triggered') return;
-        
-        setState('idle');
-        if (holdTimer.current) clearTimeout(holdTimer.current);
-        if (hapticInterval.current) clearInterval(hapticInterval.current);
-        
-        holdProgress.value = withTiming(0, { duration: 300 });
-        sosScale.value = withSpring(1);
-    };
-
     // ─── Animated Styles ─────────────────────────────────────────────────────
-
-    const pulseStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: pulseValue.value }],
-        opacity: interpolate(pulseValue.value, [1, 1.2], [0.4, 0]),
-    }));
-
-    const sosButtonStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: sosScale.value }],
-    }));
-
-    const progressRingStyle = useAnimatedStyle(() => {
-        return {
-            borderWidth: 6,
-            borderColor: '#ef4444',
-            borderRadius: 9999,
-            position: 'absolute',
-            top: -10, left: -10, right: -10, bottom: -10,
-            opacity: holdProgress.value > 0 ? 1 : 0,
-            transform: [{ scale: interpolate(holdProgress.value, [0, 100], [0.9, 1.05]) }]
-        };
-    });
 
     const sirenStyle = useAnimatedStyle(() => ({
         transform: [{ rotateZ: `${sirenRotate.value}deg` }],
@@ -286,7 +218,7 @@ export default function CreateEmergencyScreen() {
                 )}
 
                 {/* Header Section */}
-                <View className="items-center mt-6 mb-4">
+                <View className="items-center mt-8 mb-8">
                     <Animated.View style={sirenStyle} className="mb-3">
                         <View className="w-12 h-12 rounded-full bg-red-50 items-center justify-center shadow-md shadow-red-100">
                             <MaterialCommunityIcons name="alarm-light" size={28} color="#ef4444" />
@@ -299,47 +231,16 @@ export default function CreateEmergencyScreen() {
                 </View>
 
                 {/* Main SOS Button Hub */}
-                <View className="items-center justify-center py-4">
-                    {/* Pulsing Light Aura */}
-                    <Animated.View
-                        style={[pulseStyle]}
-                        className="absolute w-56 h-56 rounded-full bg-red-400"
+                <View className="items-center justify-center py-6">
+                    <SOSButton 
+                        onTrigger={() => handleSOS('OTHER', true)} 
+                        disabled={state === 'triggered' || isOffline} 
+                        holdDuration={2000} 
                     />
-
-                    <View className="w-[160px] h-[160px] items-center justify-center">
-                        <Pressable
-                            onPressIn={startHold}
-                            onPressOut={cancelHold}
-                            disabled={state === 'triggered'}
-                            className="z-50 items-center justify-center relative"
-                            accessibilityLabel="Emergency SOS button"
-                            accessibilityHint="Hold for 2 seconds to send emergency alert"
-                            accessibilityRole="button"
-                            accessibilityState={{ disabled: state === 'triggered', busy: state === 'triggered' }}
-                        >
-                            <Animated.View style={progressRingStyle} />
-                            <Animated.View
-                                style={[sosButtonStyle]}
-                                className="w-[125px] h-[125px] rounded-full bg-red-500 items-center justify-center shadow-2xl shadow-red-500/50 border-[4px] border-white overflow-hidden"
-                            >
-                                <LinearGradient
-                                    colors={['#ff6b6b', '#ef4444', '#b91c1c']}
-                                    className="absolute inset-0"
-                                />
-                                {/* Glass Gloss Overlays */}
-                                <View className="absolute top-1.5 left-4 w-20 h-8 bg-white/20 rounded-full rotate-[-15deg]" />
-                                
-                                <Text className="text-white text-3xl font-black tracking-widest leading-none mt-2" style={{ fontFamily: SgateFonts.extrabold }}>SOS</Text>
-                                <Text className="text-white/90 text-[9px] font-bold mt-1 uppercase tracking-wider" style={{ fontFamily: SgateFonts.bold }}>
-                                    {state === 'holding' ? 'HOLDING...' : 'HOLD 2 SEC'}
-                                </Text>
-                            </Animated.View>
-                        </Pressable>
-                    </View>
                 </View>
 
                 {/* Grid Section */}
-                <View className="flex-1 mt-2 px-3">
+                <View className="flex-1 mt-6 px-3">
                     <View className="flex-row flex-wrap justify-start">
                         {TILES.map((tile, index) => (
                             <CategoryCard
@@ -347,7 +248,7 @@ export default function CreateEmergencyScreen() {
                                 label={tile.label}
                                 icon={TYPE_ICONS[tile.type]}
                                 index={index}
-                                disabled={state === 'triggered'}
+                                disabled={state === 'triggered' || isOffline}
                                 onPress={() => handleSOS(tile.type)}
                             />
                         ))}
