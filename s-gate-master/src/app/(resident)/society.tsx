@@ -410,18 +410,27 @@ export default function SocietyScreen() {
     }
 
     return (
-        <View style={[S.root, { paddingTop: insets.top }]}>
+        <View style={S.root}>
             {/* ── Header ──────────────────────────────────────────────── */}
-            <View style={S.header}>
-                <Text style={S.headerTitle}>
-                    {user?.society?.name ?? 'My Society'}
-                </Text>
-                {user?.society?.address ? (
-                    <Text style={S.headerSub} numberOfLines={1}>
-                        {user.society.address}
-                        {user.society.city ? `, ${user.society.city}` : ''}
+            <View style={[S.header, { paddingTop: insets.top + 16, paddingBottom: 14 }]}>
+                <TouchableOpacity 
+                    onPress={() => router.push('/(resident)/home' as any)}
+                    style={S.backButton}
+                    accessibilityLabel="Go back to Home"
+                >
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                    <Text style={S.headerTitle} numberOfLines={1}>
+                        {user?.society?.name ?? 'My Society'}
                     </Text>
-                ) : null}
+                    {user?.society?.address ? (
+                        <Text style={S.headerSub} numberOfLines={1}>
+                            {user.society.address}
+                            {user.society.city ? `, ${user.society.city}` : ''}
+                        </Text>
+                    ) : null}
+                </View>
             </View>
 
             {/* ── Tab switcher ────────────────────────────────────────── */}
@@ -594,7 +603,8 @@ const S = StyleSheet.create({
     center: { alignItems: 'center', justifyContent: 'center' },
 
     // ── Header ──────────────────────────────────────────────────────────
-    header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+    backButton: { marginRight: 16 },
     headerTitle: { fontSize: 17, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 },
     headerSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
 
