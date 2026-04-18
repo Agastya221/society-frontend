@@ -49,10 +49,23 @@ export default function DailyHelpTypeList() {
 
   const fetchHelpers = async () => {
     try {
-      const res = await api.get('/resident/daily-help', { params: { type } });
-      const raw = res.data?.data ?? res.data;
-      const list: any[] = Array.isArray(raw) ? raw : [];
-      setHelpers(list.map(normaliseHelper));
+      const res = await api.get('/resident/daily-help');
+      const apiData = res.data?.data ?? res.data;
+      
+      // Extract staff array correctly whether it's nested in .staff or direct
+      const list: any[] = Array.isArray(apiData?.staff) ? apiData.staff : (Array.isArray(apiData) ? apiData : []);
+      
+      console.log("Selected Type:", type);
+      console.log("Staff Types:", list.map(s => s.staffType ?? s.type));
+
+      // Filter staff by selected type (case insensitive matching)
+      const selectedTypeStr = String(type).toUpperCase();
+      const filteredStaff = list.filter((item: any) => {
+        const itemType = String(item.staffType ?? item.type ?? '').toUpperCase();
+        return itemType === selectedTypeStr;
+      });
+
+      setHelpers(filteredStaff.map(normaliseHelper));
     } catch (err) {
       console.error('Failed to fetch daily help list:', err);
       setHelpers([]);
@@ -122,8 +135,8 @@ export default function DailyHelpTypeList() {
           ListEmptyComponent={
             <View style={s.emptyWrap}>
               <Feather name="users" size={32} color={C.t4} />
-              <Text style={s.emptyTitle}>No helpers found</Text>
-              <Text style={s.emptySubtitle}>Try removing filters</Text>
+              <Text style={s.emptyTitle}>No staff available</Text>
+              <Text style={s.emptySubtitle}>None found for this category</Text>
             </View>
           }
         />
