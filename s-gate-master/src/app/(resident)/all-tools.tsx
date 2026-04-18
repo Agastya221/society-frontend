@@ -73,7 +73,7 @@ export default function ResidentAllToolsScreen() {
                         <Feather name="arrow-left" size={22} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>All Tools</Text>
-                    <View style={{ width: 40 }} />
+                    
                 </View>
             </SafeAreaView>
 
@@ -108,10 +108,7 @@ const styles = StyleSheet.create({
         width: 40, height: 40, borderRadius: 20,
         alignItems: 'center', justifyContent: 'center',
     },
-    headerTitle: {
-        flex: 1, textAlign: 'center',
-        fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1,
-    },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
     scrollContent: { padding: 20, paddingBottom: 60 },
     sectionTitle: {
         fontSize: 12,

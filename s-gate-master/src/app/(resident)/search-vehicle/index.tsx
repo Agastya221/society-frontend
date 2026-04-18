@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SgateColors.bg },
   flex1: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, flex: 1, marginLeft: 12, textAlign: 'center' },
+  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   headerSpacer: { width: 22 },
 
   tabRow: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 6, paddingBottom: 6, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },

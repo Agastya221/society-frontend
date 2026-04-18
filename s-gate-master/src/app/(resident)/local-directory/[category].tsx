@@ -136,7 +136,7 @@ export default function CategoryContacts() {
           <Feather name="arrow-left" size={22} color={SgateColors.t1} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>{category}</Text>
-        <View style={{ width: 22 }} />
+        
       </View>
 
       {loading ? (
@@ -168,8 +168,8 @@ export default function CategoryContacts() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   listContent: { padding: 16, paddingBottom: 100 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, borderRadius: 12, borderWidth: 1, borderColor: SgateColors.border, paddingHorizontal: 12, paddingVertical: 10, gap: 8, marginBottom: 16 },
   searchInput: { flex: 1, fontFamily: SgateFonts.regular, fontSize: 14, color: SgateColors.t1 },

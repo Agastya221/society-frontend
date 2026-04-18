@@ -231,7 +231,7 @@ export default function PreApprovalsScreen() {
                         <Feather name="arrow-left" size={22} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Pre-Approvals</Text>
-                    <View style={{ width: 40 }} />
+                    
                 </View>
                 <View style={styles.centered}>
                     <ActivityIndicator size="large" color={SgateColors.gold} />
@@ -248,7 +248,7 @@ export default function PreApprovalsScreen() {
                         <Feather name="arrow-left" size={22} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Pre-Approvals</Text>
-                    <View style={{ width: 40 }} />
+                    
                 </View>
                 <View style={styles.centered}>
                     <Feather name="wifi-off" size={40} color={SgateColors.t4} />
@@ -380,7 +380,7 @@ export default function PreApprovalsScreen() {
                 onClose={() => setSheetVisible(false)}
                 onSuccess={() => { setSheetVisible(false); fetchEntries(); }}
             />
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -405,13 +405,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    headerTitle: {
-        flex: 1,
-        textAlign: 'center',
-        fontSize: 17,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-    },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
     addBtn: {
         width: 40,
         height: 40,

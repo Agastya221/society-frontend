@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: SgateColors.card },
   flex1: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft, paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontFamily: SgateFonts.bold, fontSize: 18, color: SgateColors.t1, flex: 1, marginLeft: 12 },
+  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   postButton: { fontFamily: SgateFonts.semibold, fontSize: 15, color: SgateColors.blue },
   postButtonDisabled: { color: SgateColors.t4 },
   scrollView: { flex: 1, backgroundColor: SgateColors.bg },

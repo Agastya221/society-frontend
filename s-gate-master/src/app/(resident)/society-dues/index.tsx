@@ -262,13 +262,7 @@ const styles = StyleSheet.create({
     width: 36,
     alignItems: 'center',
   },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-    marginLeft: 12,
-  },
+  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
 
   // Summary Card
   summaryCard: {

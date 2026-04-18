@@ -289,7 +289,7 @@ export default function ApprovalsScreen() {
                         </View>
                     )}
                 </View>
-                <View style={{ width: 40 }} />
+                
             </View>
 
             <FlatList
@@ -394,11 +394,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 8,
     },
-    headerTitle: {
-        fontSize: 18,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-    },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
     liveBadge: {
         flexDirection: 'row',
         alignItems: 'center',

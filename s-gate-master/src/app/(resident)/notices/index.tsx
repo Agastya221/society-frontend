@@ -382,7 +382,7 @@ const S = StyleSheet.create({
     headerTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
     backButton: { marginRight: 12 },
     headerLabel: { fontSize: 11, fontFamily: SgateFonts.semibold, color: SgateColors.gold, letterSpacing: 1.3, paddingTop: 2 },
-    headerTitle: { fontSize: 24, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 6 },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
     headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, lineHeight: 20 },
 
     listContent: { paddingBottom: 40 },

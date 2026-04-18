@@ -344,7 +344,7 @@ const D = StyleSheet.create({
   notFoundText: { fontSize: 16, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.bg },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, marginLeft: 12, fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   headerSpacer: { width: 36 },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 32 },
   infoCard: { backgroundColor: SgateColors.card, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: SgateColors.borderSoft },

@@ -131,7 +131,7 @@ const S = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t1, flex: 1, marginLeft: 12 },
+  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   scroll: { flexGrow: 1, paddingBottom: 8 },
   centerArea: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 16 },
   mainCard: { backgroundColor: SgateColors.card, borderRadius: 20, padding: 28, alignItems: 'center', borderWidth: 1, borderColor: SgateColors.borderSoft },

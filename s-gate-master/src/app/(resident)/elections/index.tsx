@@ -198,7 +198,7 @@ const S = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.bg },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { flex: 1, marginLeft: 12, fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   headerSpacer: { width: 36 },
   tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 16 },
   tabBtn: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },

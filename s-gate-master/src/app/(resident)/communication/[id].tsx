@@ -321,7 +321,7 @@ const S = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   notFoundText: { fontFamily: SgateFonts.medium, fontSize: 15, color: SgateColors.t3 },
   header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerTitle: { fontFamily: SgateFonts.bold, fontSize: 18, color: SgateColors.t1, marginLeft: 12 },
+  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   list: { flex: 1, backgroundColor: SgateColors.bg },
   postHeader: { backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft, padding: 16, marginBottom: 8 },
   postTopRow: { flexDirection: 'row', alignItems: 'center' },

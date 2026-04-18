@@ -93,7 +93,7 @@ export default function DailyHelpTypeList() {
             <Feather name="arrow-left" size={22} color={C.t1} />
           </TouchableOpacity>
           <Text style={s.headerTitle}>{typeLabel}</Text>
-          <View style={{ width: 22 }} />
+          
         </View>
       </SafeAreaView>
 
@@ -135,8 +135,8 @@ export default function DailyHelpTypeList() {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.borderSoft },
-  headerTitle: { fontSize: 17, fontFamily: F.bold, color: C.t1 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.borderSoft },
+  headerTitle: { fontSize: 18, fontFamily: F.semiBold, color: C.t1, marginLeft: 12, flex: 1 },
   listContent: { padding: 16, paddingBottom: 40 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingHorizontal: 12, paddingVertical: 10, gap: 8, marginBottom: 12 },
   searchInput: { flex: 1, fontFamily: F.regular, fontSize: 14, color: C.t1 },

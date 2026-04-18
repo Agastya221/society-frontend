@@ -158,7 +158,6 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
         marginBottom: 12,
         paddingHorizontal: 4,
     },
@@ -167,11 +166,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
     },
-    headerTitle: {
-        fontSize: 16,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-    },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
     manageBtn: {
         flexDirection: 'row',
         alignItems: 'center',

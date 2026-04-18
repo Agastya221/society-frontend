@@ -88,7 +88,7 @@ export default function DailyHelpProfile() {
           <View style={s.header}>
             <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
             <Text style={s.headerTitle}>Profile</Text>
-            <View style={{ width: 22 }} />
+            
           </View>
         </SafeAreaView>
         <View style={s.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
@@ -103,7 +103,7 @@ export default function DailyHelpProfile() {
           <View style={s.header}>
             <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
             <Text style={s.headerTitle}>Profile</Text>
-            <View style={{ width: 22 }} />
+            
           </View>
         </SafeAreaView>
         <View style={s.center}><Text style={s.emptyTitle}>Profile not found</Text></View>
@@ -123,7 +123,7 @@ export default function DailyHelpProfile() {
             <Feather name="arrow-left" size={22} color={SgateColors.t1} />
           </TouchableOpacity>
           <Text style={s.headerTitle}>{typeLabel} Profile</Text>
-          <View style={{ width: 22 }} />
+          
         </View>
       </SafeAreaView>
 
@@ -209,8 +209,8 @@ export default function DailyHelpProfile() {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   content: { padding: 16, paddingBottom: 32 },
   profileCard: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 24, marginBottom: 12, alignItems: 'center' },
   profileAvatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },

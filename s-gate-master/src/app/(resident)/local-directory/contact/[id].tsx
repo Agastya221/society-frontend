@@ -108,7 +108,7 @@ export default function ContactProfile() {
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
           <Text style={styles.headerTitle}>Profile Details</Text>
-          <View style={{ width: 22 }} />
+          
         </View>
         <View style={styles.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
       </SafeAreaView>
@@ -121,7 +121,7 @@ export default function ContactProfile() {
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
           <Text style={styles.headerTitle}>Profile Details</Text>
-          <View style={{ width: 22 }} />
+          
         </View>
         <View style={styles.center}><Text style={styles.emptyTitle}>Contact not found</Text></View>
       </SafeAreaView>
@@ -135,7 +135,7 @@ export default function ContactProfile() {
           <Feather name="arrow-left" size={22} color={SgateColors.t1} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile Details</Text>
-        <View style={{ width: 22 }} />
+        
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
@@ -214,8 +214,8 @@ export default function ContactProfile() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
   card: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 20, marginBottom: 16 },
   profileTop: { alignItems: "center", paddingBottom: 20 },

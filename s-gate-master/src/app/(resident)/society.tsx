@@ -604,8 +604,7 @@ const S = StyleSheet.create({
 
     // ── Header ──────────────────────────────────────────────────────────
     header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-    backButton: { marginRight: 16 },
-    headerTitle: { fontSize: 17, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
     headerSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
 
     // ── Tab switcher ────────────────────────────────────────────────────

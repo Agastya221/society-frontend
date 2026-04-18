@@ -283,13 +283,7 @@ const S = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: SgateColors.borderSoft,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t1,
-    flex: 1,
-    marginLeft: 12,
-  },
+  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   headerSpacer: {
     width: 22,
   },
