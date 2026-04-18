@@ -83,27 +83,31 @@ export default function DailyHelpProfile() {
 
   if (loading) {
     return (
-      <SafeAreaView style={s.safe} edges={['top']}>
-        <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
-          <Text style={s.headerTitle}>Profile</Text>
-          <View style={{ width: 22 }} />
-        </View>
+      <View style={s.safe}>
+        <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
+          <View style={s.header}>
+            <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
+            <Text style={s.headerTitle}>Profile</Text>
+            <View style={{ width: 22 }} />
+          </View>
+        </SafeAreaView>
         <View style={s.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!helper) {
     return (
-      <SafeAreaView style={s.safe} edges={['top']}>
-        <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
-          <Text style={s.headerTitle}>Profile</Text>
-          <View style={{ width: 22 }} />
-        </View>
+      <View style={s.safe}>
+        <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
+          <View style={s.header}>
+            <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
+            <Text style={s.headerTitle}>Profile</Text>
+            <View style={{ width: 22 }} />
+          </View>
+        </SafeAreaView>
         <View style={s.center}><Text style={s.emptyTitle}>Profile not found</Text></View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -112,14 +116,16 @@ export default function DailyHelpProfile() {
   const maskedPhone = helper.phone.replace(/\d(?=\d{4})/g, '*');
 
   return (
-    <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>{typeLabel} Profile</Text>
-        <View style={{ width: 22 }} />
-      </View>
+    <View style={s.safe}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+          </TouchableOpacity>
+          <Text style={s.headerTitle}>{typeLabel} Profile</Text>
+          <View style={{ width: 22 }} />
+        </View>
+      </SafeAreaView>
 
       <ScrollView contentContainerStyle={s.content}>
         {/* Profile Card */}
@@ -196,7 +202,7 @@ export default function DailyHelpProfile() {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

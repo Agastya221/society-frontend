@@ -167,15 +167,17 @@ export default function MyVehiclesScreen() {
 
   return (
     <View style={styles.safeArea}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Vehicles</Text>
-        <TouchableOpacity onPress={() => router.push('/(resident)/vehicles/add' as any)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="plus" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
+        <View style={[styles.header, { paddingTop: 12 }]}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>My Vehicles</Text>
+          <TouchableOpacity onPress={() => router.push('/(resident)/vehicles/add' as any)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Feather name="plus" size={22} color={SgateColors.t1} />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>

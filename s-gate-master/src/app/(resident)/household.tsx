@@ -260,14 +260,16 @@ export default function HouseholdScreen() {
     return (
         <View className="flex-1 bg-gray-50">
             {/* Header */}
-            <View className="px-5 flex-row items-center justify-between bg-white border-b border-gray-100" style={{ paddingTop: insets.top + 12, paddingBottom: 16 }}>
-                <View className="flex-row items-center gap-3">
-                    <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                        <Ionicons name="arrow-back" size={24} color="#374151" />
-                    </TouchableOpacity>
-                    <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Household</Text>
+            <SafeAreaView edges={['top']} style={{ backgroundColor: 'white' }}>
+                <View className="px-5 flex-row items-center justify-between bg-white border-b border-gray-100" style={{ paddingTop: 12, paddingBottom: 16 }}>
+                    <View className="flex-row items-center gap-3">
+                        <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                            <Ionicons name="arrow-back" size={24} color="#374151" />
+                        </TouchableOpacity>
+                        <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Household</Text>
+                    </View>
                 </View>
-            </View>
+            </SafeAreaView>
 
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {setRefreshing(true); fetchAll();}} />}>
                 

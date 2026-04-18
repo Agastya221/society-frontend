@@ -203,22 +203,24 @@ export default function SocietyDuesScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <View style={styles.safeArea}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.headerBackBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.headerBackBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+          </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Society Dues</Text>
+          <Text style={styles.headerTitle}>Society Dues</Text>
 
-        {/* Spacer same width as back button */}
-        <View style={styles.headerBackBtn} />
-      </View>
+          {/* Spacer same width as back button */}
+          <View style={styles.headerBackBtn} />
+        </View>
+      </SafeAreaView>
 
       <FlatList
         data={dues}
@@ -236,7 +238,7 @@ export default function SocietyDuesScreen() {
           />
         )}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

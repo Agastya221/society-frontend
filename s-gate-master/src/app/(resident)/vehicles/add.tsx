@@ -64,15 +64,17 @@ export default function AddVehicleScreen() {
   return (
     <View className="flex-1 bg-gray-50">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <View 
-        className="px-5 flex-row items-center gap-3 bg-white border-b border-gray-100"
-        style={{ paddingTop: insets.top + 12, paddingBottom: 16 }}
-      >
-        <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-          <Ionicons name="arrow-back" size={24} className="text-gray-700" />
-        </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-900">Add Vehicle</Text>
-      </View>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: 'white' }}>
+        <View 
+          className="px-5 flex-row items-center gap-3 bg-white border-b border-gray-100"
+          style={{ paddingTop: 12, paddingBottom: 16 }}
+        >
+          <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+            <Ionicons name="arrow-back" size={24} className="text-gray-700" />
+          </TouchableOpacity>
+          <Text className="text-xl font-bold text-gray-900">Add Vehicle</Text>
+        </View>
+      </SafeAreaView>
 
       <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">

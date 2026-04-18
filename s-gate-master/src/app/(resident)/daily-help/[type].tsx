@@ -86,14 +86,16 @@ export default function DailyHelpTypeList() {
   );
 
   return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={C.t1} />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>{typeLabel}</Text>
-        <View style={{ width: 22 }} />
-      </View>
+    <View style={s.safe}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.card }}>
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Feather name="arrow-left" size={22} color={C.t1} />
+          </TouchableOpacity>
+          <Text style={s.headerTitle}>{typeLabel}</Text>
+          <View style={{ width: 22 }} />
+        </View>
+      </SafeAreaView>
 
       {loading ? (
         <View style={s.center}><ActivityIndicator size="large" color={C.gold} /></View>
@@ -126,7 +128,7 @@ export default function DailyHelpTypeList() {
           }
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

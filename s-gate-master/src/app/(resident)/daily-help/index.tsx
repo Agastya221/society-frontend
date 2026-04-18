@@ -110,7 +110,24 @@ export default function DailyHelpIndex() {
 
   if (loading) {
     return (
-      <SafeAreaView style={s.safe} edges={['top']}>
+      <View style={s.safe}>
+        <SafeAreaView edges={['top']} style={{ backgroundColor: C.card }}>
+          <View style={s.header}>
+            <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Feather name="arrow-left" size={22} color={C.t1} />
+            </TouchableOpacity>
+            <Text style={s.headerTitle}>Daily Help</Text>
+            <View style={{ width: 22 }} />
+          </View>
+        </SafeAreaView>
+        <View style={s.center}><ActivityIndicator size="large" color={C.gold} /></View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={s.safe}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: C.card }}>
         <View style={s.header}>
           <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Feather name="arrow-left" size={22} color={C.t1} />
@@ -118,20 +135,7 @@ export default function DailyHelpIndex() {
           <Text style={s.headerTitle}>Daily Help</Text>
           <View style={{ width: 22 }} />
         </View>
-        <View style={s.center}><ActivityIndicator size="large" color={C.gold} /></View>
       </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={C.t1} />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>Daily Help</Text>
-        <View style={{ width: 22 }} />
-      </View>
       <ScrollView contentContainerStyle={s.content}>
         <View style={s.searchBar}>
           <Feather name="search" size={16} color={C.t3} />
@@ -178,7 +182,7 @@ export default function DailyHelpIndex() {
           </TouchableOpacity>
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

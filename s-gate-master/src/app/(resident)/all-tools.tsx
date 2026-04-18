@@ -66,14 +66,16 @@ export default function ResidentAllToolsScreen() {
     );
 
     return (
-        <SafeAreaView edges={['top']} style={styles.safe}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>All Tools</Text>
-                <View style={{ width: 40 }} />
-            </View>
+        <View style={styles.safe}>
+            <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>All Tools</Text>
+                    <View style={{ width: 40 }} />
+                </View>
+            </SafeAreaView>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <Text style={styles.sectionTitle}>ESSENTIALS</Text>
@@ -87,7 +89,7 @@ export default function ResidentAllToolsScreen() {
             </ScrollView>
 
             <PreApproveSheet visible={showPreApprove} onClose={() => setShowPreApprove(false)} />
-        </SafeAreaView>
+        </View>
     );
 }
 

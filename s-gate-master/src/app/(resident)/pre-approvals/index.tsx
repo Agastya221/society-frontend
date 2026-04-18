@@ -265,20 +265,22 @@ export default function PreApprovalsScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.safe} edges={['top']}>
+        <View style={styles.safe}>
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Pre-Approvals</Text>
-                <TouchableOpacity
-                    style={styles.addBtn}
-                    onPress={() => setSheetVisible(true)}
-                >
-                    <Feather name="plus" size={20} color={SgateColors.card} />
-                </TouchableOpacity>
-            </View>
+            <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Pre-Approvals</Text>
+                    <TouchableOpacity
+                        style={styles.addBtn}
+                        onPress={() => setSheetVisible(true)}
+                    >
+                        <Feather name="plus" size={20} color={SgateColors.card} />
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
 
             <FlatList
                 data={entries}

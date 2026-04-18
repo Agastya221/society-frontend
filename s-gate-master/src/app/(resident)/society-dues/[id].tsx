@@ -123,11 +123,13 @@ export default function SocietyDueDetailScreen() {
 
   if (!due) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <View style={styles.notFoundContainer}>
-          <Text style={styles.notFoundText}>Not found</Text>
-        </View>
-      </SafeAreaView>
+      <View style={styles.safeArea}>
+        <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
+            <View style={styles.notFoundContainer}>
+              <Text style={styles.notFoundText}>Not found</Text>
+            </View>
+        </SafeAreaView>
+      </View>
     );
   }
 
@@ -210,21 +212,23 @@ export default function SocietyDueDetailScreen() {
   const isActionable = due.status === 'PENDING' || due.status === 'OVERDUE';
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+    <View style={styles.safeArea}>
       {/* ── Header ── */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.headerBackBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {due.month} {due.year}
-        </Text>
-        <View style={styles.headerBackBtn} />
-      </View>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.headerBackBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {due.month} {due.year}
+          </Text>
+          <View style={styles.headerBackBtn} />
+        </View>
+      </SafeAreaView>
 
       {/* ── Status Banner ── */}
       <View style={[styles.statusBanner, { backgroundColor: banner.bg }]}>
@@ -328,7 +332,7 @@ export default function SocietyDueDetailScreen() {
           ) : null}
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -102,26 +102,31 @@ export default function AmenitiesScreen() {
   }, []));
 
   if (loading) return (
-    <SafeAreaView edges={['top']} style={S.root}>
+    <View style={S.root}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
+        <View style={S.header} />
+      </SafeAreaView>
       <View style={[S.root, { alignItems: 'center', justifyContent: 'center' }]}>
         <ActivityIndicator size="large" color={SgateColors.gold} />
       </View>
-    </SafeAreaView>
+    </View>
   );
 
   return (
-    <SafeAreaView edges={['top']} style={S.root}>
+    <View style={S.root}>
       {/* Header */}
-      <View style={S.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={S.headerTitle}>Amenities</Text>
-        <TouchableOpacity onPress={() => router.push('/(resident)/amenities/my-bookings' as any)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={S.myBookingsBtn}>
-          <Feather name="bookmark" size={14} color={SgateColors.goldDeep} />
-          <Text style={S.myBookingsBtnText}>My Bookings</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
+        <View style={S.header}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+          </TouchableOpacity>
+          <Text style={S.headerTitle}>Amenities</Text>
+          <TouchableOpacity onPress={() => router.push('/(resident)/amenities/my-bookings' as any)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={S.myBookingsBtn}>
+            <Feather name="bookmark" size={14} color={SgateColors.goldDeep} />
+            <Text style={S.myBookingsBtnText}>My Bookings</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
       {/* Grid */}
       <FlatList
         data={amenities}
@@ -133,7 +138,7 @@ export default function AmenitiesScreen() {
         ListEmptyComponent={<View style={{ flex: 1, alignItems: 'center', paddingTop: 60 }}><Feather name="home" size={32} color={SgateColors.t4} /><Text style={{ color: SgateColors.t3, marginTop: 12, fontFamily: SgateFonts.medium }}>No amenities available</Text></View>}
         renderItem={({ item, index }) => <AmenityCard item={item} index={index} />}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
