@@ -5,6 +5,11 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../../services/api';
 
+const { width: SCREEN_W } = Dimensions.get('window');
+const GAP = 12;
+const CARD_W = (SCREEN_W - 32 - GAP * 2) / 3;
+const CARD_H = CARD_W * 1.15;
+
 const C = { black: '#0D0F14', gold: '#FFB800', goldDeep: '#E5A500', goldPale: '#FFF8E1', green: '#00D68F', bg: '#F9FAFB', card: '#FFFFFF', surface: '#EEECEA', border: '#E5E3DE', borderSoft: '#F0EEEB', t1: '#0D0F14', t2: '#4A4D57', t3: '#8A8D97', t4: '#B5B8C0' };
 const F = { regular: 'Sora-Regular', medium: 'Sora-Medium', semiBold: 'Sora-SemiBold', bold: 'Sora-Bold' };
 
@@ -147,10 +152,24 @@ const s = StyleSheet.create({
   
   sectionTitle: { fontSize: 16, fontFamily: F.bold, color: C.t1, marginBottom: 16 },
   
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 28 },
-  gridItem: { width: 68, alignItems: 'center', marginBottom: 16 },
-  gridIconCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.goldPale, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  gridLabel: { fontSize: 13, fontFamily: F.bold, color: C.t1, textAlign: 'center' },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
+  gridItem: {
+    width: CARD_W,
+    height: CARD_H,
+    backgroundColor: C.card,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#EBEBEB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  gridIconCircle: { width: 58, height: 58, borderRadius: 29, backgroundColor: C.goldPale, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  gridLabel: { fontSize: 14, fontFamily: F.semiBold, color: C.t1, textAlign: 'center' },
 
 
 });
