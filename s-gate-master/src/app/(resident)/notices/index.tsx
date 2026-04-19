@@ -31,7 +31,7 @@ const TYPE_CFG = {
     GENERAL:     { label: 'General',     bg: '#F5F5F7', text: '#4B5563', border: '#E0E0EA', bar: '#8A8D97', icon: 'info'         },
 } as const;
 
-const FILTERS = ['ALL', 'PINNED', 'ALERT', 'EVENT', 'MAINTENANCE', 'GENERAL'] as const;
+const FILTERS = ['ALL', 'PINNED', 'ALERT', 'MAINTENANCE', 'EVENT', 'GENERAL'] as const;
 
 // Maps every value the backend might send → one of the 4 UI types
 const TYPE_MAP: Record<string, 'ALERT' | 'EVENT' | 'MAINTENANCE' | 'GENERAL'> = {
