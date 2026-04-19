@@ -231,13 +231,6 @@ export default function DeliveriesScreen() {
     );
 
     // ── Loading ──────────────────────────────────────────────────────────
-    if (loading) {
-        return (
-            <View style={[styles.root, styles.center, { paddingTop: insets.top }]}>
-                <ActivityIndicator size="large" color={SgateColors.gold} />
-            </View>
-        );
-    }
 
     // ── Render ────────────────────────────────────────────────────────────
     return (
@@ -298,19 +291,25 @@ export default function DeliveriesScreen() {
                 </View>
             </View>
 
-            {/* ── List ────────────────────────────────────────────────── */}
-            <FlatList
-                data={activeData}
-                keyExtractor={keyExtractor}
-                renderItem={renderItem}
-                ListEmptyComponent={ListEmpty}
-                contentContainerStyle={
-                    activeData.length === 0 ? styles.emptyContainer : styles.listContent
-                }
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                showsVerticalScrollIndicator={false}
-            />
+            {/* ── Content (spinner while loading, list when ready) ─────── */}
+            {loading ? (
+                <View style={[styles.center, { flex: 1 }]}>
+                    <ActivityIndicator size="large" color={SgateColors.gold} />
+                </View>
+            ) : (
+                <FlatList
+                    data={activeData}
+                    keyExtractor={keyExtractor}
+                    renderItem={renderItem}
+                    ListEmptyComponent={ListEmpty}
+                    contentContainerStyle={
+                        activeData.length === 0 ? styles.emptyContainer : styles.listContent
+                    }
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    showsVerticalScrollIndicator={false}
+                />
+            )}
 
             {/* ── FAB ─────────────────────────────────────────────────── */}
             <TouchableOpacity

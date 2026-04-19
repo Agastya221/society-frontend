@@ -401,13 +401,6 @@ export default function SocietyScreen() {
 
     // ── Loading ──────────────────────────────────────────────────────────
     const isTabLoading = (activeTab === 'Notices' && noticesLoading) || (activeTab === 'Visitors' && visitorsLoading);
-    if (isTabLoading) {
-        return (
-            <View style={[S.root, S.center, { paddingTop: insets.top }]}>
-                <ActivityIndicator size="large" color={SgateColors.gold} />
-            </View>
-        );
-    }
 
     return (
         <View style={S.root}>
@@ -518,79 +511,88 @@ export default function SocietyScreen() {
                 </View>
             )}
 
-            {/* ── Visitors List ────────────────────────────────────────── */}
-            {activeTab === 'Visitors' && (
-                <FlatList
-                    data={visitorRows}
-                    keyExtractor={(row, i) => row.kind === 'header' ? `hdr-${row.title}-${i}` : row.entry.id}
-                    renderItem={renderVisitorItem}
-                    ListEmptyComponent={VisitorsEmpty}
-                    ListFooterComponent={loadingMore ? <View style={S.footer}><ActivityIndicator size="small" color={SgateColors.gold} /></View> : null}
-                    contentContainerStyle={visitorRows.length === 0 ? S.emptyContainer : S.listContent}
-                    refreshing={visitorsRefreshing}
-                    onRefresh={onRefreshVisitors}
-                    onEndReached={onEndReachedVisitors}
-                    onEndReachedThreshold={0.3}
-                    showsVerticalScrollIndicator={false}
-                />
-            )}
+            {/* ── Content (spinner while loading, lists when ready) ────── */}
+            {isTabLoading ? (
+                <View style={[S.center, { flex: 1 }]}>
+                    <ActivityIndicator size="large" color={SgateColors.gold} />
+                </View>
+            ) : (
+                <>
+                    {/* ── Visitors List ────────────────────────────────────────── */}
+                    {activeTab === 'Visitors' && (
+                        <FlatList
+                            data={visitorRows}
+                            keyExtractor={(row, i) => row.kind === 'header' ? `hdr-${row.title}-${i}` : row.entry.id}
+                            renderItem={renderVisitorItem}
+                            ListEmptyComponent={VisitorsEmpty}
+                            ListFooterComponent={loadingMore ? <View style={S.footer}><ActivityIndicator size="small" color={SgateColors.gold} /></View> : null}
+                            contentContainerStyle={visitorRows.length === 0 ? S.emptyContainer : S.listContent}
+                            refreshing={visitorsRefreshing}
+                            onRefresh={onRefreshVisitors}
+                            onEndReached={onEndReachedVisitors}
+                            onEndReachedThreshold={0.3}
+                            showsVerticalScrollIndicator={false}
+                        />
+                    )}
 
-            {/* ── Notices List ─────────────────────────────────────────── */}
-            {activeTab === 'Notices' && (
-                <FlatList
-                    data={filteredNotices}
-                    keyExtractor={(n) => n.id}
-                    renderItem={renderNotice}
-                    ListEmptyComponent={NoticesEmpty}
-                    contentContainerStyle={filteredNotices.length === 0 && pinnedNotices.length === 0 ? S.emptyContainer : S.listContent}
-                    refreshing={noticesRefreshing}
-                    onRefresh={onRefreshNotices}
-                    showsVerticalScrollIndicator={false}
-                    ListHeaderComponent={
-                        <>
-                            {pinnedNotices.length > 0 && (
-                                <View style={S.sectionBlock}>
-                                    <View style={S.sectionRow}>
-                                        <Feather name="bookmark" size={12} color={SgateColors.t3} />
-                                        <Text style={S.sectionLabel}>PINNED NOTICES</Text>
+                    {/* ── Notices List ─────────────────────────────────────────── */}
+                    {activeTab === 'Notices' && (
+                        <FlatList
+                            data={filteredNotices}
+                            keyExtractor={(n) => n.id}
+                            renderItem={renderNotice}
+                            ListEmptyComponent={NoticesEmpty}
+                            contentContainerStyle={filteredNotices.length === 0 && pinnedNotices.length === 0 ? S.emptyContainer : S.listContent}
+                            refreshing={noticesRefreshing}
+                            onRefresh={onRefreshNotices}
+                            showsVerticalScrollIndicator={false}
+                            ListHeaderComponent={
+                                <>
+                                    {pinnedNotices.length > 0 && (
+                                        <View style={S.sectionBlock}>
+                                            <View style={S.sectionRow}>
+                                                <Feather name="bookmark" size={12} color={SgateColors.t3} />
+                                                <Text style={S.sectionLabel}>PINNED NOTICES</Text>
+                                            </View>
+                                            {pinnedNotices.map(renderPinnedNotice)}
+                                        </View>
+                                    )}
+                                    <View style={S.recentHeaderRow}>
+                                        <Text style={S.sectionLabel}>RECENT UPDATES</Text>
+                                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterRow}>
+                                            {NOTICE_FILTERS.map(tab => (
+                                                <TouchableOpacity
+                                                    key={tab}
+                                                    style={[S.filterChip, noticeFilter === tab && S.filterChipActive]}
+                                                    onPress={() => setNoticeFilter(tab)}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <Text style={[S.filterChipText, noticeFilter === tab && S.filterChipTextActive]}>
+                                                        {tab === 'ALERT' ? 'URGENT' : tab}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </ScrollView>
                                     </View>
-                                    {pinnedNotices.map(renderPinnedNotice)}
-                                </View>
-                            )}
-                            <View style={S.recentHeaderRow}>
-                                <Text style={S.sectionLabel}>RECENT UPDATES</Text>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterRow}>
-                                    {NOTICE_FILTERS.map(tab => (
-                                        <TouchableOpacity
-                                            key={tab}
-                                            style={[S.filterChip, noticeFilter === tab && S.filterChipActive]}
-                                            onPress={() => setNoticeFilter(tab)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Text style={[S.filterChipText, noticeFilter === tab && S.filterChipTextActive]}>
-                                                {tab === 'ALERT' ? 'URGENT' : tab}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
-                            </View>
-                        </>
-                    }
-                />
-            )}
+                                </>
+                            }
+                        />
+                    )}
 
-            {/* ── Residents List ───────────────────────────────────────── */}
-            {activeTab === 'Residents' && (
-                <FlatList
-                    data={filteredResidents}
-                    keyExtractor={(r) => r.id}
-                    renderItem={renderResident}
-                    ListEmptyComponent={ResidentsEmpty}
-                    contentContainerStyle={filteredResidents.length === 0 ? S.emptyContainer : S.listContent}
-                    showsVerticalScrollIndicator={false}
-                    onRefresh={fetchResidents}
-                    refreshing={residentsLoading}
-                />
+                    {/* ── Residents List ───────────────────────────────────────── */}
+                    {activeTab === 'Residents' && (
+                        <FlatList
+                            data={filteredResidents}
+                            keyExtractor={(r) => r.id}
+                            renderItem={renderResident}
+                            ListEmptyComponent={ResidentsEmpty}
+                            contentContainerStyle={filteredResidents.length === 0 ? S.emptyContainer : S.listContent}
+                            showsVerticalScrollIndicator={false}
+                            onRefresh={fetchResidents}
+                            refreshing={residentsLoading}
+                        />
+                    )}
+                </>
             )}
         </View>
     );
