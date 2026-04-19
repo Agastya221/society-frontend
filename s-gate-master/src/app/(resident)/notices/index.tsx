@@ -292,19 +292,19 @@ export default function NoticesScreen() {
 
     return (
         <View style={S.root}>
-            <View style={[S.header, { paddingTop: insets.top + 10, paddingBottom: 20 }]}>
-                <View style={S.headerTopRow}>
-                    <TouchableOpacity 
-                        onPress={() => router.push('/(resident)/home' as any)}
-                        style={S.backButton}
-                        accessibilityLabel="Go back to Home"
-                    >
-                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={S.headerLabel}>RESIDENT HUB</Text>
+            {/* ── Header ─ matches Society screen layout ────────────── */}
+            <View style={[S.header, { paddingTop: insets.top + 16, paddingBottom: 14 }]}>
+                <TouchableOpacity
+                    onPress={() => router.push('/(resident)/home' as any)}
+                    style={S.backButton}
+                    accessibilityLabel="Go back to Home"
+                >
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                    <Text style={S.headerTitle} numberOfLines={1}>Notices</Text>
+                    <Text style={S.headerSub} numberOfLines={1}>Society updates &amp; alerts</Text>
                 </View>
-                <Text style={S.headerTitle}>Newsletter</Text>
-                <Text style={S.headerSub}>Stay informed about the latest happenings and security alerts.</Text>
             </View>
 
             {loading ? (
@@ -375,15 +375,14 @@ const S = StyleSheet.create({
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
     header: {
+        flexDirection: 'row', alignItems: 'center',
+        paddingHorizontal: 20,
         backgroundColor: SgateColors.card,
-        paddingHorizontal: 20, paddingTop: 10, paddingBottom: 20,
         borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft,
     },
-    headerTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
     backButton: { marginRight: 12 },
-    headerLabel: { fontSize: 11, fontFamily: SgateFonts.semibold, color: SgateColors.gold, letterSpacing: 1.3, paddingTop: 2 },
     headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
-    headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, lineHeight: 20 },
+    headerSub:   { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
 
     listContent: { paddingBottom: 40 },
 
