@@ -25,13 +25,13 @@ interface Notice {
 }
 
 const TYPE_CFG = {
-    ALERT:       { label: 'URGENT ALERT',   bg: '#FFEBEB', text: '#CC3333', border: '#FFCCCC', bar: '#FF5C5C', icon: 'alert-circle' },
-    EVENT:       { label: 'UPCOMING EVENT', bg: '#EBF0FF', text: '#3355CC', border: '#CCDDFF', bar: '#4C9AFF', icon: 'calendar'     },
-    MAINTENANCE: { label: 'MAINTENANCE',    bg: '#FFF8E1', text: '#CC8800', border: '#FFE799', bar: '#FFB800', icon: 'tool'         },
-    GENERAL:     { label: 'GENERAL',        bg: '#F0F0F4', text: '#555566', border: '#E0E0EA', bar: '#8A8D97', icon: 'info'         },
+    ALERT:       { label: 'Urgent',      bg: '#FFF0F0', text: '#D32F2F', border: '#FFCCCC', bar: '#FF5C5C', icon: 'alert-circle' },
+    EVENT:       { label: 'Event',       bg: '#F0F4FF', text: '#1976D2', border: '#CCDDFF', bar: '#4C9AFF', icon: 'calendar'     },
+    MAINTENANCE: { label: 'Maintenance', bg: '#FFF8F0', text: '#D97706', border: '#FFE799', bar: '#FFB800', icon: 'tool'         },
+    GENERAL:     { label: 'General',     bg: '#F5F5F7', text: '#4B5563', border: '#E0E0EA', bar: '#8A8D97', icon: 'info'         },
 } as const;
 
-const FILTERS = ['ALL', 'PINNED', 'ALERT', 'EVENT', 'MAINTENANCE'] as const;
+const FILTERS = ['ALL', 'PINNED', 'ALERT', 'EVENT', 'MAINTENANCE', 'GENERAL'] as const;
 
 // Maps every value the backend might send → one of the 4 UI types
 const TYPE_MAP: Record<string, 'ALERT' | 'EVENT' | 'MAINTENANCE' | 'GENERAL'> = {
@@ -47,9 +47,9 @@ const TYPE_MAP: Record<string, 'ALERT' | 'EVENT' | 'MAINTENANCE' | 'GENERAL'> = 
 
 function normaliseNotice(raw: any): Notice {
     return {
-        id:        raw.id,
+        id:        raw.id || raw._id || Math.random().toString(),
         title:     raw.title ?? '',
-        content:   raw.content ?? '',
+        content:   raw.content ?? raw.description ?? '',
         type:      TYPE_MAP[raw.type] ?? 'GENERAL',
         isPinned:  raw.isPinned ?? false,
         createdAt: raw.publishAt ?? raw.createdAt ?? new Date().toISOString(),
@@ -185,13 +185,19 @@ export default function NoticesScreen() {
         try {
             const res = await api.get('/community/notices');
             const raw = res.data;
+            
+            // Helpful debug trace to see where data sits if it drops again
+            console.log("Notices Response keys:", Object.keys(raw));
+
             const rawList: any[] = Array.isArray(raw)
                 ? raw
-                : Array.isArray(raw?.data)
-                    ? raw.data
+                : Array.isArray(raw?.data?.notices)
+                    ? raw.data.notices
                     : Array.isArray(raw?.notices)
                         ? raw.notices
-                        : [];
+                        : Array.isArray(raw?.data)
+                            ? raw.data
+                            : [];
 
             const list: Notice[] = rawList.map(normaliseNotice);
             list.sort((a, b) => {
@@ -227,13 +233,12 @@ export default function NoticesScreen() {
 
     const renderNoticeCard = ({ item }: { item: Notice }) => {
         const cfg = TYPE_CFG[item.type];
-        const isExpired = item.expiresAt ? new Date(item.expiresAt) < new Date() : false;
         
         return (
             <TouchableOpacity
                 activeOpacity={0.7}
                 onPress={() => setSelected(item)}
-                style={[S.card, isExpired && { opacity: 0.5 }]}
+                style={S.card}
             >
                 <View style={S.cardHeader}>
                     <View style={S.headerLeft}>
@@ -279,7 +284,7 @@ export default function NoticesScreen() {
                 <View style={S.filtersContainer}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filtersScroll}>
                         {FILTERS.map(tab => {
-                            const filterLabel = tab === 'ALL' ? 'All' : tab === 'PINNED' ? 'Pinned' : tab === 'ALERT' ? 'Urgent' : tab === 'EVENT' ? 'Events' : 'Maintenance';
+                            const filterLabel = tab === 'ALL' ? 'All' : tab === 'PINNED' ? 'Pinned' : tab === 'ALERT' ? 'Urgent' : tab === 'EVENT' ? 'Events' : tab === 'MAINTENANCE' ? 'Maintenance' : 'General';
                             const active = filter === tab;
                             return (
                                 <TouchableOpacity key={tab} style={[S.chip, active && S.chipActive]} onPress={() => setFilter(tab)} activeOpacity={0.7}>
@@ -364,10 +369,10 @@ const S = StyleSheet.create({
     tagText: { fontSize: 11, fontFamily: SgateFonts.bold, letterSpacing: 0.2 },
     cardDate: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
     
-    cardTitle: { fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 4, lineHeight: 22 },
-    cardDescription: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, lineHeight: 20, marginBottom: 16 },
+    cardTitle: { fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 6, lineHeight: 22 },
+    cardDescription: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, lineHeight: 20, marginBottom: 20 },
     
-    cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, borderTopWidth: 1, borderTopColor: SgateColors.borderSoft },
+    cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.06)' },
     authorBox: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     authorText: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
     readMoreBox: { flexDirection: 'row', alignItems: 'center', gap: 4 },
