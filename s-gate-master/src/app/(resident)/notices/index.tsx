@@ -271,20 +271,22 @@ export default function NoticesScreen() {
             )}
 
             <View style={S.recentHeaderRow}>
-                <Text style={S.sectionLabel}>RECENT UPDATES</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterRow}>
-                    {FILTERS.map(tab => (
-                        <TouchableOpacity
-                            key={tab}
-                            style={[S.chip, filter === tab && S.chipActive]}
-                            onPress={() => setFilter(tab)}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={[S.chipText, filter === tab && S.chipTextActive]}>
-                                {tab === 'ALERT' ? 'URGENT' : tab}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                    {FILTERS.map(tab => {
+                        const filterLabel = tab === 'ALL' ? 'All' : tab === 'ALERT' ? 'Urgent' : tab === 'EVENT' ? 'Events' : 'Maintenance';
+                        return (
+                            <TouchableOpacity
+                                key={tab}
+                                style={[S.chip, filter === tab && S.chipActive]}
+                                onPress={() => setFilter(tab)}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={[S.chipText, filter === tab && S.chipTextActive]}>
+                                    {filterLabel}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </ScrollView>
             </View>
         </>
@@ -352,8 +354,11 @@ export default function NoticesScreen() {
                     }}
                     ListEmptyComponent={
                         <View style={S.empty}>
-                            <Feather name="file-text" size={44} color={SgateColors.t4} />
-                            <Text style={S.emptyText}>No notices yet. Check back later.</Text>
+                            <View style={S.emptyIconContainer}>
+                                <Feather name="bell" size={32} color={SgateColors.t3} />
+                            </View>
+                            <Text style={S.emptyTitle}>No notices yet</Text>
+                            <Text style={S.emptySub}>You're all caught up. Check back later for updates.</Text>
                         </View>
                     }
                 />
@@ -377,12 +382,12 @@ const S = StyleSheet.create({
     header: {
         flexDirection: 'row', alignItems: 'center',
         paddingHorizontal: 20,
-        backgroundColor: SgateColors.card,
-        borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft,
+        backgroundColor: SgateColors.bg,
+        marginBottom: 8,
     },
     backButton: { marginRight: 12 },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
-    headerSub:   { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+    headerTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
 
     listContent: { paddingBottom: 40 },
 
@@ -410,12 +415,12 @@ const S = StyleSheet.create({
     readMore:     { flexDirection: 'row', alignItems: 'center', gap: 2 },
     readMoreText: { fontSize: 11, fontFamily: SgateFonts.semibold, color: SgateColors.gold },
 
-    recentHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 20, paddingTop: 20, paddingBottom: 12 },
-    filterRow:       { flexDirection: 'row', gap: 6, paddingRight: 20 },
-    chip:            { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: SgateColors.surface },
-    chipActive:      { backgroundColor: SgateColors.t1 },
-    chipText:        { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 0.5 },
-    chipTextActive:  { color: SgateColors.card },
+    recentHeaderRow: { paddingTop: 16, paddingBottom: 24, paddingLeft: 20 },
+    filterRow:       { flexDirection: 'row', gap: 10, paddingRight: 20 },
+    chip:            { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 24, backgroundColor: SgateColors.surface },
+    chipActive:      { backgroundColor: '#1A1A1A' },
+    chipText:        { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
+    chipTextActive:  { color: '#FFFFFF', fontFamily: SgateFonts.semibold },
 
     recentCard: {
         flexDirection: 'row', alignItems: 'center',
@@ -436,8 +441,10 @@ const S = StyleSheet.create({
     metaGap:      { marginLeft: 4 },
     chevron:      { paddingRight: 12 },
 
-    empty:     { alignItems: 'center', paddingTop: 60, gap: 12 },
-    emptyText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+    empty:     { alignItems: 'center', paddingTop: 80, gap: 8, paddingHorizontal: 40 },
+    emptyIconContainer: { width: 72, height: 72, borderRadius: 36, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, textAlign: 'center' },
+    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center', lineHeight: 22 },
 });
 
 // ── Detail Sheet Styles ────────────────────────────────────────────────────
