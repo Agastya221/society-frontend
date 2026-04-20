@@ -177,7 +177,7 @@ export function HouseholdGrid({
           />
           <Tile
             title="Pets"
-            subtitle="+ Add"
+            subtitle="Coming Soon"
             iconName="paw"
             iconBg="#FFF0E5"
             iconColor="#F97316"
