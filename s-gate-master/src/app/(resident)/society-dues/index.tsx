@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -142,6 +142,7 @@ export default function SocietyDuesScreen() {
   const [dues, setDues]       = useState<DueItem[]>([]);
   const [summary, setSummary] = useState<DuesSummary>({ totalOutstanding: 0, currentMonth: 0, overdue: 0 });
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter]   = useState<'ALL' | DueStatus>('ALL');
 
   useFocusEffect(useCallback(() => {
     (async () => {
@@ -201,8 +202,32 @@ export default function SocietyDuesScreen() {
       </TouchableOpacity>
 
       <Text style={styles.sectionTitle}>Payment History</Text>
+
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
+        contentContainerStyle={styles.filterContainer}
+      >
+        {(['ALL', 'PAID', 'PENDING', 'OVERDUE'] as const).map((f) => {
+          const isActive = filter === f;
+          return (
+            <TouchableOpacity
+              key={f}
+              style={[styles.filterChip, isActive && styles.filterChipActive]}
+              onPress={() => setFilter(f)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.filterText, isActive && styles.filterTextActive]}>
+                {f === 'ALL' ? 'All' : f.charAt(0) + f.slice(1).toLowerCase()}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
     </View>
   );
+
+  const filteredDues = filter === 'ALL' ? dues : dues.filter(d => d.status === filter);
 
   return (
     <View style={styles.root}>
@@ -223,7 +248,7 @@ export default function SocietyDuesScreen() {
         </View>
       ) : (
         <FlatList
-          data={dues}
+          data={filteredDues}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={ListHeader}
           contentContainerStyle={styles.listContent}
@@ -348,7 +373,32 @@ const styles = StyleSheet.create({
     fontFamily: SgateFonts.bold,
     color: SgateColors.t1,
     marginTop: 40,
-    marginBottom: 16,
+    marginBottom: 12,
+  },
+  filterContainer: {
+    gap: 8,
+    paddingBottom: 20,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  filterChipActive: {
+    backgroundColor: BRAND_YELLOW,
+    borderColor: BRAND_YELLOW,
+  },
+  filterText: {
+    fontSize: 13,
+    fontFamily: SgateFonts.medium,
+    color: SgateColors.t2,
+  },
+  filterTextActive: {
+    color: SgateColors.black,
+    fontFamily: SgateFonts.bold,
   },
 
   // Due Card
