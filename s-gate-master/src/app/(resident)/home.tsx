@@ -522,7 +522,7 @@ const S = StyleSheet.create({
 
     // ── Scroll ─────────────────────────────────────────────────────────────
     scroll: { flex: 1 },
-    scrollContent: { paddingTop: 24, paddingBottom: 48 },
+    scrollContent: { paddingTop: 24, paddingBottom: 12 },
 
     // ── Section ────────────────────────────────────────────────────────────
     section: {
