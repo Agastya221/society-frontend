@@ -11,7 +11,7 @@ import {
 
 interface HouseholdGridProps {
   familyCount: number;
-  firstStaffName: string | null;
+  staffCount: number;
   vehicleCount: number;
   errors: {
     family: string | null;
@@ -95,7 +95,7 @@ function Tile({
 
 export function HouseholdGrid({
   familyCount,
-  firstStaffName,
+  staffCount,
   vehicleCount,
   errors,
   onNavigate,
@@ -103,12 +103,15 @@ export function HouseholdGrid({
 }: HouseholdGridProps) {
   const familySub =
     familyCount > 0
-      ? `${familyCount} member${familyCount !== 1 ? "s" : ""}`
-      : "No members yet";
+      ? `${familyCount} member${familyCount !== 1 ? 's' : ''}`
+      : 'No members yet';
 
-  const staffSub = firstStaffName ?? "No staff yet";
+  const staffSub =
+    staffCount > 0
+      ? `${staffCount} member${staffCount !== 1 ? 's' : ''}`
+      : 'No staff yet';
 
-  const vehicleSub = vehicleCount > 0 ? `${vehicleCount} registered` : "+ Add";
+  const vehicleSub = vehicleCount > 0 ? `${vehicleCount} registered` : '+ Add';
 
   return (
     <View style={styles.container}>

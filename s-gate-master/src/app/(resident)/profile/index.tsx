@@ -225,7 +225,7 @@ export default function SettingsScreen() {
                 ) : (
                     <HouseholdGrid
                         familyCount={familyMembers.length}
-                        firstStaffName={firstStaffName}
+                        staffCount={staffList.length}
                         vehicleCount={vehicles.length}
                         errors={errors}
                         onNavigate={handleNavigate}
