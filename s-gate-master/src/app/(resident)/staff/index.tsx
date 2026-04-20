@@ -27,7 +27,8 @@ export default function StaffScreen() {
     const fetchStaff = async () => {
         try {
             const res = await api.get('/staff/domestic');
-            setStaff(res.data?.data || []);
+            const d = res.data;
+            setStaff(d?.data?.staff ?? d?.data?.members ?? d?.data ?? []);
         } catch (err) {
             console.error('Failed to fetch staff:', err);
         } finally {

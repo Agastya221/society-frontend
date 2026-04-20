@@ -15,7 +15,7 @@ import {
     View,
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { AppAlert } from '../../components/ui/AppAlert';
 import { Avatar } from '../../components/ui/Avatar';
 import api from '../../services/api';
