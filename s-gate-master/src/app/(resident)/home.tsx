@@ -1,12 +1,14 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { RefreshControl,
+import {
+    RefreshControl,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View } from 'react-native';
+    View,
+} from 'react-native';
 import Animated, {
     FadeInDown,
     FadeOutLeft,
@@ -14,13 +16,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-    SgateBrandMark,
-    SgateQuickAction,
-    SgateSecurityBanner,
-} from '../../components/Sgate';
+import { SgateBrandMark } from '../../components/Sgate';
 import { SectionHeader } from '../../components/ui/SectionHeader';
-import { StatusPill } from '../../components/ui/StatusPill';
 import { Avatar } from '../../components/ui/Avatar';
 import { ApprovalCard } from '../../components/visitors/ApprovalCard';
 import { PreApproveSheet } from '../../components/pre-approvals/PreApproveSheet';
@@ -31,6 +28,10 @@ import { useGateStore } from '../../store/useGateStore';
 import { useNotificationStore } from '../../store/useNotificationStore';
 import type { Entry } from '../../types/api';
 import { AppAlert } from '../../components/ui/AppAlert';
+
+// ─── Brand yellow (Rapido-style) ──────────────────────────────────────────────
+const BRAND_YELLOW = '#FFD60A';
+const BRAND_YELLOW_BG = '#FFFBE6';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -61,6 +62,22 @@ function entryStatusToPill(status: Entry['status']): { pill: PillStatus; label: 
     }
 }
 
+function formatType(raw: string): string {
+    if (!raw) return 'Guest';
+    return raw
+        .split('_')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+}
+
+interface QuickItem {
+    icon: string;
+    label: string;
+    color: string;
+    bg: string;
+    onPress: () => void;
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function ResidentHomeScreen() {
@@ -81,20 +98,16 @@ export default function ResidentHomeScreen() {
     const { unreadCount, fetchUnreadCount } = useNotificationStore();
 
     const [showPreApprove, setShowPreApprove] = useState(false);
-    const [refreshing, setRefreshing]   = useState(false);
-    // Track which id is currently being acted on (for per-card loading)
-    const [actioningId, setActioningId] = useState<string | null>(null);
-    // Track exit direction per id so animated exit picks left vs right
-    const [exitDir, setExitDir]         = useState<Record<string, 'left' | 'right'>>({});
+    const [refreshing, setRefreshing]         = useState(false);
+    const [actioningId, setActioningId]       = useState<string | null>(null);
+    const [exitDir, setExitDir]               = useState<Record<string, 'left' | 'right'>>({});
 
-    // ── Initial load ─────────────────────────────────────────────────────────
     useEffect(() => {
         fetchPendingRequests();
         fetchUnreadCount();
         fetchEntries({ status: 'CHECKED_IN' });
     }, []);
 
-    // ── Pull-to-refresh ──────────────────────────────────────────────────────
     const handleRefresh = useCallback(async () => {
         setRefreshing(true);
         await Promise.allSettled([
@@ -105,240 +118,231 @@ export default function ResidentHomeScreen() {
         setRefreshing(false);
     }, [fetchPendingRequests, fetchUnreadCount, fetchEntries]);
 
-    // ── Gate actions ─────────────────────────────────────────────────────────
     const handleApprove = async (id: string) => {
         setExitDir(prev => ({ ...prev, [id]: 'right' }));
         setActioningId(id);
-        try {
-            await approveRequest(id);
-        } catch {
-            AppAlert.show('Error', 'Failed to approve. Please try again.');
-        } finally {
-            setActioningId(null);
-        }
+        try { await approveRequest(id); }
+        catch { AppAlert.show('Error', 'Failed to approve. Please try again.'); }
+        finally { setActioningId(null); }
     };
 
     const handleDeny = async (id: string) => {
         setExitDir(prev => ({ ...prev, [id]: 'left' }));
         setActioningId(id);
-        try {
-            await rejectRequest(id);
-        } catch {
-            AppAlert.show('Error', 'Failed to deny. Please try again.');
-        } finally {
-            setActioningId(null);
-        }
+        try { await rejectRequest(id); }
+        catch { AppAlert.show('Error', 'Failed to deny. Please try again.'); }
+        finally { setActioningId(null); }
     };
 
+    const firstName   = user?.name?.split(' ')[0] ?? 'Resident';
+    const societyName = user?.society?.name ?? 'Your Society';
 
-
-    // ── Derived ───────────────────────────────────────────────────────────────
-    const firstName    = user?.name?.split(' ')[0] ?? 'Resident';
-    const societyName  = user?.society?.name ?? 'Your Society';
+    const quickActions: QuickItem[] = [
+        {
+            icon: 'user-check',
+            label: 'Pre-Approve',
+            color: '#CC8800',
+            bg: BRAND_YELLOW_BG,
+            onPress: () => setShowPreApprove(true),
+        },
+        {
+            icon: 'credit-card',
+            label: 'My Passes',
+            color: SgateColors.blue,
+            bg: SgateColors.blueBg,
+            onPress: () => router.push('/(resident)/my-passes' as any),
+        },
+        {
+            icon: 'package',
+            label: 'Delivery',
+            color: SgateColors.t2,
+            bg: '#F2F2F2',
+            onPress: () => router.push('/expect-delivery' as any),
+        },
+        {
+            icon: 'alert-triangle',
+            label: 'SOS',
+            color: SgateColors.red,
+            bg: SgateColors.redBg,
+            onPress: () => router.push('/(resident)/emergency/create' as any),
+        },
+        {
+            icon: 'credit-card',
+            label: 'Dues',
+            color: SgateColors.green,
+            bg: SgateColors.greenBg,
+            onPress: () => router.push('/(resident)/society-dues' as any),
+        },
+        {
+            icon: 'users',
+            label: 'Daily Help',
+            color: SgateColors.violet,
+            bg: '#F3EEFF',
+            onPress: () => router.push('/(resident)/daily-help' as any),
+        },
+        {
+            icon: 'message-circle',
+            label: 'Community',
+            color: SgateColors.blue,
+            bg: SgateColors.blueBg,
+            onPress: () => router.push('/(resident)/communication' as any),
+        },
+        {
+            icon: 'grid',
+            label: 'All Tools',
+            color: '#FFFFFF',
+            bg: SgateColors.black,
+            onPress: () => router.push('/(resident)/all-tools' as any),
+        },
+    ];
 
     return (
-        <View style={styles.root}>
-            {/* ══ FIXED HEADER AREA ════════════════════════════════════ */}
-            <View style={[styles.headerArea, { paddingTop: insets.top + 14 }]}>
-                {/* Greeting row */}
-                <Animated.View
-                    entering={FadeInDown.delay(0).springify()}
-                    style={styles.greetingRow}
-                >
-                    <View style={styles.greetingLeft}>
-                        <SgateBrandMark size={42} />
-                        <View style={styles.greetingTexts}>
-                            <Text style={styles.greetingLine}>
-                                {greeting()}, {firstName}
-                            </Text>
-                            <Text style={styles.societyLine} numberOfLines={1}>
-                                {societyName}
-                            </Text>
+        <View style={S.root}>
+            {/* ══ HEADER ═══════════════════════════════════════════════════ */}
+            <Animated.View
+                entering={FadeInDown.delay(0).springify()}
+                style={[S.header, { paddingTop: insets.top + 18 }]}
+            >
+                {/* Brand + Greeting */}
+                <View style={S.headerTop}>
+                    <View style={S.brandRow}>
+                        <View style={S.logoWrap}>
+                            <SgateBrandMark size={36} />
+                        </View>
+                        <View>
+                            <Text style={S.greetText}>{greeting()}, {firstName} 👋</Text>
+                            <Text style={S.societyText} numberOfLines={1}>{societyName}</Text>
                         </View>
                     </View>
 
                     {/* Bell */}
                     <TouchableOpacity
-                        style={styles.bellBtn}
+                        style={S.bellBtn}
                         onPress={() => router.push('/notifications' as any)}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <Feather name="bell" size={21} color={'#E5A500'} />
+                        <Feather name="bell" size={20} color={SgateColors.t1} />
                         {unreadCount > 0 && (
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>
-                                    {unreadCount > 9 ? '9+' : unreadCount}
-                                </Text>
+                            <View style={S.badge}>
+                                <Text style={S.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
                             </View>
                         )}
                     </TouchableOpacity>
-                </Animated.View>
+                </View>
 
-                {/* Security banner */}
-                <Animated.View entering={FadeInDown.delay(80).springify()}>
-                    <SgateSecurityBanner />
-                </Animated.View>
-            </View>
+                {/* Pending gate badge — shown only when someone is waiting */}
+                {pendingRequests.length > 0 && (
+                    <View style={S.gateAlert}>
+                        <View style={S.gateAlertDot} />
+                        <Text style={S.gateAlertText}>
+                            {pendingRequests.length} visitor{pendingRequests.length > 1 ? 's' : ''} waiting at the gate
+                        </Text>
+                        <Feather name="chevron-right" size={14} color="#996300" />
+                    </View>
+                )}
+            </Animated.View>
 
             <ScrollView
-                style={styles.scroll}
-                contentContainerStyle={styles.scrollContent}
+                style={S.scroll}
+                contentContainerStyle={S.scrollContent}
                 showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={handleRefresh}
-                        tintColor={SgateColors.gold}
-                        colors={[SgateColors.gold]}
+                        tintColor={BRAND_YELLOW}
+                        colors={[BRAND_YELLOW]}
                     />
                 }
             >
-                {/* ══ BG CONTENT AREA ══════════════════════════════════════ */}
-                <View style={styles.contentArea}>
+                {/* ══ QUICK ACTIONS ════════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.delay(80).springify()} style={S.section}>
+                    <Text style={S.sectionLabel}>Quick Actions</Text>
+                    <View style={S.quickGrid}>
+                        {quickActions.map((item, i) => (
+                            <TouchableOpacity
+                                key={i}
+                                style={S.quickItem}
+                                onPress={item.onPress}
+                                activeOpacity={0.65}
+                            >
+                                <View style={[S.quickIcon, { backgroundColor: item.bg }]}>
+                                    <Feather name={item.icon as any} size={20} color={item.color} />
+                                </View>
+                                <Text style={S.quickLabel} numberOfLines={1}>{item.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </Animated.View>
 
-                    {/* ── Quick actions ──────────────────────────────────── */}
-                    <Animated.View
-                        entering={FadeInDown.delay(160).springify()}
-                        style={styles.quickRow}
-                    >
-                        <SgateQuickAction
-                            icon="user-check"
-                            label={'Pre-\nApprove'}
-                            bgColor={SgateColors.goldPale}
-                            iconColor={SgateColors.goldDeep}
-                            onPress={() => setShowPreApprove(true)}
-                        />
-                        <SgateQuickAction
-                            icon="credit-card"
-                            label={'My\nPasses'}
-                            bgColor={SgateColors.blueBg}
-                            iconColor={SgateColors.blue}
-                            onPress={() => router.push('/(resident)/my-passes' as any)}
-                        />
-                        <SgateQuickAction
-                            icon="package"
-                            label={'Expect\nDelivery'}
-                            bgColor={SgateColors.surface}
-                            iconColor={SgateColors.t2}
-                            onPress={() => router.push('/expect-delivery' as any)}
-                        />
-                        <SgateQuickAction
-                            icon="alert-triangle"
-                            label={'SOS\nAlert'}
-                            bgColor={SgateColors.redBg}
-                            iconColor={SgateColors.red}
-                            onPress={() => router.push('/(resident)/emergency/create' as any)}
-                        />
-                    </Animated.View>
+                {/* ═══ DIVIDER ════════════════════════════════════════════ */}
+                <View style={S.divider} />
 
-                    {/* ── Extra quick actions row ─────────────────────────── */}
-                    <Animated.View
-                        entering={FadeInDown.delay(200).springify()}
-                        style={[styles.quickRow, { marginTop: -18 }]}
-                    >
-                        <SgateQuickAction
-                            icon="credit-card"
-                            label={'Society\nDues'}
-                            bgColor={SgateColors.greenBg}
-                            iconColor={SgateColors.green}
-                            onPress={() => router.push('/(resident)/society-dues' as any)}
-                        />
-                        <SgateQuickAction
-                            icon="users"
-                            label={'Daily\nHelp'}
-                            bgColor={SgateColors.surface}
-                            iconColor={SgateColors.t2}
-                            onPress={() => router.push('/(resident)/daily-help' as any)}
-                        />
-                        <SgateQuickAction
-                            icon="message-circle"
-                            label={'Community'}
-                            bgColor={SgateColors.blueBg}
-                            iconColor={SgateColors.blue}
-                            onPress={() => router.push('/(resident)/communication' as any)}
-                        />
-                        <SgateQuickAction
-                            icon="grid"
-                            label={'See\nAll'}
-                            bgColor={SgateColors.black}
-                            iconColor={'#FFFFFF'}
-                            onPress={() => router.push('/(resident)/all-tools' as any)}
-                        />
-                    </Animated.View>
+                {/* ══ WAITING AT GATE ══════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.delay(160).springify()} style={S.section}>
+                    <SectionHeader
+                        title="Waiting at Gate"
+                        rightPill={
+                            pendingRequests.length > 0
+                                ? { text: `${pendingRequests.length} new`, color: '#996300', bg: BRAND_YELLOW_BG }
+                                : undefined
+                        }
+                    />
 
-                    {/* ── Pending approvals ──────────────────────────────── */}
-                    <Animated.View
-                        entering={FadeInDown.delay(240).springify()}
-                        style={styles.section}
-                    >
-                        <SectionHeader
-                            title="Waiting at Gate"
-                            rightPill={
-                                pendingRequests.length > 0
-                                    ? {
-                                          text: `${pendingRequests.length} new`,
-                                          color: SgateColors.goldDeep,
-                                          bg: SgateColors.goldPale,
-                                      }
-                                    : undefined
-                            }
-                        />
+                    {gateLoading && pendingRequests.length === 0 ? (
+                        <GateSkeleton />
+                    ) : pendingRequests.length === 0 ? (
+                        <GateEmpty />
+                    ) : (
+                        pendingRequests.map((req, index) => (
+                            <Animated.View
+                                key={req.id}
+                                entering={FadeInDown.delay(index * 60).springify()}
+                                exiting={
+                                    exitDir[req.id] === 'right'
+                                        ? FadeOutRight.duration(260)
+                                        : FadeOutLeft.duration(260)
+                                }
+                                style={S.cardWrap}
+                            >
+                                <ApprovalCard
+                                    name={req.visitorName}
+                                    type={formatType(req.type)}
+                                    time={timeAgo(req.createdAt)}
+                                    gate={req.gate ?? 'Gate A'}
+                                    onApprove={() => handleApprove(req.id)}
+                                    onDeny={() => handleDeny(req.id)}
+                                />
+                            </Animated.View>
+                        ))
+                    )}
+                </Animated.View>
 
-                        {gateLoading && pendingRequests.length === 0 ? (
-                            <GateSkeleton />
-                        ) : pendingRequests.length === 0 ? (
-                            <GateEmpty />
-                        ) : (
-                            pendingRequests.map((req, index) => (
-                                <Animated.View
-                                    key={req.id}
-                                    entering={FadeInDown.delay(index * 70).springify()}
-                                    exiting={
-                                        exitDir[req.id] === 'right'
-                                            ? FadeOutRight.duration(260)
-                                            : FadeOutLeft.duration(260)
-                                    }
-                                    style={styles.cardWrap}
-                                >
-                                    <ApprovalCard
-                                        name={req.visitorName}
-                                        type={formatType(req.type)}
-                                        time={timeAgo(req.createdAt)}
-                                        gate={req.gate ?? 'Gate A'}
-                                        onApprove={() => handleApprove(req.id)}
-                                        onDeny={() => handleDeny(req.id)}
-                                    />
-                                </Animated.View>
-                            ))
-                        )}
-                    </Animated.View>
+                {/* ═══ DIVIDER ════════════════════════════════════════════ */}
+                <View style={S.divider} />
 
-                    {/* ── Today's activity ───────────────────────────────── */}
-                    <Animated.View
-                        entering={FadeInDown.delay(320).springify()}
-                        style={styles.section}
-                    >
-                        <SectionHeader
-                            title="Today's Activity"
-                            rightLabel="See all"
-                            onRightPress={() => router.push('/(resident)/approvals' as any)}
-                        />
+                {/* ══ TODAY'S ACTIVITY ════════════════════════════════════ */}
+                <Animated.View entering={FadeInDown.delay(220).springify()} style={S.section}>
+                    <SectionHeader
+                        title="Today's Activity"
+                        rightLabel="See all"
+                        onRightPress={() => router.push('/(resident)/approvals' as any)}
+                    />
 
-                        {entries.length === 0 ? (
-                            <ActivityEmpty />
-                        ) : (
-                            <View style={styles.activityCard}>
-                                {entries.map((entry, index) => (
-                                    <ActivityRow
-                                        key={entry.id}
-                                        entry={entry}
-                                        isLast={index === entries.length - 1}
-                                    />
-                                ))}
-                            </View>
-                        )}
-                    </Animated.View>
-                </View>
+                    {entries.length === 0 ? (
+                        <ActivityEmpty />
+                    ) : (
+                        <View style={S.activityCard}>
+                            {entries.map((entry, index) => (
+                                <ActivityRow
+                                    key={entry.id}
+                                    entry={entry}
+                                    isLast={index === entries.length - 1}
+                                />
+                            ))}
+                        </View>
+                    )}
+                </Animated.View>
             </ScrollView>
 
             <PreApproveSheet
@@ -349,66 +353,59 @@ export default function ResidentHomeScreen() {
     );
 }
 
-// ─── Activity row ─────────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ActivityRow({ entry, isLast }: { entry: Entry; isLast: boolean }) {
     const { pill, label } = entryStatusToPill(entry.status);
     return (
-        <View style={[styles.activityRow, !isLast && styles.activityDivider]}>
+        <View style={[S.activityRow, !isLast && S.activityDivider]}>
             <Avatar name={entry.visitorName} size={36} />
-            <View style={styles.activityInfo}>
-                <Text style={styles.activityName} numberOfLines={1}>
-                    {entry.visitorName}
-                </Text>
-                <Text style={styles.activityTime}>
-                    {timeAgo(entry.createdAt)}
-                </Text>
+            <View style={S.activityInfo}>
+                <Text style={S.activityName} numberOfLines={1}>{entry.visitorName}</Text>
+                <Text style={S.activityTime}>{timeAgo(entry.createdAt)}</Text>
             </View>
-            {/* Custom pill so we can show "Inside" / "Left" labels */}
             <ActivityPill status={pill} label={label} />
         </View>
     );
 }
 
 function ActivityPill({ status, label }: { status: PillStatus; label: string }) {
-    const { bg, text } = ACTIVITY_PILL_COLORS[status];
+    const { bg, text } = PILL_COLORS[status];
     return (
-        <View style={[styles.actPill, { backgroundColor: bg }]}>
-            <Text style={[styles.actPillText, { color: text }]}>{label}</Text>
+        <View style={[S.actPill, { backgroundColor: bg }]}>
+            <Text style={[S.actPillText, { color: text }]}>{label}</Text>
         </View>
     );
 }
 
-const ACTIVITY_PILL_COLORS: Record<PillStatus, { bg: string; text: string }> = {
+const PILL_COLORS: Record<PillStatus, { bg: string; text: string }> = {
     active:   { bg: SgateColors.greenBg,  text: SgateColors.green },
     approved: { bg: SgateColors.greenBg,  text: SgateColors.green },
-    pending:  { bg: SgateColors.goldPale, text: SgateColors.goldDeep },
+    pending:  { bg: BRAND_YELLOW_BG,      text: '#996300' },
     denied:   { bg: SgateColors.redBg,    text: SgateColors.red },
-    expired:  { bg: SgateColors.surface,  text: SgateColors.t3 },
+    expired:  { bg: '#F2F2F2',            text: SgateColors.t3 },
 };
-
-// ─── Empty / skeleton states ──────────────────────────────────────────────────
 
 function GateEmpty() {
     return (
-        <View style={styles.emptyWrap}>
-            <View style={styles.emptyIcon}>
-                <Feather name="check-circle" size={26} color={SgateColors.green} />
+        <View style={S.emptyWrap}>
+            <View style={S.emptyIcon}>
+                <Feather name="check-circle" size={22} color={SgateColors.green} />
             </View>
-            <Text style={styles.emptyTitle}>All clear!</Text>
-            <Text style={styles.emptySub}>No one is waiting at the gate</Text>
+            <Text style={S.emptyTitle}>All clear!</Text>
+            <Text style={S.emptySub}>No one is waiting at the gate</Text>
         </View>
     );
 }
 
 function GateSkeleton() {
     return (
-        <View style={styles.skeletonCard}>
-            <View style={styles.skeletonRow}>
-                <View style={styles.skeletonCircle} />
-                <View style={styles.skeletonLines}>
-                    <View style={[styles.skeletonLine, { width: '60%' }]} />
-                    <View style={[styles.skeletonLine, { width: '40%', marginTop: 6 }]} />
+        <View style={S.skeletonCard}>
+            <View style={S.skeletonRow}>
+                <View style={S.skeletonCircle} />
+                <View style={{ flex: 1 }}>
+                    <View style={[S.skeletonLine, { width: '60%' }]} />
+                    <View style={[S.skeletonLine, { width: '40%', marginTop: 6 }]} />
                 </View>
             </View>
         </View>
@@ -417,141 +414,185 @@ function GateSkeleton() {
 
 function ActivityEmpty() {
     return (
-        <View style={styles.activityEmptyWrap}>
+        <View style={S.emptyWrap}>
             <Feather name="clock" size={20} color={SgateColors.t4} />
-            <Text style={styles.activityEmptyText}>No activity yet today</Text>
+            <Text style={S.emptySub}>No activity yet today</Text>
         </View>
     );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatType(raw: string): string {
-    if (!raw) return 'Guest';
-    // "DOMESTIC_STAFF" → "Domestic Staff"
-    return raw
-        .split('_')
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-        .join(' ');
-}
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const S = StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: SgateColors.card, // white fills the notch
-    },
-    scroll: {
-        flex: 1,
-    },
-    scrollContent: {
-        paddingBottom: 40,
+        backgroundColor: '#FFFFFF',
     },
 
-    // ── Header (white) ─────────────────────────────────────────────────────
-    headerArea: {
-        backgroundColor: SgateColors.card,
+    // ── Header ─────────────────────────────────────────────────────────────
+    header: {
+        backgroundColor: '#FFFFFF',
         paddingHorizontal: 20,
-        paddingBottom: 20,
-        gap: 16,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F0F0F0',
+        gap: 12,
     },
-    greetingRow: {
+    headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
     },
-    greetingLeft: {
+    brandRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
         flex: 1,
     },
-    greetingTexts: {
-        flex: 1,
+    logoWrap: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: BRAND_YELLOW,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    greetingLine: {
+    greetText: {
         fontSize: 13,
         fontFamily: SgateFonts.regular,
         color: SgateColors.t3,
+        marginBottom: 2,
     },
-    societyLine: {
-        fontSize: 18,
+    societyText: {
+        fontSize: 17,
         fontFamily: SgateFonts.extrabold,
-        color: '#E5A500', // Replaced blue with yellow/gold
+        color: SgateColors.t1,
+        letterSpacing: -0.3,
     },
     bellBtn: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: SgateColors.surface,
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: '#F5F5F5',
         alignItems: 'center',
         justifyContent: 'center',
     },
     badge: {
         position: 'absolute',
-        top: 7,
-        right: 7,
-        minWidth: 16,
-        height: 16,
-        borderRadius: 8,
-        backgroundColor: SgateColors.gold,
+        top: 8,
+        right: 8,
+        minWidth: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: BRAND_YELLOW,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 3,
+        paddingHorizontal: 2,
         borderWidth: 1.5,
-        borderColor: SgateColors.card,
+        borderColor: '#FFFFFF',
     },
     badgeText: {
-        fontSize: 9,
+        fontSize: 8,
         fontFamily: SgateFonts.bold,
         color: SgateColors.black,
     },
 
-    // ── Content (bg) ───────────────────────────────────────────────────────
-    contentArea: {
-        backgroundColor: SgateColors.bg,
-        paddingHorizontal: 20,
-        paddingTop: 20,
+    // Gate alert strip (only shows when someone is at gate)
+    gateAlert: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: BRAND_YELLOW_BG,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 12,
+    },
+    gateAlertDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: BRAND_YELLOW,
+    },
+    gateAlertText: {
+        flex: 1,
+        fontSize: 13,
+        fontFamily: SgateFonts.medium,
+        color: '#996300',
     },
 
-    // ── Quick actions ──────────────────────────────────────────────────────
-    quickRow: {
-        flexDirection: 'row',
-        gap: 10,
-        marginBottom: 28,
-    },
+    // ── Scroll ─────────────────────────────────────────────────────────────
+    scroll: { flex: 1 },
+    scrollContent: { paddingTop: 24, paddingBottom: 48 },
 
     // ── Section ────────────────────────────────────────────────────────────
     section: {
-        marginBottom: 28,
+        paddingHorizontal: 20,
+        marginBottom: 8,
     },
-    cardWrap: {
-        marginBottom: 12,
+    sectionLabel: {
+        fontSize: 11,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t3,
+        letterSpacing: 0.8,
+        textTransform: 'uppercase',
+        marginBottom: 16,
     },
 
-    // ── Activity card ──────────────────────────────────────────────────────
+    // ── Divider ────────────────────────────────────────────────────────────
+    divider: {
+        height: 8,
+        backgroundColor: '#F7F7F7',
+        marginBottom: 24,
+    },
+
+    // ── Quick Actions ───────────────────────────────────────────────────────
+    quickGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        rowGap: 20,
+        columnGap: 0,
+    },
+    quickItem: {
+        width: '25%',
+        alignItems: 'center',
+        gap: 8,
+    },
+    quickIcon: {
+        width: 54,
+        height: 54,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    quickLabel: {
+        fontSize: 11,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t2,
+        textAlign: 'center',
+    },
+
+    // ── Card Wrap ───────────────────────────────────────────────────────────
+    cardWrap: { marginBottom: 10 },
+
+    // ── Activity Card ───────────────────────────────────────────────────────
     activityCard: {
-        backgroundColor: SgateColors.card,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: SgateColors.borderSoft,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
         paddingHorizontal: 16,
-        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
     },
     activityRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 13,
+        paddingVertical: 14,
         gap: 12,
     },
     activityDivider: {
         borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        borderBottomColor: '#F5F5F5',
     },
-    activityInfo: {
-        flex: 1,
-    },
+    activityInfo: { flex: 1 },
     activityName: {
         fontSize: 14,
         fontFamily: SgateFonts.semibold,
@@ -565,48 +606,48 @@ const styles = StyleSheet.create({
     },
     actPill: {
         borderRadius: 20,
-        paddingHorizontal: 9,
-        paddingVertical: 3,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
     },
     actPillText: {
         fontSize: 11,
         fontFamily: SgateFonts.semibold,
     },
 
-    // ── Gate empty state ───────────────────────────────────────────────────
+    // ── Empty & Skeleton ────────────────────────────────────────────────────
     emptyWrap: {
         alignItems: 'center',
         paddingVertical: 28,
+        gap: 8,
+        backgroundColor: '#FAFAFA',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
     },
     emptyIcon: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         backgroundColor: SgateColors.greenBg,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 10,
     },
     emptyTitle: {
-        fontSize: 17,
-        fontFamily: SgateFonts.extrabold,
+        fontSize: 15,
+        fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
-        marginBottom: 4,
     },
     emptySub: {
-        fontSize: 14,
+        fontSize: 13,
         fontFamily: SgateFonts.regular,
         color: SgateColors.t3,
     },
-
-    // ── Skeleton ───────────────────────────────────────────────────────────
     skeletonCard: {
-        backgroundColor: SgateColors.card,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: SgateColors.borderSoft,
+        backgroundColor: '#FAFAFA',
+        borderRadius: 16,
         padding: 16,
-        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
     },
     skeletonRow: {
         flexDirection: 'row',
@@ -614,35 +655,14 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     skeletonCircle: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: SgateColors.surface,
-    },
-    skeletonLines: {
-        flex: 1,
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: '#EBEBEB',
     },
     skeletonLine: {
-        height: 12,
+        height: 11,
         borderRadius: 6,
-        backgroundColor: SgateColors.surface,
-    },
-
-    // ── Activity empty ─────────────────────────────────────────────────────
-    activityEmptyWrap: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        paddingVertical: 24,
-        backgroundColor: SgateColors.card,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: SgateColors.borderSoft,
-    },
-    activityEmptyText: {
-        fontSize: 14,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
+        backgroundColor: '#EBEBEB',
     },
 });
