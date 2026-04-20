@@ -18,6 +18,8 @@ import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import { useAuthStore } from '../../../store/useAuthStore';
+import { buildReceiptHTML, buildReceiptNumber } from '../../../utils/receiptTemplate';
+
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const BRAND_YELLOW = '#FFD60A';
@@ -155,70 +157,26 @@ export default function SocietyDueDetailScreen() {
     if (!due) return;
     setDownloading(true);
     try {
-      const lineItemsHtml = due.lineItems.map(item =>
-        `<tr><td style="padding:8px 0;color:#555;">${item.label}</td><td style="padding:8px 0;text-align:right;font-weight:600;">${formatAmount(item.amount)}</td></tr>`
-      ).join('');
-
-      const html = `
-        <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px 32px; color: #1a1a1a; }
-            .header { text-align: center; margin-bottom: 32px; border-bottom: 2px solid #FFD60A; padding-bottom: 20px; }
-            .header h1 { font-size: 22px; margin: 0 0 4px 0; }
-            .header p { color: #888; font-size: 13px; margin: 0; }
-            .badge { display: inline-block; background: #e8f5e9; color: #2e7d32; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-top: 12px; }
-            .section { margin-bottom: 24px; }
-            .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #999; margin-bottom: 12px; font-weight: 700; }
-            table { width: 100%; border-collapse: collapse; }
-            .total-row td { border-top: 1px solid #eee; padding-top: 14px; font-size: 16px; font-weight: 800; }
-            .detail-row td { padding: 6px 0; font-size: 13px; }
-            .detail-row td:first-child { color: #999; }
-            .detail-row td:last-child { text-align: right; font-weight: 500; }
-            .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; font-size: 11px; color: #bbb; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>Payment Receipt</h1>
-            <p>${due.society}</p>
-            <span class="badge">✓ PAID</span>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Bill Breakdown</div>
-            <table>
-              ${lineItemsHtml}
-              <tr class="total-row">
-                <td>Total</td>
-                <td style="text-align:right;">${formatAmount(due.totalAmount)}</td>
-              </tr>
-            </table>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Details</div>
-            <table>
-              <tr class="detail-row"><td>Flat</td><td>${due.flat}</td></tr>
-              <tr class="detail-row"><td>Bill Period</td><td>${due.month} ${due.year}</td></tr>
-              <tr class="detail-row"><td>Bill ID</td><td>${due.id.slice(0, 8).toUpperCase()}</td></tr>
-              <tr class="detail-row"><td>Due Date</td><td>${formatDate(due.dueDate)}</td></tr>
-              <tr class="detail-row"><td>Paid On</td><td>${due.paidOn ? formatDate(due.paidOn) : '---'}</td></tr>
-              <tr class="detail-row"><td>Payment Method</td><td>${due.paidVia || 'UPI'}</td></tr>
-            </table>
-          </div>
-
-          <div class="footer">
-            This is a computer-generated receipt and does not require a signature.<br/>
-            Generated via S-Gate App
-          </div>
-        </body>
-        </html>
-      `;
+      const receiptNumber = buildReceiptNumber(due.id, due.dueDate);
+      const html = buildReceiptHTML({
+        receiptNumber,
+        status: due.status,
+        flat: due.flat,
+        society: due.society,
+        billPeriod: `${due.month} ${due.year}`,
+        lineItems: due.lineItems,
+        totalAmount: due.totalAmount,
+        billId: due.id.slice(0, 8).toUpperCase(),
+        dueDate: formatDate(due.dueDate),
+        paidOn: due.paidOn ? formatDate(due.paidOn) : '---',
+        paymentMethod: due.paidVia || 'UPI',
+      });
 
       const { uri } = await Print.printToFileAsync({ html, base64: false });
-      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: `Receipt - ${due.month} ${due.year}` });
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: `Receipt - ${due.month} ${due.year}`,
+      });
     } catch (err) {
       console.error('Receipt generation failed:', err);
       AppAlert.show('Error', 'Could not generate receipt. Please try again.');
@@ -226,6 +184,7 @@ export default function SocietyDueDetailScreen() {
       setDownloading(false);
     }
   };
+
 
 
   if (loading) {
