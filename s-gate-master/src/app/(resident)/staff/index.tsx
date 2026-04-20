@@ -48,7 +48,7 @@ const TYPE_ICON: Record<string, React.ComponentProps<typeof MaterialCommunityIco
     MAID: 'broom',
     COOK: 'chef-hat',
     NANNY: 'baby-carriage',
-    DRIVER: 'steering',
+    DRIVER: 'car',
     CLEANER: 'spray-bottle',
     GARDENER: 'flower-tulip',
     LAUNDRY: 'washing-machine',
@@ -300,15 +300,17 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     badgeTotal: {
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#FEF9C3',
         borderRadius: 12,
-        paddingHorizontal: 10,
+        paddingHorizontal: 12,
         paddingVertical: 4,
+        borderWidth: 1,
+        borderColor: '#FDE047',
     },
     badgeTotalText: {
         fontSize: 13,
         fontWeight: '700',
-        color: '#374151',
+        color: '#a16207',
     },
 
     // Scroll
