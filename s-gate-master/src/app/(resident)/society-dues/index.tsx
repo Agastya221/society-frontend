@@ -149,23 +149,26 @@ export default function SocietyDuesScreen() {
         const res = await api.get('/resident/dues');
         const raw = res.data?.data ?? res.data;
         const list: any[] = Array.isArray(raw) ? raw : raw?.dues ?? raw?.items ?? [];
-        setDues(list.map(normaliseDue));
+        const normalisedList = list.map(normaliseDue);
+        setDues(normalisedList);
         
-        const s = raw?.summary;
-        if (s) {
-          setSummary({ 
-            totalOutstanding: s.totalOutstanding ?? 0, 
-            currentMonth: s.currentMonth ?? 0, 
-            overdue: s.overdue ?? 0 
-          });
-        } else {
-          const pendingList = list.filter(d => (d.status || d.state) !== 'PAID');
-          setSummary({
-            totalOutstanding: pendingList.reduce((a, d) => a + (d.totalAmount ?? d.amount ?? 0), 0),
-            currentMonth: list[0]?.totalAmount ?? list[0]?.amount ?? 0,
-            overdue: list.filter(d => (d.status || d.state) === 'OVERDUE').reduce((a, d) => a + (d.totalAmount ?? d.amount ?? 0), 0),
-          });
-        }
+        // Dynamic calc for summary regardless of API summary field to ensure it matches the cards
+        const pendingList = normalisedList.filter(d => d.status !== 'PAID');
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const overdueList = normalisedList.filter(d => d.status === 'OVERDUE');
+        const currentMonthBill = normalisedList.find(d => {
+          const date = new Date(d.dueDate);
+          return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+        });
+
+        setSummary({
+          totalOutstanding: pendingList.reduce((a, d) => a + d.totalAmount, 0),
+          currentMonth: currentMonthBill?.totalAmount ?? 0,
+          overdue: overdueList.reduce((a, d) => a + d.totalAmount, 0),
+        });
       } catch (err) {
         console.error('Failed to fetch dues:', err);
       } finally { setLoading(false); }
