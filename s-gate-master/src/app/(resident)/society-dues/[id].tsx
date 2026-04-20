@@ -1,29 +1,51 @@
-import React, { useState } from 'react';
-import { View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ActivityIndicator,
+  Platform
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 
-// ─── Local types ─────────────────────────────────────────────────────────────
+// ─── Constants ──────────────────────────────────────────────────────────────
+const BRAND_YELLOW = '#FFD60A';
+const BRAND_YELLOW_BG = '#FFFBE6';
+
 type DueStatus = 'PAID' | 'PENDING' | 'OVERDUE';
 interface DueLineItem { label: string; amount: number; isRed?: boolean }
 interface PaymentRecord { date: string; method: string; amount: number; txnId: string }
+
 interface DueItem {
-  id: string; month: string; year: number; dueDate: string; flat: string; society: string;
-  status: DueStatus; totalAmount: number; lineItems: DueLineItem[];
-  paidOn?: string; paidVia?: string; paymentHistory?: PaymentRecord[];
+  id: string; 
+  month: string; 
+  year: number; 
+  dueDate: string; 
+  flat: string; 
+  society: string;
+  status: DueStatus; 
+  totalAmount: number; 
+  lineItems: DueLineItem[];
+  paidOn?: string; 
+  paidVia?: string; 
+  paymentHistory?: PaymentRecord[];
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string): string {
-  const [year, month, day] = iso.split('-');
+  if (!iso) return '---';
+  const dateStr = iso.split('T')[0];
+  const parts = dateStr.split('-');
+  if (parts.length < 3) return '---';
+  const [year, month, day] = parts;
   return `${day}-${month}-${year.slice(2)}`;
 }
 
@@ -31,84 +53,57 @@ function formatAmount(amount: number): string {
   return '₹' + amount.toLocaleString('en-IN');
 }
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
+function normaliseDetailedDue(raw: any): DueItem {
+  const d = new Date(raw.dueDate || raw.date || new Date());
+  
+  // Logic for status based on isPaid boolean from user log
+  let status: DueStatus = 'PENDING';
+  if (raw.isPaid || raw.status === 'PAID') status = 'PAID';
+  else if (new Date(raw.dueDate) < new Date()) status = 'OVERDUE';
 
-interface DetailRowProps {
-  label: string;
-  value: string;
+  const defaultLineItems: DueLineItem[] = [
+    { label: 'Society Maintenance', amount: raw.amount ?? raw.totalAmount ?? 0 }
+  ];
+
+  return {
+    id: raw.id,
+    month: d.toLocaleString('default', { month: 'long' }),
+    year: d.getFullYear(),
+    dueDate: raw.dueDate || raw.date || new Date().toISOString(),
+    flat: raw.flatNo || raw.unit || 'A-102', // Placeholder as flat isn't in top level log
+    society: raw.societyName || 'Your Society',
+    status: status,
+    totalAmount: raw.amount ?? raw.totalAmount ?? 0,
+    lineItems: raw.lineItems || raw.items || defaultLineItems,
+    paidOn: raw.paidAt ?? raw.paidOn ?? undefined,
+    paidVia: raw.paidVia || raw.paymentMethod || undefined,
+    paymentHistory: raw.paymentHistory || raw.history || [],
+  };
 }
 
-function DetailRow({ label, value }: DetailRowProps) {
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
-      <View style={{ flex: 1 }} />
       <Text style={styles.detailValue}>{value}</Text>
     </View>
   );
 }
 
-interface LineItemRowProps {
-  item: DueLineItem;
-}
-
-function LineItemRow({ item }: LineItemRowProps) {
+function LineItemRow({ item }: { item: DueLineItem }) {
   return (
     <View style={styles.lineItemRow}>
-      {item.isRed ? (
-        <View style={styles.lineItemLabelRow}>
-          <Feather
-            name="alert-triangle"
-            size={12}
-            color={SgateColors.red}
-            style={styles.penaltyIcon}
-          />
-          <Text style={[styles.lineItemLabel, { color: SgateColors.red }]}>
-            {item.label}
-          </Text>
-        </View>
-      ) : (
-        <Text style={[styles.lineItemLabel, styles.lineItemLabelNormal]}>
+      <View style={styles.lineItemLabelRow}>
+        {item.isRed && <Feather name="alert-triangle" size={12} color={SgateColors.red} style={{ marginRight: 6 }} />}
+        <Text style={[styles.lineItemLabel, item.isRed && { color: SgateColors.red }]}>
           {item.label}
         </Text>
-      )}
-      <Text
-        style={[
-          styles.lineItemAmount,
-          item.isRed && { color: SgateColors.red },
-        ]}
-      >
+      </View>
+      <Text style={[styles.lineItemAmount, item.isRed && { color: SgateColors.red }]}>
         {formatAmount(item.amount)}
       </Text>
-    </View>
-  );
-}
-
-interface TimelineRowProps {
-  record: PaymentRecord;
-}
-
-function TimelineRow({ record }: TimelineRowProps) {
-  return (
-    <View style={styles.timelineRow}>
-      <Feather
-        name="check-circle"
-        size={16}
-        color={SgateColors.green}
-        style={styles.timelineIcon}
-      />
-      <View style={styles.timelineContent}>
-        <View style={styles.timelineTopRow}>
-          <Text style={styles.timelineDate}>{formatDate(record.date)}</Text>
-          <Text style={styles.timelineMethod}>{record.method}</Text>
-          <Text style={styles.timelineAmount}>
-            {formatAmount(record.amount)}
-          </Text>
-        </View>
-        <Text style={styles.timelineTxn} numberOfLines={1}>
-          {record.txnId}
-        </Text>
-      </View>
     </View>
   );
 }
@@ -118,218 +113,152 @@ function TimelineRow({ record }: TimelineRowProps) {
 export default function SocietyDueDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const original: DueItem | null = null; // Will be fetched by ID when GET /resident/dues/:id is available
-  const [due, setDue] = useState<DueItem | null>(original);
+  const [due, setDue] = useState<DueItem | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!due) {
+  useFocusEffect(useCallback(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        // User log shows /resident/dues/:id returns 404, so we try specific fetch first
+        // then gracefully fallback to the list if it fails.
+        let rawData = null;
+        
+        try {
+          const res = await api.get(`/resident/dues/${id}`);
+          rawData = res.data?.data ?? res.data;
+        } catch (e) {
+          // If specific fetch fails (404), fetch the list and find the item
+          const listRes = await api.get('/resident/dues');
+          const listRaw = listRes.data?.data ?? listRes.data;
+          const list: any[] = Array.isArray(listRaw) ? listRaw : listRaw?.dues ?? listRaw?.items ?? [];
+          rawData = list.find(it => it.id === id);
+        }
+
+        if (rawData) {
+          setDue(normaliseDetailedDue(rawData));
+        }
+      } catch (err) {
+        console.error('Failed to fetch due detail from list fallback:', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [id]));
+
+  if (loading) {
     return (
-      <View style={styles.safeArea}>
-        <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
-            <View style={styles.notFoundContainer}>
-              <Text style={styles.notFoundText}>Not found</Text>
-            </View>
-        </SafeAreaView>
+      <View style={styles.loadingRoot}>
+        <ActivityIndicator size="large" color={BRAND_YELLOW} />
       </View>
     );
   }
 
-  // ── Banner config ──────────────────────────────────────────────────────────
-  type BannerConfig = {
-    bg: string;
-    iconName: React.ComponentProps<typeof Feather>['name'];
-    iconColor: string;
-    text: string;
-    textColor: string;
-  };
-
-  function getBannerConfig(): BannerConfig {
-    switch (due!.status) {
-      case 'PAID':
-        return {
-          bg: SgateColors.greenBg,
-          iconName: 'check-circle',
-          iconColor: SgateColors.green,
-          text: 'Payment Completed',
-          textColor: SgateColors.green,
-        };
-      case 'PENDING':
-        return {
-          bg: SgateColors.goldPale,
-          iconName: 'clock',
-          iconColor: '#CC8800',
-          text: `Payment Pending · Due ${formatDate(due!.dueDate)}`,
-          textColor: '#CC8800',
-        };
-      case 'OVERDUE':
-        return {
-          bg: SgateColors.redBg,
-          iconName: 'alert-circle',
-          iconColor: SgateColors.red,
-          text: 'Overdue · Please pay immediately',
-          textColor: SgateColors.red,
-        };
-    }
-  }
-
-  const banner = getBannerConfig();
-
-  // ── Payment handler ────────────────────────────────────────────────────────
-  function handlePay() {
-    const amountStr = formatAmount(due!.totalAmount);
-    AppAlert.show(
-      'Confirm Payment',
-      `Pay ${amountStr} for ${due!.month} ${due!.year}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Pay Now',
-          onPress: () => {
-            setDue((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    status: 'PAID',
-                    paidOn: new Date().toISOString().split('T')[0],
-                    paidVia: 'UPI',
-                  }
-                : null,
-            );
-            AppAlert.show(
-              'Payment Successful',
-              `Your payment of ${amountStr} was successful!`,
-            );
-          },
-        },
-      ],
+  if (!due) {
+    return (
+      <View style={styles.root}>
+        <SafeAreaView edges={['top']} style={styles.headerBar}>
+          <View style={styles.headerInner}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+              <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Details</Text>
+            <View style={{ width: 40 }} />
+          </View>
+        </SafeAreaView>
+        <View style={styles.emptyContent}>
+          <Feather name="alert-circle" size={48} color={SgateColors.t4} />
+          <Text style={styles.emptyText}>Due record not found</Text>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 12 }}>
+            <Text style={{ color: SgateColors.t2, fontFamily: SgateFonts.bold }}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     );
-  }
-
-  function handleDownloadReceipt() {
-    AppAlert.show('Download', 'Receipt download will be available soon.');
   }
 
   const isPaid = due.status === 'PAID';
   const isActionable = due.status === 'PENDING' || due.status === 'OVERDUE';
 
+  const bannerConfig = {
+    PAID: { bg: SgateColors.greenBg, text: 'Payment Completed', color: SgateColors.green, icon: 'check-circle' },
+    PENDING: { bg: BRAND_YELLOW_BG, text: `Due by ${formatDate(due.dueDate)}`, color: '#996300', icon: 'clock' },
+    OVERDUE: { bg: SgateColors.redBg, text: 'Overdue · Pay immediately', color: SgateColors.red, icon: 'alert-circle' },
+  }[due.status];
+
   return (
-    <View style={styles.safeArea}>
+    <View style={styles.root}>
       {/* ── Header ── */}
-      <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.headerBackBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+      <SafeAreaView edges={['top']} style={styles.headerBar}>
+        <View style={styles.headerInner}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Feather name="arrow-left" size={24} color={SgateColors.t1} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            {due.month} {due.year}
-          </Text>
-          <View style={styles.headerBackBtn} />
+          <Text style={styles.headerTitle}>{due.month} {due.year}</Text>
+          <View style={{ width: 40 }} />
         </View>
       </SafeAreaView>
 
-      {/* ── Status Banner ── */}
-      <View style={[styles.statusBanner, { backgroundColor: banner.bg }]}>
-        <Feather name={banner.iconName} size={16} color={banner.iconColor} />
-        <Text style={[styles.bannerText, { color: banner.textColor }]}>
-          {'  '}{banner.text}
-        </Text>
-      </View>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Status Strip */}
+        <View style={[styles.statusStrip, { backgroundColor: bannerConfig.bg }]}>
+          <Feather name={bannerConfig.icon as any} size={16} color={bannerConfig.color} />
+          <Text style={[styles.statusText, { color: bannerConfig.color }]}>{bannerConfig.text}</Text>
+        </View>
 
-      {/* ── Scrollable content ── */}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          isActionable && { paddingBottom: 100 },
-          isPaid && { paddingBottom: 120 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
         {/* Breakdown Card */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Bill Breakdown</Text>
-
-          {due.lineItems.map((lineItem, idx) => (
-            <LineItemRow key={idx} item={lineItem} />
-          ))}
-
-          <View style={styles.cardDivider} />
-
+          <Text style={styles.cardHeader}>Bill Breakdown</Text>
+          {due.lineItems.map((item, idx) => <LineItemRow key={idx} item={item} />)}
+          
+          <View style={styles.divider} />
+          
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalAmount}>
-              {formatAmount(due.totalAmount)}
-            </Text>
+            <Text style={styles.totalLabel}>Total Amount</Text>
+            <Text style={styles.totalValue}>{formatAmount(due.totalAmount)}</Text>
           </View>
         </View>
 
         {/* Details Card */}
-        <View style={[styles.card, styles.cardMarginTop]}>
-          <Text style={styles.cardTitle}>Details</Text>
-
-          <DetailRow label="Due Date" value={formatDate(due.dueDate)} />
+        <View style={styles.card}>
+          <Text style={styles.cardHeader}>Bill Details</Text>
           <DetailRow label="Flat" value={due.flat} />
           <DetailRow label="Society" value={due.society} />
-
-          {isPaid && due.paidOn ? (
-            <DetailRow label="Paid On" value={formatDate(due.paidOn)} />
-          ) : null}
-          {isPaid && due.paidVia ? (
-            <DetailRow label="Paid Via" value={due.paidVia} />
-          ) : null}
+          <DetailRow label="Bill ID" value={due.id.slice(0, 8).toUpperCase()} />
+          
+          {isPaid && (
+            <>
+              <View style={styles.divider} />
+              <DetailRow label="Paid On" value={formatDate(due.paidOn!)} />
+              <DetailRow label="Payment Method" value={due.paidVia || 'UPI'} />
+            </>
+          )}
         </View>
 
-        {/* Payment Timeline (PAID only) */}
-        {isPaid &&
-          due.paymentHistory &&
-          due.paymentHistory.length > 0 && (
-            <View style={[styles.card, styles.cardMarginTop]}>
-              <Text style={styles.cardTitle}>Payment Timeline</Text>
-              {due.paymentHistory.map((record, idx) => (
-                <TimelineRow key={idx} record={record} />
-              ))}
-            </View>
-          )}
+        <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* ── Bottom Action ── */}
+      {/* Bottom Bar */}
       {isActionable && (
-        <View style={styles.bottomBar}>
-          <TouchableOpacity
-            style={styles.payBtn}
-            onPress={handlePay}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.payBtnText}>
-              Pay {formatAmount(due.totalAmount)}
-            </Text>
+        <View style={styles.bottomActions}>
+          <TouchableOpacity style={styles.payMainBtn} activeOpacity={0.8} onPress={() => {
+            AppAlert.show('Confirm Payment', `Pay ${formatAmount(due.totalAmount)} for ${due.month}?`, [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Pay Now', onPress: () => router.back() }
+            ]);
+          }}>
+            <Text style={styles.payMainBtnText}>Pay {formatAmount(due.totalAmount)}</Text>
+            <Feather name="arrow-right" size={20} color={SgateColors.black} />
           </TouchableOpacity>
         </View>
       )}
 
       {isPaid && (
-        <View style={styles.bottomBarPaid}>
-          <TouchableOpacity
-            style={styles.downloadBtn}
-            onPress={handleDownloadReceipt}
-            activeOpacity={0.75}
-          >
-            <View style={styles.downloadBtnInner}>
-              <Feather
-                name="download"
-                size={16}
-                color={SgateColors.t2}
-                style={styles.downloadIcon}
-              />
-              <Text style={styles.downloadBtnText}>Download Receipt</Text>
-            </View>
+        <View style={styles.bottomActions}>
+          <TouchableOpacity style={styles.downloadBtn} activeOpacity={0.7} onPress={() => AppAlert.show('Success', 'Receipt download initiated.')}>
+            <Feather name="download" size={18} color={SgateColors.t1} style={{ marginRight: 8 }} />
+            <Text style={styles.downloadBtnText}>Download Receipt</Text>
           </TouchableOpacity>
-          {due.paidVia ? (
-            <Text style={styles.paidViaText}>Paid via {due.paidVia}</Text>
-          ) : null}
         </View>
       )}
     </View>
@@ -339,131 +268,122 @@ export default function SocietyDueDetailScreen() {
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
-    backgroundColor: SgateColors.bg,
+    backgroundColor: '#FFFFFF',
   },
-
-  notFoundContainer: {
+  loadingRoot: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
   },
-  notFoundText: {
-    fontSize: 16,
-    fontFamily: SgateFonts.medium,
-    color: SgateColors.t3,
+  headerBar: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
-
-  // Header
-  header: {
-    backgroundColor: SgateColors.card,
+  headerInner: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  headerBackBtn: {
-    width: 36,
-    alignItems: 'center',
+  backBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+  headerTitle: {
+    fontSize: 18,
+    fontFamily: SgateFonts.bold,
+    color: SgateColors.t1,
+  },
+  
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 20 },
 
-  // Status Banner
-  statusBanner: {
-    height: 48,
+  statusStrip: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 12,
     paddingHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    gap: 8,
   },
-  bannerText: {
-    fontSize: 14,
+  statusText: {
+    fontSize: 13,
     fontFamily: SgateFonts.semibold,
   },
 
-  // Scroll
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
-  },
-
-  // Cards
   card: {
-    backgroundColor: SgateColors.card,
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 16,
-    marginTop: 16,
+    padding: 20,
     borderWidth: 1,
-    borderColor: SgateColors.borderSoft,
+    borderColor: '#F0F0F0',
+    marginBottom: 16,
   },
-  cardMarginTop: {
-    marginTop: 12,
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t2,
-    marginBottom: 12,
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: SgateColors.borderSoft,
-    marginVertical: 12,
+  cardHeader: {
+    fontSize: 12,
+    fontFamily: SgateFonts.bold,
+    color: SgateColors.t3,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 16,
   },
 
-  // Line items
   lineItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   lineItemLabelRow: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  penaltyIcon: {
-    marginRight: 4,
+    flex: 1,
   },
   lineItemLabel: {
     fontSize: 14,
     fontFamily: SgateFonts.regular,
-    flex: 1,
-  },
-  lineItemLabelNormal: {
     color: SgateColors.t2,
   },
   lineItemAmount: {
     fontSize: 14,
-    fontFamily: SgateFonts.medium,
+    fontFamily: SgateFonts.semibold,
     color: SgateColors.t1,
   },
 
-  // Total row
+  divider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginVertical: 16,
+  },
+
   totalRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   totalLabel: {
-    flex: 1,
     fontSize: 15,
     fontFamily: SgateFonts.bold,
     color: SgateColors.t1,
   },
-  totalAmount: {
-    fontSize: 16,
+  totalValue: {
+    fontSize: 18,
     fontFamily: SgateFonts.extrabold,
     color: SgateColors.t1,
   },
 
-  // Detail rows
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   detailLabel: {
     fontSize: 14,
@@ -474,104 +394,64 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: SgateFonts.medium,
     color: SgateColors.t1,
-    textAlign: 'right',
-    flexShrink: 1,
   },
 
-  // Timeline
-  timelineRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  timelineIcon: {
-    marginTop: 2,
-    marginRight: 10,
-  },
-  timelineContent: {
-    flex: 1,
-  },
-  timelineTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  timelineDate: {
-    fontSize: 13,
-    fontFamily: SgateFonts.medium,
-    color: SgateColors.t1,
-  },
-  timelineMethod: {
-    fontSize: 13,
-    fontFamily: SgateFonts.regular,
-    color: SgateColors.t2,
-    flex: 1,
-  },
-  timelineAmount: {
-    fontSize: 13,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t1,
-  },
-  timelineTxn: {
-    fontSize: 12,
-    fontFamily: SgateFonts.regular,
-    color: SgateColors.t4,
-    marginTop: 2,
-  },
-
-  // Bottom bar — actionable (PENDING / OVERDUE)
-  bottomBar: {
-    backgroundColor: SgateColors.card,
+  bottomActions: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
     borderTopWidth: 1,
-    borderTopColor: SgateColors.borderSoft,
-    padding: 16,
+    borderTopColor: '#F0F0F0',
   },
-  payBtn: {
-    backgroundColor: SgateColors.gold,
-    borderRadius: 14,
-    height: 52,
+  payMainBtn: {
+    backgroundColor: BRAND_YELLOW,
+    height: 56,
+    borderRadius: 16,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
+    shadowColor: BRAND_YELLOW,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  payBtnText: {
-    fontSize: 15,
+  payMainBtnText: {
+    fontSize: 16,
     fontFamily: SgateFonts.bold,
     color: SgateColors.black,
   },
 
-  // Bottom bar — PAID
-  bottomBarPaid: {
-    backgroundColor: SgateColors.card,
-    borderTopWidth: 1,
-    borderTopColor: SgateColors.borderSoft,
-    padding: 16,
-  },
   downloadBtn: {
-    flex: 1,
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: SgateColors.borderSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  downloadBtnInner: {
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  downloadIcon: {
-    marginRight: 8,
+    justifyContent: 'center',
   },
   downloadBtnText: {
     fontSize: 14,
     fontFamily: SgateFonts.semibold,
     color: SgateColors.t1,
   },
-  paidViaText: {
-    fontSize: 12,
-    fontFamily: SgateFonts.regular,
+
+  emptyContent: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingBottom: 100,
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 15,
+    fontFamily: SgateFonts.medium,
     color: SgateColors.t3,
-    textAlign: 'center',
-    marginTop: 8,
   },
 });

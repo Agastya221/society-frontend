@@ -31,15 +31,21 @@ interface DuesSummary {
 }
 
 function normaliseDue(raw: any): DueItem {
-  const d = new Date(raw.dueDate ?? raw.periodStart ?? raw.date ?? new Date());
+  const d = new Date(raw.dueDate ?? raw.date ?? new Date());
+  
+  // Logic for status based on isPaid boolean
+  let status: DueStatus = 'PENDING';
+  if (raw.isPaid || raw.status === 'PAID') status = 'PAID';
+  else if (new Date(raw.dueDate) < new Date()) status = 'OVERDUE';
+
   return {
-    id:          raw.id || Math.random().toString(36).substr(2, 9),
+    id:          raw.id,
     month:       d.toLocaleString('default', { month: 'long' }),
     year:        d.getFullYear(),
-    dueDate:     raw.dueDate || raw.periodStart || raw.date || new Date().toISOString(),
-    status:      (raw.status || 'PENDING').toUpperCase() as DueStatus,
-    totalAmount: raw.totalAmount ?? raw.amount ?? 0,
-    paidOn:      raw.paidOn ?? raw.paidAt ?? undefined,
+    dueDate:     raw.dueDate || raw.date || new Date().toISOString(),
+    status:      status,
+    totalAmount: raw.amount ?? raw.totalAmount ?? 0,
+    paidOn:      raw.paidAt ?? raw.paidOn ?? undefined,
   };
 }
 
