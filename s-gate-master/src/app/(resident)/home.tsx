@@ -275,9 +275,6 @@ export default function ResidentHomeScreen() {
                     </View>
                 </Animated.View>
 
-                {/* ═══ DIVIDER ════════════════════════════════════════════ */}
-                <View style={S.divider} />
-
                 {/* ══ WAITING AT GATE ══════════════════════════════════════ */}
                 <Animated.View entering={FadeInDown.delay(160).springify()} style={S.section}>
                     <SectionHeader
@@ -317,9 +314,6 @@ export default function ResidentHomeScreen() {
                         ))
                     )}
                 </Animated.View>
-
-                {/* ═══ DIVIDER ════════════════════════════════════════════ */}
-                <View style={S.divider} />
 
                 {/* ══ TODAY'S ACTIVITY ════════════════════════════════════ */}
                 <Animated.View entering={FadeInDown.delay(220).springify()} style={S.section}>
@@ -527,7 +521,7 @@ const S = StyleSheet.create({
     // ── Section ────────────────────────────────────────────────────────────
     section: {
         paddingHorizontal: 20,
-        marginBottom: 8,
+        marginBottom: 32,
     },
     sectionLabel: {
         fontSize: 11,
@@ -538,12 +532,7 @@ const S = StyleSheet.create({
         marginBottom: 16,
     },
 
-    // ── Divider ────────────────────────────────────────────────────────────
-    divider: {
-        height: 8,
-        backgroundColor: '#F7F7F7',
-        marginBottom: 24,
-    },
+    divider: { height: 0 },
 
     // ── Quick Actions ───────────────────────────────────────────────────────
     quickGrid: {
