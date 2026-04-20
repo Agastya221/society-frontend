@@ -14,6 +14,7 @@ import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
+import { useAuthStore } from '../../../store/useAuthStore';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 const BRAND_YELLOW = '#FFD60A';
@@ -53,10 +54,10 @@ function formatAmount(amount: number): string {
   return '₹' + amount.toLocaleString('en-IN');
 }
 
-function normaliseDetailedDue(raw: any): DueItem {
+function normaliseDetailedDue(raw: any, userProfile: any): DueItem {
   const d = new Date(raw.dueDate || raw.date || new Date());
   
-  // Logic for status based on isPaid boolean from user log
+  // Logic for status based on isPaid boolean
   let status: DueStatus = 'PENDING';
   if (raw.isPaid || raw.status === 'PAID') status = 'PAID';
   else if (new Date(raw.dueDate) < new Date()) status = 'OVERDUE';
@@ -65,13 +66,18 @@ function normaliseDetailedDue(raw: any): DueItem {
     { label: 'Society Maintenance', amount: raw.amount ?? raw.totalAmount ?? 0 }
   ];
 
+  // Resolve real clear data from user profile if not in bill
+  const flatNumber = userProfile?.flat?.number 
+    ? `${userProfile.flat.block?.name ? userProfile.flat.block.name + '-' : ''}${userProfile.flat.number}`
+    : raw.flatNo || raw.unit || '---';
+
   return {
     id: raw.id,
     month: d.toLocaleString('default', { month: 'long' }),
     year: d.getFullYear(),
     dueDate: raw.dueDate || raw.date || new Date().toISOString(),
-    flat: raw.flatNo || raw.unit || 'A-102', // Placeholder as flat isn't in top level log
-    society: raw.societyName || 'Your Society',
+    flat: flatNumber,
+    society: userProfile?.society?.name || raw.societyName || 'Your Society',
     status: status,
     totalAmount: raw.amount ?? raw.totalAmount ?? 0,
     lineItems: raw.lineItems || raw.items || defaultLineItems,
@@ -113,6 +119,7 @@ function LineItemRow({ item }: { item: DueLineItem }) {
 export default function SocietyDueDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuthStore();
   const [due, setDue] = useState<DueItem | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -120,15 +127,12 @@ export default function SocietyDueDetailScreen() {
     (async () => {
       try {
         setLoading(true);
-        // User log shows /resident/dues/:id returns 404, so we try specific fetch first
-        // then gracefully fallback to the list if it fails.
         let rawData = null;
         
         try {
           const res = await api.get(`/resident/dues/${id}`);
           rawData = res.data?.data ?? res.data;
         } catch (e) {
-          // If specific fetch fails (404), fetch the list and find the item
           const listRes = await api.get('/resident/dues');
           const listRaw = listRes.data?.data ?? listRes.data;
           const list: any[] = Array.isArray(listRaw) ? listRaw : listRaw?.dues ?? listRaw?.items ?? [];
@@ -136,7 +140,7 @@ export default function SocietyDueDetailScreen() {
         }
 
         if (rawData) {
-          setDue(normaliseDetailedDue(rawData));
+          setDue(normaliseDetailedDue(rawData, user));
         }
       } catch (err) {
         console.error('Failed to fetch due detail from list fallback:', err);
@@ -144,7 +148,7 @@ export default function SocietyDueDetailScreen() {
         setLoading(false);
       }
     })();
-  }, [id]));
+  }, [id, user]));
 
   if (loading) {
     return (
@@ -163,7 +167,6 @@ export default function SocietyDueDetailScreen() {
               <Feather name="arrow-left" size={24} color={SgateColors.t1} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Details</Text>
-            <View style={{ width: 40 }} />
           </View>
         </SafeAreaView>
         <View style={styles.emptyContent}>
@@ -195,7 +198,6 @@ export default function SocietyDueDetailScreen() {
             <Feather name="arrow-left" size={24} color={SgateColors.t1} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{due.month} {due.year}</Text>
-          <View style={{ width: 40 }} />
         </View>
       </SafeAreaView>
 
@@ -286,7 +288,6 @@ const styles = StyleSheet.create({
   headerInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
@@ -299,6 +300,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: SgateFonts.bold,
     color: SgateColors.t1,
+    marginLeft: 8,
   },
   
   scroll: { flex: 1 },
