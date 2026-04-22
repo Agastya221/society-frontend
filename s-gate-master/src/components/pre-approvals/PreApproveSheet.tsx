@@ -2809,7 +2809,7 @@ const S = StyleSheet.create({
     handle: { width: 38, height: 4, borderRadius: 2, backgroundColor: SgateColors.border },
 
     // ── Step 1: selector ──────────────────────────────────────────────────────
-    selectorWrap: { paddingHorizontal: 20, paddingBottom: 16 },
+    selectorWrap: { paddingTop: 32, paddingHorizontal: 20, paddingBottom: 16 },
     sheetTitle: {
         fontSize: 26, fontFamily: SgateFonts.extrabold,
         color: SgateColors.t1, marginBottom: 4,
@@ -2843,6 +2843,7 @@ const S = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: SgateColors.borderSoft,
         paddingHorizontal: 20,
+        paddingTop: 24,
     },
     backBtn: { paddingRight: 16, paddingBottom: 12 },
     tabItem: { flex: 1, alignItems: 'center', paddingVertical: 12 },
