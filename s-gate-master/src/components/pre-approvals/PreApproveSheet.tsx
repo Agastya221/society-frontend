@@ -548,9 +548,7 @@ function CabOnce({ state }: { state: FormState }) {
                     : 'Vehicle number is required for cab verification at the gate.'}
             </Text>
 
-            <TouchableOpacity style={S.advLink}>
-                <Text style={S.advText}>Advanced Options »</Text>
-            </TouchableOpacity>
+
         </View>
     );
 }
@@ -625,9 +623,7 @@ function DeliveryOnce({ state }: { state: FormState }) {
                 </>
             )}
 
-            <TouchableOpacity style={S.advLink}>
-                <Text style={S.advText}>Advanced Options</Text>
-            </TouchableOpacity>
+
         </View>
     );
 }
@@ -684,9 +680,7 @@ function ServiceOnce({ state }: { state: FormState }) {
                 </View>
             </View>
 
-            <TouchableOpacity style={S.advLink}>
-                <Text style={S.advText}>Advanced Options »</Text>
-            </TouchableOpacity>
+
         </View>
     );
 }
@@ -2971,9 +2965,7 @@ const S = StyleSheet.create({
         borderColor: SgateColors.goldDeep, backgroundColor: SgateColors.goldPale,
     },
 
-    // Advanced Options
-    advLink: { marginTop: 18, alignItems: 'center' },
-    advText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.blue },
+
 
     // ── Chips ─────────────────────────────────────────────────────────────────
     chipRow: { flexDirection: 'row', gap: 10, marginTop: 8, marginBottom: 4 },
