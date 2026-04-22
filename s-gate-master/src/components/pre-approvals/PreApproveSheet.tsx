@@ -846,11 +846,20 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
     const isGuest    = inviteType === 'GUEST';
     const isPrivate  = isGuest && state.isPrivate;
     const activeColor = isPrivate ? PRIVATE_PURPLE : SgateColors.gold;
+    const typeConfig = TYPES.find(t => t.key === inviteType);
 
     // CTA label
     let ctaLabel: string | undefined;
-    if (isGuest) {
+    if (inviteType === 'GUEST') {
         ctaLabel = isPrivate ? 'Add private guest' : 'Add guest';
+    } else if (inviteType === 'CAB') {
+        ctaLabel = 'Pre-approve Cab';
+    } else if (inviteType === 'DELIVERY') {
+        ctaLabel = 'Pre-approve Delivery';
+    } else if (inviteType === 'HELP') {
+        ctaLabel = 'Pre-approve Service';
+    } else {
+        ctaLabel = 'Create Pre-Approval';
     }
 
     function renderContent() {
@@ -867,19 +876,34 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
 
     return (
         <View style={S.formPanel}>
-            {/* Tab header */}
-            <View style={S.tabHeader}>
-                <TouchableOpacity onPress={onBack} style={S.backBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t2} />
-                </TouchableOpacity>
-                {(['once', 'frequently'] as FreqTab[]).map(t => (
-                    <TouchableOpacity key={t} style={S.tabItem} onPress={() => setTab(t)} activeOpacity={0.7}>
-                        <Text style={[S.tabText, tab === t && S.tabTextActive]}>
-                            {t === 'once' ? 'Once' : 'Frequently'}
-                        </Text>
-                        {tab === t && <View style={[S.tabLine, { backgroundColor: activeColor }]} />}
+            {/* Header Area */}
+            <View style={{ paddingTop: 24 }}>
+                {/* Title Row */}
+                <View style={{ flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 16 }}>
+                    <TouchableOpacity onPress={onBack} style={{ marginRight: 16, marginTop: 4 }} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
-                ))}
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 24, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 }}>
+                            {typeConfig?.label}
+                        </Text>
+                        <Text style={{ fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 }}>
+                            {typeConfig?.desc}
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Tabs Row */}
+                <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft, paddingHorizontal: 20 }}>
+                    {(['once', 'frequently'] as FreqTab[]).map(t => (
+                        <TouchableOpacity key={t} style={S.tabItem} onPress={() => setTab(t)} activeOpacity={0.7}>
+                            <Text style={[S.tabText, tab === t && S.tabTextActive]}>
+                                {t === 'once' ? 'Once' : 'Frequently'}
+                            </Text>
+                            {tab === t && <View style={[S.tabLine, { backgroundColor: activeColor }]} />}
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
 
             {/* Scrollable content */}
