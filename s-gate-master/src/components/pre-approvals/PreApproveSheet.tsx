@@ -2305,14 +2305,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                 {/* Sheet container */}
                 <Animated.View style={[S.sheetWrap, sheetStyle]} pointerEvents="box-none">
 
-                {/* Floating icon — consistent across all guest sub-steps */}
-                {shouldShowFloat && floatIconConfig && (
-                    <Animated.View style={[S.floatWrap, floatStyle]}>
-                        <View style={[S.floatCircle, { backgroundColor: floatIconConfig.iconBg }]}>
-                            <Feather name={floatIconConfig.icon} size={24} color={floatIconConfig.iconColor} />
-                        </View>
-                    </Animated.View>
-                )}
+
 
                 {/* THE SINGLE CONTAINER — never unmounts, height animated with spring */}
                 <GestureDetector gesture={panGesture}>

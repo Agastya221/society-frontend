@@ -510,21 +510,7 @@ export default function PassesScreen() {
                     )
                 )}
 
-                {/* FAB */}
-                <View style={styles.fabContainer}>
-                    <View style={styles.fabPill}>
-                        <TouchableOpacity 
-                            style={styles.fabIcon} 
-                            onPress={() => activeTab === 'Pre-Approvals' ? loadPreApprovals(true) : loadInvites(true)}
-                        >
-                            <MaterialIcons name="refresh" size={22} color="#FFF" />
-                        </TouchableOpacity>
-                        <View style={styles.fabDivider} />
-                        <TouchableOpacity style={styles.fabIcon}>
-                            <MaterialIcons name="more-horiz" size={22} color="#FFF" />
-                        </TouchableOpacity>
-                    </View>
-                </View>
+
             </View>
 
             {/* ── Pre-Approval action menu ────────────── */}
@@ -723,30 +709,7 @@ const styles = StyleSheet.create({
         fontFamily: SgateFonts.bold,
         color: '#FFF',
     },
-    fabContainer: {
-        position: 'absolute',
-        right: 20,
-        top: '40%',
-    },
-    fabPill: {
-        backgroundColor: SgateColors.black,
-        borderRadius: 30,
-        paddingVertical: 8,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-        elevation: 5,
-    },
-    fabIcon: {
-        padding: 12,
-    },
-    fabDivider: {
-        width: '60%',
-        height: 1,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-    },
+
     card: {
         backgroundColor: '#FFF',
         borderRadius: 18,
