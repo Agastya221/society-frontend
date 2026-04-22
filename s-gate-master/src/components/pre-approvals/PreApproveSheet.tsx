@@ -155,7 +155,7 @@ function Dropdown({ value, options, onSelect, icon = 'chevron-down', title }: {
 
 // ─── Check card (Make it private / Surprise Delivery / Safe Pickup) ──────────
 function CheckCard({ checked, onToggle, title, desc, rightIcon, rightIconBg, rightIconColor,
-    cardStyle, recommended, activeBg, activeCheckColor, knowMore }: {
+    cardStyle, recommended, activeBg, activeCheckColor, activeTitleColor, knowMore }: {
     checked: boolean; onToggle: () => void; title: string; desc: string;
     rightIcon?: React.ComponentProps<typeof Feather>['name'];
     rightIconBg?: string; rightIconColor?: string;
@@ -163,6 +163,7 @@ function CheckCard({ checked, onToggle, title, desc, rightIcon, rightIconBg, rig
     recommended?: boolean;
     activeBg?: string;
     activeCheckColor?: string;
+    activeTitleColor?: string;
     knowMore?: () => void;
 }) {
     return (
@@ -181,12 +182,12 @@ function CheckCard({ checked, onToggle, title, desc, rightIcon, rightIconBg, rig
                     {checked && <Feather name="check" size={11} color="#fff" />}
                 </View>
                 <View style={S.checkTexts}>
-                    <Text style={[S.checkTitle, checked && activeBg ? { color: activeCheckColor ?? SgateColors.t1 } : null]}>{title}</Text>
+                    <Text style={[S.checkTitle, checked && activeBg ? { color: activeTitleColor ?? activeCheckColor ?? SgateColors.t1 } : null]}>{title}</Text>
                     <Text style={S.checkDesc}>
                         {desc}
                         {knowMore && (
-                            <Text style={[S.knowMoreLink, checked && activeBg ? { color: activeCheckColor ?? SgateColors.goldDeep } : null]}
-                                onPress={e => { e.stopPropagation?.(); knowMore(); }}> Know more »</Text>
+                            <Text style={[S.knowMoreLink, { color: PRIVATE_PURPLE }]}
+                                onPress={e => { e.stopPropagation?.(); knowMore(); }}> Know more</Text>
                         )}
                     </Text>
                 </View>
@@ -396,33 +397,34 @@ function GuestOnce({ state }: { state: FormState }) {
                     title="Make it private"
                     desc="This allows silent entries of your guests without disturbing others"
                     rightIcon="lock"
-                    rightIconBg={prv ? PRIVATE_PURPLE + '22' : SgateColors.surface}
+                    rightIconBg={prv ? '#F0EBFF' : SgateColors.surface}
                     rightIconColor={prv ? PRIVATE_PURPLE : SgateColors.t3}
-                    activeBg={PRIVATE_PURPLE_BG}
+                    activeBg="#F5F3FF"
                     activeCheckColor={PRIVATE_PURPLE}
+                    activeTitleColor={SgateColors.t1}
                     cardStyle={S.checkCardBordered}
                     knowMore={() => state.setShowPrivateInfo(true)}
                 />
             )}
 
             {/* Date */}
-            <Text style={[S.fieldLabel, prv && { color: PRIVATE_PURPLE }]}>Select Date</Text>
-            <TouchableOpacity style={S.dropRow} onPress={state.openDate} activeOpacity={0.7}>
+            <Text style={S.fieldLabel}>Select Date</Text>
+            <TouchableOpacity style={S.dropRowWhite} onPress={state.openDate} activeOpacity={0.7}>
                 <Text style={S.dropText}>{isToday(state.date) ? 'Today' : fmtDateShort(state.date)}</Text>
-                <Feather name="calendar" size={18} color={prv ? PRIVATE_PURPLE : SgateColors.t3} />
+                <Feather name="calendar" size={18} color={SgateColors.t3} />
             </TouchableOpacity>
 
             {/* Time + Duration */}
             <View style={S.twoCol}>
                 <View style={S.col}>
-                    <Text style={[S.fieldLabel, prv && { color: PRIVATE_PURPLE }]}>Starting from</Text>
-                    <TouchableOpacity style={S.dropRow} onPress={state.openTime} activeOpacity={0.7}>
+                    <Text style={S.fieldLabel}>Starting from</Text>
+                    <TouchableOpacity style={S.dropRowWhite} onPress={state.openTime} activeOpacity={0.7}>
                         <Text style={S.dropText}>{fmt12(state.time)}</Text>
-                        <Feather name="clock" size={18} color={prv ? PRIVATE_PURPLE : SgateColors.t3} />
+                        <Feather name="clock" size={18} color={SgateColors.t3} />
                     </TouchableOpacity>
                 </View>
                 <View style={S.col}>
-                    <Text style={[S.fieldLabel, prv && { color: PRIVATE_PURPLE }]}>Valid for</Text>
+                    <Text style={S.fieldLabel}>Valid for</Text>
                     <Dropdown value={state.duration} options={DURATIONS}
                         onSelect={state.setDuration} icon="clock" title="Valid For" />
                 </View>
@@ -2600,6 +2602,13 @@ const S = StyleSheet.create({
     dropRow: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         backgroundColor: SgateColors.bg,
+        borderRadius: 12, borderWidth: 1, borderColor: SgateColors.borderSoft,
+        paddingHorizontal: 14, paddingVertical: 13,
+    },
+    // White-background variant for guest form fields
+    dropRowWhite: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        backgroundColor: '#FFFFFF',
         borderRadius: 12, borderWidth: 1, borderColor: SgateColors.borderSoft,
         paddingHorizontal: 14, paddingVertical: 13,
     },
