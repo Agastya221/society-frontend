@@ -5,6 +5,7 @@ import QRCode from 'react-native-qrcode-svg';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
+    Animated as RNAnimated,
     Dimensions,
     Image,
     Platform,
@@ -18,6 +19,7 @@ import {
     BackHandler,
     Modal,
 } from 'react-native';
+
 import { Gesture, GestureDetector, NativeViewGestureHandler, GestureHandlerRootView, ScrollView as RNGHScrollView } from 'react-native-gesture-handler';
 import Animated, {
     Easing,
@@ -932,6 +934,296 @@ const INVITE_THEMES: { icon: React.ComponentProps<typeof Feather>['name']; color
     { icon: 'gift',       color: '#E67E22',             bg: '#FEF0E0',             emoji: '🎂' },
 ];
 
+// ─── Party Theme definitions — each with unique bg image + color tokens ───────
+const PARTY_THEMES = [
+    {
+        emoji: '🏠', label: 'Home',
+        bgImage: require('../../../assets/images/party_room_bg.png'),
+        headerBg: '#F5EFE8', headlineColor: '#8B6300', dark: false,
+        chipBorder: '#E8564A', chipBg: '#FFE8E2',
+        ctaBg: '#F5C800', ctaText: '#1A1A1A',
+        overlayBg: 'rgba(255,252,240,0.72)',
+    },
+    {
+        emoji: '🍽️', label: 'Dinner',
+        bgImage: require('../../../assets/images/theme_dinner_bg.png'),
+        headerBg: '#FDF4E7', headlineColor: '#7A4210', dark: false,
+        chipBorder: '#D97706', chipBg: '#FEF3C7',
+        ctaBg: '#D97706', ctaText: '#FFFFFF',
+        overlayBg: 'rgba(253,244,231,0.75)',
+    },
+    {
+        emoji: '🎈', label: 'Celebration',
+        bgImage: require('../../../assets/images/theme_celebration_bg.png'),
+        headerBg: '#FFF0F5', headlineColor: '#9D174D', dark: false,
+        chipBorder: '#EC4899', chipBg: '#FCE7F3',
+        ctaBg: '#EC4899', ctaText: '#FFFFFF',
+        overlayBg: 'rgba(255,240,245,0.72)',
+    },
+    {
+        emoji: '📽️', label: 'Movie',
+        bgImage: require('../../../assets/images/theme_movie_bg.png'),
+        headerBg: '#1E2A4A', headlineColor: '#E0EAFF', dark: true,
+        chipBorder: '#93C5FD', chipBg: '#1E3A8A',
+        ctaBg: '#3B82F6', ctaText: '#FFFFFF',
+        overlayBg: 'rgba(10,18,50,0.68)',
+    },
+    {
+        emoji: '🃏', label: 'Cards',
+        bgImage: require('../../../assets/images/theme_cards_bg.png'),
+        headerBg: '#064E3B', headlineColor: '#ECFDF5', dark: true,
+        chipBorder: '#34D399', chipBg: '#065F46',
+        ctaBg: '#10B981', ctaText: '#FFFFFF',
+        overlayBg: 'rgba(4,40,30,0.65)',
+    },
+    {
+        emoji: '🎂', label: 'Birthday',
+        bgImage: require('../../../assets/images/theme_birthday_bg.png'),
+        headerBg: '#FFFBEB', headlineColor: '#92400E', dark: false,
+        chipBorder: '#F59E0B', chipBg: '#FEF3C7',
+        ctaBg: '#F59E0B', ctaText: '#1A1A1A',
+        overlayBg: 'rgba(255,251,235,0.72)',
+    },
+];
+
+function PartyGroupThemePanel({ onBack, onNext }: {
+    onBack: () => void;
+    onNext: (data: { theme: number; note: string }) => void;
+}) {
+    const [selectedTheme, setSelectedTheme] = useState(0);
+    const [note, setNote] = useState('');
+    const { user } = useAuthStore();
+    const displayName = user?.name?.split(' ')[0] ?? 'You';
+
+    // Animated fade values — one per theme image
+    const fadeAnims = useRef(PARTY_THEMES.map((_, i) => new RNAnimated.Value(i === 0 ? 1 : 0))).current;
+
+    const handleThemeSelect = (i: number) => {
+        const prev = selectedTheme;
+        setSelectedTheme(i);
+        // Cross-fade: fade out previous, fade in new
+        RNAnimated.parallel([
+            RNAnimated.timing(fadeAnims[prev], { toValue: 0, duration: 280, useNativeDriver: true }),
+            RNAnimated.timing(fadeAnims[i],    { toValue: 1, duration: 280, useNativeDriver: true }),
+        ]).start();
+    };
+
+    const theme = PARTY_THEMES[selectedTheme];
+
+    return (
+        <View style={[{ flex: 1 }, { backgroundColor: theme.headerBg }]}>
+
+            {/* ── Header — sits below the floating drag-handle pill ───── */}
+            <View style={[PT.header, { backgroundColor: theme.headerBg, paddingTop: 28 }]}>
+                <TouchableOpacity
+                    style={PT.headerBack}
+                    onPress={onBack}
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                >
+                    <Feather
+                        name="arrow-left"
+                        size={22}
+                        color={theme.dark ? '#FFFFFF' : SgateColors.t1}
+                    />
+                </TouchableOpacity>
+                <Text style={[PT.headerTitle, theme.dark && { color: '#FFFFFF' }]}>
+                    Party/Group Invite
+                </Text>
+            </View>
+
+            {/* ── Full-bleed illustration area ─────────────────────── */}
+            <View style={{ flex: 1, position: 'relative', backgroundColor: theme.headerBg }}>
+
+                {/* Stacked background images, each fades in/out — contain keeps full image visible */}
+                {PARTY_THEMES.map((t, i) => (
+                    <RNAnimated.Image
+                        key={i}
+                        source={t.bgImage}
+                        style={[
+                            StyleSheet.absoluteFillObject,
+                            { opacity: fadeAnims[i] },
+                        ]}
+                        resizeMode="contain"
+                    />
+                ))}
+
+                {/* Top overlay: invite text + note input + chips — frosted card for readability */}
+                <View style={[PT.overlayCard, { backgroundColor: theme.overlayBg }]}>
+
+                    {/* Invite headline — color adapts; dark themes use light text */}
+                    <Text style={[
+                        PT.inviteHeadline,
+                        { color: theme.headlineColor },
+                        theme.dark && PT.inviteHeadlineShadow,
+                    ]}>
+                        {displayName} has invited you.
+                    </Text>
+
+                    {/* Note input — frosted pill */}
+                    <TextInput
+                        style={[PT.notePill, theme.dark && PT.notePillDark]}
+                        placeholder="Add a note"
+                        placeholderTextColor={theme.dark ? '#94A3B8' : '#8C8277'}
+                        value={note}
+                        onChangeText={setNote}
+                        maxLength={120}
+                    />
+
+                    {/* Theme chips */}
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={PT.chipRow}
+                    >
+                        {PARTY_THEMES.map((t, i) => (
+                            <TouchableOpacity
+                                key={i}
+                                style={[
+                                    PT.chip,
+                                    { backgroundColor: t.chipBg },
+                                    selectedTheme === i && {
+                                        borderColor: t.chipBorder,
+                                        borderWidth: 2.5,
+                                        shadowColor: t.chipBorder,
+                                        shadowOpacity: 0.4,
+                                        shadowRadius: 6,
+                                        shadowOffset: { width: 0, height: 2 },
+                                        elevation: 4,
+                                    },
+                                ]}
+                                onPress={() => handleThemeSelect(i)}
+                                activeOpacity={0.75}
+                            >
+                                <Text style={PT.chipEmoji}>{t.emoji}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+
+                {/* Bottom overlay: Next button — adapts color per theme */}
+                <View style={PT.overlayBottom}>
+                    <TouchableOpacity
+                        style={[PT.nextBtn, { backgroundColor: theme.ctaBg }]}
+                        onPress={() => onNext({ theme: selectedTheme, note })}
+                        activeOpacity={0.85}
+                    >
+                        <Text style={[PT.nextBtnText, { color: theme.ctaText }]}>Next</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
+    );
+}
+
+const PT = StyleSheet.create({
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingTop: 14,
+        paddingBottom: 10,
+    },
+    headerBack: {
+        marginRight: 12,
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t1,
+    },
+    overlayCard: {
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 16,
+        gap: 14,
+        // frosted card blends with theme — backgroundColor set inline
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
+    },
+    // kept for legacy safety
+    overlayTop: {
+        paddingHorizontal: 20,
+        paddingTop: 22,
+        gap: 14,
+    },
+    inviteHeadline: {
+        fontSize: 26,
+        fontFamily: SgateFonts.extrabold,
+        lineHeight: 34,
+        maxWidth: '78%',
+    },
+    inviteHeadlineShadow: {
+        textShadowColor: 'rgba(0,0,0,0.45)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
+    },
+    notePill: {
+        alignSelf: 'flex-start',
+        backgroundColor: 'rgba(255,255,255,0.82)',
+        borderRadius: 50,
+        paddingHorizontal: 22,
+        paddingVertical: 10,
+        fontSize: 15,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t1,
+        minWidth: 160,
+    },
+    notePillDark: {
+        backgroundColor: 'rgba(255,255,255,0.12)',
+        color: '#E2E8F0',
+    },
+    chipRow: {
+        gap: 10,
+        paddingVertical: 4,
+    },
+    chip: {
+        width: 54,
+        height: 54,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: 'transparent',
+    },
+    chipEmoji: {
+        fontSize: 26,
+    },
+    overlayBottom: {
+        position: 'absolute',
+        bottom: 20,
+        left: 20,
+        right: 20,
+    },
+    nextBtn: {
+        borderRadius: 50,
+        height: 54,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 6,
+    },
+    nextBtnText: {
+        fontSize: 18,
+        fontFamily: SgateFonts.bold,
+    },
+    // legacy stubs (used nowhere — kept for PT reference safety)
+    heroBanner: { height: 0 },
+    heroOverlay: { ...StyleSheet.absoluteFillObject },
+    backBtn: {},
+    heroEmoji: { fontSize: 0 },
+    themePill: {}, themePillText: { fontSize: 0 },
+    decCircle: { position: 'absolute', borderRadius: 999 },
+    sectionTitle: { fontSize: 0 }, sectionSub: { fontSize: 0 },
+    themeGrid: {}, themeCard: {}, themeCardActive: {},
+    themeCheckBadge: {}, themeCardEmoji: { fontSize: 0 },
+    themeCardLabel: { fontSize: 0 }, noteBox: {}, noteInput: { fontSize: 0 },
+});
+
+
+
 const GUEST_INVITE_TYPES: {
     key: GuestInviteMode; title: string; desc: string;
     icon: React.ComponentProps<typeof Feather>['name']; special?: boolean;
@@ -977,76 +1269,7 @@ function GuestTypePanel({ onSelect, onBack }: {
     );
 }
 
-// ─── Party/Group: Step 1 — theme + note picker ───────────────────────────────
-function PartyGroupThemePanel({ onBack, onNext }: {
-    onBack: () => void;
-    onNext: (data: { theme: number; note: string }) => void;
-}) {
-    const [selectedTheme, setSelectedTheme] = useState(0);
-    const [note, setNote] = useState('');
 
-    // Theme illustrations (described by index). We use emoji avatars for the placeholder art
-    const illustrations = ['🍛', '🎮', '🎊', '🎬', '♟️', '🎂'];
-
-    return (
-        <View style={{ flex: 1 }}>
-            <View style={S.tabHeader}>
-                <TouchableOpacity onPress={onBack} style={S.backBtn} hitSlop={{ top:12,bottom:12,left:12,right:12 }}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t2} />
-                </TouchableOpacity>
-                <Text style={S.panelTitle}>Party/Group Invite</Text>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
-                {/* Big illustration area */}
-                <View style={S.partyIllustration}>
-                    <Text style={S.partyIllustrationEmoji}>{illustrations[selectedTheme]}</Text>
-                </View>
-
-                <View style={{ paddingHorizontal: 20, paddingBottom: 8 }}>
-                    {/* Note input */}
-                    <TouchableOpacity
-                        style={S.partyNoteWrap}
-                        onPress={() => {}}
-                        activeOpacity={1}
-                    >
-                        <TextInput
-                            style={S.partyNoteInput}
-                            placeholder="Add a note"
-                            placeholderTextColor={SgateColors.t4}
-                            value={note}
-                            onChangeText={setNote}
-                        />
-                    </TouchableOpacity>
-
-                    {/* Theme chips */}
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 10 }}>
-                        {INVITE_THEMES.map((t, i) => (
-                            <TouchableOpacity
-                                key={i}
-                                style={[
-                                    S.themeChip,
-                                    { backgroundColor: t.bg },
-                                    selectedTheme === i && S.themeChipActive,
-                                ]}
-                                onPress={() => setSelectedTheme(i)}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={{ fontSize: 22 }}>{illustrations[i]}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            </ScrollView>
-
-            <View style={S.ctaWrap}>
-                <TouchableOpacity style={S.ctaBtn} onPress={() => onNext({ theme: selectedTheme, note })} activeOpacity={0.85}>
-                    <Text style={S.ctaText}>Next</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
-    );
-}
 
 // ─── Party/Group: Step 2 — date / venue / guest count ────────────────────────
 const PARTY_GUEST_COUNTS = [5, 20, 50];
@@ -2094,12 +2317,8 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                 {/* THE SINGLE CONTAINER — never unmounts, height animated with spring */}
                 <GestureDetector gesture={panGesture}>
                 <Animated.View style={[S.sheet, sheetSizeStyle]}>
-                    {/* Drag handle — always visible, anchors continuity */}
-                    <View style={S.handleRow}>
-                        <View style={S.handle} />
-                    </View>
 
-                    {/* All steps stacked absolutely — only active one is visible */}
+                    {/* All steps stacked — fill the entire sheet including handle zone */}
                     <View style={S.contentArea}>
                         {/* Layer 1: Type selector */}
                         <Animated.View style={[S.stepLayer, selectAnimStyle]} pointerEvents={step === 'select' ? 'auto' : 'none'}>
@@ -2265,6 +2484,12 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                             )}
                         </Animated.View>
                     </View>
+
+                    {/* Floating drag handle — overlaid above all steps, no layout impact */}
+                    <View style={S.handleRow} pointerEvents="none">
+                        <View style={S.handle} />
+                    </View>
+
                 </Animated.View>
                 </GestureDetector>
 
@@ -2586,7 +2811,14 @@ const S = StyleSheet.create({
         lineHeight: 22,
     },
     successBtn: { width: '100%' },
-    handleRow: { alignItems: 'center', paddingTop: 10, paddingBottom: 6 },
+    handleRow: {
+        position: 'absolute',
+        top: 0, left: 0, right: 0,
+        alignItems: 'center',
+        paddingTop: 10,
+        paddingBottom: 6,
+        zIndex: 100,
+    },
     handle: { width: 38, height: 4, borderRadius: 2, backgroundColor: SgateColors.border },
 
     // ── Step 1: selector ──────────────────────────────────────────────────────
