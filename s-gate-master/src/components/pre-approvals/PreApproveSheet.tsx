@@ -251,41 +251,48 @@ function TypeSelector({ onSelect, anims }: {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ─── Guest Once ──────────────────────────────────────────────────────────────
+const PRIVATE_PURPLE    = '#7C3AED';
+const PRIVATE_PURPLE_BG = '#EDE9FE';
+
 function GuestOnce({ state }: { state: FormState }) {
+    const prv = state.isPrivate;
     return (
         <View style={S.formBody}>
             {/* Make it private */}
             {state.guestMode !== 'private' && (
                 <CheckCard
-                    checked={state.isPrivate}
-                    onToggle={() => state.setIsPrivate(!state.isPrivate)}
+                    checked={prv}
+                    onToggle={() => state.setIsPrivate(!prv)}
                     title="Make it private"
-                    desc="Silent entry — flat members not notified"
+                    desc="This allows silent entries of your guests without disturbing others"
                     rightIcon="lock"
-                    rightIconBg={SgateColors.surface}
-                    rightIconColor={SgateColors.t3}
+                    rightIconBg={prv ? PRIVATE_PURPLE + '22' : SgateColors.surface}
+                    rightIconColor={prv ? PRIVATE_PURPLE : SgateColors.t3}
+                    activeBg={PRIVATE_PURPLE_BG}
+                    activeCheckColor={PRIVATE_PURPLE}
                     cardStyle={S.checkCardBordered}
+                    knowMore={() => {}}
                 />
             )}
 
             {/* Date */}
-            <Text style={S.fieldLabel}>SELECT DATE</Text>
+            <Text style={[S.fieldLabel, prv && { color: PRIVATE_PURPLE }]}>Select Date</Text>
             <TouchableOpacity style={S.dropRow} onPress={state.openDate} activeOpacity={0.7}>
                 <Text style={S.dropText}>{isToday(state.date) ? 'Today' : fmtDateShort(state.date)}</Text>
-                <Feather name="calendar" size={18} color={SgateColors.t3} />
+                <Feather name="calendar" size={18} color={prv ? PRIVATE_PURPLE : SgateColors.t3} />
             </TouchableOpacity>
 
             {/* Time + Duration */}
             <View style={S.twoCol}>
                 <View style={S.col}>
-                    <Text style={S.fieldLabel}>STARTING FROM</Text>
+                    <Text style={[S.fieldLabel, prv && { color: PRIVATE_PURPLE }]}>Starting from</Text>
                     <TouchableOpacity style={S.dropRow} onPress={state.openTime} activeOpacity={0.7}>
                         <Text style={S.dropText}>{fmt12(state.time)}</Text>
-                        <Feather name="clock" size={18} color={SgateColors.t3} />
+                        <Feather name="clock" size={18} color={prv ? PRIVATE_PURPLE : SgateColors.t3} />
                     </TouchableOpacity>
                 </View>
                 <View style={S.col}>
-                    <Text style={S.fieldLabel}>VALID FOR</Text>
+                    <Text style={[S.fieldLabel, prv && { color: PRIVATE_PURPLE }]}>Valid for</Text>
                     <Dropdown value={state.duration} options={DURATIONS}
                         onSelect={state.setDuration} icon="clock" title="Valid For" />
                 </View>
@@ -650,8 +657,15 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
     inviteType: InviteType; tab: FreqTab; setTab: (t: FreqTab) => void;
     onBack: () => void; state: FormState; submitting: boolean; onSubmit: () => void;
 }) {
-    const isGuest = inviteType === 'GUEST';
-    const ctaText = isGuest ? 'Select Guest(s)' : undefined;
+    const isGuest    = inviteType === 'GUEST';
+    const isPrivate  = isGuest && state.isPrivate;
+    const activeColor = isPrivate ? PRIVATE_PURPLE : SgateColors.gold;
+
+    // CTA label
+    let ctaLabel: string | undefined;
+    if (isGuest) {
+        ctaLabel = isPrivate ? 'Select private guest(s)' : 'Select Guest(s)';
+    }
 
     function renderContent() {
         if (tab === 'once') {
@@ -677,12 +691,12 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
                         <Text style={[S.tabText, tab === t && S.tabTextActive]}>
                             {t === 'once' ? 'Once' : 'Frequently'}
                         </Text>
-                        {tab === t && <View style={S.tabLine} />}
+                        {tab === t && <View style={[S.tabLine, { backgroundColor: activeColor }]} />}
                     </TouchableOpacity>
                 ))}
             </View>
 
-            {/* Scrollable content — wrapped so pan-to-dismiss and scroll work simultaneously */}
+            {/* Scrollable content */}
             <NativeViewGestureHandler ref={state.nativeScrollRef}>
                 <ScrollView
                     style={S.formScroll}
@@ -700,13 +714,17 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
             {/* Fixed CTA */}
             <View style={S.ctaWrap}>
                 <TouchableOpacity
-                    style={[S.ctaBtn, submitting && S.ctaBtnDisabled]}
+                    style={[
+                        S.ctaBtn,
+                        isPrivate && { backgroundColor: PRIVATE_PURPLE },
+                        submitting && S.ctaBtnDisabled,
+                    ]}
                     onPress={onSubmit}
                     disabled={submitting}
                     activeOpacity={0.85}
                 >
-                    {ctaText
-                        ? <Text style={S.ctaText}>{ctaText}</Text>
+                    {ctaLabel
+                        ? <Text style={[S.ctaText, isPrivate && { color: '#fff' }]}>{ctaLabel}</Text>
                         : <Feather name="check" size={26} color={SgateColors.black} />
                     }
                 </TouchableOpacity>
@@ -1524,6 +1542,8 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     };
 
     const goBack = () => {
+        // Reset private toggle whenever user navigates back
+        setIsPrivate(false);
         formOp.value     = withTiming(0, { duration: 180 });
         floatScale.value = withTiming(0, { duration: 150 });
         // If we came from guest_type, go back there; else go to main select
@@ -2425,9 +2445,8 @@ const S = StyleSheet.create({
 
     // ── Fields ────────────────────────────────────────────────────────────────
     fieldLabel: {
-        fontSize: 11, fontFamily: SgateFonts.bold,
-        color: SgateColors.t3, letterSpacing: 0.8,
-        textTransform: 'uppercase',
+        fontSize: 13, fontFamily: SgateFonts.medium,
+        color: SgateColors.t3,
         marginTop: 16, marginBottom: 8,
     },
     fieldLabelMuted: {
@@ -2472,7 +2491,7 @@ const S = StyleSheet.create({
     },
     knowMoreLink: {
         fontSize: 12, fontFamily: SgateFonts.semibold,
-        color: SgateColors.goldDeep, textDecorationLine: 'underline',
+        color: PRIVATE_PURPLE, textDecorationLine: 'underline',
     },
     checkbox: {
         width: 22, height: 22, borderRadius: 5,

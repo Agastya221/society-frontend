@@ -1,15 +1,19 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator,
+import { 
+    ActivityIndicator,
     FlatList,
     Modal,
     RefreshControl,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+    View,
+    StatusBar,
+    Platform,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
@@ -23,7 +27,6 @@ import {
     revokeInvitePass,
     cancelPartyInvite,
     type PartyInvite,
-    type PartyInviteStatus,
 } from '../../../services/gate.service';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import type {
@@ -68,7 +71,6 @@ const PARTY_STATUS: Record<string, { label: string; color: string; bg: string }>
     CANCELLED: { label: 'Cancelled', color: SgateColors.red,   bg: SgateColors.redBg    },
 };
 
-// Combined list item type for Invites tab
 type InviteListItem =
     | { _kind: 'section'; title: string }
     | { _kind: 'guest';   data: InvitePass }
@@ -81,18 +83,16 @@ const DAYS_SHORT: Record<string, string> = {
 function scheduleLabel(entry: PreApprovedEntry): string {
     const s = entry.schedule;
     if (s.scheduleType === 'ONCE') {
-        if (s.date) return `${s.date}  ${s.startTime ?? ''}–${s.endTime ?? ''}`.trim();
+        if (s.date) return `${s.date} ${s.startTime ?? ''}–${s.endTime ?? ''}`.trim();
         return 'One-time';
     }
     const days = (s.daysOfWeek ?? []).map(d => DAYS_SHORT[d] ?? d).join(' ');
-    return `${days}  ${s.timeFrom ?? ''}–${s.timeTo ?? ''}`.trim();
+    return `${days} ${s.timeFrom ?? ''}–${s.timeTo ?? ''}`.trim();
 }
 
 function fmtDate(iso: string): string {
     return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
-
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
 
 const TABS = ['Pre-Approvals', 'Invites'] as const;
 type Tab = typeof TABS[number];
@@ -101,17 +101,15 @@ type Tab = typeof TABS[number];
 
 export default function PassesScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
 
     const [activeTab, setActiveTab] = useState<Tab>('Pre-Approvals');
-
-    // ── Pre-Approvals state ──────────────────────────────────────────────────
     const [paEntries, setPaEntries]         = useState<PreApprovedEntry[]>([]);
     const [paLoading, setPaLoading]         = useState(true);
     const [paRefreshing, setPaRefreshing]   = useState(false);
     const [paMenuEntry, setPaMenuEntry]     = useState<PreApprovedEntry | null>(null);
     const [sheetVisible, setSheetVisible]   = useState(false);
 
-    // ── Invites state ────────────────────────────────────────────────────────
     const [invites, setInvites]             = useState<InvitePass[]>([]);
     const [partyInvites, setPartyInvites]   = useState<PartyInvite[]>([]);
     const [invLoading, setInvLoading]       = useState(false);
@@ -120,8 +118,6 @@ export default function PassesScreen() {
     const [partyMenuEntry, setPartyMenuEntry] = useState<PartyInvite | null>(null);
 
     const loadedTabs = useRef<Set<Tab>>(new Set(['Pre-Approvals']));
-
-    // ── Fetch ────────────────────────────────────────────────────────────────
 
     const loadPreApprovals = useCallback(async (isRefresh = false) => {
         if (isRefresh) setPaRefreshing(true);
@@ -165,8 +161,6 @@ export default function PassesScreen() {
         }
     };
 
-    // ── Pre-Approval actions ─────────────────────────────────────────────────
-
     const handlePaCancel = (entry: PreApprovedEntry) => {
         setPaMenuEntry(null);
         AppAlert.show('Cancel Pre-Approval?', 'The QR code will stop working.', [
@@ -202,8 +196,6 @@ export default function PassesScreen() {
             },
         ]);
     };
-
-    // ── Invite actions ───────────────────────────────────────────────────────
 
     const handleInvRevoke = (invite: InvitePass) => {
         setInvMenuEntry(null);
@@ -241,8 +233,6 @@ export default function PassesScreen() {
         ]);
     };
 
-    // ── Party invite actions ─────────────────────────────────────────────────
-
     const handlePartyCancel = (party: PartyInvite) => {
         setPartyMenuEntry(null);
         AppAlert.show('Cancel Party Invite?', 'All guest codes will stop working.', [
@@ -260,8 +250,6 @@ export default function PassesScreen() {
             },
         ]);
     };
-
-    // ── Render items ─────────────────────────────────────────────────────────
 
     const renderPreApproval = useCallback(({ item }: { item: PreApprovedEntry }) => {
         const tc = PA_TYPE[item.type];
@@ -292,11 +280,6 @@ export default function PassesScreen() {
                                     <Text style={[styles.pillText, { color: SgateColors.blue }]}> Safe</Text>
                                 </View>
                             )}
-                            {item.mode === 'SURPRISE' && (
-                                <View style={[styles.pill, { backgroundColor: '#F3EEFF' }]}>
-                                    <Text style={[styles.pillText, { color: '#9B6DFF' }]}>Surprise</Text>
-                                </View>
-                            )}
                             {item.schedule.scheduleType === 'RECURRING' && (
                                 <View style={[styles.pill, { backgroundColor: SgateColors.surface }]}>
                                     <Feather name="repeat" size={10} color={SgateColors.t3} />
@@ -310,16 +293,10 @@ export default function PassesScreen() {
                                 <Text style={styles.metaText} numberOfLines={1}> {sched}</Text>
                             </View>
                         )}
-                        {item.type === 'HELP' && !!item.meta.category && (
-                            <Text style={styles.categoryText}>
-                                {(item.meta.customCategory ?? item.meta.category).replace(/_/g, ' ')}
-                            </Text>
-                        )}
                     </View>
                     <TouchableOpacity
                         style={styles.menuBtn}
                         onPress={() => setPaMenuEntry(item)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
                         <Feather name="more-vertical" size={18} color={SgateColors.t3} />
                     </TouchableOpacity>
@@ -353,15 +330,10 @@ export default function PassesScreen() {
                             <Feather name="users" size={11} color={SgateColors.t4} />
                             <Text style={styles.metaText}> {filledSlots}/{item.maxGuests} guests</Text>
                         </View>
-                        <View style={styles.metaRow}>
-                            <Feather name="calendar" size={11} color={SgateColors.t4} />
-                            <Text style={styles.metaText}> {fmtDate(item.validFrom)} – {fmtDate(item.validUntil)}</Text>
-                        </View>
                     </View>
                     <TouchableOpacity
                         style={styles.menuBtn}
                         onPress={() => setPartyMenuEntry(item)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
                         <Feather name="more-vertical" size={18} color={SgateColors.t3} />
                     </TouchableOpacity>
@@ -399,20 +371,10 @@ export default function PassesScreen() {
                                 <Text style={[styles.metaText, styles.passcode]}> {item.passcode}</Text>
                             </View>
                         ) : null}
-                        <View style={styles.metaRow}>
-                            <Feather name="calendar" size={11} color={SgateColors.t4} />
-                            <Text style={styles.metaText}> Until {fmtDate(item.validUntil)}</Text>
-                            {item.maxUses !== null && (
-                                <Text style={[styles.metaText, { marginLeft: 10 }]}>
-                                    · {item.usedCount}/{item.maxUses} uses
-                                </Text>
-                            )}
-                        </View>
                     </View>
                     <TouchableOpacity
                         style={styles.menuBtn}
                         onPress={() => setInvMenuEntry(item)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
                         <Feather name="more-vertical" size={18} color={SgateColors.t3} />
                     </TouchableOpacity>
@@ -421,177 +383,164 @@ export default function PassesScreen() {
         );
     }, []);
 
-    // ── Render ───────────────────────────────────────────────────────────────
+    const renderEmptyState = () => (
+        <View style={styles.empty}>
+            <View style={styles.iconCircle}>
+                <Feather name="shield" size={60} color={SgateColors.t4} />
+            </View>
+            <Text style={styles.emptyTitle}>
+                {activeTab === 'Pre-Approvals' ? 'No Pre-Approvals' : 'No Invites Yet'}
+            </Text>
+            <Text style={styles.emptySubtitle}>
+                {activeTab === 'Pre-Approvals' 
+                    ? 'Pre-approve cabs, deliveries, or helpers so they can enter without waiting.'
+                    : 'Your guest passes and party invites will appear here.'
+                }
+            </Text>
+            {activeTab === 'Pre-Approvals' && (
+                <TouchableOpacity 
+                    style={styles.primaryBtn} 
+                    onPress={() => setSheetVisible(true)}
+                    activeOpacity={0.8}
+                >
+                    <Text style={styles.primaryBtnText}>Create Pre-Approval</Text>
+                </TouchableOpacity>
+            )}
+        </View>
+    );
 
     return (
-        <SafeAreaView style={styles.safe} edges={['top']}>
-
+        <View style={styles.root}>
+            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+            
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Passes</Text>
-                {activeTab === 'Pre-Approvals' && (
-                    <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
-                        <Feather name="plus" size={20} color={SgateColors.card} />
+            <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'ios' ? 4 : 10) }]}>
+                <View style={styles.headerInner}>
+                    <TouchableOpacity style={styles.headerIconBtn} onPress={() => router.back()}>
+                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
-                )}
-            </View>
-
-            {/* Tabs */}
-            <View style={styles.tabBar}>
-                {TABS.map(tab => (
-                    <TouchableOpacity
-                        key={tab}
-                        style={[styles.tabItem, activeTab === tab && styles.tabItemActive]}
-                        onPress={() => handleTabChange(tab)}
+                    <Text style={styles.headerTitleMain}>Passes</Text>
+                    <TouchableOpacity 
+                        style={styles.headerIconBtnCircle} 
+                        onPress={() => setSheetVisible(true)}
                     >
-                        <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                            {tab}
-                        </Text>
+                        <Feather name="plus" size={22} color="#FFF" />
                     </TouchableOpacity>
-                ))}
+                </View>
             </View>
 
-            {/* Pre-Approvals list */}
-            {activeTab === 'Pre-Approvals' && (
-                paLoading ? (
-                    <View style={styles.centered}>
-                        <ActivityIndicator size="large" color={SgateColors.gold} />
-                    </View>
-                ) : (
-                    <FlatList
-                        data={paEntries}
-                        keyExtractor={item => item.id}
-                        renderItem={renderPreApproval}
-                        contentContainerStyle={styles.listContent}
-                        showsVerticalScrollIndicator={false}
-                        refreshControl={
-                            <RefreshControl
-                                refreshing={paRefreshing}
-                                onRefresh={() => loadPreApprovals(true)}
-                                tintColor={SgateColors.gold}
-                                colors={[SgateColors.gold]}
-                            />
-                        }
-                        ListEmptyComponent={
-                            <View style={styles.empty}>
-                                <Feather name="shield" size={52} color={SgateColors.t4} />
-                                <Text style={styles.emptyTitle}>No Pre-Approvals</Text>
-                                <Text style={styles.emptySubtitle}>
-                                    Pre-approve cabs, deliveries, or helpers so they can enter without waiting.
+            {/* Segmented Control */}
+            <View style={styles.tabWrapper}>
+                <View style={styles.segmentedContainer}>
+                    {TABS.map(tab => {
+                        const isActive = activeTab === tab;
+                        return (
+                            <TouchableOpacity
+                                key={tab}
+                                style={[styles.segment, isActive && styles.segmentActive]}
+                                onPress={() => handleTabChange(tab)}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={[styles.segmentText, isActive && styles.segmentTextActive]}>
+                                    {tab}
                                 </Text>
-                                <TouchableOpacity style={styles.emptyBtn} onPress={() => setSheetVisible(true)}>
-                                    <Text style={styles.emptyBtnText}>Create Pre-Approval</Text>
-                                </TouchableOpacity>
-                            </View>
-                        }
-                    />
-                )
-            )}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </View>
 
-            {/* Invites list — guest passes + party invites combined */}
-            {activeTab === 'Invites' && (
-                invLoading ? (
-                    <View style={styles.centered}>
-                        <ActivityIndicator size="large" color={SgateColors.gold} />
-                    </View>
-                ) : (
-                    <FlatList
-                        data={[
-                            ...(invites.length > 0 ? [{ _kind: 'section' as const, title: 'Guest Passes' }] : []),
-                            ...invites.map(d => ({ _kind: 'guest' as const, data: d })),
-                            ...(partyInvites.length > 0 ? [{ _kind: 'section' as const, title: 'Party Invites' }] : []),
-                            ...partyInvites.map(d => ({ _kind: 'party' as const, data: d })),
-                        ] as InviteListItem[]}
-                        keyExtractor={item =>
-                            item._kind === 'section' ? `section-${item.title}` :
-                            item._kind === 'guest'   ? item.data.id :
-                            `party-${item.data.id}`
-                        }
-                        renderItem={({ item }: { item: InviteListItem }) => {
-                            if (item._kind === 'section') {
-                                return (
-                                    <Text style={styles.sectionLabel}>{item.title}</Text>
-                                );
+            <View style={{ flex: 1 }}>
+                {activeTab === 'Pre-Approvals' ? (
+                    paLoading ? (
+                        <View style={styles.centered}>
+                            <ActivityIndicator size="large" color={SgateColors.black} />
+                        </View>
+                    ) : (
+                        <FlatList
+                            data={paEntries}
+                            keyExtractor={item => item.id}
+                            renderItem={renderPreApproval}
+                            contentContainerStyle={styles.listContent}
+                            showsVerticalScrollIndicator={false}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={paRefreshing}
+                                    onRefresh={() => loadPreApprovals(true)}
+                                    tintColor={SgateColors.black}
+                                />
                             }
-                            if (item._kind === 'guest') return renderInvite({ item: item.data } as any);
-                            return renderPartyInvite({ item: item.data } as any);
-                        }}
-                        contentContainerStyle={styles.listContent}
-                        showsVerticalScrollIndicator={false}
-                        refreshControl={
-                            <RefreshControl
-                                refreshing={invRefreshing}
-                                onRefresh={() => loadInvites(true)}
-                                tintColor={SgateColors.gold}
-                                colors={[SgateColors.gold]}
-                            />
-                        }
-                        ListEmptyComponent={
-                            <View style={styles.empty}>
-                                <Feather name="user-check" size={52} color={SgateColors.t4} />
-                                <Text style={styles.emptyTitle}>No Invites Yet</Text>
-                                <Text style={styles.emptySubtitle}>
-                                    Your guest passes and party invites will appear here.
-                                </Text>
-                            </View>
-                        }
-                    />
-                )
-            )}
+                            ListEmptyComponent={renderEmptyState}
+                        />
+                    )
+                ) : (
+                    invLoading ? (
+                        <View style={styles.centered}>
+                            <ActivityIndicator size="large" color={SgateColors.black} />
+                        </View>
+                    ) : (
+                        <FlatList
+                            data={[
+                                ...(invites.length > 0 ? [{ _kind: 'section' as const, title: 'Guest Passes' }] : []),
+                                ...invites.map(d => ({ _kind: 'guest' as const, data: d })),
+                                ...(partyInvites.length > 0 ? [{ _kind: 'section' as const, title: 'Party Invites' }] : []),
+                                ...partyInvites.map(d => ({ _kind: 'party' as const, data: d })),
+                            ] as InviteListItem[]}
+                            keyExtractor={item =>
+                                item._kind === 'section' ? `section-${item.title}` :
+                                item._kind === 'guest'   ? item.data.id :
+                                `party-${item.data.id}`
+                            }
+                            renderItem={({ item }: { item: InviteListItem }) => {
+                                if (item._kind === 'section') return <Text style={styles.sectionLabel}>{item.title}</Text>;
+                                if (item._kind === 'guest') return renderInvite({ item: item.data } as any);
+                                return renderPartyInvite({ item: item.data } as any);
+                            }}
+                            contentContainerStyle={styles.listContent}
+                            showsVerticalScrollIndicator={false}
+                            refreshControl={
+                                <RefreshControl
+                                    refreshing={invRefreshing}
+                                    onRefresh={() => loadInvites(true)}
+                                    tintColor={SgateColors.black}
+                                />
+                            }
+                            ListEmptyComponent={renderEmptyState}
+                        />
+                    )
+                )}
 
-            {/* ── Pre-Approval action menu ─────────────────────────────────── */}
-            <Modal
-                visible={!!paMenuEntry}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setPaMenuEntry(null)}
-            >
+                {/* FAB */}
+                <View style={styles.fabContainer}>
+                    <View style={styles.fabPill}>
+                        <TouchableOpacity 
+                            style={styles.fabIcon} 
+                            onPress={() => activeTab === 'Pre-Approvals' ? loadPreApprovals(true) : loadInvites(true)}
+                        >
+                            <MaterialIcons name="refresh" size={22} color="#FFF" />
+                        </TouchableOpacity>
+                        <View style={styles.fabDivider} />
+                        <TouchableOpacity style={styles.fabIcon}>
+                            <MaterialIcons name="more-horiz" size={22} color="#FFF" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+
+            {/* ── Pre-Approval action menu ────────────── */}
+            <Modal visible={!!paMenuEntry} transparent animationType="slide">
                 <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setPaMenuEntry(null)}>
                     <View style={styles.sheet}>
                         <View style={styles.sheetHandle} />
-                        <Text style={styles.sheetTitle} numberOfLines={1}>
-                            {paMenuEntry?.meta.visitorName ?? PA_TYPE[paMenuEntry?.type ?? 'CAB']?.label}
-                        </Text>
-
-                        <TouchableOpacity
-                            style={styles.sheetItem}
-                            onPress={() => { setPaMenuEntry(null); setSheetVisible(true); }}
-                        >
-                            <View style={[styles.sheetIcon, { backgroundColor: SgateColors.blueBg }]}>
-                                <Feather name="refresh-cw" size={18} color={SgateColors.blue} />
-                            </View>
-                            <Text style={styles.sheetItemLabel}>Repeat This</Text>
-                            <Feather name="chevron-right" size={16} color={SgateColors.t4} />
+                        <Text style={styles.sheetTitle}>{paMenuEntry?.meta.visitorName ?? 'Pre-Approval'}</Text>
+                        
+                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setPaMenuEntry(null); handlePaCancel(paMenuEntry!); }}>
+                           <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Cancel Pre-Approval</Text>
                         </TouchableOpacity>
 
-                        {paMenuEntry?.status === 'ACTIVE' && (
-                            <TouchableOpacity
-                                style={styles.sheetItem}
-                                onPress={() => paMenuEntry && handlePaCancel(paMenuEntry)}
-                            >
-                                <View style={[styles.sheetIcon, { backgroundColor: SgateColors.redBg }]}>
-                                    <Feather name="x-circle" size={18} color={SgateColors.red} />
-                                </View>
-                                <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Cancel Pre-Approval</Text>
-                                <Feather name="chevron-right" size={16} color={SgateColors.t4} />
-                            </TouchableOpacity>
-                        )}
-
-                        {paMenuEntry?.status !== 'ACTIVE' && (
-                            <TouchableOpacity
-                                style={styles.sheetItem}
-                                onPress={() => paMenuEntry && handlePaDelete(paMenuEntry)}
-                            >
-                                <View style={[styles.sheetIcon, { backgroundColor: SgateColors.redBg }]}>
-                                    <Feather name="trash-2" size={18} color={SgateColors.red} />
-                                </View>
-                                <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Delete Entry</Text>
-                                <Feather name="chevron-right" size={16} color={SgateColors.t4} />
-                            </TouchableOpacity>
-                        )}
+                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setPaMenuEntry(null); handlePaDelete(paMenuEntry!); }}>
+                           <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Delete Entry</Text>
+                        </TouchableOpacity>
 
                         <TouchableOpacity style={styles.sheetDismiss} onPress={() => setPaMenuEntry(null)}>
                             <Text style={styles.sheetDismissText}>Dismiss</Text>
@@ -600,45 +549,22 @@ export default function PassesScreen() {
                 </TouchableOpacity>
             </Modal>
 
-            {/* ── Invite action menu ───────────────────────────────────────── */}
-            <Modal
-                visible={!!invMenuEntry}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setInvMenuEntry(null)}
-            >
+            {/* ── Invite action menu ─────────────────── */}
+            <Modal visible={!!invMenuEntry} transparent animationType="slide">
                 <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setInvMenuEntry(null)}>
                     <View style={styles.sheet}>
                         <View style={styles.sheetHandle} />
-                        <Text style={styles.sheetTitle} numberOfLines={1}>
-                            {invMenuEntry?.visitorName ?? `${INV_TYPE[invMenuEntry?.type ?? 'QUICK']?.label} Pass`}
-                        </Text>
+                        <Text style={styles.sheetTitle}>{invMenuEntry?.visitorName ?? 'Guest Pass'}</Text>
 
                         {invMenuEntry?.status === 'ACTIVE' && (
-                            <TouchableOpacity
-                                style={styles.sheetItem}
-                                onPress={() => invMenuEntry && handleInvRevoke(invMenuEntry)}
-                            >
-                                <View style={[styles.sheetIcon, { backgroundColor: SgateColors.redBg }]}>
-                                    <Feather name="slash" size={18} color={SgateColors.red} />
-                                </View>
+                            <TouchableOpacity style={styles.sheetItem} onPress={() => { setInvMenuEntry(null); handleInvRevoke(invMenuEntry!); }}>
                                 <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Revoke Pass</Text>
-                                <Feather name="chevron-right" size={16} color={SgateColors.t4} />
                             </TouchableOpacity>
                         )}
 
-                        {invMenuEntry?.status !== 'ACTIVE' && (
-                            <TouchableOpacity
-                                style={styles.sheetItem}
-                                onPress={() => invMenuEntry && handleInvDelete(invMenuEntry)}
-                            >
-                                <View style={[styles.sheetIcon, { backgroundColor: SgateColors.redBg }]}>
-                                    <Feather name="trash-2" size={18} color={SgateColors.red} />
-                                </View>
-                                <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Delete Pass</Text>
-                                <Feather name="chevron-right" size={16} color={SgateColors.t4} />
-                            </TouchableOpacity>
-                        )}
+                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setInvMenuEntry(null); handleInvDelete(invMenuEntry!); }}>
+                            <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Delete Pass</Text>
+                        </TouchableOpacity>
 
                         <TouchableOpacity style={styles.sheetDismiss} onPress={() => setInvMenuEntry(null)}>
                             <Text style={styles.sheetDismissText}>Dismiss</Text>
@@ -647,30 +573,16 @@ export default function PassesScreen() {
                 </TouchableOpacity>
             </Modal>
 
-            {/* ── Party action menu ────────────────────────────────────────── */}
-            <Modal
-                visible={!!partyMenuEntry}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setPartyMenuEntry(null)}
-            >
+            {/* ── Party action menu ──────────────────── */}
+            <Modal visible={!!partyMenuEntry} transparent animationType="slide">
                 <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setPartyMenuEntry(null)}>
                     <View style={styles.sheet}>
                         <View style={styles.sheetHandle} />
-                        <Text style={styles.sheetTitle} numberOfLines={1}>
-                            {partyMenuEntry?.venue ?? 'Party Invite'}
-                        </Text>
+                        <Text style={styles.sheetTitle}>{partyMenuEntry?.venue ?? 'Party Invite'}</Text>
 
                         {partyMenuEntry?.status === 'ACTIVE' && (
-                            <TouchableOpacity
-                                style={styles.sheetItem}
-                                onPress={() => partyMenuEntry && handlePartyCancel(partyMenuEntry)}
-                            >
-                                <View style={[styles.sheetIcon, { backgroundColor: SgateColors.redBg }]}>
-                                    <Feather name="x-circle" size={18} color={SgateColors.red} />
-                                </View>
+                            <TouchableOpacity style={styles.sheetItem} onPress={() => { setPartyMenuEntry(null); handlePartyCancel(partyMenuEntry!); }}>
                                 <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Cancel Party Invite</Text>
-                                <Feather name="chevron-right" size={16} color={SgateColors.t4} />
                             </TouchableOpacity>
                         )}
 
@@ -681,143 +593,211 @@ export default function PassesScreen() {
                 </TouchableOpacity>
             </Modal>
 
-            {/* Pre-Approve creation sheet */}
             <PreApproveSheet
                 visible={sheetVisible}
                 onClose={() => setSheetVisible(false)}
                 onSuccess={() => { setSheetVisible(false); loadPreApprovals(); }}
             />
-        </SafeAreaView>
+        </View>
     );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-    safe: { flex: 1, backgroundColor: SgateColors.bg },
-
-    header: {
-        backgroundColor: SgateColors.card,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 13,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-    addBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: SgateColors.black,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-
-    tabBar: {
-        flexDirection: 'row',
-        backgroundColor: SgateColors.card,
-        paddingHorizontal: 16,
-        paddingBottom: 12,
-        gap: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    },
-    tabItem: {
+    root: {
         flex: 1,
-        paddingVertical: 8,
-        borderRadius: 10,
-        alignItems: 'center',
-        backgroundColor: SgateColors.bg,
+        backgroundColor: '#F5F5F5',
     },
-    tabItemActive: {
+    header: {
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    headerInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    headerIconBtn: {
+        width: 32,
+        height: 32,
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+    },
+    headerTitleMain: {
+        fontSize: 20,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+    },
+    headerIconBtnCircle: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: SgateColors.black,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tabWrapper: {
+        backgroundColor: '#FFF',
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+    },
+    segmentedContainer: {
+        flexDirection: 'row',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+        padding: 4,
+    },
+    segment: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: 'center',
+        borderRadius: 10,
+    },
+    segmentActive: {
         backgroundColor: SgateColors.black,
     },
-    tabText: {
-        fontSize: 13,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.t3,
+    segmentText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t2,
     },
-    tabTextActive: {
-        color: SgateColors.card,
+    segmentTextActive: {
+        color: '#FFF',
+        fontFamily: SgateFonts.bold,
     },
-
+    listContent: {
+        padding: 20,
+        paddingBottom: 100,
+    },
     centered: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    listContent: {
-        padding: 16,
-        gap: 10,
-        flexGrow: 1,
+    empty: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: 60,
+        paddingHorizontal: 40,
     },
-
+    iconCircle: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: '#FFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 3,
+    },
+    emptyTitle: {
+        fontSize: 22,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    emptySubtitle: {
+        fontSize: 14,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 32,
+    },
+    primaryBtn: {
+        backgroundColor: SgateColors.black,
+        paddingHorizontal: 32,
+        paddingVertical: 18,
+        borderRadius: 40,
+        width: '100%',
+        alignItems: 'center',
+    },
+    primaryBtnText: {
+        fontSize: 16,
+        fontFamily: SgateFonts.bold,
+        color: '#FFF',
+    },
+    fabContainer: {
+        position: 'absolute',
+        right: 20,
+        top: '40%',
+    },
+    fabPill: {
+        backgroundColor: SgateColors.black,
+        borderRadius: 30,
+        paddingVertical: 8,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 5,
+    },
+    fabIcon: {
+        padding: 12,
+    },
+    fabDivider: {
+        width: '60%',
+        height: 1,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+    },
     card: {
-        backgroundColor: SgateColors.card,
+        backgroundColor: '#FFF',
         borderRadius: 18,
+        padding: 16,
+        marginBottom: 12,
         borderWidth: 1,
-        borderColor: SgateColors.borderSoft,
-        overflow: 'hidden',
+        borderColor: '#F0F0F0',
     },
     cardTop: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        padding: 14,
         gap: 12,
     },
     typeBubble: {
-        width: 46,
-        height: 46,
-        borderRadius: 14,
+        width: 44,
+        height: 44,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 2,
     },
     cardInfo: { flex: 1 },
     cardRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 6,
+        marginBottom: 4,
     },
     cardName: {
-        fontSize: 15,
-        fontFamily: SgateFonts.semibold,
+        fontSize: 16,
+        fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
-        flex: 1,
-        marginRight: 8,
     },
     statusBadge: {
-        borderRadius: 10,
         paddingHorizontal: 8,
-        paddingVertical: 3,
+        paddingVertical: 4,
+        borderRadius: 8,
     },
     statusText: {
         fontSize: 10,
         fontFamily: SgateFonts.bold,
-        letterSpacing: 0.6,
+        textTransform: 'uppercase',
     },
     pillRow: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 5,
-        marginBottom: 6,
+        gap: 6,
+        marginTop: 4,
     },
     pill: {
-        flexDirection: 'row',
-        alignItems: 'center',
         paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
     },
     pillText: {
         fontSize: 11,
@@ -826,7 +806,8 @@ const styles = StyleSheet.create({
     metaRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 2,
+        marginTop: 6,
+        gap: 4,
     },
     metaText: {
         fontSize: 12,
@@ -835,116 +816,61 @@ const styles = StyleSheet.create({
     },
     passcode: {
         fontFamily: SgateFonts.bold,
-        letterSpacing: 1.5,
         color: SgateColors.t1,
     },
-    categoryText: {
-        fontSize: 12,
-        fontFamily: SgateFonts.medium,
-        color: SgateColors.t3,
-        textTransform: 'capitalize',
-        marginTop: 2,
+    menuBtn: {
+        padding: 4,
     },
-    menuBtn: { paddingTop: 2 },
-
     sectionLabel: {
-        fontSize: 11,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t3,
-        letterSpacing: 0.8,
-        textTransform: 'uppercase',
-        marginTop: 8,
-        marginBottom: 4,
-    },
-
-    empty: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingTop: 80,
-        paddingHorizontal: 36,
-        gap: 10,
-    },
-    emptyTitle: {
-        fontSize: 18,
+        fontSize: 13,
         fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
-        marginTop: 8,
+        marginTop: 20,
+        marginBottom: 12,
     },
-    emptySubtitle: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-    emptyBtn: {
-        marginTop: 12,
-        backgroundColor: SgateColors.black,
-        paddingHorizontal: 28,
-        paddingVertical: 13,
-        borderRadius: 14,
-    },
-    emptyBtnText: {
-        fontSize: 14,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.card,
-    },
-
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.4)',
         justifyContent: 'flex-end',
     },
     sheet: {
-        backgroundColor: SgateColors.card,
+        backgroundColor: '#FFF',
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        padding: 20,
-        paddingBottom: 36,
+        padding: 24,
+        paddingBottom: 40,
     },
     sheetHandle: {
-        width: 36,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: SgateColors.border,
+        width: 40,
+        height: 5,
+        backgroundColor: '#E5E7EB',
+        borderRadius: 3,
         alignSelf: 'center',
-        marginBottom: 16,
+        marginBottom: 20,
     },
     sheetTitle: {
-        fontSize: 14,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.t3,
-        marginBottom: 14,
+        fontSize: 18,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        marginBottom: 20,
     },
     sheetItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
+        paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-        gap: 12,
-    },
-    sheetIcon: {
-        width: 38,
-        height: 38,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
+        borderBottomColor: '#F3F4F6',
     },
     sheetItemLabel: {
-        flex: 1,
-        fontSize: 15,
+        fontSize: 16,
         fontFamily: SgateFonts.medium,
         color: SgateColors.t1,
     },
     sheetDismiss: {
-        paddingTop: 16,
+        marginTop: 20,
         alignItems: 'center',
     },
     sheetDismissText: {
-        fontSize: 14,
-        fontFamily: SgateFonts.semibold,
+        fontSize: 15,
+        fontFamily: SgateFonts.bold,
         color: SgateColors.t3,
     },
 });
