@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     Alert,
     Dimensions,
+    Image,
     Platform,
     Pressable,
     ScrollView,
@@ -254,6 +255,135 @@ function TypeSelector({ onSelect, anims }: {
 const PRIVATE_PURPLE    = '#7C3AED';
 const PRIVATE_PURPLE_BG = '#EDE9FE';
 
+// ─── Private Invite Info Modal ───────────────────────────────────────────────
+function PrivateInviteInfoModal({ visible, onClose, onCreatePrivate }: {
+    visible: boolean;
+    onClose: () => void;
+    onCreatePrivate: () => void;
+}) {
+    return (
+        <Modal
+            visible={visible}
+            animationType="slide"
+            statusBarTranslucent
+            onRequestClose={onClose}
+        >
+            <View style={PKM.container}>
+                {/* Back arrow */}
+                <TouchableOpacity style={PKM.backBtn} onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                    <Feather name="arrow-left" size={22} color="#1A1A2E" />
+                </TouchableOpacity>
+
+                <ScrollView contentContainerStyle={PKM.scroll} showsVerticalScrollIndicator={false} bounces={false}>
+                    {/* Lock icon */}
+                    <View style={PKM.iconWrap}>
+                        <Feather name="lock" size={32} color={PRIVATE_PURPLE} />
+                    </View>
+
+                    {/* Title */}
+                    <Text style={PKM.title}>Private Guest Invites</Text>
+
+                    {/* Illustration */}
+                    <View style={PKM.imageCard}>
+                        <Image
+                            source={require('../../../assets/images/private_invite_party.png')}
+                            style={PKM.image}
+                            resizeMode="cover"
+                        />
+                    </View>
+
+                    {/* Features */}
+                    <View style={PKM.features}>
+                        <View style={PKM.featureItem}>
+                            <Text style={PKM.featureEmoji}>🎉</Text>
+                            <View style={PKM.featureTexts}>
+                                <Text style={PKM.featureTitle}>Surprise Parties Unleashed</Text>
+                                <Text style={PKM.featureDesc}>
+                                    Plan spontaneous celebrations without tipping off your family! It's your secret, your surprise.
+                                </Text>
+                            </View>
+                        </View>
+                        <View style={PKM.featureItem}>
+                            <Text style={PKM.featureEmoji}>🙂</Text>
+                            <View style={PKM.featureTexts}>
+                                <Text style={PKM.featureTitle}>Undisturbed Invitations</Text>
+                                <Text style={PKM.featureDesc}>
+                                    Invite guests without disrupting your flatmates peace. Your space, your rules!
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+                </ScrollView>
+
+                {/* CTA */}
+                <View style={PKM.ctaWrap}>
+                    <TouchableOpacity style={PKM.ctaBtn} onPress={onCreatePrivate} activeOpacity={0.85}>
+                        <Text style={PKM.ctaText}>Create private invite</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </Modal>
+    );
+}
+
+const PKM = StyleSheet.create({
+    container: {
+        flex: 1, backgroundColor: '#FFFFFF',
+    },
+    backBtn: {
+        position: 'absolute', top: 52, left: 20, zIndex: 10,
+    },
+    scroll: {
+        paddingTop: 80, paddingHorizontal: 24, paddingBottom: 24,
+        alignItems: 'center',
+    },
+    iconWrap: {
+        width: 72, height: 72, borderRadius: 20,
+        backgroundColor: '#F0EBFF',
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 16,
+    },
+    title: {
+        fontSize: 22, fontFamily: SgateFonts.extrabold,
+        color: PRIVATE_PURPLE, marginBottom: 24, textAlign: 'center',
+    },
+    imageCard: {
+        width: '100%', borderRadius: 20, overflow: 'hidden',
+        marginBottom: 28,
+        elevation: 4, shadowColor: '#000',
+        shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+    },
+    image: {
+        width: '100%', height: 220,
+    },
+    features: { width: '100%', gap: 20, marginBottom: 8 },
+    featureItem: {
+        flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    },
+    featureEmoji: { fontSize: 24, marginTop: 2 },
+    featureTexts: { flex: 1 },
+    featureTitle: {
+        fontSize: 15, fontFamily: SgateFonts.bold,
+        color: '#1A1A2E', marginBottom: 4, textAlign: 'center',
+    },
+    featureDesc: {
+        fontSize: 13, fontFamily: SgateFonts.regular,
+        color: '#555', lineHeight: 19, textAlign: 'center',
+    },
+    ctaWrap: {
+        paddingHorizontal: 24, paddingBottom: 36, paddingTop: 12,
+        backgroundColor: '#FFFFFF',
+    },
+    ctaBtn: {
+        backgroundColor: PRIVATE_PURPLE,
+        borderRadius: 50, height: 54,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    ctaText: {
+        fontSize: 16, fontFamily: SgateFonts.bold, color: '#FFFFFF',
+    },
+});
+
 function GuestOnce({ state }: { state: FormState }) {
     const prv = state.isPrivate;
     return (
@@ -271,7 +401,7 @@ function GuestOnce({ state }: { state: FormState }) {
                     activeBg={PRIVATE_PURPLE_BG}
                     activeCheckColor={PRIVATE_PURPLE}
                     cardStyle={S.checkCardBordered}
-                    knowMore={() => {}}
+                    knowMore={() => state.setShowPrivateInfo(true)}
                 />
             )}
 
@@ -650,6 +780,7 @@ interface FormState {
     serviceCategory: HelpCategory | null; setServiceCategory: (v: HelpCategory | null) => void;
     nativeScrollRef: React.RefObject<any>;
     scrollOffset: SharedValue<number>;
+    showPrivateInfo: boolean; setShowPrivateInfo: (v: boolean) => void;
 }
 
 // ─── Form panel wrapper ───────────────────────────────────────────────────────
@@ -1267,6 +1398,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
 
     // ── Form state ────────────────────────────────────────────────────────────
     const [isPrivate,        setIsPrivate]        = useState(false);
+    const [showPrivateInfo,  setShowPrivateInfo]  = useState(false);
     const [date,             setDate]             = useState(new Date());
     const [time,             setTime]             = useState(new Date());
     const [duration,         setDuration]         = useState('8 hours');
@@ -1860,6 +1992,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
         company, setCompany, timeFrom, setTimeFrom, timeUntil, setTimeUntil,
         serviceCategory, setServiceCategory,
         nativeScrollRef, scrollOffset,
+        showPrivateInfo, setShowPrivateInfo,
     };
 
     // The floating icon should be visible on any step that shows a sub-panel
@@ -1872,6 +2005,15 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
 
     return (
         <View style={[StyleSheet.absoluteFill, { zIndex: 1000, elevation: 100 }]} pointerEvents="box-none">
+            {/* Know-more info screen */}
+            <PrivateInviteInfoModal
+                visible={showPrivateInfo}
+                onClose={() => setShowPrivateInfo(false)}
+                onCreatePrivate={() => {
+                    setShowPrivateInfo(false);
+                    setIsPrivate(true);
+                }}
+            />
             <GestureHandlerRootView style={{ flex: 1 }} pointerEvents="box-none">
                 {/* Backdrop */}
                 <Animated.View style={[S.backdrop, backdropStyle]}>
