@@ -854,7 +854,7 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
     // CTA label
     let ctaLabel: string | undefined;
     if (isGuest) {
-        ctaLabel = isPrivate ? 'Select private guest(s)' : 'Select Guest(s)';
+        ctaLabel = isPrivate ? 'Add private guest' : 'Add guest';
     }
 
     function renderContent() {
