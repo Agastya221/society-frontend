@@ -256,7 +256,7 @@ function TypeSelector({ onSelect, anims }: {
 const PRIVATE_PURPLE    = '#7C3AED';
 const PRIVATE_PURPLE_BG = '#EDE9FE';
 
-// ─── Private Invite Info Modal ───────────────────────────────────────────────
+/// ─── Private Invite Info Modal ───────────────────────────────────────────────
 function PrivateInviteInfoModal({ visible, onClose, onCreatePrivate }: {
     visible: boolean;
     onClose: () => void;
@@ -271,14 +271,18 @@ function PrivateInviteInfoModal({ visible, onClose, onCreatePrivate }: {
         >
             <View style={PKM.container}>
                 {/* Back arrow */}
-                <TouchableOpacity style={PKM.backBtn} onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                    <Feather name="arrow-left" size={22} color="#1A1A2E" />
+                <TouchableOpacity style={PKM.backBtn} onPress={onClose} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+                    <Feather name="arrow-left" size={24} color="#1A1A2E" />
                 </TouchableOpacity>
 
-                <ScrollView contentContainerStyle={PKM.scroll} showsVerticalScrollIndicator={false} bounces={false}>
+                <ScrollView
+                    contentContainerStyle={PKM.scroll}
+                    showsVerticalScrollIndicator={false}
+                    bounces={false}
+                >
                     {/* Lock icon */}
                     <View style={PKM.iconWrap}>
-                        <Feather name="lock" size={32} color={PRIVATE_PURPLE} />
+                        <Feather name="lock" size={30} color={PRIVATE_PURPLE} />
                     </View>
 
                     {/* Title */}
@@ -295,23 +299,23 @@ function PrivateInviteInfoModal({ visible, onClose, onCreatePrivate }: {
 
                     {/* Features */}
                     <View style={PKM.features}>
-                        <View style={PKM.featureItem}>
-                            <Text style={PKM.featureEmoji}>🎉</Text>
-                            <View style={PKM.featureTexts}>
-                                <Text style={PKM.featureTitle}>Surprise Parties Unleashed</Text>
-                                <Text style={PKM.featureDesc}>
-                                    Plan spontaneous celebrations without tipping off your family! It's your secret, your surprise.
-                                </Text>
+                        <View style={PKM.featureBlock}>
+                            <View style={PKM.featureTitleRow}>
+                                <Text style={PKM.featureEmoji}>🎉</Text>
+                                <Text style={PKM.featureTitle}> Surprise Parties Unleashed</Text>
                             </View>
+                            <Text style={PKM.featureDesc}>
+                                Plan spontaneous celebrations without tipping off your family! It&apos;s your secret, your surprise.
+                            </Text>
                         </View>
-                        <View style={PKM.featureItem}>
-                            <Text style={PKM.featureEmoji}>🙂</Text>
-                            <View style={PKM.featureTexts}>
-                                <Text style={PKM.featureTitle}>Undisturbed Invitations</Text>
-                                <Text style={PKM.featureDesc}>
-                                    Invite guests without disrupting your flatmates peace. Your space, your rules!
-                                </Text>
+                        <View style={PKM.featureBlock}>
+                            <View style={PKM.featureTitleRow}>
+                                <Text style={PKM.featureEmoji}>🙂</Text>
+                                <Text style={PKM.featureTitle}> Undisturbed Invitations</Text>
                             </View>
+                            <Text style={PKM.featureDesc}>
+                                Invite guests without disrupting your flatmates peace. Your space, your rules!
+                            </Text>
                         </View>
                     </View>
                 </ScrollView>
@@ -329,60 +333,113 @@ function PrivateInviteInfoModal({ visible, onClose, onCreatePrivate }: {
 
 const PKM = StyleSheet.create({
     container: {
-        flex: 1, backgroundColor: '#FFFFFF',
+        flex: 1,
+        backgroundColor: '#F6F5FA',
     },
     backBtn: {
-        position: 'absolute', top: 52, left: 20, zIndex: 10,
+        position: 'absolute',
+        top: 50,
+        left: 18,
+        zIndex: 20,
+        padding: 6,
     },
     scroll: {
-        paddingTop: 80, paddingHorizontal: 24, paddingBottom: 24,
+        paddingTop: 96,
+        paddingHorizontal: 28,
+        paddingBottom: 32,
         alignItems: 'center',
     },
     iconWrap: {
-        width: 72, height: 72, borderRadius: 20,
-        backgroundColor: '#F0EBFF',
-        alignItems: 'center', justifyContent: 'center',
-        marginBottom: 16,
+        width: 76,
+        height: 76,
+        borderRadius: 22,
+        backgroundColor: '#EDE9FE',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 18,
+        shadowColor: PRIVATE_PURPLE,
+        shadowOpacity: 0.18,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 5,
     },
     title: {
-        fontSize: 22, fontFamily: SgateFonts.extrabold,
-        color: PRIVATE_PURPLE, marginBottom: 24, textAlign: 'center',
+        fontSize: 24,
+        fontFamily: SgateFonts.extrabold,
+        color: PRIVATE_PURPLE,
+        marginBottom: 28,
+        textAlign: 'center',
+        letterSpacing: -0.3,
     },
     imageCard: {
-        width: '100%', borderRadius: 20, overflow: 'hidden',
-        marginBottom: 28,
-        elevation: 4, shadowColor: '#000',
-        shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+        width: '100%',
+        borderRadius: 22,
+        overflow: 'hidden',
+        marginBottom: 32,
+        shadowColor: '#000',
+        shadowOpacity: 0.10,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 6,
     },
     image: {
-        width: '100%', height: 220,
+        width: '100%',
+        height: 210,
     },
-    features: { width: '100%', gap: 20, marginBottom: 8 },
-    featureItem: {
-        flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    features: {
+        width: '100%',
+        gap: 24,
     },
-    featureEmoji: { fontSize: 24, marginTop: 2 },
-    featureTexts: { flex: 1 },
+    featureBlock: {
+        alignItems: 'center',
+    },
+    featureTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    featureEmoji: {
+        fontSize: 18,
+    },
     featureTitle: {
-        fontSize: 15, fontFamily: SgateFonts.bold,
-        color: '#1A1A2E', marginBottom: 4, textAlign: 'center',
+        fontSize: 15,
+        fontFamily: SgateFonts.bold,
+        color: '#1A1A2E',
     },
     featureDesc: {
-        fontSize: 13, fontFamily: SgateFonts.regular,
-        color: '#555', lineHeight: 19, textAlign: 'center',
+        fontSize: 13,
+        fontFamily: SgateFonts.regular,
+        color: '#666',
+        lineHeight: 20,
+        textAlign: 'center',
     },
     ctaWrap: {
-        paddingHorizontal: 24, paddingBottom: 36, paddingTop: 12,
-        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 28,
+        paddingBottom: 42,
+        paddingTop: 12,
+        backgroundColor: '#F6F5FA',
     },
     ctaBtn: {
         backgroundColor: PRIVATE_PURPLE,
-        borderRadius: 50, height: 54,
-        alignItems: 'center', justifyContent: 'center',
+        borderRadius: 32,
+        height: 56,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: PRIVATE_PURPLE,
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 5 },
+        elevation: 8,
     },
     ctaText: {
-        fontSize: 16, fontFamily: SgateFonts.bold, color: '#FFFFFF',
+        fontSize: 16,
+        fontFamily: SgateFonts.bold,
+        color: '#FFFFFF',
+        letterSpacing: 0.2,
     },
+    // legacy — unused but kept for safety
+    featureItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+    featureTexts: { flex: 1 },
 });
 
 function GuestOnce({ state }: { state: FormState }) {
