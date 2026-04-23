@@ -158,7 +158,7 @@ export default function SearchVehicleScreen() {
     <View style={S.root}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
-      {/* ── Header ─────────────────────────────────────────────────────── */}
+      {/* ── Header + Tabs (one visual block) ────────────────────────────── */}
       <View style={S.headerBg}>
         <SafeAreaView edges={['top']}>
           <View style={S.headerInner}>
@@ -169,21 +169,32 @@ export default function SearchVehicleScreen() {
             <View style={{ width: 22 }} />
           </View>
         </SafeAreaView>
-      </View>
 
-      {/* ── Segmented Tabs ─────────────────────────────────────────────── */}
-      <View style={S.tabContainer}>
-        <View style={S.tabBar}>
-          <TouchableOpacity style={[S.tabItem, tab === 'LOOKUP' && S.tabItemActive]} onPress={() => setTab('LOOKUP')}>
-            <MaterialCommunityIcons name="car-search-outline" size={16} color={tab === 'LOOKUP' ? SgateColors.goldDeep : SgateColors.t3} style={{ marginRight: 6 }} />
-            <Text style={[S.tabText, tab === 'LOOKUP' && S.tabTextActive]}>Lookup</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[S.tabItem, tab === 'MY_REPORTS' && S.tabItemActive]} onPress={() => setTab('MY_REPORTS')}>
-            <MaterialCommunityIcons name="clipboard-text-outline" size={16} color={tab === 'MY_REPORTS' ? SgateColors.goldDeep : SgateColors.t3} style={{ marginRight: 6 }} />
-            <Text style={[S.tabText, tab === 'MY_REPORTS' && S.tabTextActive]}>My Reports</Text>
-          </TouchableOpacity>
+        {/* ── Premium Segmented Control ─────────────────────────────────── */}
+        <View style={S.segmentContainer}>
+          <View style={S.segmentTrack}>
+            <TouchableOpacity
+              style={[S.segmentItem, tab === 'LOOKUP' && S.segmentItemActive]}
+              onPress={() => setTab('LOOKUP')}
+              activeOpacity={0.85}
+            >
+              <MaterialCommunityIcons name="car-search-outline" size={16} color={tab === 'LOOKUP' ? SgateColors.t1 : '#9CA3AF'} />
+              <Text style={[S.segmentText, tab === 'LOOKUP' && S.segmentTextActive]}>Lookup</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[S.segmentItem, tab === 'MY_REPORTS' && S.segmentItemActive]}
+              onPress={() => setTab('MY_REPORTS')}
+              activeOpacity={0.85}
+            >
+              <MaterialCommunityIcons name="clipboard-text-outline" size={16} color={tab === 'MY_REPORTS' ? SgateColors.t1 : '#9CA3AF'} />
+              <Text style={[S.segmentText, tab === 'MY_REPORTS' && S.segmentTextActive]}>My Reports</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
+
+      {/* Fixed spacing between header block and content */}
+      <View style={{ height: 14 }} />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {tab === 'LOOKUP' ? (
@@ -350,13 +361,23 @@ const S = StyleSheet.create({
   backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
   headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
 
-  // Segmented Tabs
-  tabContainer: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, backgroundColor: '#FFFFFF' },
-  tabBar: { flexDirection: 'row', backgroundColor: '#F5F5F5', borderRadius: 12, padding: 4 },
-  tabItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 10 },
-  tabItemActive: { backgroundColor: SgateColors.goldPale },
-  tabText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-  tabTextActive: { color: SgateColors.goldDeep },
+  // Premium Segmented Control
+  segmentContainer: { paddingHorizontal: 16, paddingTop: 6, paddingBottom: 14 },
+  segmentTrack: { flexDirection: 'row', backgroundColor: '#F4F4F5', borderRadius: 16, padding: 4 },
+  segmentItem: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    height: 44, borderRadius: 14, gap: 6,
+  },
+  segmentItemActive: {
+    backgroundColor: SgateColors.gold,
+    shadowColor: SgateColors.gold,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  segmentText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: '#9CA3AF' },
+  segmentTextActive: { color: SgateColors.t1 },
 
   scrollContent: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 32 },
   listContent: { padding: 16, paddingBottom: 40, flexGrow: 1 },
