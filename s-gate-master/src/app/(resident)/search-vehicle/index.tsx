@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Linking, FlatList, Modal } from 'react-native';
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Linking, FlatList, Modal, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
@@ -133,54 +133,65 @@ export default function SearchVehicleScreen() {
 
   const isSearchDisabled = query.trim().length < 4 || loading;
 
-  // ─── Renderers ───────────────────────────────────────────────────────────────
+  // ─── Complaint Card ──────────────────────────────────────────────────────────
   const renderComplaint = ({ item, index }: { item: Complaint, index: number }) => {
     const isOpen = item.status === 'OPEN' || item.status === 'NOTIFIED';
     return (
-      <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={styles.complaintCard}>
-        <View style={styles.complaintHeader}>
-          <Text style={styles.complaintPlate}>{item.vehicleNumber}</Text>
-          <View style={[styles.statusBadge, !isOpen && { backgroundColor: SgateColors.surface }]}>
-            <Text style={[styles.statusText, !isOpen && { color: SgateColors.t3 }]}>{item.status}</Text>
+      <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={S.complaintCard}>
+        <View style={S.complaintHeader}>
+          <Text style={S.complaintPlate}>{item.vehicleNumber}</Text>
+          <View style={[S.cStatusBadge, !isOpen && { backgroundColor: SgateColors.surface }]}>
+            <Text style={[S.cStatusText, !isOpen && { color: SgateColors.t3 }]}>{item.status}</Text>
           </View>
         </View>
-        <Text style={styles.complaintType}>{item.type.replace('_', ' ')}</Text>
-        <Text style={styles.complaintDate}>{new Date(item.createdAt).toLocaleString()}</Text>
+        <Text style={S.complaintType}>{item.type.replace('_', ' ')}</Text>
+        <Text style={S.complaintDate}>{new Date(item.createdAt).toLocaleString()}</Text>
       </Animated.View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Parking & Vehicles</Text>
-        <View style={styles.headerSpacer} />
+    <View style={S.root}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <View style={S.headerBg}>
+        <SafeAreaView edges={['top']}>
+          <View style={S.headerInner}>
+            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+            </TouchableOpacity>
+            <Text style={S.headerTitle}>Parking & Vehicles</Text>
+            <View style={{ width: 22 }} />
+          </View>
+        </SafeAreaView>
       </View>
 
-      {/* Tabs */}
-      <View style={styles.tabRow}>
-        <TouchableOpacity style={[styles.tab, tab === 'LOOKUP' && styles.tabActive]} onPress={() => setTab('LOOKUP')}>
-          <Text style={[styles.tabText, tab === 'LOOKUP' && styles.tabTextActive]}>Lookup</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.tab, tab === 'MY_REPORTS' && styles.tabActive]} onPress={() => setTab('MY_REPORTS')}>
-          <Text style={[styles.tabText, tab === 'MY_REPORTS' && styles.tabTextActive]}>My Reports</Text>
-        </TouchableOpacity>
+      {/* ── Segmented Tabs ─────────────────────────────────────────────── */}
+      <View style={S.tabContainer}>
+        <View style={S.tabBar}>
+          <TouchableOpacity style={[S.tabItem, tab === 'LOOKUP' && S.tabItemActive]} onPress={() => setTab('LOOKUP')}>
+            <MaterialCommunityIcons name="car-search-outline" size={16} color={tab === 'LOOKUP' ? SgateColors.goldDeep : SgateColors.t3} style={{ marginRight: 6 }} />
+            <Text style={[S.tabText, tab === 'LOOKUP' && S.tabTextActive]}>Lookup</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[S.tabItem, tab === 'MY_REPORTS' && S.tabItemActive]} onPress={() => setTab('MY_REPORTS')}>
+            <MaterialCommunityIcons name="clipboard-text-outline" size={16} color={tab === 'MY_REPORTS' ? SgateColors.goldDeep : SgateColors.t3} style={{ marginRight: 6 }} />
+            <Text style={[S.tabText, tab === 'MY_REPORTS' && S.tabTextActive]}>My Reports</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {tab === 'LOOKUP' ? (
-          <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <View style={styles.searchCard}>
-              <Text style={styles.searchCardTitle}>Find a Vehicle</Text>
-              <Text style={styles.searchCardSubtitle}>Enter a vehicle number to check if it is registered in the society.</Text>
-              <View style={[styles.inputRow, focused && styles.inputRowFocused]}>
-                <Feather name="truck" size={18} color={SgateColors.t3} style={styles.inputIcon} />
+          <ScrollView contentContainerStyle={S.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {/* ── Search Card ──────────────────────────────────────────── */}
+            <View style={S.searchCard}>
+              <Text style={S.searchCardTitle}>Find a Vehicle</Text>
+              <Text style={S.searchCardSub}>Enter a vehicle number to check if it is registered in the society.</Text>
+              <View style={[S.inputRow, focused && S.inputRowFocused]}>
+                <MaterialCommunityIcons name="car-outline" size={20} color={focused ? SgateColors.goldDeep : SgateColors.t4} style={{ marginRight: 10 }} />
                 <TextInput
-                  style={styles.textInput}
+                  style={S.textInput}
                   placeholder="MH01AB1234"
                   placeholderTextColor={SgateColors.t4}
                   autoCapitalize="characters"
@@ -197,64 +208,67 @@ export default function SearchVehicleScreen() {
                   </TouchableOpacity>
                 )}
               </View>
-              <TouchableOpacity style={[styles.searchBtn, isSearchDisabled && styles.searchBtnDisabled]} onPress={handleSearch} disabled={isSearchDisabled} activeOpacity={0.85}>
-                {loading ? <ActivityIndicator size="small" color={SgateColors.card} /> : <Text style={[styles.searchBtnText, isSearchDisabled && styles.searchBtnTextDisabled]}>Search</Text>}
+              <TouchableOpacity style={[S.searchBtn, isSearchDisabled && S.searchBtnDisabled]} onPress={handleSearch} disabled={isSearchDisabled} activeOpacity={0.85}>
+                {loading ? <ActivityIndicator size="small" color={SgateColors.t1} /> : <Text style={[S.searchBtnText, isSearchDisabled && S.searchBtnTextDisabled]}>Search</Text>}
               </TouchableOpacity>
             </View>
 
+            {/* ── Found Result ─────────────────────────────────────────── */}
             {result && (
-              <Animated.View entering={FadeInDown.springify()} style={[styles.resultCard, styles.foundCard]}>
-                <View style={styles.foundHeader}>
-                  <Feather name="check-circle" size={20} color={SgateColors.green} />
-                  <Text style={styles.foundHeaderText}>Registered Vehicle</Text>
+              <Animated.View entering={FadeInDown.springify()} style={S.resultCard}>
+                <View style={S.foundBanner}>
+                  <MaterialCommunityIcons name="check-circle-outline" size={18} color={SgateColors.green} />
+                  <Text style={S.foundBannerText}>Registered Vehicle</Text>
                 </View>
-                <Text style={styles.vehicleNumber}>{result.vehicleNumber}</Text>
-                <View style={styles.detailRows}>
+                <Text style={S.vehicleNumber}>{result.vehicleNumber}</Text>
+                <View style={S.detailRows}>
                   {result.flat?.flatNumber && (
-                    <View style={styles.detailRow}>
-                      <Feather name="home" size={15} color={SgateColors.t3} />
-                      <Text style={styles.detailLabel}>Flat</Text>
-                      <Text style={styles.detailValue}>{result.flat.flatNumber}</Text>
+                    <View style={S.detailRow}>
+                      <View style={S.detailIconWrap}><MaterialCommunityIcons name="home-outline" size={14} color={SgateColors.goldDeep} /></View>
+                      <Text style={S.detailLabel}>Flat</Text>
+                      <Text style={S.detailValue}>{result.flat.flatNumber}</Text>
                     </View>
                   )}
-                  <View style={styles.detailRow}>
-                    <Feather name="truck" size={15} color={SgateColors.t3} />
-                    <Text style={styles.detailLabel}>Vehicle</Text>
-                    <Text style={styles.detailValue}>{result.vehicleType} · {result.model} · {result.color}</Text>
+                  <View style={S.detailRow}>
+                    <View style={S.detailIconWrap}><MaterialCommunityIcons name="car-outline" size={14} color={SgateColors.goldDeep} /></View>
+                    <Text style={S.detailLabel}>Vehicle</Text>
+                    <Text style={S.detailValue}>{result.vehicleType} · {result.model} · {result.color}</Text>
                   </View>
                   {result.parkingSlot && (
-                    <View style={styles.detailRow}>
-                      <Feather name="map-pin" size={15} color={SgateColors.t3} />
-                      <Text style={styles.detailLabel}>Parking</Text>
-                      <Text style={styles.detailValue}>{result.parkingSlot}</Text>
+                    <View style={S.detailRow}>
+                      <View style={S.detailIconWrap}><MaterialCommunityIcons name="map-marker-outline" size={14} color={SgateColors.goldDeep} /></View>
+                      <Text style={S.detailLabel}>Parking</Text>
+                      <Text style={S.detailValue}>{result.parkingSlot}</Text>
                     </View>
                   )}
                 </View>
-                <View style={styles.divider} />
-                <View style={styles.actionRow}>
+                <View style={S.divider} />
+                <View style={S.actionRow}>
                   {result.user?.phone && (
-                    <TouchableOpacity style={styles.callBtn} onPress={() => Linking.openURL('tel:' + result.user!.phone.replace(/\s/g, ''))} activeOpacity={0.8}>
-                      <Feather name="phone" size={15} color={SgateColors.green} />
-                      <Text style={styles.callBtnText}>Call Owner</Text>
+                    <TouchableOpacity style={S.callBtn} onPress={() => Linking.openURL('tel:' + result.user!.phone.replace(/\s/g, ''))} activeOpacity={0.8}>
+                      <MaterialCommunityIcons name="phone-outline" size={16} color={SgateColors.green} />
+                      <Text style={S.callBtnText}>Call Owner</Text>
                     </TouchableOpacity>
                   )}
-                  <TouchableOpacity style={styles.reportBtnSecondary} onPress={() => setReportTarget(result.vehicleNumber)} activeOpacity={0.8}>
-                    <Feather name="alert-triangle" size={15} color={SgateColors.t2} />
-                    <Text style={styles.reportBtnSecondaryText}>Report Issue</Text>
+                  <TouchableOpacity style={S.reportBtnSec} onPress={() => setReportTarget(result.vehicleNumber)} activeOpacity={0.8}>
+                    <MaterialCommunityIcons name="alert-outline" size={16} color={SgateColors.t2} />
+                    <Text style={S.reportBtnSecText}>Report Issue</Text>
                   </TouchableOpacity>
                 </View>
               </Animated.View>
             )}
 
+            {/* ── Not Found ────────────────────────────────────────────── */}
             {notFound && (
-               <Animated.View entering={FadeInDown.springify()} style={[styles.resultCard, styles.notFoundCard]}>
-                <View style={styles.notFoundHeader}>
-                  <Feather name="x-circle" size={20} color={SgateColors.red} />
-                  <Text style={styles.notFoundHeaderText}>Vehicle Not Found</Text>
+              <Animated.View entering={FadeInDown.springify()} style={S.notFoundCard}>
+                <View style={S.nfIconCircle}>
+                  <MaterialCommunityIcons name="car-off" size={28} color={SgateColors.red} />
                 </View>
-                <Text style={styles.notFoundBody}>This vehicle number is not registered in the society directory.</Text>
-                <TouchableOpacity style={styles.reportUnknownBtn} onPress={() => setReportTarget(query.toUpperCase())} activeOpacity={0.8}>
-                  <Text style={styles.reportUnknownText}>File Parking Complaint</Text>
+                <Text style={S.nfTitle}>Vehicle Not Found</Text>
+                <Text style={S.nfBody}>This vehicle number is not registered in the society directory.</Text>
+                <TouchableOpacity style={S.nfReportBtn} onPress={() => setReportTarget(query.toUpperCase())} activeOpacity={0.8}>
+                  <MaterialCommunityIcons name="alert-outline" size={16} color={SgateColors.red} />
+                  <Text style={S.nfReportText}>File Parking Complaint</Text>
                 </TouchableOpacity>
               </Animated.View>
             )}
@@ -264,15 +278,17 @@ export default function SearchVehicleScreen() {
             data={complaints}
             keyExtractor={(item) => item.id}
             renderItem={renderComplaint}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={S.listContent}
             refreshing={loadingComplaints}
             onRefresh={fetchMyComplaints}
             ListEmptyComponent={
               !loadingComplaints ? (
-                <View style={styles.emptyWrap}>
-                  <Feather name="shield" size={48} color={SgateColors.t4} />
-                  <Text style={styles.emptyTitle}>No Reports</Text>
-                  <Text style={styles.emptySub}>You haven't filed any parking complaints.</Text>
+                <View style={S.emptyWrap}>
+                  <View style={S.emptyIconCircle}>
+                    <MaterialCommunityIcons name="shield-check-outline" size={32} color={SgateColors.goldDeep} />
+                  </View>
+                  <Text style={S.emptyTitle}>No Reports</Text>
+                  <Text style={S.emptySub}>You haven't filed any parking complaints.</Text>
                 </View>
               ) : null
             }
@@ -280,130 +296,133 @@ export default function SearchVehicleScreen() {
         )}
       </KeyboardAvoidingView>
 
-      {/* Modal: File Complaint */}
+      {/* ── Modal: File Complaint ───────────────────────────────────────── */}
       <Modal visible={!!reportTarget} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>File Parking Complaint</Text>
-            <Text style={styles.modalSub}>Vehicle: {reportTarget}</Text>
-            
+        <View style={S.modalOverlay}>
+          <View style={S.modalContent}>
+            <Text style={S.modalTitle}>File Parking Complaint</Text>
+            <Text style={S.modalSub}>Vehicle: {reportTarget}</Text>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-              <Text style={styles.fieldLabel}>Issue Type</Text>
-              <View style={styles.tagsContainer}>
-                  {VIOLATION_TYPES.map(vt => (
-                      <TouchableOpacity key={vt} style={[styles.tag, rType === vt && styles.tagActive]} onPress={() => setRType(vt)}>
-                          <Text style={[styles.tagText, rType === vt && styles.tagTextActive]}>{vt.replace('_', ' ')}</Text>
-                      </TouchableOpacity>
-                  ))}
+              <Text style={S.fieldLabel}>Issue Type</Text>
+              <View style={S.tagsContainer}>
+                {VIOLATION_TYPES.map(vt => (
+                  <TouchableOpacity key={vt} style={[S.tag, rType === vt && S.tagActive]} onPress={() => setRType(vt)}>
+                    <Text style={[S.tagText, rType === vt && S.tagTextActive]}>{vt.replace('_', ' ')}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-
-              <Text style={styles.fieldLabel}>Description (Optional but helpful)</Text>
+              <Text style={S.fieldLabel}>Description (Optional but helpful)</Text>
               <TextInput
-                  style={styles.inputArea}
-                  placeholder="e.g. Blocking my parking spot since morning"
-                  placeholderTextColor={SgateColors.t4}
-                  value={rDesc}
-                  onChangeText={setRDesc}
-                  multiline
+                style={S.inputArea}
+                placeholder="e.g. Blocking my parking spot since morning"
+                placeholderTextColor={SgateColors.t4}
+                value={rDesc}
+                onChangeText={setRDesc}
+                multiline
               />
-
-              <View style={styles.modalBtnRow}>
-                  <TouchableOpacity style={styles.modalCancel} onPress={() => setReportTarget(null)}>
-                      <Text style={styles.modalCancelTxt}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.modalSubmit} onPress={submitComplaint} disabled={submitting}>
-                      {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalSubmitTxt}>Submit</Text>}
-                  </TouchableOpacity>
+              <View style={S.modalBtnRow}>
+                <TouchableOpacity style={S.modalCancel} onPress={() => setReportTarget(null)}>
+                  <Text style={S.modalCancelTxt}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={S.modalSubmit} onPress={submitComplaint} disabled={submitting}>
+                  {submitting ? <ActivityIndicator color="#fff" /> : <Text style={S.modalSubmitTxt}>Submit</Text>}
+                </TouchableOpacity>
               </View>
             </ScrollView>
           </View>
         </View>
       </Modal>
-
-    </SafeAreaView>
+    </View>
   );
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: SgateColors.bg },
-  flex1: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-  headerSpacer: { width: 22 },
+const S = StyleSheet.create({
+  root: { flex: 1, backgroundColor: SgateColors.bg },
 
-  tabRow: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 6, paddingBottom: 6, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabActive: { borderBottomColor: SgateColors.blue },
+  // Header
+  headerBg: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
+  headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
+  headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
+
+  // Segmented Tabs
+  tabContainer: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4, backgroundColor: '#FFFFFF' },
+  tabBar: { flexDirection: 'row', backgroundColor: '#F5F5F5', borderRadius: 12, padding: 4 },
+  tabItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 10 },
+  tabItemActive: { backgroundColor: SgateColors.goldPale },
   tabText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-  tabTextActive: { color: SgateColors.blue },
+  tabTextActive: { color: SgateColors.goldDeep },
 
   scrollContent: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 32 },
   listContent: { padding: 16, paddingBottom: 40, flexGrow: 1 },
 
-  searchCard: { backgroundColor: SgateColors.card, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: SgateColors.borderSoft },
-  searchCardTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
-  searchCardSubtitle: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 16 },
-  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderRadius: 14, paddingHorizontal: 14, height: 52, borderWidth: 1.5, borderColor: 'transparent' },
-  inputRowFocused: { borderColor: SgateColors.gold },
-  inputIcon: { marginRight: 10 },
+  // Search Card
+  searchCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)', shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 1 },
+  searchCardTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
+  searchCardSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 16, lineHeight: 19 },
+  inputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F9F9F9', borderRadius: 12, paddingHorizontal: 14, height: 52, borderWidth: 1.5, borderColor: 'transparent' },
+  inputRowFocused: { borderColor: SgateColors.gold, backgroundColor: '#FFFFFF' },
   textInput: { flex: 1, fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t1, letterSpacing: 1.5 },
-  searchBtn: { marginTop: 12, backgroundColor: SgateColors.gold, borderRadius: 14, height: 48, alignItems: 'center', justifyContent: 'center' },
-  searchBtnDisabled: { backgroundColor: SgateColors.surface },
+  searchBtn: { marginTop: 14, backgroundColor: SgateColors.gold, borderRadius: 14, height: 50, alignItems: 'center', justifyContent: 'center' },
+  searchBtnDisabled: { backgroundColor: '#E8E8E8' },
   searchBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-  searchBtnTextDisabled: { color: SgateColors.t3 },
+  searchBtnTextDisabled: { color: SgateColors.t4 },
 
-  resultCard: { backgroundColor: SgateColors.card, borderRadius: 18, padding: 20, borderWidth: 2, marginTop: 20 },
-  foundCard: { borderColor: SgateColors.green },
-  foundHeader: { backgroundColor: SgateColors.greenBg, borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-  foundHeaderText: { flex: 1, fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.green },
-  vehicleNumber: { fontSize: 24, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, textAlign: 'center', marginBottom: 20, letterSpacing: 2 },
+  // Found Result
+  resultCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginTop: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)', shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 1 },
+  foundBanner: { backgroundColor: SgateColors.greenBg, borderRadius: 10, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
+  foundBannerText: { fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.green },
+  vehicleNumber: { fontSize: 22, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, textAlign: 'center', marginBottom: 18, letterSpacing: 2 },
   detailRows: { gap: 12 },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  detailLabel: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, width: 70 },
+  detailIconWrap: { width: 28, height: 28, borderRadius: 8, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+  detailLabel: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, width: 60 },
   detailValue: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1, flexShrink: 1 },
-  divider: { height: 1, backgroundColor: SgateColors.borderSoft, marginVertical: 16 },
+  divider: { height: 1, backgroundColor: 'rgba(0,0,0,0.04)', marginVertical: 16 },
   actionRow: { flexDirection: 'row', gap: 10 },
   callBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 44, borderRadius: 12, backgroundColor: SgateColors.greenBg, gap: 6 },
   callBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.green },
-  reportBtnSecondary: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 44, borderRadius: 12, backgroundColor: SgateColors.surface, gap: 6 },
-  reportBtnSecondaryText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
+  reportBtnSec: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 44, borderRadius: 12, backgroundColor: '#F5F5F5', gap: 6 },
+  reportBtnSecText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
 
-  notFoundCard: { borderColor: SgateColors.red },
-  notFoundHeader: { backgroundColor: SgateColors.redBg, borderRadius: 12, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-  notFoundHeaderText: { flex: 1, fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.red },
-  notFoundBody: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t2, textAlign: 'center', lineHeight: 21, marginBottom: 20 },
-  reportUnknownBtn: { borderWidth: 1.5, borderColor: SgateColors.red, backgroundColor: SgateColors.redBg, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  reportUnknownText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.red },
+  // Not Found
+  notFoundCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24, marginTop: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)' },
+  nfIconCircle: { width: 56, height: 56, borderRadius: 28, backgroundColor: SgateColors.redBg, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  nfTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 6 },
+  nfBody: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center', lineHeight: 20, marginBottom: 18 },
+  nfReportBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: SgateColors.red, backgroundColor: SgateColors.redBg, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20 },
+  nfReportText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.red },
 
-  // Complaints Tab
-  complaintCard: { backgroundColor: SgateColors.card, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: SgateColors.borderSoft },
+  // Complaints
+  complaintCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 6, elevation: 1 },
   complaintHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   complaintPlate: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-  statusBadge: { backgroundColor: SgateColors.goldPale, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  statusText: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
+  cStatusBadge: { backgroundColor: SgateColors.goldPale, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  cStatusText: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
   complaintType: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.red, marginBottom: 6 },
   complaintDate: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
 
+  // Empty
   emptyWrap: { alignItems: 'center', marginTop: 60 },
-  emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 16, marginBottom: 8 },
+  emptyIconCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 8 },
   emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center' },
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: SgateColors.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
+  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
   modalTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
   modalSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 20 },
   fieldLabel: { fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginBottom: 8, marginTop: 16, textTransform: 'uppercase' },
-  inputArea: { backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border, borderRadius: 12, padding: 14, fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1, height: 80, textAlignVertical: 'top' },
+  inputArea: { backgroundColor: '#F9F9F9', borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)', borderRadius: 12, padding: 14, fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1, height: 80, textAlignVertical: 'top' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border },
-  tagActive: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
+  tag: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: '#F5F5F5', borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)' },
+  tagActive: { backgroundColor: SgateColors.goldPale, borderColor: SgateColors.gold },
   tagText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
-  tagTextActive: { color: SgateColors.t1 },
-
+  tagTextActive: { color: SgateColors.goldDeep },
   modalBtnRow: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  modalCancel: { flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: SgateColors.surface, alignItems: 'center' },
+  modalCancel: { flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: '#F5F5F5', alignItems: 'center' },
   modalCancelTxt: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
   modalSubmit: { flex: 1.2, paddingVertical: 14, borderRadius: 14, backgroundColor: SgateColors.red, alignItems: 'center' },
   modalSubmitTxt: { fontSize: 14, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
