@@ -3,8 +3,8 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { Clipboard, Linking, ScrollView, Share, StyleSheet,
   Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from "react-native-safe-area-context";
 import { SgateColors, SgateFonts } from "../../../../constants/Sgate-theme";
+import { ScreenHeader } from "../../../../components/ui/ScreenHeader";
 import api from "../../../../services/api";
 import { AppAlert } from '../../../../components/ui/AppAlert';
 
@@ -104,39 +104,25 @@ export default function ContactProfile() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile Details</Text>
-          
-        </View>
+      <View style={styles.root}>
+        <ScreenHeader title="Profile Details" />
         <View style={styles.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!contact) {
     return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile Details</Text>
-          
-        </View>
+      <View style={styles.root}>
+        <ScreenHeader title="Profile Details" />
         <View style={styles.center}><Text style={styles.emptyTitle}>Contact not found</Text></View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile Details</Text>
-        
-      </View>
+    <View style={styles.root}>
+      <ScreenHeader title="Profile Details" />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
@@ -207,15 +193,13 @@ export default function ContactProfile() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: SgateColors.bg },
+  root: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
   card: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 20, marginBottom: 16 },
   profileTop: { alignItems: "center", paddingBottom: 20 },

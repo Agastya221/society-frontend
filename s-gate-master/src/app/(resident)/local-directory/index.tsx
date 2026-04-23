@@ -2,11 +2,9 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../../services/api';
-
-const SgateColors = { black: '#0D0F14', gold: '#FFB800', goldDeep: '#E5A500', goldPale: '#FFF8E1', green: '#00D68F', greenBg: '#E5FBF3', bg: '#F5F4F0', card: '#FFFFFF', surface: '#EEECEA', border: '#E5E3DE', borderSoft: '#F0EEEB', t1: '#0D0F14', t2: '#4A4D57', t3: '#8A8D97', t4: '#B5B8C0' };
-const SgateFonts = { regular: 'Sora-Regular', medium: 'Sora-Medium', semiBold: 'Sora-SemiBold', bold: 'Sora-Bold' };
+import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { ScreenHeader } from '../../../components/ui/ScreenHeader';
 
 interface LocalCategory {
   name: string;
@@ -54,14 +52,8 @@ export default function LocalDirectoryIndex() {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Local Directory</Text>
-        
-      </View>
+    <View style={styles.root}>
+      <ScreenHeader title="Local Directory" />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
@@ -88,15 +80,13 @@ export default function LocalDirectoryIndex() {
         <Feather name="plus" size={18} color={SgateColors.black} />
         <Text style={styles.fabLabel}>Add contact</Text>
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: SgateColors.bg },
+  root: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   listContent: { padding: 16, paddingBottom: 100 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, borderRadius: 12, borderWidth: 1, borderColor: SgateColors.border, paddingHorizontal: 12, paddingVertical: 10, gap: 8, marginBottom: 12 },
   searchInput: { flex: 1, fontFamily: SgateFonts.regular, fontSize: 14, color: SgateColors.t1 },
@@ -104,11 +94,11 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, borderRadius: 14, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 14, marginBottom: 10, gap: 12 },
   iconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
   rowContent: { flex: 1 },
-  rowName: { fontSize: 15, fontFamily: SgateFonts.semiBold, color: SgateColors.t1, marginBottom: 2 },
+  rowName: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 2 },
   rowCount: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
   emptyWrap: { alignItems: 'center', paddingTop: 60, gap: 8 },
-  emptyTitle: { fontSize: 16, fontFamily: SgateFonts.semiBold, color: SgateColors.t2 },
+  emptyTitle: { fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
   emptySubtitle: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
   fab: { position: 'absolute', bottom: 24, right: 20, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: SgateColors.gold, borderRadius: 24, paddingHorizontal: 18, paddingVertical: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 8 },
-  fabLabel: { fontSize: 14, fontFamily: SgateFonts.semiBold, color: SgateColors.black },
+  fabLabel: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.black },
 });
