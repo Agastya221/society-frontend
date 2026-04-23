@@ -4,21 +4,21 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 
 const AMENITY_THEMES: { keywords: string[]; icon: string; colorBg: string; colorIcon: string }[] = [
-  { keywords: ['swim', 'pool'],                     icon: 'droplet',    colorBg: '#DBEEFF', colorIcon: '#1A7FD4' },
-  { keywords: ['gym', 'fitness', 'workout'],        icon: 'activity',   colorBg: '#FFE8E8', colorIcon: '#D94040' },
-  { keywords: ['club', 'hall', 'lounge', 'party'],  icon: 'home',       colorBg: SgateColors.goldPale, colorIcon: SgateColors.goldDeep },
-  { keywords: ['badminton', 'tennis', 'squash'],    icon: 'target',     colorBg: '#E8FFE8', colorIcon: '#2E9E4F' },
-  { keywords: ['basket', 'cricket', 'football'],    icon: 'circle',     colorBg: '#FFF0DB', colorIcon: '#E07B00' },
-  { keywords: ['kids', 'play', 'children'],         icon: 'smile',      colorBg: '#FFF8DB', colorIcon: '#D4A000' },
-  { keywords: ['garden', 'terrace', 'park', 'lawn'],icon: 'sun',        colorBg: '#E8FFE8', colorIcon: '#2E9E4F' },
-  { keywords: ['yoga', 'meditation', 'aerobic'],    icon: 'wind',       colorBg: '#EDE9FE', colorIcon: '#7C3AED' },
-  { keywords: ['library', 'reading', 'study'],      icon: 'book-open',  colorBg: '#EDE9FE', colorIcon: '#5B21B6' },
-  { keywords: ['parking', 'car', 'vehicle'],        icon: 'truck',      colorBg: '#F0F0F0', colorIcon: '#555555' },
+  { keywords: ['swim', 'pool'],                     icon: 'pool',               colorBg: '#DBEEFF', colorIcon: '#1A7FD4' },
+  { keywords: ['gym', 'fitness', 'workout'],        icon: 'dumbbell',           colorBg: '#FFE8E8', colorIcon: '#D94040' },
+  { keywords: ['club', 'hall', 'lounge', 'party'],  icon: 'glass-cocktail',     colorBg: SgateColors.goldPale, colorIcon: SgateColors.goldDeep },
+  { keywords: ['badminton', 'tennis', 'squash'],    icon: 'tennis',             colorBg: '#E8FFE8', colorIcon: '#2E9E4F' },
+  { keywords: ['basket', 'cricket', 'football'],    icon: 'basketball',         colorBg: '#FFF0DB', colorIcon: '#E07B00' },
+  { keywords: ['kids', 'play', 'children'],         icon: 'human-child',        colorBg: '#FFF8DB', colorIcon: '#D4A000' },
+  { keywords: ['garden', 'terrace', 'park', 'lawn'],icon: 'pine-tree',          colorBg: '#E8FFE8', colorIcon: '#2E9E4F' },
+  { keywords: ['yoga', 'meditation', 'aerobic'],    icon: 'yoga',               colorBg: '#EDE9FE', colorIcon: '#7C3AED' },
+  { keywords: ['library', 'reading', 'study'],      icon: 'book-open-page-variant', colorBg: '#EDE9FE', colorIcon: '#5B21B6' },
+  { keywords: ['parking', 'car', 'vehicle'],        icon: 'car',                colorBg: '#F0F0F0', colorIcon: '#555555' },
 ];
 
 function resolveTheme(name: string) {
@@ -124,36 +124,40 @@ export default function AmenityDetailScreen() {
   );
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={S.root}>
+    <View style={S.root}>
       {/* Header */}
-      <View style={S.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={S.headerTitle} numberOfLines={1}>
-          {amenity.name}
-        </Text>
-        <View style={S.headerSpacer} />
+      <View style={{ backgroundColor: SgateColors.card }}>
+        <SafeAreaView edges={['top']}>
+          <View style={S.header}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+            </TouchableOpacity>
+            <Text style={S.headerTitle} numberOfLines={1}>
+              Details
+            </Text>
+            <View style={S.headerSpacer} />
+          </View>
+        </SafeAreaView>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={S.scrollContent}
       >
-        {/* Banner */}
-        <View style={[S.banner, { backgroundColor: amenity.colorBg }]}>
-          <View style={S.bannerIconBubble}>
-            <Feather
+        {/* Premium Profile Header */}
+        <View style={S.profileHeader}>
+          <View style={[S.avatarCircle, { backgroundColor: amenity.colorBg }]}>
+            <MaterialCommunityIcons
               name={amenity.icon as any}
-              size={36}
+              size={48}
               color={amenity.colorIcon}
             />
           </View>
-          <Text style={S.bannerName}>{amenity.name}</Text>
-          <Text style={S.bannerTiming}>{amenity.timing}</Text>
+          <Text style={S.profileName}>{amenity.name}</Text>
+          <Text style={S.profileSubText}>{amenity.timing}</Text>
         </View>
 
         {/* Info card */}
@@ -316,7 +320,7 @@ export default function AmenityDetailScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -341,7 +345,6 @@ const S = StyleSheet.create({
 
   // Header
   header: {
-    backgroundColor: SgateColors.card,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
@@ -352,30 +355,36 @@ const S = StyleSheet.create({
     width: 22,
   },
 
-  // Banner
-  banner: {
-    paddingVertical: 32,
+  // Premium Profile Header
+  profileHeader: {
     alignItems: 'center',
+    marginBottom: 28,
+    paddingTop: 16,
   },
-  bannerIconBubble: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+  avatarCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
   },
-  bannerName: {
-    fontSize: 20,
-    fontFamily: SgateFonts.extrabold,
+  profileName: {
+    fontSize: 26,
+    fontFamily: SgateFonts.medium,
     color: SgateColors.t1,
-    marginTop: 12,
+    marginBottom: 4,
   },
-  bannerTiming: {
+  profileSubText: {
     fontSize: 13,
-    fontFamily: SgateFonts.regular,
+    fontFamily: SgateFonts.medium,
     color: SgateColors.t3,
-    marginTop: 4,
+    letterSpacing: 0.5,
   },
 
   // Info card
@@ -383,10 +392,14 @@ const S = StyleSheet.create({
     backgroundColor: SgateColors.card,
     borderRadius: 16,
     marginHorizontal: 16,
-    marginTop: -1,
     padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 8,
+    elevation: 1,
     borderWidth: 1,
-    borderColor: SgateColors.borderSoft,
+    borderColor: 'rgba(0,0,0,0.03)',
   },
   infoRow: {
     flexDirection: 'row',
@@ -448,16 +461,17 @@ const S = StyleSheet.create({
 
   // Date chips
   dateChipsContent: {
-    gap: 8,
-    paddingBottom: 12,
+    gap: 10,
+    paddingBottom: 16,
+    paddingHorizontal: 2, // avoid clipping subtle shadow
   },
   dateChip: {
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     alignItems: 'center',
-    minWidth: 52,
+    minWidth: 56,
   },
   dateChipSelected: {
     backgroundColor: SgateColors.black,
@@ -465,77 +479,84 @@ const S = StyleSheet.create({
   },
   dateChipDefault: {
     backgroundColor: SgateColors.card,
-    borderColor: SgateColors.borderSoft,
+    borderColor: 'rgba(0,0,0,0.04)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
   dateChipLabel: {
     fontSize: 13,
-    fontFamily: SgateFonts.semibold,
+    fontFamily: SgateFonts.medium,
   },
   dateChipSubLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: SgateFonts.bold,
-    marginTop: 2,
+    marginTop: 4,
   },
 
   // Slot grid
   slotGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
   slotChip: {
-    borderRadius: 10,
-    borderWidth: 1.5,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 100, // Modern pill shape
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
   },
-  // AVAILABLE — green tint
+  // AVAILABLE — app yellow tint
   slotChipAvailable: {
-    backgroundColor: '#F0FFF4',
-    borderColor: '#86EFAC',
+    backgroundColor: SgateColors.goldPale,
+    borderColor: 'transparent',
   },
-  // BOOKED — red tint, disabled
+  // BOOKED & PAST — greyed out
   slotChipBooked: {
-    backgroundColor: SgateColors.redBg,
-    borderColor: '#FCA5A5',
-    opacity: 0.7,
+    backgroundColor: SgateColors.surface,
+    borderColor: 'transparent',
+    opacity: 0.8,
   },
-  // PAST — grey, disabled
   slotChipPast: {
     backgroundColor: SgateColors.surface,
-    borderColor: SgateColors.border,
-    opacity: 0.5,
+    borderColor: 'transparent',
+    opacity: 0.6,
   },
-  // SELECTED — gold
+  // SELECTED — solid gold
   slotChipSelected: {
     backgroundColor: SgateColors.gold,
-    borderColor: SgateColors.goldDeep,
+    borderColor: SgateColors.gold,
+    shadowColor: SgateColors.goldDeep,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   slotTimeDefault: {
-    fontSize: 12,
-    fontFamily: SgateFonts.medium,
-    color: '#16A34A',
+    fontSize: 13,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.goldDeep,
   },
   slotTimeBooked: {
-    fontSize: 12,
-    fontFamily: SgateFonts.regular,
-    color: SgateColors.red,
+    fontSize: 13,
+    fontFamily: SgateFonts.medium,
+    color: SgateColors.t4,
+    textDecorationLine: 'line-through', // Extra clear it's booked
   },
   slotTimePast: {
-    fontSize: 12,
-    fontFamily: SgateFonts.regular,
+    fontSize: 13,
+    fontFamily: SgateFonts.medium,
     color: SgateColors.t4,
   },
   slotTimeSelected: {
-    fontSize: 12,
-    fontFamily: SgateFonts.semibold,
+    fontSize: 13,
+    fontFamily: SgateFonts.bold,
     color: SgateColors.black,
   },
   slotStatusLabel: {
-    fontSize: 10,
-    fontFamily: SgateFonts.regular,
-    color: SgateColors.t4,
-    marginTop: 2,
+    display: 'none', // Removed the extra "Booked" text since line-through handles it much more elegantly in a pill
   },
 
   // Hint
