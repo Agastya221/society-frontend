@@ -1,28 +1,33 @@
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
   ActivityIndicator, Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { AppAlert } from '../../../../components/ui/AppAlert';
 import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
 import api from '../../../../services/api';
 import { useAuthStore } from '../../../../store/useAuthStore';
-import { AppAlert } from '../../../../components/ui/AppAlert';
 
 // ─── Amenity theme (consistent with index + detail screens) ────────────────────
 const AMENITY_THEMES: { keywords: string[]; icon: string; bg: string; color: string }[] = [
-  { keywords: ['swim', 'pool'],                    icon: 'pool',               bg: '#DBEEFF', color: '#1A7FD4' },
-  { keywords: ['gym', 'fitness', 'workout'],       icon: 'dumbbell',           bg: '#FFE8E8', color: '#D94040' },
-  { keywords: ['club', 'hall', 'lounge', 'party'], icon: 'glass-cocktail',     bg: SgateColors.goldPale, color: SgateColors.goldDeep },
-  { keywords: ['badminton', 'tennis', 'squash'],   icon: 'tennis',             bg: '#E8FFE8', color: '#2E9E4F' },
-  { keywords: ['basket', 'cricket', 'football'],   icon: 'basketball',         bg: '#FFF0DB', color: '#E07B00' },
-  { keywords: ['kids', 'play', 'children'],        icon: 'human-child',        bg: '#FFF8DB', color: '#D4A000' },
-  { keywords: ['garden', 'terrace', 'park', 'lawn'], icon: 'pine-tree',        bg: '#E8FFE8', color: '#2E9E4F' },
-  { keywords: ['yoga', 'meditation', 'aerobic'],   icon: 'yoga',               bg: '#EDE9FE', color: '#7C3AED' },
-  { keywords: ['library', 'reading', 'study'],     icon: 'book-open-page-variant', bg: '#EDE9FE', color: '#5B21B6' },
-  { keywords: ['parking', 'car', 'vehicle'],       icon: 'car',                bg: '#F0F0F0', color: '#555555' },
+  { keywords: ['swim', 'pool'], icon: 'pool', bg: '#DBEEFF', color: '#1A7FD4' },
+  { keywords: ['gym', 'fitness', 'workout'], icon: 'dumbbell', bg: '#FFE8E8', color: '#D94040' },
+  { keywords: ['club', 'hall', 'lounge', 'party'], icon: 'glass-cocktail', bg: SgateColors.goldPale, color: SgateColors.goldDeep },
+  { keywords: ['badminton', 'tennis', 'squash'], icon: 'tennis', bg: '#E8FFE8', color: '#2E9E4F' },
+  { keywords: ['basket', 'cricket', 'football'], icon: 'basketball', bg: '#FFF0DB', color: '#E07B00' },
+  { keywords: ['kids', 'play', 'children'], icon: 'human-child', bg: '#FFF8DB', color: '#D4A000' },
+  { keywords: ['garden', 'terrace', 'park', 'lawn'], icon: 'pine-tree', bg: '#E8FFE8', color: '#2E9E4F' },
+  { keywords: ['yoga', 'meditation', 'aerobic'], icon: 'yoga', bg: '#EDE9FE', color: '#7C3AED' },
+  { keywords: ['library', 'reading', 'study'], icon: 'book-open-page-variant', bg: '#EDE9FE', color: '#5B21B6' },
+  { keywords: ['parking', 'car', 'vehicle'], icon: 'car', bg: '#F0F0F0', color: '#555555' },
 ];
 
 function resolveTheme(name: string) {
@@ -57,18 +62,18 @@ export default function BookAmenityScreen() {
       amenityName: string; maxCapacity: string; rules: string;
     }>();
 
-  const [purpose, setPurpose]     = useState('');
+  const [purpose, setPurpose] = useState('');
   const [purposeFocused, setPurposeFocused] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const btnScale = useRef(new Animated.Value(1)).current;
 
-  const name        = amenityName ?? '';
-  const theme       = resolveTheme(name);
-  const capacity    = parseInt(maxCapacity ?? '1', 10) || 1;
+  const name = amenityName ?? '';
+  const theme = resolveTheme(name);
+  const capacity = parseInt(maxCapacity ?? '1', 10) || 1;
   const rules: string[] = (() => { try { return JSON.parse(rulesParam ?? '[]'); } catch { return []; } })();
-  const flatLabel   = user?.flat ? `${user.flat.block?.name ? user.flat.block.name + ' ' : ''}${user.flat.number}` : '—';
+  const flatLabel = user?.flat ? `${user.flat.block?.name ? user.flat.block.name + ' ' : ''}${user.flat.number}` : '—';
   const readableDate = date ? formatReadableDate(date) : '';
 
   const handleConfirm = async () => {
@@ -113,6 +118,9 @@ export default function BookAmenityScreen() {
           </View>
         </SafeAreaView>
       </View>
+
+      {/* Persistent spacer — content never touches header */}
+      <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.scrollContent}>
         {/* ─── Summary Card ─────────────────────────────────────────── */}
