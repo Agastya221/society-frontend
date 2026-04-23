@@ -348,9 +348,9 @@ const styles = StyleSheet.create({
   inputRowFocused: { borderColor: SgateColors.gold },
   inputIcon: { marginRight: 10 },
   textInput: { flex: 1, fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t1, letterSpacing: 1.5 },
-  searchBtn: { marginTop: 12, backgroundColor: SgateColors.black, borderRadius: 14, height: 48, alignItems: 'center', justifyContent: 'center' },
+  searchBtn: { marginTop: 12, backgroundColor: SgateColors.gold, borderRadius: 14, height: 48, alignItems: 'center', justifyContent: 'center' },
   searchBtnDisabled: { backgroundColor: SgateColors.surface },
-  searchBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.card },
+  searchBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
   searchBtnTextDisabled: { color: SgateColors.t3 },
 
   resultCard: { backgroundColor: SgateColors.card, borderRadius: 18, padding: 20, borderWidth: 2, marginTop: 20 },
@@ -398,9 +398,9 @@ const styles = StyleSheet.create({
   inputArea: { backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border, borderRadius: 12, padding: 14, fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1, height: 80, textAlignVertical: 'top' },
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border },
-  tagActive: { backgroundColor: SgateColors.black, borderColor: SgateColors.black },
+  tagActive: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
   tagText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
-  tagTextActive: { color: '#fff' },
+  tagTextActive: { color: SgateColors.t1 },
 
   modalBtnRow: { flexDirection: 'row', gap: 12, marginTop: 24 },
   modalCancel: { flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: SgateColors.surface, alignItems: 'center' },

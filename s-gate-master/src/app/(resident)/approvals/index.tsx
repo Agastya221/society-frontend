@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
     },
     approveBtn: {
         flex: 1.6,
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         borderRadius: 14,
         paddingVertical: 13,
         flexDirection: 'row',
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
     approveText: {
         fontSize: 13,
         fontFamily: SgateFonts.semibold,
-        color: '#FFFFFF',
+        color: SgateColors.t1,
     },
 
     // ── Empty state ──────────────────────────────────────────────────────────
@@ -591,7 +591,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     retryBtn: {
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         borderRadius: 14,
         paddingVertical: 12,
         paddingHorizontal: 28,
@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
     retryText: {
         fontSize: 14,
         fontFamily: SgateFonts.bold,
-        color: '#FFFFFF',
+        color: SgateColors.t1,
     },
 
     // ── Modal ────────────────────────────────────────────────────────────────

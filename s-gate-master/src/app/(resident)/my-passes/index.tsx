@@ -454,7 +454,7 @@ export default function PassesScreen() {
                 {activeTab === 'Pre-Approvals' ? (
                     paLoading ? (
                         <View style={styles.centered}>
-                            <ActivityIndicator size="large" color={SgateColors.black} />
+                            <ActivityIndicator size="large" color={SgateColors.gold} />
                         </View>
                     ) : (
                         <FlatList
@@ -467,7 +467,7 @@ export default function PassesScreen() {
                                 <RefreshControl
                                     refreshing={paRefreshing}
                                     onRefresh={() => loadPreApprovals(true)}
-                                    tintColor={SgateColors.black}
+                                    tintColor={SgateColors.gold}
                                 />
                             }
                             ListEmptyComponent={renderEmptyState}
@@ -476,7 +476,7 @@ export default function PassesScreen() {
                 ) : (
                     invLoading ? (
                         <View style={styles.centered}>
-                            <ActivityIndicator size="large" color={SgateColors.black} />
+                            <ActivityIndicator size="large" color={SgateColors.gold} />
                         </View>
                     ) : (
                         <FlatList
@@ -502,7 +502,7 @@ export default function PassesScreen() {
                                 <RefreshControl
                                     refreshing={invRefreshing}
                                     onRefresh={() => loadInvites(true)}
-                                    tintColor={SgateColors.black}
+                                    tintColor={SgateColors.gold}
                                 />
                             }
                             ListEmptyComponent={renderEmptyState}
@@ -619,7 +619,7 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 19,
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     segmentActive: {
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
     },
     segmentText: {
         fontSize: 14,
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
         color: SgateColors.t2,
     },
     segmentTextActive: {
-        color: '#FFF',
+        color: SgateColors.t1,
         fontFamily: SgateFonts.bold,
     },
     listContent: {
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
         marginBottom: 32,
     },
     primaryBtn: {
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         paddingHorizontal: 32,
         paddingVertical: 18,
         borderRadius: 40,
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
     primaryBtnText: {
         fontSize: 16,
         fontFamily: SgateFonts.bold,
-        color: '#FFF',
+        color: SgateColors.t1,
     },
 
     card: {

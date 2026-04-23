@@ -299,13 +299,13 @@ export default function CommunicationDetailScreen() {
             maxLength={500}
           />
           <TouchableOpacity
-            style={[S.sendButton, { backgroundColor: commentText.trim() ? SgateColors.black : SgateColors.surface }]}
+            style={[S.sendButton, { backgroundColor: commentText.trim() ? SgateColors.gold : SgateColors.surface }]}
             onPress={handleSend}
             activeOpacity={0.8}
           >
             {sending
               ? <ActivityIndicator size="small" color={SgateColors.card} />
-              : <Feather name="send" size={20} color={commentText.trim() ? SgateColors.card : SgateColors.t3} />
+              : <Feather name="send" size={20} color={commentText.trim() ? SgateColors.t1 : SgateColors.t3} />
             }
           </TouchableOpacity>
         </View>
