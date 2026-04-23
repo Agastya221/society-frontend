@@ -104,6 +104,10 @@ export default function SearchVehicleScreen() {
   };
 
   useFocusEffect(useCallback(() => {
+    // Reset lookup state on screen focus (e.g. navigating back)
+    setQuery('');
+    setResult(null);
+    setNotFound(false);
     if (tab === 'MY_REPORTS') fetchMyComplaints();
   }, [tab]));
 
