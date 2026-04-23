@@ -35,6 +35,12 @@ function calcPct(votes: number, total: number): number {
   return Math.round((votes / total) * 100);
 }
 
+// Maps backend status → UI status
+const STATUS_MAP: Record<string, 'ACTIVE' | 'COMPLETED'> = {
+  OPEN: 'ACTIVE', ACTIVE: 'ACTIVE',
+  CLOSED: 'COMPLETED', COMPLETED: 'COMPLETED', ENDED: 'COMPLETED',
+};
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface Candidate {
@@ -58,10 +64,14 @@ interface ElectionDetail {
 
 function normaliseDetail(raw: any): ElectionDetail {
   const isElection = raw.type === 'ELECTION' && Array.isArray(raw.candidates);
+  const rawStatus = (raw.status ?? '').toUpperCase();
+  const mappedStatus = STATUS_MAP[rawStatus]
+    ?? (new Date(raw.votingEndsAt ?? raw.deadline) > new Date() ? 'ACTIVE' : 'COMPLETED');
+
   return {
-    id:         raw.id,
+    id:         raw.id ?? raw._id,
     type:       isElection ? 'ELECTION' : 'SURVEY',
-    status:     raw.status ?? (new Date(raw.votingEndsAt ?? raw.deadline) > new Date() ? 'ACTIVE' : 'COMPLETED'),
+    status:     mappedStatus,
     title:      raw.title ?? '',
     totalVotes: raw.totalVotes ?? 0,
     deadline:   raw.deadline ?? raw.votingEndsAt ?? new Date().toISOString(),
@@ -83,10 +93,10 @@ function CandidateCard({ candidate, selected, hasVoted, totalVotes, isWinner, on
 }) {
   const pct = calcPct(candidate.votes, totalVotes);
   return (
-    <TouchableOpacity activeOpacity={hasVoted ? 1 : 0.75} onPress={hasVoted ? undefined : onSelect}
+    <TouchableOpacity activeOpacity={hasVoted ? 1 : 0.85} onPress={hasVoted ? undefined : onSelect}
       style={[D.candidateCard, selected && D.candidateCardSelected]}>
-      <View style={D.avatarCircle}>
-        <Text style={D.avatarInitials}>{getInitials(candidate.name)}</Text>
+      <View style={[D.avatarCircle, selected && { backgroundColor: SgateColors.gold }]}>
+        <Text style={[D.avatarInitials, selected && { color: '#FFFFFF' }]}>{getInitials(candidate.name)}</Text>
       </View>
       <View style={D.candidateInfo}>
         <Text style={D.candidateName}>{candidate.name}</Text>
@@ -119,15 +129,22 @@ function SurveyOptionCard({ option, selected, hasVoted, totalVotes, onSelect }: 
 }) {
   const pct = calcPct(option.votes, totalVotes);
   return (
-    <TouchableOpacity activeOpacity={hasVoted ? 1 : 0.75} onPress={hasVoted ? undefined : onSelect}
-      style={[D.surveyCard, selected && D.surveyCardSelected]}>
-      <Feather name={selected ? 'check-circle' : 'circle'} size={20} color={SgateColors.violet} />
+    <TouchableOpacity
+      activeOpacity={hasVoted ? 1 : 0.85}
+      onPress={hasVoted ? undefined : onSelect}
+      style={[D.surveyCard, selected && D.surveyCardSelected]}
+    >
+      {/* Radio indicator */}
+      <View style={[D.radioOuter, selected && D.radioOuterSelected]}>
+        {selected && <View style={D.radioInner} />}
+      </View>
+
       <View style={D.surveyOptionBody}>
         <Text style={D.surveyOptionText}>{option.text}</Text>
         {hasVoted && (
           <View style={D.progressContainer}>
             <View style={D.progressBar}>
-              <View style={[D.progressFillViolet, { width: `${pct}%` }]} />
+              <View style={[D.progressFill, { width: `${pct}%` }]} />
               <View style={D.progressEmpty} />
             </View>
             <Text style={D.progressLabel}>{option.votes} vote{option.votes !== 1 ? 's' : ''} ({pct}%)</Text>
@@ -170,17 +187,19 @@ export default function ElectionDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={D.root} edges={['top', 'bottom']}>
+      <View style={{ flex: 1, backgroundColor: SgateColors.bg }}>
+        <View style={D.headerContainer}><SafeAreaView edges={['top']} /></View>
         <View style={D.notFound}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!item) {
     return (
-      <SafeAreaView style={D.root} edges={['top', 'bottom']}>
+      <View style={{ flex: 1, backgroundColor: SgateColors.bg }}>
+        <View style={D.headerContainer}><SafeAreaView edges={['top']} /></View>
         <View style={D.notFound}><Text style={D.notFoundText}>Not found</Text></View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -191,9 +210,9 @@ export default function ElectionDetailScreen() {
   const options     = item.options ?? [];
   const maxVotes    = candidates.length > 0 ? Math.max(...candidates.map(c => c.votes)) : 0;
 
-  const badgeBg    = isElection ? SgateColors.blueBg : '#F3EEFF';
-  const badgeText  = isElection ? SgateColors.blue   : SgateColors.violet;
-  const badgeLabel = isElection ? 'ELECTION' : 'SURVEY';
+  const badgeIcon  = isElection ? 'award' : 'bar-chart-2';
+  const badgeLabel = isElection ? 'Election' : 'Survey';
+  const statusLabel = isActive ? 'Active' : 'Closed';
   const statusBg   = isActive ? SgateColors.greenBg : SgateColors.surface;
   const statusTx   = isActive ? SgateColors.green    : SgateColors.t3;
 
@@ -246,37 +265,50 @@ export default function ElectionDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={D.root} edges={['top', 'bottom']}>
-      <View style={D.header}>
-        <TouchableOpacity onPress={() => router.back()} style={D.backBtn} activeOpacity={0.7}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={D.headerTitle} numberOfLines={1}>{item.title}</Text>
-        <View style={D.headerSpacer} />
+    <View style={D.root}>
+      {/* Header — extends behind status bar */}
+      <View style={D.headerContainer}>
+        <SafeAreaView edges={['top']}>
+          <View style={D.header}>
+            <TouchableOpacity onPress={() => router.back()} style={D.backBtn} activeOpacity={0.7}>
+              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+            </TouchableOpacity>
+            <Text style={D.headerTitle} numberOfLines={1}>{item.title}</Text>
+            <View style={D.headerSpacer} />
+          </View>
+        </SafeAreaView>
       </View>
 
+      {/* Persistent spacer */}
+      <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
+
       <ScrollView contentContainerStyle={D.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Summary Card */}
         <View style={D.infoCard}>
           <View style={D.infoTopRow}>
-            <View style={[D.badge, { backgroundColor: badgeBg }]}>
-              <Text style={[D.badgeText, { color: badgeText }]}>{badgeLabel}</Text>
+            <View style={D.badge}>
+              <Feather name={badgeIcon as any} size={12} color={SgateColors.goldDeep} />
+              <Text style={D.badgeText}>{badgeLabel}</Text>
             </View>
             <View style={{ flex: 1 }} />
             <View style={[D.statusPill, { backgroundColor: statusBg }]}>
-              <Text style={[D.statusPillText, { color: statusTx }]}>{item.status}</Text>
+              <Text style={[D.statusPillText, { color: statusTx }]}>{statusLabel}</Text>
             </View>
           </View>
           <Text style={D.infoTitle}>{item.title}</Text>
-          <View style={D.infoMetaRow}>
-            <Feather name="users" size={14} color={SgateColors.t3} />
-            <Text style={D.infoMetaText}> {item.totalVotes} total votes</Text>
-          </View>
-          <View style={[D.infoMetaRow, { marginTop: 4 }]}>
-            <Feather name="clock" size={14} color={SgateColors.t3} />
-            <Text style={D.infoMetaText}> {getDeadlineLabel(item.deadline)}</Text>
+          <View style={D.metaRow}>
+            <View style={D.metaChip}>
+              <Feather name="users" size={13} color={SgateColors.t3} />
+              <Text style={D.metaChipText}>{item.totalVotes} total vote{item.totalVotes !== 1 ? 's' : ''}</Text>
+            </View>
+            <View style={D.metaChip}>
+              <Feather name="clock" size={13} color={SgateColors.t3} />
+              <Text style={D.metaChipText}>{getDeadlineLabel(item.deadline)}</Text>
+            </View>
           </View>
         </View>
 
+        {/* Election — Candidates */}
         {isElection && candidates.length > 0 && (
           <View>
             <Text style={D.sectionTitle}>Candidates</Text>
@@ -294,19 +326,27 @@ export default function ElectionDetailScreen() {
           </View>
         )}
 
+        {/* Survey — Options */}
         {!isElection && options.length > 0 && (
           <View>
-            {!!item.question && <Text style={D.questionText}>{item.question}</Text>}
-            {options.map(option => (
-              <SurveyOptionCard
-                key={option.id}
-                option={option}
-                selected={selectedOptions.includes(option.id)}
-                hasVoted={hasVoted}
-                totalVotes={item.totalVotes}
-                onSelect={() => toggleSurveyOption(option.id)}
-              />
-            ))}
+            {!!item.question && (
+              <View style={D.descriptionCard}>
+                <Text style={D.questionText}>{item.question}</Text>
+              </View>
+            )}
+            <Text style={D.sectionTitle}>Options</Text>
+            <View style={{ gap: 10 }}>
+              {options.map(option => (
+                <SurveyOptionCard
+                  key={option.id}
+                  option={option}
+                  selected={selectedOptions.includes(option.id)}
+                  hasVoted={hasVoted}
+                  totalVotes={item.totalVotes}
+                  onSelect={() => toggleSurveyOption(option.id)}
+                />
+              ))}
+            </View>
           </View>
         )}
       </ScrollView>
@@ -316,25 +356,27 @@ export default function ElectionDetailScreen() {
           {isElection ? (
             <TouchableOpacity
               activeOpacity={castVoteDisabled || submitting ? 1 : 0.8}
-              style={[D.footerBtn, { backgroundColor: castVoteDisabled ? SgateColors.surface : SgateColors.green }]}
+              style={[D.footerBtn, { backgroundColor: castVoteDisabled ? SgateColors.surface : SgateColors.gold }]}
               onPress={castVoteDisabled || submitting ? undefined : handleCastVote}>
-              <Text style={[D.footerBtnText, { color: castVoteDisabled ? SgateColors.t3 : SgateColors.card }]}>
+              <Feather name="check-circle" size={18} color={castVoteDisabled ? SgateColors.t4 : SgateColors.t1} style={{ marginRight: 8 }} />
+              <Text style={[D.footerBtnText, { color: castVoteDisabled ? SgateColors.t3 : SgateColors.t1 }]}>
                 {submitting ? 'Submitting…' : 'Cast Vote'}
               </Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
               activeOpacity={submitDisabled || submitting ? 1 : 0.8}
-              style={[D.footerBtn, { backgroundColor: submitDisabled ? SgateColors.surface : SgateColors.green }]}
+              style={[D.footerBtn, { backgroundColor: submitDisabled ? SgateColors.surface : SgateColors.gold }]}
               onPress={submitDisabled || submitting ? undefined : handleSubmitSurvey}>
-              <Text style={[D.footerBtnText, { color: submitDisabled ? SgateColors.t3 : SgateColors.card }]}>
+              <Feather name="send" size={16} color={submitDisabled ? SgateColors.t4 : SgateColors.t1} style={{ marginRight: 8 }} />
+              <Text style={[D.footerBtnText, { color: submitDisabled ? SgateColors.t3 : SgateColors.t1 }]}>
                 {submitting ? 'Submitting…' : 'Submit Response'}
               </Text>
             </TouchableOpacity>
           )}
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -342,43 +384,227 @@ const D = StyleSheet.create({
   root: { flex: 1, backgroundColor: SgateColors.bg },
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   notFoundText: { fontSize: 16, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.bg },
+
+  // ── Header ──
+  headerContainer: {
+    backgroundColor: SgateColors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.04)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 3,
+    elevation: 2,
+    zIndex: 10,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+  headerTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginLeft: 8, flex: 1 },
   headerSpacer: { width: 36 },
+
+  // ── Scroll ──
   scrollContent: { paddingHorizontal: 16, paddingBottom: 32 },
-  infoCard: { backgroundColor: SgateColors.card, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: SgateColors.borderSoft },
-  infoTopRow: { flexDirection: 'row', alignItems: 'center' },
-  badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { fontSize: 11, fontFamily: SgateFonts.bold, letterSpacing: 0.5 },
-  statusPill: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  statusPillText: { fontSize: 11, fontFamily: SgateFonts.bold, letterSpacing: 0.5 },
-  infoTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 10, lineHeight: 24 },
-  infoMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  infoMetaText: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
-  sectionTitle: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 12 },
-  candidateCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: SgateColors.card, borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: SgateColors.borderSoft },
-  candidateCardSelected: { backgroundColor: SgateColors.blueBg, borderColor: SgateColors.blue, borderWidth: 2 },
-  avatarCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: SgateColors.blueBg, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  avatarInitials: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.blue },
+
+  // ── Info Card ──
+  infoCard: {
+    backgroundColor: SgateColors.card,
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 1,
+  },
+  infoTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: SgateColors.goldPale,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.goldDeep,
+    letterSpacing: 0.3,
+  },
+  statusPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  statusPillText: {
+    fontSize: 11,
+    fontFamily: SgateFonts.semibold,
+    letterSpacing: 0.3,
+  },
+  infoTitle: {
+    fontSize: 18,
+    fontFamily: SgateFonts.bold,
+    color: SgateColors.t1,
+    lineHeight: 26,
+    marginBottom: 12,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  metaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: SgateColors.bg,
+  },
+  metaChipText: {
+    fontSize: 12,
+    fontFamily: SgateFonts.medium,
+    color: SgateColors.t3,
+  },
+
+  // ── Description ──
+  descriptionCard: {
+    backgroundColor: SgateColors.card,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+  },
+  questionText: {
+    fontSize: 15,
+    fontFamily: SgateFonts.regular,
+    color: SgateColors.t2,
+    lineHeight: 23,
+  },
+
+  // ── Sections ──
+  sectionTitle: {
+    fontSize: 15,
+    fontFamily: SgateFonts.bold,
+    color: SgateColors.t1,
+    marginBottom: 12,
+  },
+
+  // ── Candidate Card ──
+  candidateCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: SgateColors.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  candidateCardSelected: {
+    backgroundColor: SgateColors.goldPale,
+    borderColor: SgateColors.gold,
+    borderWidth: 2,
+  },
+  avatarCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: SgateColors.goldPale,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  avatarInitials: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
   candidateInfo: { flex: 1 },
   candidateName: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
   candidateSubtitle: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
-  radioOuter: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: SgateColors.border, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  radioOuterSelected: { borderColor: SgateColors.blue },
-  radioInner: { width: 14, height: 14, borderRadius: 7, backgroundColor: SgateColors.blue },
+
+  // ── Radio ──
+  radioOuter: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: SgateColors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  radioOuterSelected: { borderColor: SgateColors.gold },
+  radioInner: { width: 14, height: 14, borderRadius: 7, backgroundColor: SgateColors.gold },
+
+  // ── Progress ──
   progressContainer: { marginTop: 8 },
   progressBar: { flexDirection: 'row', height: 4, borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: 4, backgroundColor: SgateColors.blue, borderRadius: 2 },
-  progressFillViolet: { height: 4, backgroundColor: SgateColors.violet, borderRadius: 2 },
+  progressFill: { height: 4, backgroundColor: SgateColors.gold, borderRadius: 2 },
   progressEmpty: { flex: 1, height: 4, backgroundColor: SgateColors.surface },
   progressLabel: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.t2, marginTop: 4 },
-  surveyCard: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: SgateColors.card, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: SgateColors.borderSoft },
-  surveyCardSelected: { backgroundColor: '#F3EEFF', borderColor: SgateColors.violet, borderWidth: 2 },
-  surveyOptionBody: { flex: 1, marginLeft: 10 },
-  surveyOptionText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
-  questionText: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 16, lineHeight: 22 },
-  footer: { paddingHorizontal: 16, paddingVertical: 12, backgroundColor: SgateColors.card, borderTopWidth: 1, borderTopColor: SgateColors.borderSoft },
-  footerBtn: { borderRadius: 14, height: 52, alignItems: 'center', justifyContent: 'center' },
-  footerBtnText: { fontSize: 15, fontFamily: SgateFonts.semibold },
+
+  // ── Survey Option Card ──
+  surveyCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: SgateColors.card,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  surveyCardSelected: {
+    backgroundColor: SgateColors.goldPale,
+    borderColor: SgateColors.gold,
+    borderWidth: 2,
+  },
+  surveyOptionBody: { flex: 1 },
+  surveyOptionText: { fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1, lineHeight: 22 },
+
+  // ── Footer ──
+  footer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: SgateColors.card,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.04)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  footerBtn: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerBtnText: { fontSize: 15, fontFamily: SgateFonts.bold },
 });
