@@ -98,32 +98,51 @@ function ElectionCard({ item, index }: { item: ElectionItem; index: number }) {
   const isActive   = item.status === 'ACTIVE';
   const showVoteBtn = isActive && !item.hasVoted;
 
-  const badgeBg   = isElection ? SgateColors.blueBg : '#F3EEFF';
-  const badgeText = isElection ? SgateColors.blue   : SgateColors.violet;
-  const badgeLabel = isElection ? 'ELECTION' : 'SURVEY';
+  const badgeIcon  = isElection ? 'award' : 'bar-chart-2';
+  const badgeLabel = isElection ? 'Election' : 'Survey';
 
   return (
     <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
-      <TouchableOpacity activeOpacity={0.75} style={S.card}
-        onPress={() => router.push(`/(resident)/elections/${item.id}` as any)}>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        style={S.card}
+        onPress={() => router.push(`/(resident)/elections/${item.id}` as any)}
+      >
+        {/* Row 1: Badge + Deadline */}
         <View style={S.cardTopRow}>
-          <View style={[S.badge, { backgroundColor: badgeBg }]}>
-            <Text style={[S.badgeText, { color: badgeText }]}>{badgeLabel}</Text>
+          <View style={S.badge}>
+            <Feather name={badgeIcon as any} size={12} color={SgateColors.goldDeep} />
+            <Text style={S.badgeText}>{badgeLabel}</Text>
           </View>
-          <View style={{ flex: 1 }} />
           {isActive && !item.hasVoted && (
-            <Text style={S.deadlineText}>{getDeadlineText(item.deadline)}</Text>
+            <View style={S.deadlineChip}>
+              <Feather name="clock" size={11} color={SgateColors.t3} />
+              <Text style={S.deadlineText}>{getDeadlineText(item.deadline)}</Text>
+            </View>
           )}
         </View>
-        <Text style={S.cardTitle}>{item.title}</Text>
-        {!!item.society && <Text style={S.cardSociety}>{item.society}</Text>}
+
+        {/* Row 2: Title */}
+        <Text style={S.cardTitle} numberOfLines={3}>{item.title}</Text>
+        {!!item.question && <Text style={S.cardQuestion} numberOfLines={2}>{item.question}</Text>}
+
+        {/* Row 3: Votes + Action */}
         <View style={S.cardBottomRow}>
-          <Text style={S.votesText}>{item.totalVotes} votes cast</Text>
+          <View style={S.votesChip}>
+            <Feather name="users" size={13} color={SgateColors.t3} />
+            <Text style={S.votesText}>{item.totalVotes} vote{item.totalVotes !== 1 ? 's' : ''}</Text>
+          </View>
           <View style={{ flex: 1 }} />
           <TouchableOpacity
-            activeOpacity={0.75}
+            activeOpacity={0.8}
             style={[S.actionBtn, showVoteBtn ? S.actionBtnVote : S.actionBtnView]}
-            onPress={() => router.push(`/(resident)/elections/${item.id}` as any)}>
+            onPress={() => router.push(`/(resident)/elections/${item.id}` as any)}
+          >
+            <Feather
+              name={showVoteBtn ? 'check-circle' : 'eye'}
+              size={14}
+              color={showVoteBtn ? SgateColors.goldDeep : SgateColors.t2}
+            />
             <Text style={[S.actionBtnText, showVoteBtn ? S.actionBtnTextVote : S.actionBtnTextView]}>
               {showVoteBtn ? 'Vote Now' : 'View Results'}
             </Text>
@@ -214,9 +233,15 @@ export default function ElectionsScreen() {
           renderItem={({ item, index }) => <ElectionCard item={item} index={index} />}
           ListEmptyComponent={
             <View style={S.emptyContainer}>
-              <Feather name="bar-chart-2" size={48} color={SgateColors.t4} />
+              <View style={S.emptyIconWrap}>
+                <Feather name="bar-chart-2" size={32} color={SgateColors.goldDeep} />
+              </View>
               <Text style={S.emptyTitle}>No {activeTab.toLowerCase()} polls</Text>
-              <Text style={S.emptySubtitle}>Elections and surveys will appear here when available.</Text>
+              <Text style={S.emptySubtitle}>
+                {activeTab === 'ACTIVE'
+                  ? 'Active polls and surveys will show up here when available.'
+                  : "You haven't participated in any polls yet. Completed ones will appear here."}
+              </Text>
             </View>
           }
           showsVerticalScrollIndicator={false}
@@ -252,22 +277,137 @@ const S = StyleSheet.create({
   tabBtnTextActive: { color: SgateColors.card },
   tabBtnTextInactive: { color: SgateColors.t2 },
   listContent: { paddingHorizontal: 16, paddingBottom: 32 },
-  card: { backgroundColor: SgateColors.card, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: SgateColors.borderSoft },
-  cardTopRow: { flexDirection: 'row', alignItems: 'center' },
-  badge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText: { fontSize: 11, fontFamily: SgateFonts.bold, letterSpacing: 0.5 },
-  deadlineText: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-  cardTitle: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginTop: 8, marginBottom: 4 },
-  cardSociety: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
-  cardBottomRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
-  votesText: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
-  actionBtn: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
-  actionBtnVote: { backgroundColor: SgateColors.greenBg },
-  actionBtnView: { backgroundColor: SgateColors.surface },
-  actionBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold },
-  actionBtnTextVote: { color: SgateColors.green },
-  actionBtnTextView: { color: SgateColors.t2 },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, paddingHorizontal: 40, gap: 12 },
-  emptyTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-  emptySubtitle: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center', lineHeight: 20 },
+
+  // ── Card ──
+  card: {
+    backgroundColor: SgateColors.card,
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 1,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: SgateColors.goldPale,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.goldDeep,
+    letterSpacing: 0.3,
+  },
+  deadlineChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  deadlineText: {
+    fontSize: 12,
+    fontFamily: SgateFonts.medium,
+    color: SgateColors.t3,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.t1,
+    lineHeight: 23,
+    marginBottom: 4,
+  },
+  cardQuestion: {
+    fontSize: 13,
+    fontFamily: SgateFonts.regular,
+    color: SgateColors.t3,
+    lineHeight: 19,
+    marginBottom: 4,
+  },
+  cardBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.04)',
+  },
+  votesChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  votesText: {
+    fontSize: 13,
+    fontFamily: SgateFonts.medium,
+    color: SgateColors.t3,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  actionBtnVote: {
+    backgroundColor: SgateColors.goldPale,
+  },
+  actionBtnView: {
+    backgroundColor: SgateColors.surface,
+  },
+  actionBtnText: {
+    fontSize: 13,
+    fontFamily: SgateFonts.semibold,
+  },
+  actionBtnTextVote: {
+    color: SgateColors.goldDeep,
+  },
+  actionBtnTextView: {
+    color: SgateColors.t2,
+  },
+
+  // ── Empty State ──
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 80,
+    paddingHorizontal: 40,
+    gap: 10,
+  },
+  emptyIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: SgateColors.goldPale,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontFamily: SgateFonts.bold,
+    color: SgateColors.t1,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    fontFamily: SgateFonts.regular,
+    color: SgateColors.t3,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
 });
