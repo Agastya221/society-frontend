@@ -601,7 +601,6 @@ const styles = StyleSheet.create({
     headerInner: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
     },
     headerIconBtn: {
         width: 32,
@@ -610,9 +609,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     headerTitleMain: {
+        flex: 1,
         fontSize: 20,
         fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
+        marginLeft: 12,
     },
     headerIconBtnCircle: {
         width: 38,

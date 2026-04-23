@@ -18,6 +18,7 @@ import {
     View,
     BackHandler,
     Modal,
+    KeyboardAvoidingView,
 } from 'react-native';
 
 import { Gesture, GestureDetector, NativeViewGestureHandler, GestureHandlerRootView, ScrollView as RNGHScrollView } from 'react-native-gesture-handler';
@@ -2315,6 +2316,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                 }}
             />
             <GestureHandlerRootView style={{ flex: 1 }} pointerEvents="box-none">
+                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }} pointerEvents="box-none">
                 {/* Backdrop */}
                 <Animated.View style={[S.backdrop, backdropStyle]}>
                     <Pressable style={{ flex: 1 }} onPress={handleClose} />
@@ -2519,6 +2521,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                     />
                 )}
             </Animated.View>
+                </KeyboardAvoidingView>
             </GestureHandlerRootView>
         </View>
     );
