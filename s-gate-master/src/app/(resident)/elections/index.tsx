@@ -271,10 +271,10 @@ const S = StyleSheet.create({
   headerSpacer: { width: 36 },
   tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 16 },
   tabBtn: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
-  tabBtnActive: { backgroundColor: SgateColors.t1 },
+  tabBtnActive: { backgroundColor: SgateColors.gold },
   tabBtnInactive: { backgroundColor: SgateColors.bg },
   tabBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold },
-  tabBtnTextActive: { color: SgateColors.card },
+  tabBtnTextActive: { color: SgateColors.t1, fontFamily: SgateFonts.bold },
   tabBtnTextInactive: { color: SgateColors.t2 },
   listContent: { paddingHorizontal: 16, paddingBottom: 32 },
 

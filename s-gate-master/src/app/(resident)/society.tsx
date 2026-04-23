@@ -634,9 +634,9 @@ const S = StyleSheet.create({
     // ── Block filter ────────────────────────────────────────────────────
     blockWrap: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 4, gap: 8 },
     blockPill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: SgateColors.surface },
-    blockPillActive: { backgroundColor: SgateColors.black },
+    blockPillActive: { backgroundColor: SgateColors.gold },
     blockLabel: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-    blockLabelActive: { color: '#FFFFFF' },
+    blockLabelActive: { color: SgateColors.t1 },
 
     // ── List ────────────────────────────────────────────────────────────
     listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 80 },
@@ -649,9 +649,9 @@ const S = StyleSheet.create({
     recentHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
     filterRow: { flexDirection: 'row', gap: 6 },
     filterChip: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: SgateColors.surface },
-    filterChipActive: { backgroundColor: SgateColors.t1 },
+    filterChipActive: { backgroundColor: SgateColors.gold },
     filterChipText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 0.5 },
-    filterChipTextActive: { color: SgateColors.card },
+    filterChipTextActive: { color: SgateColors.t1 },
 
     // ── Pinned notice card ──────────────────────────────────────────────
     pinnedCard: { backgroundColor: SgateColors.card, borderRadius: 14, borderLeftWidth: 4, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
