@@ -187,7 +187,7 @@ export default function AmenityDetailScreen() {
   return (
     <View style={S.root}>
       {/* Header */}
-      <View style={{ backgroundColor: SgateColors.card }}>
+      <View style={S.headerContainer}>
         <SafeAreaView edges={['top']}>
           <View style={S.header}>
             <TouchableOpacity
@@ -453,6 +453,17 @@ const S = StyleSheet.create({
   },
 
   // Header
+  headerContainer: {
+    backgroundColor: SgateColors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 3,
+    elevation: 2,
+    zIndex: 10,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
