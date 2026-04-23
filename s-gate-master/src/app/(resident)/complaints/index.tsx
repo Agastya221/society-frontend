@@ -1,12 +1,21 @@
-import { Ionicons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
 import { Complaint, ComplaintStatus, deleteComplaint, fetchComplaints } from '../../../services/complaints';
 import { AppAlert } from '../../../components/ui/AppAlert';
+import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+
+const FILTERS: { key: ComplaintStatus | 'ALL'; label: string }[] = [
+    { key: 'ALL', label: 'All' },
+    { key: 'OPEN', label: 'Open' },
+    { key: 'IN_PROGRESS', label: 'In Progress' },
+    { key: 'RESOLVED', label: 'Resolved' },
+    { key: 'CLOSED', label: 'Closed' },
+];
 
 export default function ComplaintsScreen() {
     const router = useRouter();
@@ -17,20 +26,13 @@ export default function ComplaintsScreen() {
     const [error, setError] = useState('');
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    // Fetch complaints from API
     const loadComplaints = async (isRefresh = false) => {
-        if (!isRefresh) {
-            setIsLoading(true);
-        }
+        if (!isRefresh) setIsLoading(true);
         setError('');
-
         try {
-            console.log('📥 Fetching complaints...');
             const data = await fetchComplaints();
-            console.log('✅ Fetched complaints:', data.length);
             setComplaints(data);
         } catch (err: any) {
-            console.error('❌ Failed to fetch complaints:', err);
             setError(err.message || 'Failed to load complaints');
         } finally {
             setIsLoading(false);
@@ -38,154 +40,174 @@ export default function ComplaintsScreen() {
         }
     };
 
-    // Fetch on screen mount and when focused
-    useFocusEffect(
-        useCallback(() => {
-            loadComplaints();
-        }, [])
-    );
+    useFocusEffect(useCallback(() => { loadComplaints(); }, []));
 
-    // Pull to refresh handler
-    const handleRefresh = () => {
-        setIsRefreshing(true);
-        loadComplaints(true);
-    };
+    const handleRefresh = () => { setIsRefreshing(true); loadComplaints(true); };
 
-    // Delete complaint handler
     const handleDeleteComplaint = (complaint: Complaint) => {
-        // Show confirmation alert
-        AppAlert.show(
-            'Delete Complaint',
-            'Are you sure you want to delete this complaint?',
-            [
-                {
-                    text: 'Cancel',
-                    style: 'cancel',
+        AppAlert.show('Delete Complaint', 'Are you sure you want to delete this complaint?', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Delete', style: 'destructive',
+                onPress: async () => {
+                    try {
+                        setDeletingId(complaint.id);
+                        const message = await deleteComplaint(complaint.id);
+                        setComplaints(prev => prev.filter(c => c.id !== complaint.id));
+                        AppAlert.show('Success', message || 'Complaint deleted successfully');
+                    } catch (err: any) {
+                        AppAlert.show('Error', err.message || 'Failed to delete complaint');
+                    } finally {
+                        setDeletingId(null);
+                    }
                 },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            setDeletingId(complaint.id);
-                            
-                            // Call delete API
-                            const message = await deleteComplaint(complaint.id);
-                            
-                            // Remove from local state (optimistic update)
-                            setComplaints(prev => prev.filter(c => c.id !== complaint.id));
-                            
-                            // Show success alert
-                            AppAlert.show('Success', message || 'Complaint deleted successfully');
-                        } catch (err: any) {
-                            console.error('Failed to delete complaint:', err);
-                            AppAlert.show('Error', err.message || 'Failed to delete complaint');
-                        } finally {
-                            setDeletingId(null);
-                        }
-                    },
-                },
-            ]
-        );
+            },
+        ]);
     };
 
-    // Filter complaints by status (with safety check to prevent undefined errors)
-    const filteredComplaints = Array.isArray(complaints) 
+    const filteredComplaints = Array.isArray(complaints)
         ? complaints.filter(c => filterStatus === 'ALL' ? true : c.status === filterStatus)
         : [];
 
-    const FilterChip = ({ status, label }: { status: ComplaintStatus | 'ALL', label: string }) => (
-        <TouchableOpacity
-            onPress={() => setFilterStatus(status)}
-            className={`px-4 py-2 rounded-full mr-2 border ${
-                filterStatus === status
-                    ? 'bg-indigo-600 border-indigo-600'
-                    : 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700'
-            }`}
-        >
-            <Text className={`text-xs font-bold ${
-                filterStatus === status ? 'text-white' : 'text-gray-600 dark:text-gray-400'
-            }`}>
-                {label}
-            </Text>
-        </TouchableOpacity>
-    );
-
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-black" edges={['top']}>
-            <View className="px-5 py-4 flex-row items-center justify-between bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800">
-                <View className="flex-row items-center gap-3">
-                    <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800">
-                        <Ionicons name="arrow-back" size={24} className="text-gray-700 dark:text-gray-300" />
-                    </TouchableOpacity>
-                    <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">Complaints</Text>
-                </View>
-                <TouchableOpacity onPress={() => router.push('/(resident)/complaints/create')} className="bg-indigo-600 h-9 w-9 rounded-full items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-none">
-                    <Ionicons name="add" size={24} color="white" />
-                </TouchableOpacity>
+        <View style={S.root}>
+            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+
+            {/* ── Header ─────────────────────────────────────────────────── */}
+            <View style={S.headerBg}>
+                <SafeAreaView edges={['top']}>
+                    <View style={S.headerInner}>
+                        <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                        </TouchableOpacity>
+                        <Text style={S.headerTitle}>Complaints</Text>
+                        <TouchableOpacity
+                            style={S.addBtn}
+                            onPress={() => router.push('/(resident)/complaints/create')}
+                        >
+                            <Feather name="plus" size={20} color={SgateColors.t1} />
+                        </TouchableOpacity>
+                    </View>
+                </SafeAreaView>
             </View>
 
+            {/* ── Error Banner ────────────────────────────────────────────── */}
             {error ? (
-                <View className="bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 p-4">
-                    <Text className="text-red-600 dark:text-red-400 text-sm text-center">{error}</Text>
+                <View style={S.errorBanner}>
+                    <Text style={S.errorText}>{error}</Text>
                 </View>
             ) : null}
 
-            <View className="py-4 bg-white dark:bg-zinc-900/50">
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
-                    <FilterChip status="ALL" label="All" />
-                    <FilterChip status="OPEN" label="Open" />
-                    <FilterChip status="IN_PROGRESS" label="In Progress" />
-                    <FilterChip status="RESOLVED" label="Resolved" />
-                    <FilterChip status="CLOSED" label="Closed" />
+            {/* ── Filter Tabs ────────────────────────────────────────────── */}
+            <View style={S.filterContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterScroll}>
+                    <View style={S.filterBar}>
+                        {FILTERS.map(f => (
+                            <TouchableOpacity
+                                key={f.key}
+                                style={[S.filterItem, filterStatus === f.key && S.filterItemActive]}
+                                onPress={() => setFilterStatus(f.key)}
+                            >
+                                <Text style={[S.filterText, filterStatus === f.key && S.filterTextActive]}>{f.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
                 </ScrollView>
             </View>
 
+            {/* ── Content ─────────────────────────────────────────────────── */}
             {isLoading ? (
-                <View className="flex-1 items-center justify-center">
-                    <ActivityIndicator size="large" color="#4f46e5" />
-                    <Text className="text-gray-500 dark:text-gray-400 mt-4">Loading complaints...</Text>
+                <View style={S.center}>
+                    <ActivityIndicator size="large" color={SgateColors.gold} />
                 </View>
             ) : (
                 <FlatList
                     data={filteredComplaints}
                     keyExtractor={item => item.id}
                     renderItem={({ item }) => (
-                        <ComplaintCard 
-                            complaint={item} 
-                            onPress={() => {
-                                console.log('📱 Navigating to complaint:', item.id);
-                                router.push(`/(resident)/complaints/${item.id}` as any);
-                            }}
+                        <ComplaintCard
+                            complaint={item}
+                            onPress={() => router.push(`/(resident)/complaints/${item.id}` as any)}
                             onDelete={handleDeleteComplaint}
                             isDeleting={deletingId === item.id}
                         />
                     )}
-                    contentContainerStyle={{ padding: 20 }}
+                    contentContainerStyle={S.listContent}
                     refreshControl={
                         <RefreshControl
                             refreshing={isRefreshing}
                             onRefresh={handleRefresh}
-                            tintColor="#4f46e5"
-                            colors={['#4f46e5']}
+                            tintColor={SgateColors.gold}
+                            colors={[SgateColors.gold]}
                         />
                     }
                     ListEmptyComponent={
-                        <View className="items-center justify-center py-20">
-                            <Ionicons name="chatbubbles-outline" size={64} color="#d1d5db" />
-                            <Text className="text-gray-400 mt-4 text-center">
+                        <View style={S.emptyWrap}>
+                            <View style={S.emptyIconCircle}>
+                                <MaterialCommunityIcons name="message-text-outline" size={32} color={SgateColors.goldDeep} />
+                            </View>
+                            <Text style={S.emptyTitle}>
                                 {filterStatus === 'ALL' ? 'No complaints yet' : `No ${filterStatus.toLowerCase().replace('_', ' ')} complaints`}
                             </Text>
-                            <TouchableOpacity 
+                            <Text style={S.emptySub}>File a complaint and it will appear here</Text>
+                            <TouchableOpacity
                                 onPress={() => router.push('/(resident)/complaints/create')}
-                                className="mt-4 bg-indigo-600 px-6 py-3 rounded-xl"
+                                style={S.emptyBtn}
                             >
-                                <Text className="text-white font-semibold">Create Complaint</Text>
+                                <Feather name="plus" size={16} color={SgateColors.t1} />
+                                <Text style={S.emptyBtnText}>Create Complaint</Text>
                             </TouchableOpacity>
                         </View>
                     }
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 }
+
+const S = StyleSheet.create({
+    root: { flex: 1, backgroundColor: SgateColors.bg },
+
+    // Header
+    headerBg: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
+    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+    backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
+    headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
+    addBtn: {
+        width: 40, height: 40, borderRadius: 12,
+        backgroundColor: SgateColors.gold,
+        alignItems: 'center', justifyContent: 'center',
+    },
+
+    // Error
+    errorBanner: { backgroundColor: SgateColors.redBg, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
+    errorText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.red, textAlign: 'center' },
+
+    // Filter Tabs
+    filterContainer: { backgroundColor: '#FFFFFF', paddingVertical: 10 },
+    filterScroll: { paddingHorizontal: 16 },
+    filterBar: { flexDirection: 'row', backgroundColor: '#F2F2F2', borderRadius: 14, padding: 4 },
+    filterItem: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 11 },
+    filterItemActive: { backgroundColor: SgateColors.goldPale },
+    filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: '#888' },
+    filterTextActive: { color: SgateColors.goldDeep },
+
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    listContent: { padding: 16, paddingBottom: 40 },
+
+    // Empty State
+    emptyWrap: { alignItems: 'center', paddingTop: 60 },
+    emptyIconCircle: {
+        width: 64, height: 64, borderRadius: 32,
+        backgroundColor: SgateColors.goldPale,
+        alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+    },
+    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 6 },
+    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center', marginBottom: 24 },
+    emptyBtn: {
+        flexDirection: 'row', alignItems: 'center', gap: 8,
+        backgroundColor: SgateColors.gold, borderRadius: 14,
+        paddingHorizontal: 24, paddingVertical: 14,
+    },
+    emptyBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+});

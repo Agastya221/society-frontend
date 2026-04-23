@@ -1,12 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Share, Text, TouchableOpacity, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ActivityIndicator, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Complaint } from '../../services/complaints';
-import { Card } from '../ui/Card';
 import { ImageCarousel } from '../ui/ImageCarousel';
 import { ComplaintStatusBadge } from './ComplaintStatusBadge';
 import { PriorityBadge } from './PriorityBadge';
+import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
 
-// Backend serves complaint images publicly at this base URL
 const IMAGE_BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
 
 interface ComplaintCardProps {
@@ -19,137 +18,161 @@ interface ComplaintCardProps {
         createdBy?: string;
     };
     onPress: () => void;
-    onDelete?: (complaint: Complaint) => void;  // Optional delete handler
-    isDeleting?: boolean;  // Loading state for delete operation
+    onDelete?: (complaint: Complaint) => void;
+    isDeleting?: boolean;
 }
 
 export function ComplaintCard({ complaint, onPress, onDelete, isDeleting }: ComplaintCardProps) {
     const canDelete = complaint.status === 'OPEN' && onDelete;
-    
+
+    const handleShare = async () => {
+        try {
+            await Share.share({
+                message: [
+                    `Complaint: ${complaint.title}`,
+                    `Category: ${complaint.category}`,
+                    `Priority: ${complaint.priority}`,
+                    `Status: ${complaint.status}`,
+                    `Flat: ${complaint.flat?.flatNumber || 'N/A'}`
+                ].join('\n'),
+            });
+        } catch (error: any) {
+            console.error(error.message);
+        }
+    };
+
     return (
-        <TouchableOpacity onPress={onPress} activeOpacity={0.7} disabled={isDeleting}>
-            <Card className="mb-3 p-4">
-                <View className="flex-row justify-between items-start mb-3">
-                    <View className="flex-1 mr-2">
-                        <View className="flex-row items-center gap-2 mb-2">
-                            <PriorityBadge priority={complaint.priority} />
-                            {complaint.isAnonymous && (
-                                <View className="bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded-md">
-                                    <Text className="text-[10px] font-bold text-gray-600 dark:text-gray-400">ANONYMOUS</Text>
-                                </View>
-                            )}
-                        </View>
-                        <Text className="text-base font-bold text-gray-900 dark:text-gray-100 mb-1">
-                            {complaint.title}
-                        </Text>
-                        {complaint.location ? (
-                            <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                <Ionicons name="location-outline" size={12} /> {complaint.location}
-                            </Text>
-                        ) : null}
+        <TouchableOpacity onPress={onPress} activeOpacity={0.97} disabled={isDeleting}>
+            <View style={S.card}>
+                {/* Top row: priority + status + delete */}
+                <View style={S.topRow}>
+                    <View style={S.badgesLeft}>
+                        <PriorityBadge priority={complaint.priority} />
+                        {complaint.isAnonymous && (
+                            <View style={S.anonBadge}>
+                                <Text style={S.anonText}>ANONYMOUS</Text>
+                            </View>
+                        )}
                     </View>
-                    <View className="flex-row items-center gap-2">
+                    <View style={S.badgesRight}>
                         <ComplaintStatusBadge status={complaint.status} />
                         {canDelete && (
                             <TouchableOpacity
-                                onPress={(e) => {
-                                    e.stopPropagation();
-                                    onDelete(complaint);
-                                }}
+                                onPress={(e) => { e.stopPropagation(); onDelete(complaint); }}
                                 disabled={isDeleting}
-                                className={`h-8 w-8 rounded-full items-center justify-center ${
-                                    isDeleting 
-                                        ? 'bg-gray-100 dark:bg-zinc-800' 
-                                        : 'bg-red-50 dark:bg-red-900/20'
-                                }`}
+                                style={S.deleteBtn}
                             >
-                                {isDeleting ? (
-                                    <ActivityIndicator size="small" color="#EF4444" />
-                                ) : (
-                                    <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                                )}
+                                {isDeleting
+                                    ? <ActivityIndicator size="small" color={SgateColors.red} />
+                                    : <MaterialCommunityIcons name="delete-outline" size={18} color={SgateColors.red} />
+                                }
                             </TouchableOpacity>
                         )}
                     </View>
                 </View>
 
-                <Text className="text-gray-500 dark:text-gray-400 text-sm mb-3" numberOfLines={2}>
-                    {complaint.description}
-                </Text>
+                {/* Title */}
+                <Text style={S.title}>{complaint.title}</Text>
 
-                {/* Render complaint images */}
+                {/* Location */}
+                {complaint.location ? (
+                    <View style={S.locationRow}>
+                        <MaterialCommunityIcons name="map-marker-outline" size={14} color={SgateColors.t3} />
+                        <Text style={S.locationText}>{complaint.location}</Text>
+                    </View>
+                ) : null}
+
+                {/* Description */}
+                <Text style={S.description} numberOfLines={3}>{complaint.description}</Text>
+
+                {/* Images */}
                 {(() => {
                     const imageSources = (complaint.imageUrls && complaint.imageUrls.length > 0)
                         ? complaint.imageUrls.map(img => img.viewUrl)
                         : (complaint.images || []).map(path => `${IMAGE_BASE_URL}/${path}`);
-
                     return imageSources.length > 0 ? (
-                        <View className="mb-3">
+                        <View style={{ marginBottom: 14 }}>
                             <ImageCarousel images={imageSources as string[]} height={200} />
                         </View>
                     ) : null;
                 })()}
 
-                <View className="flex-row justify-between items-center border-t border-gray-100 dark:border-zinc-800 pt-3 mt-1">
-                    <View className="flex-1">
-                        {!complaint.isAnonymous && complaint.reportedBy ? (
-                            <View>
-                                <Text className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-semibold">Reported By</Text>
-                                <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-0.5">{complaint.reportedBy.name}</Text>
-                            </View>
-                        ) : (
-                            <View>
-                                <Text className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-semibold">Reported By</Text>
-                                <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-0.5">Anonymous</Text>
-                            </View>
-                        )}
+                {/* Reporter + Flat */}
+                <View style={S.footerDivider} />
+                <View style={S.footerRow}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={S.footerLabel}>REPORTED BY</Text>
+                        <Text style={S.footerValue}>
+                            {!complaint.isAnonymous && complaint.reportedBy ? complaint.reportedBy.name : 'Anonymous'}
+                        </Text>
                     </View>
                     {complaint.flat && (
-                        <View className="items-end">
-                            <Text className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-semibold">Flat</Text>
-                            <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300 mt-0.5">{complaint.flat.flatNumber}</Text>
+                        <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={S.footerLabel}>FLAT</Text>
+                            <Text style={S.footerValue}>{complaint.flat.flatNumber}</Text>
                         </View>
                     )}
                 </View>
-                <View className="flex-row items-center gap-3">
-                        <TouchableOpacity 
-                            onPress={async (e) => {
-                                e.stopPropagation();
-                                try {
-                                    await Share.share({
-                                        message: [
-                                            `Complaint: ${complaint.title}`,
-                                            `Category: ${complaint.category}`,
-                                            `Priority: ${complaint.priority}`,
-                                            `Status: ${complaint.status}`,
-                                            `Flat: ${complaint.flat?.flatNumber || 'N/A'}`
-                                        ].join('\n'),
-                                    });
-                                } catch (error: any) {
-                                    console.error(error.message);
-                                }
-                            }}
-                            className="flex-row items-center gap-1"
-                        >
-                            <Ionicons name="share-social-outline" size={14} className="text-gray-400" />
-                            <Text className="text-xs text-gray-400 font-medium">Share</Text>
-                        </TouchableOpacity>
 
-                        {typeof complaint.likes === 'number' && (
-                            <View className="flex-row items-center gap-1">
-                                <Ionicons name="heart-outline" size={14} color="#9ca3af" />
-                                <Text className="text-xs text-gray-400 font-medium">{complaint.likes}</Text>
-                            </View>
-                        )}
-
-                        {complaint.comments && complaint.comments.length > 0 && (
-                            <View className="flex-row items-center gap-1">
-                                <Ionicons name="chatbubble-outline" size={14} className="text-gray-400" />
-                                <Text className="text-xs text-gray-400 font-medium">{complaint.comments.length}</Text>
-                            </View>
-                        )}
-                    </View>
-            </Card>
+                {/* Actions row */}
+                <View style={S.actionsRow}>
+                    <TouchableOpacity onPress={handleShare} style={S.shareBtn}>
+                        <MaterialCommunityIcons name="share-variant-outline" size={14} color={SgateColors.t4} />
+                        <Text style={S.shareText}>Share</Text>
+                    </TouchableOpacity>
+                    {typeof complaint.likes === 'number' && (
+                        <View style={S.statItem}>
+                            <MaterialCommunityIcons name="heart-outline" size={14} color={SgateColors.t4} />
+                            <Text style={S.statText}>{complaint.likes}</Text>
+                        </View>
+                    )}
+                    {complaint.comments && complaint.comments.length > 0 && (
+                        <View style={S.statItem}>
+                            <MaterialCommunityIcons name="comment-outline" size={14} color={SgateColors.t4} />
+                            <Text style={S.statText}>{complaint.comments.length}</Text>
+                        </View>
+                    )}
+                </View>
+            </View>
         </TouchableOpacity>
     );
 }
+
+const S = StyleSheet.create({
+    card: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 14,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.04)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.04,
+        shadowRadius: 10,
+        elevation: 1,
+    },
+    topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    badgesLeft: { flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 },
+    badgesRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    anonBadge: { backgroundColor: '#F2F2F2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+    anonText: { fontSize: 9, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 0.5 },
+    deleteBtn: {
+        width: 32, height: 32, borderRadius: 16,
+        backgroundColor: SgateColors.redBg,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    title: { fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t1, lineHeight: 22, marginBottom: 4 },
+    locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
+    locationText: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, flex: 1 },
+    description: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t2, lineHeight: 21, marginBottom: 14 },
+    footerDivider: { height: 1, backgroundColor: 'rgba(0,0,0,0.04)', marginBottom: 12 },
+    footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
+    footerLabel: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.t4, letterSpacing: 0.8, marginBottom: 2 },
+    footerValue: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    actionsRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    shareText: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.t4 },
+    statItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    statText: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.t4 },
+});
