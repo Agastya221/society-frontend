@@ -57,18 +57,28 @@ interface ElectionItem {
   options?: PollOption[];
 }
 
+// Maps backend status values → our UI status
+const STATUS_MAP: Record<string, 'ACTIVE' | 'COMPLETED'> = {
+  OPEN:      'ACTIVE',
+  ACTIVE:    'ACTIVE',
+  CLOSED:    'COMPLETED',
+  COMPLETED: 'COMPLETED',
+  ENDED:     'COMPLETED',
+};
+
 function normaliseItem(raw: any): ElectionItem {
   const isOldFormat = raw.candidates !== undefined;
+  const rawStatus = (raw.status ?? '').toUpperCase();
+  const mappedStatus = STATUS_MAP[rawStatus]
+    ?? (new Date(raw.votingEndsAt ?? raw.deadline) > new Date() ? 'ACTIVE' : 'COMPLETED');
+
   return {
-    id:         raw.id,
-    // Old format had type field; new backend is polls-only (treat as SURVEY)
+    id:         raw.id ?? raw._id,
     type:       raw.type === 'ELECTION' && isOldFormat ? 'ELECTION' : 'SURVEY',
-    status:     raw.status ?? (new Date(raw.votingEndsAt ?? raw.deadline) > new Date() ? 'ACTIVE' : 'COMPLETED'),
+    status:     mappedStatus,
     title:      raw.title ?? '',
-    // society may not be in new backend response — fallback gracefully
     society:    raw.society ?? raw.societyName ?? '',
     totalVotes: raw.totalVotes ?? 0,
-    // backend uses votingEndsAt, old mock used deadline
     deadline:   raw.deadline ?? raw.votingEndsAt ?? new Date().toISOString(),
     hasVoted:   raw.hasVoted ?? false,
     candidates: raw.candidates,
@@ -134,9 +144,24 @@ export default function ElectionsScreen() {
   const fetchPolls = async () => {
     try {
       const res = await api.get('/resident/polls');
-      const raw = res.data?.data ?? res.data;
-      const list: any[] = Array.isArray(raw) ? raw : raw?.polls ?? [];
-      setItems(list.map(normaliseItem));
+      const raw = res.data;
+
+      // Handle every possible nesting the backend might use
+      const rawList: any[] = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.data?.polls)
+          ? raw.data.polls
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : Array.isArray(raw?.polls)
+              ? raw.polls
+              : [];
+
+      console.log('[Elections] raw keys:', Object.keys(raw ?? {}));
+      console.log('[Elections] rawList length:', rawList.length);
+      if (rawList.length > 0) console.log('[Elections] first item:', JSON.stringify(rawList[0]).slice(0, 200));
+
+      setItems(rawList.map(normaliseItem));
     } catch (err) {
       console.error('Failed to fetch elections/polls:', err);
       setItems([]);
@@ -150,26 +175,34 @@ export default function ElectionsScreen() {
   const filtered = items.filter(e => e.status === activeTab);
 
   return (
-    <SafeAreaView style={S.root} edges={['top']}>
-      <View style={S.header}>
-        <TouchableOpacity onPress={() => router.back()} style={S.backBtn} activeOpacity={0.7}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={S.headerTitle}>Elections & Surveys</Text>
-        <View style={S.headerSpacer} />
+    <View style={S.root}>
+      {/* Header — bg extends behind status bar */}
+      <View style={S.headerContainer}>
+        <SafeAreaView edges={['top']}>
+          <View style={S.header}>
+            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} activeOpacity={0.7}>
+              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+            </TouchableOpacity>
+            <Text style={S.headerTitle}>Elections & Surveys</Text>
+            <View style={S.headerSpacer} />
+          </View>
+        </SafeAreaView>
+
+        <View style={S.tabRow}>
+          {(['ACTIVE', 'COMPLETED'] as Tab[]).map(tab => (
+            <TouchableOpacity key={tab} activeOpacity={0.75}
+              style={[S.tabBtn, activeTab === tab ? S.tabBtnActive : S.tabBtnInactive]}
+              onPress={() => setActiveTab(tab)}>
+              <Text style={[S.tabBtnText, activeTab === tab ? S.tabBtnTextActive : S.tabBtnTextInactive]}>
+                {tab.charAt(0) + tab.slice(1).toLowerCase()}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
-      <View style={S.tabRow}>
-        {(['ACTIVE', 'COMPLETED'] as Tab[]).map(tab => (
-          <TouchableOpacity key={tab} activeOpacity={0.75}
-            style={[S.tabBtn, activeTab === tab ? S.tabBtnActive : S.tabBtnInactive]}
-            onPress={() => setActiveTab(tab)}>
-            <Text style={[S.tabBtnText, activeTab === tab ? S.tabBtnTextActive : S.tabBtnTextInactive]}>
-              {tab.charAt(0) + tab.slice(1).toLowerCase()}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Persistent spacer */}
+      <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
       {loading ? (
         <View style={S.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
@@ -189,21 +222,32 @@ export default function ElectionsScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const S = StyleSheet.create({
   root: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.bg },
+  headerContainer: {
+    backgroundColor: SgateColors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.04)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 3,
+    elevation: 2,
+    zIndex: 10,
+  },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+  headerTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginLeft: 8, flex: 1 },
   headerSpacer: { width: 36 },
   tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 16 },
   tabBtn: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
-  tabBtnActive: { backgroundColor: SgateColors.black },
-  tabBtnInactive: { backgroundColor: SgateColors.surface },
+  tabBtnActive: { backgroundColor: SgateColors.t1 },
+  tabBtnInactive: { backgroundColor: SgateColors.bg },
   tabBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold },
   tabBtnTextActive: { color: SgateColors.card },
   tabBtnTextInactive: { color: SgateColors.t2 },
