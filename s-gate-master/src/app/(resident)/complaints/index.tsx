@@ -98,20 +98,22 @@ export default function ComplaintsScreen() {
                 </View>
             ) : null}
 
-            {/* ── Filter Tabs ────────────────────────────────────────────── */}
+            {/* ── Filter Chips ──────────────────────────────────────────── */}
             <View style={S.filterContainer}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterScroll}>
-                    <View style={S.filterBar}>
-                        {FILTERS.map(f => (
+                    {FILTERS.map(f => {
+                        const active = filterStatus === f.key;
+                        return (
                             <TouchableOpacity
                                 key={f.key}
-                                style={[S.filterItem, filterStatus === f.key && S.filterItemActive]}
+                                style={[S.chip, active && S.chipActive]}
                                 onPress={() => setFilterStatus(f.key)}
+                                activeOpacity={0.8}
                             >
-                                <Text style={[S.filterText, filterStatus === f.key && S.filterTextActive]}>{f.label}</Text>
+                                <Text style={[S.chipText, active && S.chipTextActive]}>{f.label}</Text>
                             </TouchableOpacity>
-                        ))}
-                    </View>
+                        );
+                    })}
                 </ScrollView>
             </View>
 
@@ -183,14 +185,28 @@ const S = StyleSheet.create({
     errorBanner: { backgroundColor: SgateColors.redBg, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
     errorText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.red, textAlign: 'center' },
 
-    // Filter Tabs
-    filterContainer: { backgroundColor: '#FFFFFF', paddingVertical: 10 },
-    filterScroll: { paddingHorizontal: 16 },
-    filterBar: { flexDirection: 'row', backgroundColor: '#F2F2F2', borderRadius: 14, padding: 4 },
-    filterItem: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 11 },
-    filterItemActive: { backgroundColor: SgateColors.gold },
-    filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: '#888' },
-    filterTextActive: { color: SgateColors.t1 },
+    // Filter Chips
+    filterContainer: { backgroundColor: '#FFFFFF', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
+    filterScroll: { paddingHorizontal: 16, gap: 8 },
+    chip: {
+        paddingHorizontal: 18,
+        paddingVertical: 10,
+        borderRadius: 999,
+        backgroundColor: '#F5F5F5',
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.04)',
+    },
+    chipActive: {
+        backgroundColor: SgateColors.gold,
+        borderColor: SgateColors.gold,
+        shadowColor: SgateColors.gold,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    chipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: '#999' },
+    chipTextActive: { color: SgateColors.t1 },
 
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     listContent: { padding: 16, paddingBottom: 40 },
