@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -12,18 +12,18 @@ interface LocalCategory {
   count: number;
 }
 
-function getCategoryIcon(name: string): { icon: keyof typeof Feather.glyphMap; color: string; bg: string } {
+function getCategoryIcon(name: string): { icon: keyof typeof MaterialCommunityIcons.glyphMap; color: string; bg: string } {
   const lower = name.toLowerCase();
   // Uber/Notion style: very soft backgrounds with subtle, non-harsh icon colors
-  if (lower.includes('plumber')) return { icon: 'droplet', color: '#3B82F6', bg: '#EFF6FF' }; // Soft Blue
-  if (lower.includes('electrician')) return { icon: 'zap', color: '#F97316', bg: '#FFF7ED' }; // Soft Orange
-  if (lower.includes('carpenter')) return { icon: 'tool', color: '#D97706', bg: '#FEF3C7' }; // Soft Amber
-  if (lower.includes('painter')) return { icon: 'edit-2', color: '#A855F7', bg: '#FAF5FF' }; // Soft Purple
-  if (lower.includes('cleaner')) return { icon: 'wind', color: '#14B8A6', bg: '#F0FDFA' }; // Soft Teal
-  if (lower.includes('gardener')) return { icon: 'sun', color: '#22C55E', bg: '#F0FDF4' }; // Soft Green
-  if (lower.includes('pest')) return { icon: 'target', color: '#EF4444', bg: '#FEF2F2' }; // Soft Red
-  if (lower.includes('security')) return { icon: 'shield', color: '#4B5563', bg: '#F3F4F6' }; // Soft Gray
-  if (lower.includes('medical') || lower.includes('doctor')) return { icon: 'activity', color: '#EF4444', bg: '#FEF2F2' }; // Soft Red
+  if (lower.includes('plumber')) return { icon: 'pipe-wrench', color: '#3B82F6', bg: '#EFF6FF' }; // Soft Blue
+  if (lower.includes('electrician')) return { icon: 'lightning-bolt', color: '#F97316', bg: '#FFF7ED' }; // Soft Orange
+  if (lower.includes('carpenter')) return { icon: 'hammer-screwdriver', color: '#D97706', bg: '#FEF3C7' }; // Soft Amber
+  if (lower.includes('painter')) return { icon: 'format-paint', color: '#A855F7', bg: '#FAF5FF' }; // Soft Purple
+  if (lower.includes('cleaner')) return { icon: 'broom', color: '#14B8A6', bg: '#F0FDFA' }; // Soft Teal
+  if (lower.includes('gardener')) return { icon: 'leaf', color: '#22C55E', bg: '#F0FDF4' }; // Soft Green
+  if (lower.includes('pest')) return { icon: 'bug', color: '#EF4444', bg: '#FEF2F2' }; // Soft Red
+  if (lower.includes('security')) return { icon: 'shield-account', color: '#4B5563', bg: '#F3F4F6' }; // Soft Gray
+  if (lower.includes('medical') || lower.includes('doctor')) return { icon: 'hospital-box', color: '#EF4444', bg: '#FEF2F2' }; // Soft Red
   
   // Default
   return { icon: 'briefcase', color: '#6B7280', bg: '#F3F4F6' }; // Soft Gray
@@ -68,7 +68,7 @@ export default function LocalDirectoryIndex() {
         <TouchableOpacity style={styles.row} activeOpacity={0.6}
           onPress={() => router.push({ pathname: '/(resident)/local-directory/[category]' as any, params: { category: item.name } })}>
           <View style={[styles.iconBox, { backgroundColor: bg }]}>
-            <Feather name={icon} size={20} color={color} />
+            <MaterialCommunityIcons name={icon} size={24} color={color} />
           </View>
           <View style={styles.rowContent}>
             <Text style={styles.rowName}>{displayName}</Text>
