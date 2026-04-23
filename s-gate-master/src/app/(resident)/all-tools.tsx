@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,7 +12,7 @@ export default function ResidentAllToolsScreen() {
     const [showPreApprove, setShowPreApprove] = useState(false);
 
     type Tool = {
-        icon: keyof typeof Feather.glyphMap;
+        icon: keyof typeof MaterialCommunityIcons.glyphMap;
         title: string;
         bg: string;
         color: string;
@@ -20,27 +20,27 @@ export default function ResidentAllToolsScreen() {
     };
 
     const essentialTools: Tool[] = [
-        { icon: 'user-check' as const,     title: 'Pre-Approve',     bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: 'MODAL' },
-        { icon: 'credit-card' as const,    title: 'My Passes',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(resident)/my-passes' },
-        { icon: 'package' as const,        title: 'Expect Delivery', bg: SgateColors.surface,   color: SgateColors.t2,       route: '/expect-delivery' },
-        { icon: 'alert-triangle' as const, title: 'SOS Alert',       bg: SgateColors.redBg,     color: SgateColors.red,      route: '/(resident)/emergency/create' },
+        { icon: 'account-check-outline' as const, title: 'Pre-Approve',     bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: 'MODAL' },
+        { icon: 'smart-card-outline' as const,    title: 'My Passes',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(resident)/my-passes' },
+        { icon: 'package-variant' as const,       title: 'Expect Delivery', bg: SgateColors.surface,   color: SgateColors.t2,       route: '/expect-delivery' },
+        { icon: 'alert-outline' as const,         title: 'SOS Alert',       bg: SgateColors.redBg,     color: SgateColors.red,      route: '/(resident)/emergency/create' },
     ];
 
     const communityTools: Tool[] = [
-        { icon: 'message-circle' as const, title: 'Community',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(resident)/communication' },
-        { icon: 'book-open' as const,      title: 'Local Directory', bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(resident)/local-directory' },
-        { icon: 'users' as const,          title: 'Daily Help',      bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(resident)/daily-help' },
-        { icon: 'calendar' as const,       title: 'Amenities',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(resident)/amenities' },
-        { icon: 'bar-chart-2' as const,    title: 'Polls',           bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(resident)/elections' },
-        { icon: 'folder' as const,         title: 'Documents',       bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(resident)/documents' },
-        { icon: 'bell' as const,           title: 'Notices',         bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(resident)/notices' }
+        { icon: 'message-outline' as const,          title: 'Community',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(resident)/communication' },
+        { icon: 'book-open-blank-variant' as const,  title: 'Local Directory', bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(resident)/local-directory' },
+        { icon: 'account-group-outline' as const,    title: 'Daily Help',      bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(resident)/daily-help' },
+        { icon: 'calendar-outline' as const,         title: 'Amenities',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(resident)/amenities' },
+        { icon: 'poll' as const,                     title: 'Polls',           bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(resident)/elections' },
+        { icon: 'folder-outline' as const,           title: 'Documents',       bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(resident)/documents' },
+        { icon: 'bell-outline' as const,             title: 'Notices',         bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(resident)/notices' }
     ];
 
     const personalTools: Tool[] = [
-        { icon: 'credit-card' as const,    title: 'Society Dues',    bg: SgateColors.redBg,     color: SgateColors.red,      route: '/(resident)/society-dues' },
-        { icon: 'truck' as const,          title: 'My Vehicles',     bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(resident)/vehicles' },
-        { icon: 'search' as const,         title: 'Search Vehicle',  bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(resident)/search-vehicle' },
-        { icon: 'settings' as const,       title: 'Complaints',      bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(resident)/complaints' }
+        { icon: 'receipt-text-outline' as const, title: 'Society Dues',    bg: SgateColors.redBg,     color: SgateColors.red,      route: '/(resident)/society-dues' },
+        { icon: 'car-outline' as const,          title: 'My Vehicles',     bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(resident)/vehicles' },
+        { icon: 'car-search-outline' as const,   title: 'Search Vehicle',  bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(resident)/search-vehicle' },
+        { icon: 'headset' as const,              title: 'Complaints',      bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(resident)/complaints' }
     ];
 
     const nav = (route: string) => {
@@ -57,7 +57,7 @@ export default function ResidentAllToolsScreen() {
             {tools.map((t, idx) => (
                 <TouchableOpacity key={idx} style={styles.tile} onPress={() => nav(t.route)}>
                     <View style={[styles.iconWrap, { backgroundColor: t.bg }]}>
-                        <Feather name={t.icon} size={22} color={t.color} />
+                        <MaterialCommunityIcons name={t.icon} size={24} color={t.color} />
                     </View>
                     <Text style={styles.tileTitle}>{t.title}</Text>
                 </TouchableOpacity>
