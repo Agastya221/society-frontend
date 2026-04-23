@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppScreenLayout } from '../../../components/ui/AppScreenLayout';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
@@ -173,37 +174,19 @@ export default function AmenityDetailScreen() {
   };
 
   if (loading) return (
-    <SafeAreaView edges={['top', 'bottom']} style={S.root}>
-      <View style={[S.notFound]}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: SgateColors.bg }}>
+      <View style={S.notFound}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
     </SafeAreaView>
   );
 
   if (!amenity) return (
-    <SafeAreaView edges={['top', 'bottom']} style={S.root}>
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: SgateColors.bg }}>
       <View style={S.notFound}><Text style={S.notFoundText}>Amenity not found</Text></View>
     </SafeAreaView>
   );
 
   return (
-    <View style={S.root}>
-      {/* Header */}
-      <View style={S.headerContainer}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.header}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle} numberOfLines={1}>
-              Details
-            </Text>
-            <View style={S.headerSpacer} />
-          </View>
-        </SafeAreaView>
-      </View>
-
+    <AppScreenLayout title="Details">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={S.scrollContent}
@@ -429,19 +412,16 @@ export default function AmenityDetailScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </AppScreenLayout>
   );
 }
 
 const S = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: SgateColors.bg,
-  },
   notFound: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: SgateColors.bg,
   },
   notFoundText: {
     fontSize: 16,
@@ -450,29 +430,6 @@ const S = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 32,
-  },
-
-  // Header
-  headerContainer: {
-    backgroundColor: SgateColors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 2,
-    zIndex: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-  headerSpacer: {
-    width: 22,
   },
 
   // Premium Profile Header

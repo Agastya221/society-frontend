@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppScreenLayout } from '../../../components/ui/AppScreenLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -101,32 +101,28 @@ export default function AmenitiesScreen() {
     })();
   }, []));
 
+  const myBookingsBtn = (
+    <TouchableOpacity
+      onPress={() => router.push('/(resident)/amenities/my-bookings' as any)}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      style={S.myBookingsBtn}
+      activeOpacity={0.7}
+    >
+      <Feather name="calendar" size={14} color="#111827" />
+      <Text style={S.myBookingsBtnText}>My Bookings</Text>
+    </TouchableOpacity>
+  );
+
   if (loading) return (
-    <View style={S.root}>
-      <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
-        <View style={S.header} />
-      </SafeAreaView>
-      <View style={[S.root, { alignItems: 'center', justifyContent: 'center' }]}>
+    <AppScreenLayout title="Amenities" rightElement={myBookingsBtn}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator size="large" color={SgateColors.gold} />
       </View>
-    </View>
+    </AppScreenLayout>
   );
 
   return (
-    <View style={S.root}>
-      {/* Header */}
-      <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
-        <View style={S.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-          </TouchableOpacity>
-          <Text style={S.headerTitle}>Amenities</Text>
-          <TouchableOpacity onPress={() => router.push('/(resident)/amenities/my-bookings' as any)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={S.myBookingsBtn} activeOpacity={0.7}>
-            <Feather name="calendar" size={14} color="#111827" />
-            <Text style={S.myBookingsBtnText}>My Bookings</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+    <AppScreenLayout title="Amenities" rightElement={myBookingsBtn}>
       {/* Grid */}
       <FlatList
         data={amenities}
@@ -138,26 +134,11 @@ export default function AmenitiesScreen() {
         ListEmptyComponent={<View style={{ flex: 1, alignItems: 'center', paddingTop: 60 }}><Feather name="home" size={32} color={SgateColors.t4} /><Text style={{ color: SgateColors.t3, marginTop: 12, fontFamily: SgateFonts.medium }}>No amenities available</Text></View>}
         renderItem={({ item, index }) => <AmenityCard item={item} index={index} />}
       />
-    </View>
+    </AppScreenLayout>
   );
 }
 
 const S = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: SgateColors.bg, // Restored theme background
-  },
-
-  // Header
-  header: {
-    backgroundColor: SgateColors.card, // Restored theme card color
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    // Removed bottom border for a flush, seamless look
-  },
-  headerTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
 
   // Grid
   columnWrapper: {

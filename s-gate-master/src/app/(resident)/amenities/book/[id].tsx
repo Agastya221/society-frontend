@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppScreenLayout } from '../../../../components/ui/AppScreenLayout';
 import { AppAlert } from '../../../../components/ui/AppAlert';
 import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
 import api from '../../../../services/api';
@@ -105,23 +105,7 @@ export default function BookAmenityScreen() {
   };
 
   return (
-    <View style={S.root}>
-      {/* Header */}
-      <View style={S.headerContainer}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.header}>
-            <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle}>Confirm Booking</Text>
-            <View style={S.headerSpacer} />
-          </View>
-        </SafeAreaView>
-      </View>
-
-      {/* Persistent spacer — content never touches header */}
-      <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
-
+    <AppScreenLayout title="Confirm Booking">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.scrollContent}>
         {/* ─── Summary Card ─────────────────────────────────────────── */}
         <View style={S.summaryCard}>
@@ -227,47 +211,16 @@ export default function BookAmenityScreen() {
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
-    </View>
+    </AppScreenLayout>
   );
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: SgateColors.bg,
-  },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingBottom: 44,
   },
-
-  // Header
-  headerContainer: {
-    backgroundColor: SgateColors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 2,
-    zIndex: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-    marginLeft: 12,
-    flex: 1,
-  },
-  headerSpacer: { width: 22 },
 
   // Summary Card
   summaryCard: {

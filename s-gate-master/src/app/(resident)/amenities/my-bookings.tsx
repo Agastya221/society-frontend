@@ -2,7 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Animated,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppScreenLayout } from '../../../components/ui/AppScreenLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AnimatedRN, { FadeInDown } from 'react-native-reanimated';
@@ -212,23 +212,7 @@ export default function MyBookingsScreen() {
   };
 
   return (
-    <View style={S.root}>
-      {/* Header */}
-      <View style={S.headerContainer}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.header}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle}>My Bookings</Text>
-            <View style={S.headerSpacer} />
-          </View>
-        </SafeAreaView>
-      </View>
-
+    <AppScreenLayout title="My Bookings">
       {/* Tab Switcher */}
       <View style={S.tabContainer}>
         <View style={S.tabPill}>
@@ -309,43 +293,12 @@ export default function MyBookingsScreen() {
           }
         />
       )}
-    </View>
+    </AppScreenLayout>
   );
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: SgateColors.bg,
-  },
-
-  // Header
-  headerContainer: {
-    backgroundColor: SgateColors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 2,
-    zIndex: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-    marginLeft: 12,
-    flex: 1,
-  },
-  headerSpacer: { width: 22 },
 
   // Tab Switcher
   tabContainer: {
