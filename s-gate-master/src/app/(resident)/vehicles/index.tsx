@@ -1,15 +1,20 @@
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Platform, StatusBar,
+  ActivityIndicator,
+  FlatList,
+  Platform, StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppAlert } from '../../../components/ui/AppAlert';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
-import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,15 +34,15 @@ interface Vehicle {
 
 function normaliseVehicle(raw: any): Vehicle {
   return {
-    id:            raw.id,
+    id: raw.id,
     vehicleNumber: raw.vehicleNumber ?? raw.number ?? '',
-    vehicleType:   raw.vehicleType ?? raw.type ?? 'Other',
-    model:         raw.model ?? '',
-    color:         raw.color ?? '',
-    status:        raw.status ?? 'PENDING',
-    parkingSlot:   raw.parkingSlot ?? undefined,
+    vehicleType: raw.vehicleType ?? raw.type ?? 'Other',
+    model: raw.model ?? '',
+    color: raw.color ?? '',
+    status: raw.status ?? 'PENDING',
+    parkingSlot: raw.parkingSlot ?? undefined,
     stickerNumber: raw.stickerNumber ?? undefined,
-    lastSeen:      raw.lastSeen ?? undefined,
+    lastSeen: raw.lastSeen ?? undefined,
   };
 }
 
@@ -47,16 +52,16 @@ type StatusCfg = { bg: string; text: string; label: string };
 
 function getStatusCfg(status: VehicleStatus): StatusCfg {
   switch (status) {
-    case 'ACTIVE':   return { bg: SgateColors.greenBg,  text: SgateColors.green,    label: 'Active' };
-    case 'PENDING':  return { bg: SgateColors.goldPale,  text: SgateColors.goldDeep, label: 'Pending Approval' };
-    case 'REJECTED': return { bg: SgateColors.redBg,     text: SgateColors.red,       label: 'Rejected' };
+    case 'ACTIVE': return { bg: SgateColors.greenBg, text: SgateColors.green, label: 'Active' };
+    case 'PENDING': return { bg: SgateColors.goldPale, text: SgateColors.goldDeep, label: 'Pending Approval' };
+    case 'REJECTED': return { bg: SgateColors.redBg, text: SgateColors.red, label: 'Rejected' };
   }
 }
 
 // Vehicle type → MaterialCommunityIcons (same icon package as Daily Help)
 function getTypeIcon(vehicleType: string): keyof typeof MaterialCommunityIcons.glyphMap {
   const t = vehicleType.toUpperCase();
-  if (t === 'CAR')  return 'car';
+  if (t === 'CAR') return 'car';
   if (t === 'BIKE') return 'motorbike';
   if (t === 'SCOOTER') return 'moped';
   return 'car-side';
@@ -66,7 +71,7 @@ function getTypeIcon(vehicleType: string): keyof typeof MaterialCommunityIcons.g
 
 function VehicleCard({ vehicle, index, onDelete }: { vehicle: Vehicle; index: number; onDelete: (id: string) => void }) {
   const statusCfg = getStatusCfg(vehicle.status);
-  const typeIcon  = getTypeIcon(vehicle.vehicleType);
+  const typeIcon = getTypeIcon(vehicle.vehicleType);
   const stickerIssued = !!vehicle.stickerNumber;
 
   const handleMenuPress = () => {
@@ -75,11 +80,12 @@ function VehicleCard({ vehicle, index, onDelete }: { vehicle: Vehicle; index: nu
       'What would you like to do?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete Vehicle', style: 'destructive', onPress: () =>
-          AppAlert.show('Delete Vehicle', 'Are you sure?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Delete', style: 'destructive', onPress: () => onDelete(vehicle.id) },
-          ]),
+        {
+          text: 'Delete Vehicle', style: 'destructive', onPress: () =>
+            AppAlert.show('Delete Vehicle', 'Are you sure?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Delete', style: 'destructive', onPress: () => onDelete(vehicle.id) },
+            ]),
         },
       ],
     );
@@ -160,7 +166,7 @@ function getColorHex(colorName: string): string {
 export default function MyVehiclesScreen() {
   const router = useRouter();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const fetchVehicles = async () => {
     try {
