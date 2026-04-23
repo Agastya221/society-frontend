@@ -360,9 +360,9 @@ const S = StyleSheet.create({
     filtersContainer: { paddingLeft: 20 },
     filtersScroll: { flexDirection: 'row', gap: 10, paddingRight: 20 },
     chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface },
-    chipActive: { backgroundColor: '#1A1A1A' },
+    chipActive: { backgroundColor: SgateColors.gold },
     chipText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
-    chipTextActive: { color: '#FFFFFF', fontFamily: SgateFonts.semibold },
+    chipTextActive: { color: SgateColors.t1, fontFamily: SgateFonts.bold },
 
     // Lists
     listContent: { paddingHorizontal: 20, paddingBottom: 40 },
