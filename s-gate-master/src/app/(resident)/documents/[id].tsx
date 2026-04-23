@@ -1,12 +1,14 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet,
-  Share, ScrollView, ActivityIndicator, Linking, StatusBar, Platform } from 'react-native';
+  Share, ScrollView, ActivityIndicator, StatusBar, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 const CATEGORY_LABELS: Record<string, string> = {
   RULES_AND_BYLAWS: 'Rules & Regulations', MEETING_MINUTES: 'Minutes of Meeting',
@@ -67,12 +69,38 @@ export default function DocumentDetailScreen() {
     if (!doc || opening) return;
     setOpening(true);
     try {
+      // 1. Get signed URL
       const res = await api.get(`/resident/documents/${id}/view-url`);
       const url: string = res.data?.data?.url ?? res.data?.url ?? res.data;
-      if (url) await Linking.openURL(url);
-      else AppAlert.show('Error', 'Could not get document URL.');
-    } catch { AppAlert.show('Error', 'Could not open document.'); }
-    finally { setOpening(false); }
+      if (!url || typeof url !== 'string') {
+        AppAlert.show('Error', 'Could not get document URL.');
+        return;
+      }
+
+      // 2. Download to local cache
+      const extMap: Record<string, string> = { PDF: '.pdf', DOC: '.doc', DOCX: '.docx', IMAGE: '.jpg' };
+      const ext = extMap[doc.fileType] ?? '.pdf';
+      const safeName = doc.name.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 60);
+      const localUri = FileSystem.cacheDirectory + safeName + ext;
+      const download = await FileSystem.downloadAsync(url, localUri);
+
+      if (!download?.uri) {
+        AppAlert.show('Error', 'Download failed. Please try again.');
+        return;
+      }
+
+      // 3. Open via share sheet
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(download.uri, { dialogTitle: doc.name });
+      } else {
+        AppAlert.show('Error', 'Sharing is not available on this device.');
+      }
+    } catch {
+      AppAlert.show('Error', 'Could not open document. Please try again.');
+    } finally {
+      setOpening(false);
+    }
   };
 
   const handleShare = async () => doc && Share.share({ message: `${doc.name} - Shared from S-Gate` });

@@ -1,5 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator, Platform,
@@ -15,6 +17,39 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+
+// ─── Download helper ─────────────────────────────────────────────────────────
+
+const FILE_EXT: Record<string, string> = { PDF: '.pdf', DOC: '.doc', DOCX: '.docx', IMAGE: '.jpg' };
+
+async function downloadAndOpen(doc: { id: string; name: string; fileType: string; fileUrl?: string }) {
+  // 1. Get a usable URL — prefer direct fileUrl, otherwise fetch a signed one
+  let url = doc.fileUrl;
+  if (!url) {
+    const res = await api.get(`/resident/documents/${doc.id}/view-url`);
+    url = res.data?.data?.url ?? res.data?.url ?? res.data;
+  }
+  if (!url || typeof url !== 'string') {
+    throw new Error('NO_URL');
+  }
+
+  // 2. Download to local cache
+  const ext = FILE_EXT[doc.fileType] ?? '.pdf';
+  const safeName = doc.name.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 60);
+  const localUri = FileSystem.cacheDirectory + safeName + ext;
+  const download = await FileSystem.downloadAsync(url, localUri);
+
+  if (!download?.uri) throw new Error('DOWNLOAD_FAILED');
+
+  // 3. Open / share the file
+  const canShare = await Sharing.isAvailableAsync();
+  if (canShare) {
+    await Sharing.shareAsync(download.uri, { dialogTitle: doc.name });
+  } else {
+    // Fallback — should rarely happen
+    throw new Error('SHARING_UNAVAILABLE');
+  }
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -95,13 +130,24 @@ function FileIconBubble({ fileType }: { fileType: string }) {
 // ─── Doc Card (Admin) ────────────────────────────────────────────────────────
 
 function AdminDocCard({ doc, index }: { doc: SocietyDocument; index: number }) {
-  const handleDownload = () => {
-    if (doc.fileUrl) {
-      AppAlert.show('Opening...', `${doc.name}`);
-    } else {
-      AppAlert.show('Unavailable', 'Download link is not available yet.');
+  const [busy, setBusy] = useState(false);
+
+  const handleDownload = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await downloadAndOpen(doc);
+    } catch (err: any) {
+      if (err?.message === 'NO_URL') {
+        AppAlert.show('Unavailable', 'Download link is not available for this document.');
+      } else {
+        AppAlert.show('Download Failed', 'Could not download the file. Please try again.');
+      }
+    } finally {
+      setBusy(false);
     }
   };
+
   return (
     <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={styles.docCard}>
       <FileIconBubble fileType={doc.fileType} />
@@ -116,12 +162,16 @@ function AdminDocCard({ doc, index }: { doc: SocietyDocument; index: number }) {
         <Text style={styles.dateText}>{formatDate(doc.uploadedAt)}</Text>
       </View>
       <TouchableOpacity
-        style={styles.downloadBtn}
+        style={[styles.downloadBtn, busy && styles.downloadBtnActive]}
         onPress={handleDownload}
+        disabled={busy}
         activeOpacity={0.7}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Feather name="download" size={18} color={SgateColors.t2} />
+        {busy
+          ? <ActivityIndicator size="small" color={SgateColors.goldDeep} />
+          : <Feather name="download" size={18} color={SgateColors.t2} />
+        }
       </TouchableOpacity>
     </Animated.View>
   );
@@ -130,12 +180,31 @@ function AdminDocCard({ doc, index }: { doc: SocietyDocument; index: number }) {
 // ─── Doc Card (My) ───────────────────────────────────────────────────────────
 
 function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: number; onDelete: (id: string) => void }) {
+  const [busy, setBusy] = useState(false);
+
+  const handleDownload = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await downloadAndOpen(doc);
+    } catch (err: any) {
+      if (err?.message === 'NO_URL') {
+        AppAlert.show('Unavailable', 'Download link is not available for this document.');
+      } else {
+        AppAlert.show('Download Failed', 'Could not download the file. Please try again.');
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleDelete = () => {
     AppAlert.show('Delete Document', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => onDelete(doc.id) },
     ]);
   };
+
   return (
     <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={styles.docCard}>
       <FileIconBubble fileType={doc.fileType} />
@@ -151,12 +220,16 @@ function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: numb
       </View>
       <View style={styles.myDocActions}>
         <TouchableOpacity
-          style={styles.downloadBtn}
-          onPress={() => AppAlert.show('Opening...', doc.name)}
+          style={[styles.downloadBtn, busy && styles.downloadBtnActive]}
+          onPress={handleDownload}
+          disabled={busy}
           activeOpacity={0.7}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Feather name="download" size={18} color={SgateColors.t2} />
+          {busy
+            ? <ActivityIndicator size="small" color={SgateColors.goldDeep} />
+            : <Feather name="download" size={18} color={SgateColors.t2} />
+          }
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteActionBtn}
@@ -442,6 +515,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8F8F8',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  downloadBtnActive: {
+    backgroundColor: SgateColors.goldPale,
   },
 
   // ── My Doc Actions ────────────────────────────────────────────────────
