@@ -1,7 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
+  Animated, Modal,
 } from 'react-native';
+import { Calendar } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -40,15 +42,73 @@ interface DateItem {
 }
 
 function buildDates(): DateItem[] {
-  return Array.from({ length: 7 }, (_, i) => {
+  return Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
-    const label =
-      i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : WEEKDAY_ABBR[d.getDay()];
-    const subLabel = i <= 1 ? null : String(d.getDate());
+    // Always use 3-letter day abbreviation for consistent pill width
+    const label = WEEKDAY_ABBR[d.getDay()];
+    const subLabel = String(d.getDate());
     const key = d.toISOString().split('T')[0];
     return { date: d, label, subLabel, key };
   });
+}
+
+// ─── Premium Calendar Strip Item ───────────────────────────────────────────────
+function DateStripItem({ item, isSelected, onPress }: { item: DateItem; isSelected: boolean; onPress: () => void }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const circleScale = useRef(new Animated.Value(isSelected ? 1 : 0.7)).current;
+  const circleOpacity = useRef(new Animated.Value(isSelected ? 1 : 0)).current;
+
+  React.useEffect(() => {
+    Animated.parallel([
+      Animated.spring(circleScale, {
+        toValue: isSelected ? 1 : 0.7,
+        useNativeDriver: true,
+        speed: 20,
+        bounciness: 6,
+      }),
+      Animated.timing(circleOpacity, {
+        toValue: isSelected ? 1 : 0,
+        duration: 180,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [isSelected]);
+
+  const handlePressIn = () =>
+    Animated.spring(scale, { toValue: 0.92, useNativeDriver: true, speed: 40 }).start();
+  const handlePressOut = () =>
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40 }).start();
+
+  return (
+    <Animated.View style={[S.dateStripItem, { transform: [{ scale }] }]}>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        style={S.dateStripBtn}
+      >
+        {/* Day label */}
+        <Text style={[S.dateStripDay, isSelected && S.dateStripDaySelected]}>
+          {item.label}
+        </Text>
+
+        {/* Circular highlight + date number */}
+        <View style={S.dateStripCircleWrap}>
+          <Animated.View
+            style={[
+              S.dateStripCircle,
+              { transform: [{ scale: circleScale }], opacity: circleOpacity },
+            ]}
+          />
+          <Text style={[S.dateStripDate, isSelected && S.dateStripDateSelected]}>
+            {item.subLabel}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
 }
 
 export default function AmenityDetailScreen() {
@@ -61,6 +121,7 @@ export default function AmenityDetailScreen() {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const dates = buildDates();
 
   useFocusEffect(useCallback(() => {
@@ -209,46 +270,94 @@ export default function AmenityDetailScreen() {
         <View style={S.slotsSection}>
           <Text style={S.slotsSectionTitle}>Available Slots</Text>
 
-          {/* Date chips */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={S.dateChipsContent}
+          {/* Calendar Date Picker */}
+          <TouchableOpacity
+            style={S.calendarTrigger}
+            activeOpacity={0.75}
+            onPress={() => setShowCalendar(true)}
           >
-            {dates.map((item) => {
-              const isSelected = selectedDate === item.key;
-              return (
+            <Feather name="calendar" size={16} color={SgateColors.goldDeep} />
+            <Text style={S.calendarTriggerText}>
+              {selectedDate
+                ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })
+                : 'Select a date'}
+            </Text>
+            <Feather name="chevron-down" size={16} color={SgateColors.t3} />
+          </TouchableOpacity>
+
+          {/* Calendar Modal */}
+          <Modal
+            visible={showCalendar}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowCalendar(false)}
+          >
+            <TouchableOpacity
+              style={S.calendarOverlay}
+              activeOpacity={1}
+              onPress={() => setShowCalendar(false)}
+            >
+              <TouchableOpacity
+                activeOpacity={1}
+                style={S.calendarSheet}
+                onPress={(e) => e.stopPropagation()}
+              >
+                {/* Sheet Handle */}
+                <View style={S.calendarHandle} />
+                <Text style={S.calendarSheetTitle}>Select a Date</Text>
+
+                <Calendar
+                  minDate={new Date().toISOString().split('T')[0]}
+                  maxDate={(() => { const d = new Date(); d.setMonth(d.getMonth() + 3); return d.toISOString().split('T')[0]; })()}
+                  onDayPress={(day) => {
+                    handleDateSelect(day.dateString);
+                    setShowCalendar(false);
+                  }}
+                  markedDates={selectedDate ? {
+                    [selectedDate]: {
+                      selected: true,
+                      selectedColor: SgateColors.gold,
+                      selectedTextColor: '#111111',
+                    },
+                  } : {}}
+                  theme={{
+                    backgroundColor: 'transparent',
+                    calendarBackground: 'transparent',
+                    selectedDayBackgroundColor: SgateColors.gold,
+                    selectedDayTextColor: '#111111',
+                    todayTextColor: SgateColors.goldDeep,
+                    dayTextColor: SgateColors.t1,
+                    textDisabledColor: '#D1D5DB',
+                    arrowColor: SgateColors.goldDeep,
+                    monthTextColor: SgateColors.t1,
+                    textDayFontFamily: SgateFonts.medium,
+                    textMonthFontFamily: SgateFonts.bold,
+                    textDayHeaderFontFamily: SgateFonts.semibold,
+                    textDayFontSize: 15,
+                    textMonthFontSize: 17,
+                    textDayHeaderFontSize: 12,
+                    dotColor: SgateColors.gold,
+                    'stylesheet.calendar.header': {
+                      header: {
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        paddingHorizontal: 8,
+                        paddingVertical: 12,
+                      },
+                    },
+                  }}
+                />
+
                 <TouchableOpacity
-                  key={item.key}
-                  activeOpacity={0.75}
-                  style={[
-                    S.dateChip,
-                    isSelected ? S.dateChipSelected : S.dateChipDefault,
-                  ]}
-                  onPress={() => handleDateSelect(item.key)}
+                  style={S.calendarDismiss}
+                  onPress={() => setShowCalendar(false)}
                 >
-                  <Text
-                    style={[
-                      S.dateChipLabel,
-                      { color: isSelected ? SgateColors.card : SgateColors.t2 },
-                    ]}
-                  >
-                    {item.label}
-                  </Text>
-                  {item.subLabel !== null && (
-                    <Text
-                      style={[
-                        S.dateChipSubLabel,
-                        { color: isSelected ? SgateColors.card : SgateColors.t1 },
-                      ]}
-                    >
-                      {item.subLabel}
-                    </Text>
-                  )}
+                  <Text style={S.calendarDismissText}>Cancel</Text>
                 </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </Modal>
 
           {/* Slot grid */}
           {selectedDate ? (
@@ -459,41 +568,127 @@ const S = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // Date chips
-  dateChipsContent: {
-    gap: 10,
-    paddingBottom: 16,
-    paddingHorizontal: 2, // avoid clipping subtle shadow
-  },
-  dateChip: {
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+  // Calendar trigger button
+  calendarTrigger: {
+    flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 56,
-  },
-  dateChipSelected: {
-    backgroundColor: SgateColors.black,
-    borderColor: SgateColors.black,
-  },
-  dateChipDefault: {
+    gap: 10,
     backgroundColor: SgateColors.card,
-    borderColor: 'rgba(0,0,0,0.04)',
-    shadowColor: '#000',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: SgateColors.goldPale,
+    shadowColor: SgateColors.goldDeep,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
     elevation: 1,
   },
-  dateChipLabel: {
-    fontSize: 13,
+  calendarTriggerText: {
+    flex: 1,
+    fontSize: 15,
     fontFamily: SgateFonts.medium,
+    color: SgateColors.t1,
   },
-  dateChipSubLabel: {
-    fontSize: 16,
+
+  // Calendar Modal
+  calendarOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  calendarSheet: {
+    backgroundColor: SgateColors.card,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingBottom: 32,
+    paddingTop: 12,
+  },
+  calendarHandle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+    marginBottom: 16,
+  },
+  calendarSheetTitle: {
+    fontSize: 18,
     fontFamily: SgateFonts.bold,
-    marginTop: 4,
+    color: SgateColors.t1,
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  calendarDismiss: {
+    marginHorizontal: 20,
+    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: SgateColors.surface,
+    alignItems: 'center',
+  },
+  calendarDismissText: {
+    fontSize: 15,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.t2,
+  },
+
+  // Calendar Strip
+  dateStripOuter: {
+    backgroundColor: SgateColors.goldPale, // subtle warm strip across entire row
+    borderRadius: 20,
+    marginBottom: 20,
+    overflow: 'hidden',
+  },
+  dateStripRow: {
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 0, // items sit flush together — strip feel
+  },
+  dateStripItem: {
+    // No background here — circle handles the highlight
+  },
+  dateStripBtn: {
+    width: 52,
+    height: 68,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  dateStripDay: {
+    fontSize: 11,
+    fontFamily: SgateFonts.medium,
+    color: '#999999',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  dateStripDaySelected: {
+    color: SgateColors.goldDeep,
+    fontFamily: SgateFonts.semibold,
+  },
+  dateStripCircleWrap: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateStripCircle: {
+    position: 'absolute',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: SgateColors.gold,
+  },
+  dateStripDate: {
+    fontSize: 17,
+    fontFamily: SgateFonts.bold,
+    color: SgateColors.t1,
+    // sits on top of the absolutely positioned circle
+  },
+  dateStripDateSelected: {
+    color: '#111111',
   },
 
   // Slot grid
