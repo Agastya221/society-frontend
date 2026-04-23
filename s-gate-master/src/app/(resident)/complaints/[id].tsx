@@ -1,8 +1,8 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, RefreshControl, ScrollView, Share, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Modal, RefreshControl, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ImageCarousel } from '../../../components/ui/ImageCarousel';
 import { Complaint, fetchComplaintDetails } from '../../../services/complaints';
@@ -143,26 +143,21 @@ export default function ComplaintDetailScreen() {
 
     return (
         <>
-        <View style={S.root}>
-            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-
-            {/* ── Header ─────────────────────────────────────────────────── */}
-            <View style={S.headerBg}>
-                <SafeAreaView edges={['top']}>
-                    <View style={S.headerInner}>
-                        <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+        <ComplaintScreenLayout
+            headerContent={
+                <View style={S.headerInner}>
+                    <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <Text style={S.headerTitle}>Complaint Details</Text>
+                    <View style={S.headerActions}>
+                        <TouchableOpacity onPress={handleShare} style={S.headerIconBtn}>
+                            <MaterialCommunityIcons name="share-variant-outline" size={20} color={SgateColors.t2} />
                         </TouchableOpacity>
-                        <Text style={S.headerTitle}>Complaint Details</Text>
-                        <View style={S.headerActions}>
-                            <TouchableOpacity onPress={handleShare} style={S.headerIconBtn}>
-                                <MaterialCommunityIcons name="share-variant-outline" size={20} color={SgateColors.t2} />
-                            </TouchableOpacity>
-                        </View>
                     </View>
-                </SafeAreaView>
-            </View>
-
+                </View>
+            }
+        >
             {/* ── Content ─────────────────────────────────────────────────── */}
             <ScrollView
                 style={{ flex: 1 }}
@@ -230,7 +225,7 @@ export default function ComplaintDetailScreen() {
                     ) : null}
                 </Animated.View>
             </ScrollView>
-        </View>
+        </ComplaintScreenLayout>
 
         {/* ── Rating Modal ────────────────────────────────────────────────── */}
         <Modal visible={showRatingModal} transparent animationType="slide" onRequestClose={() => setShowRatingModal(false)}>
@@ -277,11 +272,9 @@ export default function ComplaintDetailScreen() {
 
 // ─── Main Styles ────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
-    root: { flex: 1, backgroundColor: SgateColors.bg },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
 
     // Header
-    headerBg: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#EEEEEE' },
     headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
     backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
     headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
@@ -293,7 +286,7 @@ const S = StyleSheet.create({
     errorBtn: { marginTop: 20, backgroundColor: SgateColors.gold, borderRadius: 14, paddingHorizontal: 28, paddingVertical: 14 },
     errorBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
-    scrollContent: { padding: 16, paddingBottom: 40 },
+    scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
 
     // Title + Badges
     complaintTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: '#111', lineHeight: 30, marginBottom: 12 },

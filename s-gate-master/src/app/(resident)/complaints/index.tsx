@@ -2,8 +2,8 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
 import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
 import { Complaint, ComplaintStatus, deleteComplaint, fetchComplaints } from '../../../services/complaints';
 import { AppAlert } from '../../../components/ui/AppAlert';
@@ -70,12 +70,9 @@ export default function ComplaintsScreen() {
         : [];
 
     return (
-        <View style={S.root}>
-            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-
-            {/* ── Header ─────────────────────────────────────────────────── */}
-            <View style={S.headerBg}>
-                <SafeAreaView edges={['top']}>
+        <ComplaintScreenLayout
+            headerContent={
+                <View>
                     <View style={S.headerInner}>
                         <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                             <Feather name="arrow-left" size={22} color={SgateColors.t1} />
@@ -88,34 +85,33 @@ export default function ComplaintsScreen() {
                             <Feather name="plus" size={20} color={SgateColors.t1} />
                         </TouchableOpacity>
                     </View>
-                </SafeAreaView>
-            </View>
-
+                    {/* ── Filter Chips ──────────────────────────────────────────── */}
+                    <View style={S.filterContainer}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterScroll}>
+                            {FILTERS.map(f => {
+                                const active = filterStatus === f.key;
+                                return (
+                                    <TouchableOpacity
+                                        key={f.key}
+                                        style={[S.chip, active && S.chipActive]}
+                                        onPress={() => setFilterStatus(f.key)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={[S.chipText, active && S.chipTextActive]}>{f.label}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </ScrollView>
+                    </View>
+                </View>
+            }
+        >
             {/* ── Error Banner ────────────────────────────────────────────── */}
             {error ? (
                 <View style={S.errorBanner}>
                     <Text style={S.errorText}>{error}</Text>
                 </View>
             ) : null}
-
-            {/* ── Filter Chips ──────────────────────────────────────────── */}
-            <View style={S.filterContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterScroll}>
-                    {FILTERS.map(f => {
-                        const active = filterStatus === f.key;
-                        return (
-                            <TouchableOpacity
-                                key={f.key}
-                                style={[S.chip, active && S.chipActive]}
-                                onPress={() => setFilterStatus(f.key)}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={[S.chipText, active && S.chipTextActive]}>{f.label}</Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </ScrollView>
-            </View>
 
             {/* ── Content ─────────────────────────────────────────────────── */}
             {isLoading ? (
@@ -163,15 +159,12 @@ export default function ComplaintsScreen() {
                     }
                 />
             )}
-        </View>
+        </ComplaintScreenLayout>
     );
 }
 
 const S = StyleSheet.create({
-    root: { flex: 1, backgroundColor: SgateColors.bg },
-
     // Header
-    headerBg: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
     headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
     backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
     headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
@@ -186,7 +179,7 @@ const S = StyleSheet.create({
     errorText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.red, textAlign: 'center' },
 
     // Filter Chips
-    filterContainer: { backgroundColor: '#FFFFFF', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
+    filterContainer: { paddingBottom: 12, paddingTop: 4 },
     filterScroll: { paddingHorizontal: 16, gap: 8 },
     chip: {
         paddingHorizontal: 18,
@@ -209,7 +202,7 @@ const S = StyleSheet.create({
     chipTextActive: { color: SgateColors.t1 },
 
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    listContent: { padding: 16, paddingBottom: 40 },
+    listContent: { paddingHorizontal: 16, paddingBottom: 40 },
 
     // Empty State
     emptyWrap: { alignItems: 'center', paddingTop: 60 },

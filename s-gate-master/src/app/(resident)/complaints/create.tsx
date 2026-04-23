@@ -9,6 +9,7 @@ import {
     TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
 import { ComplaintCategory, ComplaintUrgency, createComplaint } from '../../../services/complaints';
 import { uploadImage } from '../../../services/uploadService';
 import { AppAlert } from '../../../components/ui/AppAlert';
@@ -129,22 +130,17 @@ export default function CreateComplaintScreen() {
     const canSubmit = formData.title.trim().length > 0 && formData.description.trim().length > 0 && !isLoading;
 
     return (
-        <View style={S.root}>
-            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-
-            {/* ── Header ─────────────────────────────────────────────────── */}
-            <View style={S.headerBg}>
-                <SafeAreaView edges={['top']}>
-                    <View style={S.headerInner}>
-                        <TouchableOpacity onPress={() => router.back()} style={S.closeBtn} disabled={isLoading}>
-                            <Feather name="x" size={22} color={SgateColors.t1} />
-                        </TouchableOpacity>
-                        <Text style={S.headerTitle}>Raise Complaint</Text>
-                        <View style={{ width: 38 }} />
-                    </View>
-                </SafeAreaView>
-            </View>
-
+        <ComplaintScreenLayout
+            headerContent={
+                <View style={S.headerInner}>
+                    <TouchableOpacity onPress={() => router.back()} style={S.closeBtn} disabled={isLoading}>
+                        <Feather name="x" size={22} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <Text style={S.headerTitle}>Raise Complaint</Text>
+                    <View style={{ width: 38 }} />
+                </View>
+            }
+        >
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
                 <ScrollView contentContainerStyle={S.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
@@ -367,21 +363,18 @@ export default function CreateComplaintScreen() {
                     </View>
                 </TouchableOpacity>
             </Modal>
-        </View>
+        </ComplaintScreenLayout>
     );
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
-    root: { flex: 1, backgroundColor: SgateColors.bg },
-
     // Header
-    headerBg: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#EEEEEE' },
     headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
     closeBtn: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#F5F5F5', alignItems: 'center', justifyContent: 'center' },
     headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
 
-    scrollContent: { padding: 16, paddingBottom: 40 },
+    scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
 
     // Error
     errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: SgateColors.redBg, borderRadius: 12, padding: 14, marginBottom: 14 },
