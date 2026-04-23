@@ -284,13 +284,17 @@ export default function MyBookingsScreen() {
           ListEmptyComponent={
             <View style={S.emptyInner}>
               <View style={S.emptyIconCircle}>
-                <Feather name="calendar" size={32} color={SgateColors.goldDeep} />
+                <Feather name={tab === 'UPCOMING' ? 'calendar' : 'clock'} size={32} color={SgateColors.goldDeep} />
               </View>
-              <Text style={S.emptyTitle}>No bookings yet</Text>
+              <Text style={S.emptyTitle}>
+                {tab === 'UPCOMING'
+                  ? 'No upcoming bookings'
+                  : 'No past bookings'}
+              </Text>
               <Text style={S.emptySubtitle}>
                 {tab === 'UPCOMING'
-                  ? 'Your upcoming bookings will appear here'
-                  : 'Past bookings will be shown here'}
+                  ? 'Looks like you haven\u2019t booked anything yet. Explore amenities and reserve your slot in seconds.'
+                  : 'You haven\u2019t completed any bookings yet. Once you do, they\u2019ll appear here for quick reference.'}
               </Text>
               {tab === 'UPCOMING' && (
                 <TouchableOpacity
@@ -298,7 +302,7 @@ export default function MyBookingsScreen() {
                   activeOpacity={0.8}
                   onPress={() => router.push('/(resident)/amenities' as any)}
                 >
-                  <Text style={S.emptyCtaText}>Browse Amenities</Text>
+                  <Text style={S.emptyCtaText}>Explore Amenities</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -335,26 +339,33 @@ const S = StyleSheet.create({
   // Tab Switcher
   tabContainer: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 14,
     paddingBottom: 8,
   },
   tabPill: {
     flexDirection: 'row',
-    backgroundColor: '#F4F4F4',
+    backgroundColor: SgateColors.card,
     borderRadius: 16,
     padding: 4,
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.03)',
   },
   tabIndicator: {
     position: 'absolute',
     width: '48%',
     height: '100%',
     backgroundColor: SgateColors.gold,
-    borderRadius: 14,
+    borderRadius: 13,
     top: 4,
     shadowColor: SgateColors.goldDeep,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.18,
     shadowRadius: 6,
     elevation: 2,
   },
@@ -367,7 +378,7 @@ const S = StyleSheet.create({
   tabBtnText: {
     fontSize: 14,
     fontFamily: SgateFonts.semibold,
-    color: '#777777',
+    color: '#888888',
   },
   tabBtnTextActive: {
     color: '#111111',
@@ -393,29 +404,31 @@ const S = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 80,
-    gap: 12,
+    paddingTop: 60,
+    paddingHorizontal: 32,
+    gap: 10,
   },
   emptyIconCircle: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: SgateColors.goldPale,
+    backgroundColor: '#FFF6D6',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontFamily: SgateFonts.semibold,
     color: SgateColors.t1,
   },
   emptySubtitle: {
     fontSize: 14,
     fontFamily: SgateFonts.regular,
-    color: SgateColors.t3,
+    color: '#777777',
     textAlign: 'center',
-    paddingHorizontal: 40,
+    lineHeight: 20,
+    maxWidth: 280,
   },
   emptyCta: {
     marginTop: 12,
