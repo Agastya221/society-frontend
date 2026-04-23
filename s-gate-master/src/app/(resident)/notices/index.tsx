@@ -296,6 +296,9 @@ export default function NoticesScreen() {
                 </View>
             </View>
 
+            {/* Persistent spacer — content never touches header */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
+
             {loading ? (
                 <View style={S.center}>
                     <ActivityIndicator size="large" color={SgateColors.gold} />
@@ -337,7 +340,18 @@ const S = StyleSheet.create({
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
     // Header & Filters
-    headerWrapper: { backgroundColor: SgateColors.bg, paddingBottom: 20 },
+    headerWrapper: { 
+        backgroundColor: SgateColors.card, 
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
+    },
     headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
