@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet,
-  Share, ScrollView, ActivityIndicator, Linking } from 'react-native';
+  Share, ScrollView, ActivityIndicator, Linking, StatusBar, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -33,10 +33,18 @@ function normalise(raw: any): Doc {
   };
 }
 
+// File-type → Feather icon mapping
+const FILE_TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
+  PDF: 'file-text', DOC: 'file', DOCX: 'file', IMAGE: 'image',
+};
+
 function FileIcon({ ft }: { ft: string }) {
-  if (ft === 'PDF') return <View style={[S.iconBubble, { backgroundColor: SgateColors.redBg }]}><Feather name="file-text" size={40} color={SgateColors.red} /></View>;
-  if (ft === 'DOC' || ft === 'DOCX') return <View style={[S.iconBubble, { backgroundColor: SgateColors.blueBg }]}><Feather name="file" size={40} color={SgateColors.blue} /></View>;
-  return <View style={[S.iconBubble, { backgroundColor: SgateColors.greenBg }]}><Feather name="image" size={40} color={SgateColors.green} /></View>;
+  const iconName = FILE_TYPE_ICON[ft] ?? 'file';
+  return (
+    <View style={S.iconBubble}>
+      <Feather name={iconName} size={40} color={SgateColors.goldDeep} />
+    </View>
+  );
 }
 
 export default function DocumentDetailScreen() {
@@ -69,29 +77,67 @@ export default function DocumentDetailScreen() {
 
   const handleShare = async () => doc && Share.share({ message: `${doc.name} - Shared from S-Gate` });
 
-  if (loading) return <SafeAreaView style={S.safe} edges={['top','bottom']}><View style={S.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View></SafeAreaView>;
+  if (loading) return (
+    <View style={S.root}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <View style={S.headerBg}>
+        <SafeAreaView edges={['top']}>
+          <View style={S.headerInner}>
+            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+            </TouchableOpacity>
+            <Text style={S.headerTitle}>Document</Text>
+            <View style={{ width: 22 }} />
+          </View>
+        </SafeAreaView>
+      </View>
+      <View style={S.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+    </View>
+  );
 
   if (!doc) return (
-    <SafeAreaView style={S.safe} edges={['top','bottom']}>
+    <View style={S.root}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <View style={S.headerBg}>
+        <SafeAreaView edges={['top']}>
+          <View style={S.headerInner}>
+            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+            </TouchableOpacity>
+            <Text style={S.headerTitle}>Document</Text>
+            <View style={{ width: 22 }} />
+          </View>
+        </SafeAreaView>
+      </View>
       <View style={S.center}>
-        <Feather name="file" size={40} color={SgateColors.t4} />
+        <View style={S.emptyIconCircle}>
+          <Feather name="file" size={28} color={SgateColors.goldDeep} />
+        </View>
         <Text style={S.notFoundText}>Document not found</Text>
         <TouchableOpacity onPress={() => router.back()}><Text style={S.backLink}>Go back</Text></TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 
   return (
-    <SafeAreaView style={S.safe} edges={['top','bottom']}>
-      <View style={S.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top:8,bottom:8,left:8,right:8 }}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={S.headerTitle} numberOfLines={1}>{doc.name}</Text>
-        <TouchableOpacity onPress={handleShare} hitSlop={{ top:8,bottom:8,left:8,right:8 }} style={{ marginRight: 12 }}>
-          <Feather name="share-2" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
+    <View style={S.root}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+
+      {/* ── Header (edge-to-edge) ─────────────────────────────────────── */}
+      <View style={S.headerBg}>
+        <SafeAreaView edges={['top']}>
+          <View style={S.headerInner}>
+            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+            </TouchableOpacity>
+            <Text style={S.headerTitle} numberOfLines={1}>{doc.name}</Text>
+            <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Feather name="share-2" size={20} color={SgateColors.t1} />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
       </View>
+
       <ScrollView contentContainerStyle={S.scroll} showsVerticalScrollIndicator={false}>
         <View style={S.centerArea}>
           <View style={S.mainCard}>
@@ -106,7 +152,9 @@ export default function DocumentDetailScreen() {
               { icon: 'hard-drive' as const, label: 'File size', value: `${doc.fileSizeMB} MB` },
             ].map(r => (
               <View key={r.label} style={S.row}>
-                <Feather name={r.icon} size={14} color={SgateColors.t4} style={{ marginRight: 10 }} />
+                <View style={S.rowIconWrap}>
+                  <Feather name={r.icon} size={14} color={SgateColors.goldDeep} />
+                </View>
                 <Text style={S.rowLabel}>{r.label}</Text>
                 <Text style={S.rowValue}>{r.value}</Text>
               </View>
@@ -115,7 +163,13 @@ export default function DocumentDetailScreen() {
         </View>
         <View style={S.btns}>
           <TouchableOpacity style={S.primary} onPress={handleOpen} activeOpacity={0.85}>
-            {opening ? <ActivityIndicator size="small" color={SgateColors.card} /> : <Text style={S.primaryText}>Open Document</Text>}
+            {opening
+              ? <ActivityIndicator size="small" color={SgateColors.t1} />
+              : <>
+                  <Feather name="external-link" size={18} color={SgateColors.t1} />
+                  <Text style={S.primaryText}>Open Document</Text>
+                </>
+            }
           </TouchableOpacity>
           <TouchableOpacity style={S.secondary} onPress={handleShare} activeOpacity={0.85}>
             <Feather name="share-2" size={16} color={SgateColors.t2} />
@@ -123,31 +177,187 @@ export default function DocumentDetailScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const S = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: SgateColors.bg },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-  scroll: { flexGrow: 1, paddingBottom: 8 },
-  centerArea: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 16 },
-  mainCard: { backgroundColor: SgateColors.card, borderRadius: 20, padding: 28, alignItems: 'center', borderWidth: 1, borderColor: SgateColors.borderSoft },
-  iconBubble: { width: 88, height: 88, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  pill: { marginTop: 10, backgroundColor: SgateColors.surface, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5 },
-  pillText: { fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t2, letterSpacing: 0.8 },
-  docName: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, textAlign: 'center', marginTop: 12, lineHeight: 24 },
-  divider: { width: 60, height: 1, backgroundColor: SgateColors.borderSoft, marginVertical: 20 },
-  row: { flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 10 },
-  rowLabel: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, flex: 1 },
-  rowValue: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
-  btns: { paddingHorizontal: 16, gap: 10, paddingBottom: 16 },
-  primary: { backgroundColor: SgateColors.black, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  primaryText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.card },
-  secondary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 48, borderRadius: 14, borderWidth: 1.5, borderColor: SgateColors.border, gap: 8 },
-  secondaryText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
-  notFoundText: { fontSize: 16, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
-  backLink: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.gold },
+  root: {
+    flex: 1,
+    backgroundColor: SgateColors.bg,
+  },
+
+  // ── Header ────────────────────────────────────────────────────────────
+  headerBg: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.04)',
+  },
+  headerInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  backBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.t1,
+    marginLeft: 12,
+    flex: 1,
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+
+  scroll: {
+    flexGrow: 1,
+    paddingBottom: 8,
+  },
+  centerArea: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  mainCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 28,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 1,
+  },
+
+  // ── Gold-themed Icon Bubble ───────────────────────────────────────────
+  iconBubble: {
+    width: 88,
+    height: 88,
+    borderRadius: 22,
+    backgroundColor: SgateColors.goldPale,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  pill: {
+    marginTop: 10,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  pillText: {
+    fontSize: 12,
+    fontFamily: SgateFonts.bold,
+    color: SgateColors.t2,
+    letterSpacing: 0.8,
+  },
+  docName: {
+    fontSize: 17,
+    fontFamily: SgateFonts.bold,
+    color: SgateColors.t1,
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 24,
+  },
+  divider: {
+    width: 60,
+    height: 1,
+    backgroundColor: SgateColors.borderSoft,
+    marginVertical: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 12,
+  },
+  rowIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: SgateColors.goldPale,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  rowLabel: {
+    fontSize: 12,
+    fontFamily: SgateFonts.regular,
+    color: SgateColors.t3,
+    flex: 1,
+  },
+  rowValue: {
+    fontSize: 13,
+    fontFamily: SgateFonts.medium,
+    color: SgateColors.t1,
+  },
+
+  btns: {
+    paddingHorizontal: 16,
+    gap: 10,
+    paddingBottom: 16,
+  },
+  primary: {
+    backgroundColor: SgateColors.gold,
+    height: 52,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  primaryText: {
+    fontSize: 15,
+    fontFamily: SgateFonts.bold,
+    color: SgateColors.t1,
+  },
+  secondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: SgateColors.border,
+    gap: 8,
+  },
+  secondaryText: {
+    fontSize: 14,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.t1,
+  },
+  notFoundText: {
+    fontSize: 16,
+    fontFamily: SgateFonts.medium,
+    color: SgateColors.t2,
+  },
+  backLink: {
+    fontSize: 14,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.gold,
+  },
+  emptyIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: SgateColors.goldPale,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
 });

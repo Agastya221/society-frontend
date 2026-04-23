@@ -1,16 +1,24 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import {
+  ActivityIndicator, Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppAlert } from '../../../components/ui/AppAlert';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
-import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
@@ -18,17 +26,25 @@ function formatDate(iso: string): string {
 
 // Maps backend category names → display labels
 const CATEGORY_LABELS: Record<string, string> = {
-  RULES:          'Rules & Regulations',
+  RULES: 'Rules & Regulations',
   RULES_AND_BYLAWS: 'Rules & Regulations',
-  MINUTES:        'Minutes of Meeting',
-  MEETING_MINUTES:'Minutes of Meeting',
-  FINANCIAL:      'Financial Report',
-  GENERAL:        'General',
-  CIRCULAR:       'Circular',
-  MAINTENANCE:    'Maintenance',
-  LEGAL:          'Legal',
-  PERSONAL:       'Personal',
-  OTHER:          'Other',
+  MINUTES: 'Minutes of Meeting',
+  MEETING_MINUTES: 'Minutes of Meeting',
+  FINANCIAL: 'Financial Report',
+  GENERAL: 'General',
+  CIRCULAR: 'Circular',
+  MAINTENANCE: 'Maintenance',
+  LEGAL: 'Legal',
+  PERSONAL: 'Personal',
+  OTHER: 'Other',
+};
+
+// File-type → Feather icon mapping
+const FILE_TYPE_ICON: Record<string, React.ComponentProps<typeof Feather>['name']> = {
+  PDF: 'file-text',
+  DOC: 'file',
+  DOCX: 'file',
+  IMAGE: 'image',
 };
 
 interface SocietyDocument {
@@ -53,35 +69,30 @@ function normaliseDoc(raw: any): SocietyDocument {
   const sizeMB = raw.fileSizeMB ?? (sizeBytes > 0 ? parseFloat((sizeBytes / 1048576).toFixed(2)) : 0);
 
   return {
-    id:          raw.id,
-    name:        raw.name ?? raw.fileName ?? '',
-    category:    raw.category ?? 'GENERAL',
-    uploadedBy:  uploaderName,
-    uploadedAt:  raw.uploadedAt ?? raw.createdAt ?? new Date().toISOString(),
-    fileSizeMB:  sizeMB,
-    fileType:    raw.fileType ?? 'PDF',
-    isAdminDoc:  raw.isAdminDoc ?? false,
-    fileUrl:     raw.fileUrl ?? undefined,
+    id: raw.id,
+    name: raw.name ?? raw.fileName ?? '',
+    category: raw.category ?? 'GENERAL',
+    uploadedBy: uploaderName,
+    uploadedAt: raw.uploadedAt ?? raw.createdAt ?? new Date().toISOString(),
+    fileSizeMB: sizeMB,
+    fileType: raw.fileType ?? 'PDF',
+    isAdminDoc: raw.isAdminDoc ?? false,
+    fileUrl: raw.fileUrl ?? undefined,
   };
 }
 
-// ─── File icon bubble ─────────────────────────────────────────────────────────
+// ─── File icon bubble (gold-themed) ──────────────────────────────────────────
 
-function FileIconBubble({ fileType, size = 44 }: { fileType: SocietyDocument['fileType']; size?: number }) {
-  const radius = Math.round(size * 0.27);
-  const iconSize = Math.round(size * 0.45);
-  let bgColor: string, iconColor: string, iconName: React.ComponentProps<typeof Feather>['name'];
-  if (fileType === 'PDF')        { bgColor = SgateColors.redBg;   iconColor = SgateColors.red;   iconName = 'file-text'; }
-  else if (fileType === 'DOC')   { bgColor = SgateColors.blueBg;  iconColor = SgateColors.blue;  iconName = 'file'; }
-  else                           { bgColor = SgateColors.greenBg; iconColor = SgateColors.green; iconName = 'image'; }
+function FileIconBubble({ fileType }: { fileType: string }) {
+  const iconName = FILE_TYPE_ICON[fileType] ?? 'file';
   return (
-    <View style={[styles.iconBubble, { width: size, height: size, borderRadius: radius, backgroundColor: bgColor }]}>
-      <Feather name={iconName} size={iconSize} color={iconColor} />
+    <View style={styles.iconBubble}>
+      <Feather name={iconName} size={20} color={SgateColors.goldDeep} />
     </View>
   );
 }
 
-// ─── Doc Card ─────────────────────────────────────────────────────────────────
+// ─── Doc Card (Admin) ────────────────────────────────────────────────────────
 
 function AdminDocCard({ doc, index }: { doc: SocietyDocument; index: number }) {
   const handleDownload = () => {
@@ -93,9 +104,9 @@ function AdminDocCard({ doc, index }: { doc: SocietyDocument; index: number }) {
   };
   return (
     <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={styles.docCard}>
-      <FileIconBubble fileType={doc.fileType} size={44} />
+      <FileIconBubble fileType={doc.fileType} />
       <View style={styles.docContent}>
-        <Text style={styles.docName} numberOfLines={1}>{doc.name}</Text>
+        <Text style={styles.docName} numberOfLines={2}>{doc.name}</Text>
         <View style={styles.docMeta}>
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryText}>{CATEGORY_LABELS[doc.category] ?? doc.category}</Text>
@@ -104,12 +115,19 @@ function AdminDocCard({ doc, index }: { doc: SocietyDocument; index: number }) {
         </View>
         <Text style={styles.dateText}>{formatDate(doc.uploadedAt)}</Text>
       </View>
-      <TouchableOpacity onPress={handleDownload} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-        <Feather name="download" size={20} color={SgateColors.t3} />
+      <TouchableOpacity
+        style={styles.downloadBtn}
+        onPress={handleDownload}
+        activeOpacity={0.7}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Feather name="download" size={18} color={SgateColors.t2} />
       </TouchableOpacity>
     </Animated.View>
   );
 }
+
+// ─── Doc Card (My) ───────────────────────────────────────────────────────────
 
 function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: number; onDelete: (id: string) => void }) {
   const handleDelete = () => {
@@ -120,9 +138,9 @@ function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: numb
   };
   return (
     <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={styles.docCard}>
-      <FileIconBubble fileType={doc.fileType} size={44} />
+      <FileIconBubble fileType={doc.fileType} />
       <View style={styles.docContent}>
-        <Text style={styles.docName} numberOfLines={1}>{doc.name}</Text>
+        <Text style={styles.docName} numberOfLines={2}>{doc.name}</Text>
         <View style={styles.docMeta}>
           <View style={styles.categoryBadge}>
             <Text style={styles.categoryText}>{CATEGORY_LABELS[doc.category] ?? doc.category}</Text>
@@ -132,10 +150,20 @@ function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: numb
         <Text style={styles.dateText}>{formatDate(doc.uploadedAt)}</Text>
       </View>
       <View style={styles.myDocActions}>
-        <TouchableOpacity onPress={() => AppAlert.show('Opening...', doc.name)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="download" size={18} color={SgateColors.t3} />
+        <TouchableOpacity
+          style={styles.downloadBtn}
+          onPress={() => AppAlert.show('Opening...', doc.name)}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Feather name="download" size={18} color={SgateColors.t2} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.deleteBtn}>
+        <TouchableOpacity
+          style={styles.deleteActionBtn}
+          onPress={handleDelete}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           <Feather name="trash-2" size={18} color={SgateColors.red} />
         </TouchableOpacity>
       </View>
@@ -182,47 +210,69 @@ export default function DocumentsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Documents</Text>
-        <View style={styles.headerSpacer} />
+    <View style={styles.root}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+
+      {/* ── Header (edge-to-edge) ─────────────────────────────────────── */}
+      <View style={styles.headerBg}>
+        <SafeAreaView edges={['top']}>
+          <View style={styles.headerInner}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Documents</Text>
+            <View style={{ width: 22 }} />
+          </View>
+        </SafeAreaView>
       </View>
 
+      {/* ── Content ───────────────────────────────────────────────────── */}
       {loading ? (
-        <View style={styles.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={SgateColors.gold} />
+        </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Society Documents ──────────────────────────────────────── */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Society Documents</Text>
             <Text style={styles.sectionSubtitle}>Uploaded by RWA administration</Text>
           </View>
+
           {adminDocs.length === 0 ? (
             <View style={styles.emptyCard}>
-              <Feather name="folder" size={32} color={SgateColors.t4} />
-              <Text style={styles.emptyText}>No society documents available</Text>
+              <View style={styles.emptyIconCircle}>
+                <Feather name="folder" size={28} color={SgateColors.goldDeep} />
+              </View>
+              <Text style={styles.emptyTitle}>No documents available</Text>
+              <Text style={styles.emptySub}>Society documents will appear here once uploaded by the admin</Text>
             </View>
           ) : (
             adminDocs.map((doc, index) => <AdminDocCard key={doc.id} doc={doc} index={index} />)
           )}
 
-          <View style={[styles.sectionHeader, styles.sectionHeaderMy]}>
+          {/* ── My Documents ──────────────────────────────────────────── */}
+          <View style={styles.sectionHeaderMy}>
             <View style={styles.sectionTitleRow}>
-              <Text style={[styles.sectionTitle, styles.flex1]}>My Documents</Text>
-              <TouchableOpacity style={styles.uploadBtn} onPress={handleUpload}>
-                <Feather name="upload" size={16} color={SgateColors.t2} />
-                <Text style={styles.uploadBtnText}>Upload</Text>
-              </TouchableOpacity>
+              <Text style={[styles.sectionTitle, { flex: 1 }]}>My Documents</Text>
             </View>
             <Text style={styles.sectionSubtitle}>Your personal documents</Text>
           </View>
 
           {myDocs.length === 0 ? (
             <View style={styles.emptyCard}>
-              <Feather name="folder" size={32} color={SgateColors.t4} />
-              <Text style={styles.emptyText}>No documents uploaded</Text>
+              <View style={styles.emptyIconCircle}>
+                <Feather name="file-plus" size={28} color={SgateColors.goldDeep} />
+              </View>
+              <Text style={styles.emptyTitle}>No documents yet</Text>
+              <Text style={styles.emptySub}>Upload personal documents to access them anytime</Text>
             </View>
           ) : (
             myDocs.map((doc, index) => (
@@ -231,37 +281,239 @@ export default function DocumentsScreen() {
           )}
         </ScrollView>
       )}
-    </SafeAreaView>
+
+      {/* ── Upload FAB ────────────────────────────────────────────────── */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={handleUpload}
+        activeOpacity={0.85}
+      >
+        <Feather name="upload" size={20} color={SgateColors.t1} />
+        <Text style={styles.fabText}>Upload</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
+// ─── Styles ─────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: SgateColors.bg },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-  headerSpacer: { width: 22 },
-  scrollContent: { paddingBottom: 32 },
-  sectionHeader: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 10 },
-  sectionHeaderMy: { paddingTop: 24 },
-  sectionTitleRow: { flexDirection: 'row', alignItems: 'center' },
-  sectionTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-  sectionSubtitle: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
-  flex1: { flex: 1 },
-  uploadBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  uploadBtnText: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
-  docCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, borderRadius: 14, marginHorizontal: 16, marginBottom: 8, padding: 14, borderWidth: 1, borderColor: SgateColors.borderSoft, gap: 12 },
-  iconBubble: { alignItems: 'center', justifyContent: 'center' },
-  docContent: { flex: 1 },
-  docName: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
-  docMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  categoryBadge: { backgroundColor: SgateColors.surface, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
-  categoryText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.t2 },
-  sizeText: { fontSize: 11, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
-  dateText: { fontSize: 11, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 2 },
-  myDocActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  deleteBtn: { marginLeft: 2 },
-  emptyCard: { backgroundColor: SgateColors.card, borderRadius: 14, marginHorizontal: 16, padding: 24, alignItems: 'center' },
-  emptyText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t2, marginTop: 8 },
-  gold: { color: '#FFB800' },
+  root: {
+    flex: 1,
+    backgroundColor: SgateColors.bg,
+  },
+
+  // ── Header ────────────────────────────────────────────────────────────
+  headerBg: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.04)',
+  },
+  headerInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  backBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.t1,
+    marginLeft: 12,
+  },
+
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+
+  // ── Section Headers ───────────────────────────────────────────────────
+  sectionHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 22,
+    paddingBottom: 14,
+  },
+  sectionHeaderMy: {
+    paddingHorizontal: 16,
+    paddingTop: 28,
+    paddingBottom: 14,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.t1,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    fontFamily: SgateFonts.regular,
+    color: SgateColors.t3,
+    marginTop: 3,
+  },
+
+  // ── Document Card ─────────────────────────────────────────────────────
+  docCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+    gap: 14,
+    // Subtle shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 1,
+  },
+
+  // ── Icon Bubble (gold-themed) ─────────────────────────────────────────
+  iconBubble: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: SgateColors.goldPale,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Card Content ──────────────────────────────────────────────────────
+  docContent: {
+    flex: 1,
+  },
+  docName: {
+    fontSize: 15,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.t1,
+    lineHeight: 21,
+  },
+  docMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
+  },
+  categoryBadge: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  categoryText: {
+    fontSize: 11,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.t2,
+  },
+  sizeText: {
+    fontSize: 13,
+    fontFamily: SgateFonts.regular,
+    color: SgateColors.t3,
+  },
+  dateText: {
+    fontSize: 12,
+    fontFamily: SgateFonts.regular,
+    color: SgateColors.t4,
+    marginTop: 4,
+  },
+
+  // ── Download Button ───────────────────────────────────────────────────
+  downloadBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#F8F8F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── My Doc Actions ────────────────────────────────────────────────────
+  myDocActions: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 8,
+  },
+  deleteActionBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: SgateColors.redBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Empty State ───────────────────────────────────────────────────────
+  emptyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginHorizontal: 16,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
+  },
+  emptyIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: SgateColors.goldPale,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.t1,
+    marginBottom: 6,
+  },
+  emptySub: {
+    fontSize: 13,
+    fontFamily: SgateFonts.regular,
+    color: SgateColors.t3,
+    textAlign: 'center',
+    lineHeight: 19,
+  },
+
+  // ── Upload FAB ────────────────────────────────────────────────────────
+  fab: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 36 : 24,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: SgateColors.gold,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 14,
+    gap: 8,
+    shadowColor: SgateColors.gold,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  fabText: {
+    fontSize: 15,
+    fontFamily: SgateFonts.bold,
+    color: SgateColors.t1,
+  },
 });
