@@ -1,48 +1,31 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator,
-    FlatList,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View } from 'react-native';
+import {
+    ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform,
+    ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput,
+    TouchableOpacity, View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card } from '../../../components/ui/Card';
-import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 import { ComplaintCategory, ComplaintUrgency, createComplaint } from '../../../services/complaints';
 import { uploadImage } from '../../../services/uploadService';
 import { AppAlert } from '../../../components/ui/AppAlert';
+import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 
-const SgateColors = {
-    black: '#0D0F14', gold: '#FFB800', goldDeep: '#E5A500', goldPale: '#FFF8E1',
-    green: '#00D68F', greenBg: '#E5FBF3', red: '#FF5C5C', redBg: '#FFF0F0',
-    bg: '#F5F4F0', card: '#FFFFFF', surface: '#EEECEA', border: '#E5E3DE',
-    borderSoft: '#F0EEEB', t1: '#0D0F14', t2: '#4A4D57', t3: '#8A8D97', t4: '#B5B8C0',
-};
-const SgateFonts = {
-    regular: 'Sora-Regular', medium: 'Sora-Medium', semiBold: 'Sora-SemiBold',
-    bold: 'Sora-Bold', extraBold: 'Sora-ExtraBold',
-};
-
-const COMPLAINT_CATEGORIES: { label: string; value: ComplaintCategory }[] = [
-    { label: 'Plumbing', value: 'PLUMBING' },
-    { label: 'Electrical', value: 'ELECTRICITY' },
-    { label: 'Civil', value: 'MAINTENANCE' },
-    { label: 'Carpentry', value: 'MAINTENANCE' },
-    { label: 'Painting', value: 'MAINTENANCE' },
-    { label: 'Housekeeping', value: 'CLEANLINESS' },
-    { label: 'Security', value: 'SECURITY' },
-    { label: 'Lift', value: 'MAINTENANCE' },
-    { label: 'Water', value: 'WATER' },
-    { label: 'Other', value: 'OTHER' },
+// ─── Data ──────────────────────────────────────────────────────────────────────
+const CATEGORIES: { label: string; value: ComplaintCategory; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
+    { label: 'Plumbing', value: 'PLUMBING', icon: 'pipe-wrench' },
+    { label: 'Electrical', value: 'ELECTRICITY', icon: 'flash-outline' },
+    { label: 'Civil', value: 'MAINTENANCE', icon: 'hammer-wrench' },
+    { label: 'Carpentry', value: 'MAINTENANCE', icon: 'saw-blade' },
+    { label: 'Painting', value: 'MAINTENANCE', icon: 'format-paint' },
+    { label: 'Housekeeping', value: 'CLEANLINESS', icon: 'broom' },
+    { label: 'Security', value: 'SECURITY', icon: 'shield-outline' },
+    { label: 'Lift', value: 'MAINTENANCE', icon: 'elevator-passenger-outline' },
+    { label: 'Water', value: 'WATER', icon: 'water-outline' },
+    { label: 'Other', value: 'OTHER', icon: 'dots-horizontal-circle-outline' },
 ];
 
 const PREFERRED_TIMES = [
@@ -54,12 +37,9 @@ const PREFERRED_TIMES = [
 
 type RequestType = 'unit' | 'community';
 
-interface ImageState {
-    localUri: string;
-    s3Key?: string;
-    uploading: boolean;
-}
+interface ImageState { localUri: string; s3Key?: string; uploading: boolean; }
 
+// ─── Screen ────────────────────────────────────────────────────────────────────
 export default function CreateComplaintScreen() {
     const router = useRouter();
     const [formData, setFormData] = useState({
@@ -69,36 +49,29 @@ export default function CreateComplaintScreen() {
         description: '',
         location: '',
         urgency: 'MEDIUM' as ComplaintUrgency,
-        isPrivate: false,
     });
     const [images, setImages] = useState<ImageState[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-
-    // New enhanced state
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
     const [requestType, setRequestType] = useState<RequestType>('unit');
     const [preferredTime, setPreferredTime] = useState('');
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [isUrgent, setIsUrgent] = useState(false);
+    const [focusedField, setFocusedField] = useState('');
 
+    // ─── Submit ─────────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
         if (!formData.title.trim()) { setError('Please enter a title'); return; }
         if (!formData.description.trim()) { setError('Please enter a description'); return; }
-
-        setIsLoading(true);
-        setError('');
-
-        const stillUploading = images.some(img => img.uploading);
-        if (stillUploading) {
+        setIsLoading(true); setError('');
+        if (images.some(img => img.uploading)) {
             AppAlert.show('Please Wait', 'Images are still uploading...');
-            setIsLoading(false);
-            return;
+            setIsLoading(false); return;
         }
-
         try {
             const s3Keys = images.filter(img => img.s3Key).map(img => img.s3Key!);
-            const payload: any = {
+            const result = await createComplaint({
                 title: formData.title.trim(),
                 description: formData.description.trim(),
                 category: formData.category,
@@ -106,35 +79,32 @@ export default function CreateComplaintScreen() {
                 urgency: isUrgent ? 'CRITICAL' : formData.urgency,
                 isPrivate: requestType === 'unit',
                 photos: s3Keys,
-                preferredTime: preferredTime || 'ANYTIME',
-            };
-
-            const result = await createComplaint(payload);
-            AppAlert.show(
-                'Complaint Submitted',
-                `Your complaint has been registered successfully.\n\nTicket Number: ${result.ticketNumber}`,
-                [{ text: 'OK', onPress: () => router.back() }]
-            );
+            } as any);
+            AppAlert.show('Complaint Submitted', `Your complaint has been registered.\n\nTicket: ${result.ticketNumber}`, [
+                { text: 'OK', onPress: () => router.back() },
+            ]);
         } catch (err: any) {
-            setError(err.message || 'Failed to submit complaint. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
+            setError(err.message || 'Failed to submit.');
+        } finally { setIsLoading(false); }
     };
 
-    const pickImageFromCamera = async () => {
-        if (images.length >= 5) { AppAlert.show('Limit Reached', 'You can add a maximum of 5 photos'); return; }
+    // ─── Image Handling ─────────────────────────────────────────────────────────
+    const pickImage = async (source: 'camera' | 'gallery') => {
+        if (images.length >= 5) { AppAlert.show('Limit Reached', 'Max 5 photos'); return; }
         try {
-            const permission = await ImagePicker.requestCameraPermissionsAsync();
-            if (!permission.granted) { AppAlert.show('Permission Required', 'Please allow camera access'); return; }
-            const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8,
-                cameraType: ImagePicker.CameraType.back,
-            });
+            let result;
+            if (source === 'camera') {
+                const perm = await ImagePicker.requestCameraPermissionsAsync();
+                if (!perm.granted) { AppAlert.show('Permission Required', 'Allow camera access'); return; }
+                result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8 });
+            } else {
+                const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (!perm.granted) { AppAlert.show('Permission Required', 'Allow gallery access'); return; }
+                result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8 });
+            }
             if (!result.canceled && result.assets.length > 0) {
                 const localUri = result.assets[0].uri;
-                const newImage: ImageState = { localUri, uploading: true };
-                setImages(prev => [...prev, newImage]);
+                setImages(prev => [...prev, { localUri, uploading: true }]);
                 try {
                     const s3Key = await uploadImage(localUri, { context: 'entry-photo' });
                     setImages(prev => prev.map(img => img.localUri === localUri ? { ...img, s3Key, uploading: false } : img));
@@ -143,363 +113,352 @@ export default function CreateComplaintScreen() {
                     AppAlert.show('Upload Failed', 'Failed to upload image.');
                 }
             }
-        } catch { AppAlert.show('Error', 'Failed to take photo.'); }
+        } catch { AppAlert.show('Error', 'Failed to pick image.'); }
     };
 
-    const pickImageFromGallery = async () => {
-        if (images.length >= 5) { AppAlert.show('Limit Reached', 'You can add a maximum of 5 photos'); return; }
-        try {
-            const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            if (!permission.granted) { AppAlert.show('Permission Required', 'Please allow gallery access'); return; }
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8,
-            });
-            if (!result.canceled && result.assets.length > 0) {
-                const localUri = result.assets[0].uri;
-                const newImage: ImageState = { localUri, uploading: true };
-                setImages(prev => [...prev, newImage]);
-                try {
-                    const s3Key = await uploadImage(localUri, { context: 'entry-photo' });
-                    setImages(prev => prev.map(img => img.localUri === localUri ? { ...img, s3Key, uploading: false } : img));
-                } catch {
-                    setImages(prev => prev.filter(img => img.localUri !== localUri));
-                    AppAlert.show('Upload Failed', 'Failed to upload image.');
-                }
-            }
-        } catch { AppAlert.show('Error', 'Failed to select image.'); }
-    };
-
-    const showImagePickerOptions = () => {
+    const showImageOptions = () => {
         AppAlert.show('Add Photo', 'Choose an option', [
-            { text: 'Take Photo', onPress: pickImageFromCamera },
-            { text: 'Choose from Gallery', onPress: pickImageFromGallery },
+            { text: 'Take Photo', onPress: () => pickImage('camera') },
+            { text: 'Choose from Gallery', onPress: () => pickImage('gallery') },
             { text: 'Cancel', style: 'cancel' },
         ]);
     };
 
-    const removeImage = (index: number) => setImages(prev => prev.filter((_, i) => i !== index));
-
+    const removeImage = (i: number) => setImages(prev => prev.filter((_, idx) => idx !== i));
     const selectedTimeLabel = PREFERRED_TIMES.find(t => t.value === preferredTime)?.label ?? 'Select preferred time';
+    const canSubmit = formData.title.trim().length > 0 && formData.description.trim().length > 0 && !isLoading;
 
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-black" edges={['top']}>
-            {/* Header */}
-            <View className="px-5 py-4 flex-row items-center gap-3 bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800">
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800"
-                    disabled={isLoading}
-                >
-                    <Ionicons name="close" size={24} className="text-gray-700 dark:text-gray-300" />
-                </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">Raise Complaint</Text>
+        <View style={S.root}>
+            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+
+            {/* ── Header ─────────────────────────────────────────────────── */}
+            <View style={S.headerBg}>
+                <SafeAreaView edges={['top']}>
+                    <View style={S.headerInner}>
+                        <TouchableOpacity onPress={() => router.back()} style={S.closeBtn} disabled={isLoading}>
+                            <Feather name="x" size={22} color={SgateColors.t1} />
+                        </TouchableOpacity>
+                        <Text style={S.headerTitle}>Raise Complaint</Text>
+                        <View style={{ width: 38 }} />
+                    </View>
+                </SafeAreaView>
             </View>
 
-            <ScrollView className="flex-1 p-5">
-                {error ? (
-                    <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-4">
-                        <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
-                    </View>
-                ) : null}
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+                <ScrollView contentContainerStyle={S.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
-                <Card className="p-5 gap-5 mb-4">
-                    {/* Title */}
-                    <View>
-                        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title *</Text>
-                        <TextInput
-                            className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 text-gray-900 dark:text-white"
-                            placeholder="Brief title (e.g. Water Leak)"
-                            placeholderTextColor="#9ca3af"
-                            value={formData.title}
-                            onChangeText={t => { setFormData({ ...formData, title: t }); setError(''); }}
-                            editable={!isLoading}
-                        />
-                    </View>
+                    {/* Error */}
+                    {error ? (
+                        <View style={S.errorBanner}>
+                            <MaterialCommunityIcons name="alert-circle-outline" size={16} color={SgateColors.red} />
+                            <Text style={S.errorText}>{error}</Text>
+                        </View>
+                    ) : null}
 
-                    {/* Category Dropdown */}
-                    <View>
-                        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category *</Text>
-                        <TouchableOpacity
-                            style={styles.dropdown}
-                            onPress={() => setShowCategoryPicker(true)}
-                            disabled={isLoading}
-                        >
-                            <Text style={styles.dropdownText}>{formData.categoryLabel}</Text>
-                            <Feather name="chevron-down" size={18} color={SgateColors.t3} />
-                        </TouchableOpacity>
-                    </View>
+                    {/* ── Form Card ───────────────────────────────────────────── */}
+                    <View style={S.formCard}>
 
-                    {/* Description with counter */}
-                    <View>
-                        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description *</Text>
-                        <TextInput
-                            className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 text-gray-900 dark:text-white h-32 text-start"
-                            placeholder="Describe the issue in detail..."
-                            placeholderTextColor="#9ca3af"
-                            multiline
-                            textAlignVertical="top"
-                            maxLength={3000}
-                            value={formData.description}
-                            onChangeText={t => { setFormData({ ...formData, description: t }); setError(''); }}
-                            editable={!isLoading}
-                        />
-                        <Text style={styles.charCounter}>{formData.description.length} / 3000</Text>
-                    </View>
+                        {/* Title */}
+                        <View style={S.fieldGroup}>
+                            <Text style={S.label}>Title <Text style={S.required}>*</Text></Text>
+                            <View style={[S.inputWrap, focusedField === 'title' && S.inputFocused]}>
+                                <TextInput
+                                    style={S.textInput}
+                                    placeholder="Brief title (e.g. Water Leak)"
+                                    placeholderTextColor="#999"
+                                    value={formData.title}
+                                    onChangeText={t => { setFormData({ ...formData, title: t }); setError(''); }}
+                                    onFocus={() => setFocusedField('title')}
+                                    onBlur={() => setFocusedField('')}
+                                    editable={!isLoading}
+                                />
+                            </View>
+                        </View>
 
-                    {/* Location */}
-                    <View>
-                        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Location</Text>
-                        <TextInput
-                            className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 text-gray-900 dark:text-white"
-                            placeholder="e.g., Kitchen, Parking Lot B, Flat 204"
-                            placeholderTextColor="#9ca3af"
-                            value={formData.location}
-                            onChangeText={t => setFormData({ ...formData, location: t })}
-                            editable={!isLoading}
-                        />
-                    </View>
+                        {/* Category */}
+                        <View style={S.fieldGroup}>
+                            <Text style={S.label}>Category <Text style={S.required}>*</Text></Text>
+                            <TouchableOpacity style={S.selectWrap} onPress={() => setShowCategoryPicker(true)} disabled={isLoading}>
+                                <MaterialCommunityIcons name={CATEGORIES.find(c => c.label === formData.categoryLabel)?.icon ?? 'folder-outline'} size={18} color={SgateColors.goldDeep} />
+                                <Text style={S.selectText}>{formData.categoryLabel}</Text>
+                                <Feather name="chevron-down" size={18} color={SgateColors.t3} />
+                            </TouchableOpacity>
+                        </View>
 
-                    {/* Preferred Time */}
-                    <View>
-                        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preferred Time</Text>
-                        <TouchableOpacity
-                            style={styles.dropdown}
-                            onPress={() => setShowTimePicker(true)}
-                            disabled={isLoading}
-                        >
-                            <Feather name="clock" size={16} color={SgateColors.t3} style={{ marginRight: 4 }} />
-                            <Text style={[styles.dropdownText, !preferredTime && { color: SgateColors.t4 }]}>
-                                {selectedTimeLabel}
-                            </Text>
-                            <Feather name="chevron-down" size={18} color={SgateColors.t3} />
-                        </TouchableOpacity>
-                    </View>
+                        {/* Description */}
+                        <View style={S.fieldGroup}>
+                            <Text style={S.label}>Description <Text style={S.required}>*</Text></Text>
+                            <View style={[S.inputWrap, S.textAreaWrap, focusedField === 'desc' && S.inputFocused]}>
+                                <TextInput
+                                    style={[S.textInput, S.textArea]}
+                                    placeholder="Describe the issue in detail..."
+                                    placeholderTextColor="#999"
+                                    multiline
+                                    textAlignVertical="top"
+                                    maxLength={3000}
+                                    value={formData.description}
+                                    onChangeText={t => { setFormData({ ...formData, description: t }); setError(''); }}
+                                    onFocus={() => setFocusedField('desc')}
+                                    onBlur={() => setFocusedField('')}
+                                    editable={!isLoading}
+                                />
+                            </View>
+                            <Text style={S.charCount}>{formData.description.length} / 3000</Text>
+                        </View>
 
-                    {/* Photos */}
-                    <View>
-                        <Text className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Photos (Optional, Max 5)</Text>
-                        <View className="flex-row gap-3 flex-wrap">
-                            {images.map((img, index) => (
-                                <View key={index} className="h-20 w-20 rounded-xl bg-gray-100 dark:bg-zinc-800 overflow-hidden relative">
-                                    {img.uploading && (
-                                        <View className="absolute inset-0 bg-black/50 items-center justify-center z-20">
-                                            <ActivityIndicator size="small" color="white" />
-                                        </View>
-                                    )}
-                                    <TouchableOpacity
-                                        onPress={() => removeImage(index)}
-                                        disabled={isLoading || img.uploading}
-                                        className="absolute top-1 right-1 z-10 bg-red-500 rounded-full h-5 w-5 items-center justify-center"
-                                    >
-                                        <Ionicons name="close" size={14} color="white" />
+                        {/* Location */}
+                        <View style={S.fieldGroup}>
+                            <Text style={S.label}>Location</Text>
+                            <View style={[S.inputWrap, S.inputWithIcon, focusedField === 'location' && S.inputFocused]}>
+                                <MaterialCommunityIcons name="map-marker-outline" size={18} color={SgateColors.t3} />
+                                <TextInput
+                                    style={[S.textInput, { flex: 1 }]}
+                                    placeholder="e.g., Kitchen, Parking Lot B"
+                                    placeholderTextColor="#999"
+                                    value={formData.location}
+                                    onChangeText={t => setFormData({ ...formData, location: t })}
+                                    onFocus={() => setFocusedField('location')}
+                                    onBlur={() => setFocusedField('')}
+                                    editable={!isLoading}
+                                />
+                            </View>
+                        </View>
+
+                        {/* Preferred Time */}
+                        <View style={S.fieldGroup}>
+                            <Text style={S.label}>Preferred Time</Text>
+                            <TouchableOpacity style={S.selectWrap} onPress={() => setShowTimePicker(true)} disabled={isLoading}>
+                                <MaterialCommunityIcons name="clock-outline" size={18} color={SgateColors.t3} />
+                                <Text style={[S.selectText, !preferredTime && { color: '#999' }]}>{selectedTimeLabel}</Text>
+                                <Feather name="chevron-down" size={18} color={SgateColors.t3} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Photos */}
+                        <View style={S.fieldGroup}>
+                            <Text style={S.label}>Photos <Text style={S.optional}>(Optional, Max 5)</Text></Text>
+                            <View style={S.photosRow}>
+                                {images.map((img, i) => (
+                                    <View key={i} style={S.photoThumb}>
+                                        <Image source={{ uri: img.localUri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} />
+                                        {img.uploading && (
+                                            <View style={S.photoOverlay}>
+                                                <ActivityIndicator size="small" color="#fff" />
+                                            </View>
+                                        )}
+                                        <TouchableOpacity style={S.photoRemove} onPress={() => removeImage(i)} disabled={isLoading || img.uploading}>
+                                            <Feather name="x" size={12} color="#fff" />
+                                        </TouchableOpacity>
+                                        {img.s3Key && (
+                                            <View style={S.photoCheck}>
+                                                <Feather name="check" size={10} color="#fff" />
+                                            </View>
+                                        )}
+                                    </View>
+                                ))}
+                                {images.length < 5 && (
+                                    <TouchableOpacity style={S.photoAdd} onPress={showImageOptions} disabled={isLoading}>
+                                        <MaterialCommunityIcons name="camera-plus-outline" size={22} color={SgateColors.t3} />
+                                        <Text style={S.photoAddText}>Add</Text>
                                     </TouchableOpacity>
-                                    {img.s3Key && (
-                                        <View className="absolute bottom-1 right-1 z-10 bg-green-500 rounded-full h-4 w-4 items-center justify-center">
-                                            <Ionicons name="checkmark" size={10} color="white" />
-                                        </View>
-                                    )}
-                                    <Image source={{ uri: img.localUri }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
-                                </View>
-                            ))}
-                            {images.length < 5 && (
-                                <TouchableOpacity
-                                    onPress={showImagePickerOptions}
-                                    disabled={isLoading}
-                                    className="h-20 w-20 border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-xl items-center justify-center bg-gray-50 dark:bg-zinc-800/50"
-                                >
-                                    <Ionicons name="camera-outline" size={24} color="#9ca3af" />
-                                    <Text className="text-[10px] text-gray-400 mt-1">Add Photo</Text>
-                                </TouchableOpacity>
-                            )}
+                                )}
+                            </View>
                         </View>
                     </View>
-                </Card>
 
-                {/* Request Type Section */}
-                <View style={styles.sectionCard}>
-                    <Text style={styles.sectionLabel}>Request Type</Text>
-                    <View style={styles.requestTypeRow}>
-                        <TouchableOpacity
-                            style={[styles.requestTypeCard, requestType === 'unit' && styles.requestTypeCardActive]}
-                            onPress={() => setRequestType('unit')}
-                        >
-                            <Feather name="home" size={20} color={requestType === 'unit' ? SgateColors.goldDeep : SgateColors.t3} />
-                            <Text style={[styles.requestTypeTitle, requestType === 'unit' && styles.requestTypeTitleActive]}>Unit</Text>
-                            <View style={styles.radioRow}>
-                                <View style={[styles.radio, requestType === 'unit' && styles.radioActive]}>
-                                    {requestType === 'unit' && <View style={styles.radioDot} />}
-                                </View>
-                            </View>
-                            <Text style={styles.requestTypeDesc}>For issues regarding the concerned flat. Visible only to unit members.</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.requestTypeCard, requestType === 'community' && styles.requestTypeCardActive]}
-                            onPress={() => setRequestType('community')}
-                        >
-                            <Feather name="grid" size={20} color={requestType === 'community' ? SgateColors.goldDeep : SgateColors.t3} />
-                            <Text style={[styles.requestTypeTitle, requestType === 'community' && styles.requestTypeTitleActive]}>Community</Text>
-                            <View style={styles.radioRow}>
-                                <View style={[styles.radio, requestType === 'community' && styles.radioActive]}>
-                                    {requestType === 'community' && <View style={styles.radioDot} />}
-                                </View>
-                            </View>
-                            <Text style={styles.requestTypeDesc}>Visible to the entire society. For common area issues.</Text>
-                        </TouchableOpacity>
+                    {/* ── Request Type ────────────────────────────────────────── */}
+                    <View style={S.formCard}>
+                        <Text style={S.sectionTitle}>Request Type</Text>
+                        <View style={S.requestRow}>
+                            {(['unit', 'community'] as RequestType[]).map(type => {
+                                const active = requestType === type;
+                                const icon = type === 'unit' ? 'home-outline' : 'account-group-outline';
+                                const title = type === 'unit' ? 'Unit' : 'Community';
+                                const desc = type === 'unit'
+                                    ? 'For flat-specific issues. Visible to unit members only.'
+                                    : 'For common area issues. Visible to entire society.';
+                                return (
+                                    <TouchableOpacity key={type} style={[S.requestCard, active && S.requestCardActive]} onPress={() => setRequestType(type)}>
+                                        <MaterialCommunityIcons name={icon} size={22} color={active ? SgateColors.goldDeep : SgateColors.t3} />
+                                        <Text style={[S.requestTitle, active && S.requestTitleActive]}>{title}</Text>
+                                        <View style={[S.radio, active && S.radioActive]}>
+                                            {active && <View style={S.radioDot} />}
+                                        </View>
+                                        <Text style={S.requestDesc}>{desc}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
                     </View>
-                </View>
 
-                {/* Mark as Urgent */}
-                <View style={styles.urgentCard}>
-                    <View style={styles.urgentContent}>
-                        <Text style={styles.urgentTitle}>Mark as Urgent?</Text>
-                        <Text style={styles.urgentSubtitle}>For critical issues that require immediate attention.</Text>
+                    {/* ── Urgent Toggle ───────────────────────────────────────── */}
+                    <View style={S.urgentCard}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={S.urgentTitle}>Mark as Urgent?</Text>
+                            <Text style={S.urgentSub}>For critical issues needing immediate attention.</Text>
+                        </View>
+                        <Switch
+                            value={isUrgent}
+                            onValueChange={setIsUrgent}
+                            disabled={isLoading}
+                            trackColor={{ false: '#E0E0E0', true: SgateColors.goldPale }}
+                            thumbColor={isUrgent ? SgateColors.gold : '#F5F5F5'}
+                        />
                     </View>
-                    <Switch
-                        value={isUrgent}
-                        onValueChange={setIsUrgent}
-                        disabled={isLoading}
-                        trackColor={{ false: '#d1d5db', true: SgateColors.goldPale }}
-                        thumbColor={isUrgent ? SgateColors.gold : '#f4f4f5'}
-                    />
-                </View>
 
-                <PrimaryButton
-                    title={isLoading ? 'Submitting...' : 'Submit Complaint'}
-                    onPress={handleSubmit}
-                    disabled={!formData.title.trim() || !formData.description.trim() || isLoading}
-                />
+                    {/* ── Submit Button ───────────────────────────────────────── */}
+                    <TouchableOpacity
+                        style={[S.submitBtn, !canSubmit && S.submitBtnDisabled]}
+                        onPress={handleSubmit}
+                        disabled={!canSubmit}
+                        activeOpacity={0.85}
+                    >
+                        {isLoading
+                            ? <ActivityIndicator size="small" color={SgateColors.t1} />
+                            : <Text style={[S.submitBtnText, !canSubmit && S.submitBtnTextDisabled]}>Submit Complaint</Text>
+                        }
+                    </TouchableOpacity>
 
-                {isLoading && (
-                    <View className="items-center mt-4">
-                        <ActivityIndicator size="small" color="#4f46e5" />
-                    </View>
-                )}
-                <View className="h-10" />
-            </ScrollView>
+                    <View style={{ height: 32 }} />
+                </ScrollView>
+            </KeyboardAvoidingView>
 
-            {/* Category Picker Modal */}
+            {/* ── Category Picker ─────────────────────────────────────────── */}
             <Modal visible={showCategoryPicker} transparent animationType="slide" onRequestClose={() => setShowCategoryPicker(false)}>
-                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowCategoryPicker(false)}>
-                    <View style={styles.pickerSheet}>
-                        <View style={styles.pickerHandle} />
-                        <Text style={styles.pickerTitle}>Choose Category</Text>
+                <TouchableOpacity style={S.modalOverlay} activeOpacity={1} onPress={() => setShowCategoryPicker(false)}>
+                    <View style={S.pickerSheet}>
+                        <View style={S.pickerHandle} />
+                        <Text style={S.pickerTitle}>Choose Category</Text>
                         <FlatList
-                            data={COMPLAINT_CATEGORIES}
+                            data={CATEGORIES}
                             keyExtractor={item => item.value + item.label}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={[styles.pickerRow, formData.categoryLabel === item.label && styles.pickerRowActive]}
-                                    onPress={() => {
-                                        setFormData({ ...formData, category: item.value, categoryLabel: item.label });
-                                        setShowCategoryPicker(false);
-                                    }}
-                                >
-                                    <Text style={[styles.pickerRowText, formData.categoryLabel === item.label && styles.pickerRowTextActive]}>
-                                        {item.label}
-                                    </Text>
-                                    {formData.categoryLabel === item.label && (
-                                        <Feather name="check" size={16} color={SgateColors.goldDeep} />
-                                    )}
-                                </TouchableOpacity>
-                            )}
+                            renderItem={({ item }) => {
+                                const active = formData.categoryLabel === item.label;
+                                return (
+                                    <TouchableOpacity style={[S.pickerRow, active && S.pickerRowActive]} onPress={() => { setFormData({ ...formData, category: item.value, categoryLabel: item.label }); setShowCategoryPicker(false); }}>
+                                        <MaterialCommunityIcons name={item.icon} size={20} color={active ? SgateColors.goldDeep : SgateColors.t3} style={{ marginRight: 12 }} />
+                                        <Text style={[S.pickerRowText, active && S.pickerRowTextActive]}>{item.label}</Text>
+                                        {active && <Feather name="check" size={16} color={SgateColors.goldDeep} />}
+                                    </TouchableOpacity>
+                                );
+                            }}
                         />
                     </View>
                 </TouchableOpacity>
             </Modal>
 
-            {/* Time Picker Modal */}
+            {/* ── Time Picker ────────────────────────────────────────────── */}
             <Modal visible={showTimePicker} transparent animationType="slide" onRequestClose={() => setShowTimePicker(false)}>
-                <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowTimePicker(false)}>
-                    <View style={styles.pickerSheet}>
-                        <View style={styles.pickerHandle} />
-                        <Text style={styles.pickerTitle}>Preferred Time</Text>
-                        {PREFERRED_TIMES.map(t => (
-                            <TouchableOpacity
-                                key={t.value}
-                                style={[styles.pickerRow, preferredTime === t.value && styles.pickerRowActive]}
-                                onPress={() => { setPreferredTime(t.value); setShowTimePicker(false); }}
-                            >
-                                <Text style={[styles.pickerRowText, preferredTime === t.value && styles.pickerRowTextActive]}>
-                                    {t.label}
-                                </Text>
-                                {preferredTime === t.value && <Feather name="check" size={16} color={SgateColors.goldDeep} />}
-                            </TouchableOpacity>
-                        ))}
+                <TouchableOpacity style={S.modalOverlay} activeOpacity={1} onPress={() => setShowTimePicker(false)}>
+                    <View style={S.pickerSheet}>
+                        <View style={S.pickerHandle} />
+                        <Text style={S.pickerTitle}>Preferred Time</Text>
+                        {PREFERRED_TIMES.map(t => {
+                            const active = preferredTime === t.value;
+                            return (
+                                <TouchableOpacity key={t.value} style={[S.pickerRow, active && S.pickerRowActive]} onPress={() => { setPreferredTime(t.value); setShowTimePicker(false); }}>
+                                    <MaterialCommunityIcons name="clock-outline" size={18} color={active ? SgateColors.goldDeep : SgateColors.t3} style={{ marginRight: 12 }} />
+                                    <Text style={[S.pickerRowText, active && S.pickerRowTextActive]}>{t.label}</Text>
+                                    {active && <Feather name="check" size={16} color={SgateColors.goldDeep} />}
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
                 </TouchableOpacity>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }
 
-const styles = StyleSheet.create({
-    charCounter: {
-        fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4,
-        textAlign: 'right', marginTop: 4,
+// ─── Styles ────────────────────────────────────────────────────────────────────
+const S = StyleSheet.create({
+    root: { flex: 1, backgroundColor: SgateColors.bg },
+
+    // Header
+    headerBg: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#EEEEEE' },
+    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+    closeBtn: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#F5F5F5', alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
+
+    scrollContent: { padding: 16, paddingBottom: 40 },
+
+    // Error
+    errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: SgateColors.redBg, borderRadius: 12, padding: 14, marginBottom: 14 },
+    errorText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.red, flex: 1 },
+
+    // Form Card
+    formCard: {
+        backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, marginBottom: 14,
+        borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
+        shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1,
     },
-    dropdown: {
-        flexDirection: 'row', alignItems: 'center',
-        backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb',
-        borderRadius: 12, padding: 12, gap: 4,
+
+    // Fields
+    fieldGroup: { marginBottom: 18 },
+    label: { fontSize: 13, fontFamily: SgateFonts.semibold, color: '#666', marginBottom: 8 },
+    required: { color: SgateColors.red },
+    optional: { color: '#999', fontFamily: SgateFonts.regular },
+
+    inputWrap: { backgroundColor: '#FAFAFA', borderRadius: 12, borderWidth: 1, borderColor: '#EAEAEA' },
+    inputFocused: { borderColor: SgateColors.gold, backgroundColor: '#FFFFFF' },
+    inputWithIcon: { flexDirection: 'row', alignItems: 'center', paddingLeft: 14, gap: 8 },
+    textInput: { fontSize: 15, fontFamily: SgateFonts.regular, color: '#111', padding: 14 },
+    textAreaWrap: {},
+    textArea: { minHeight: 110, textAlignVertical: 'top' },
+    charCount: { fontSize: 11, fontFamily: SgateFonts.regular, color: '#999', textAlign: 'right', marginTop: 4 },
+
+    selectWrap: {
+        flexDirection: 'row', alignItems: 'center', gap: 10,
+        backgroundColor: '#FAFAFA', borderRadius: 12, borderWidth: 1, borderColor: '#EAEAEA', padding: 14,
     },
-    dropdownText: {
-        flex: 1, fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1,
-    },
-    sectionCard: {
-        backgroundColor: SgateColors.card, borderRadius: 16, borderWidth: 1,
-        borderColor: SgateColors.borderSoft, padding: 16, marginBottom: 12,
-    },
-    sectionLabel: {
-        fontSize: 14, fontFamily: SgateFonts.semiBold, color: SgateColors.t2, marginBottom: 12,
-    },
-    requestTypeRow: { flexDirection: 'row', gap: 10 },
-    requestTypeCard: {
-        flex: 1, borderRadius: 14, borderWidth: 2, borderColor: SgateColors.border,
-        padding: 14, alignItems: 'center', gap: 6,
-    },
-    requestTypeCardActive: { borderColor: SgateColors.gold, backgroundColor: SgateColors.goldPale },
-    requestTypeTitle: {
-        fontSize: 14, fontFamily: SgateFonts.semiBold, color: SgateColors.t2,
-    },
-    requestTypeTitleActive: { color: SgateColors.goldDeep },
-    radioRow: { flexDirection: 'row', justifyContent: 'center' },
-    radio: {
-        width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: SgateColors.border,
-        alignItems: 'center', justifyContent: 'center',
-    },
+    selectText: { flex: 1, fontSize: 15, fontFamily: SgateFonts.medium, color: '#111' },
+
+    // Photos
+    photosRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+    photoThumb: { width: 76, height: 76, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F5F5F5' },
+    photoOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+    photoRemove: { position: 'absolute', top: 4, right: 4, zIndex: 3, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
+    photoCheck: { position: 'absolute', bottom: 4, right: 4, zIndex: 3, width: 16, height: 16, borderRadius: 8, backgroundColor: SgateColors.green, alignItems: 'center', justifyContent: 'center' },
+    photoAdd: { width: 76, height: 76, borderRadius: 12, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#DDD', backgroundColor: '#FAFAFA', alignItems: 'center', justifyContent: 'center', gap: 4 },
+    photoAddText: { fontSize: 10, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+
+    // Section Title
+    sectionTitle: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#111', marginBottom: 14 },
+
+    // Request Type
+    requestRow: { flexDirection: 'row', gap: 10 },
+    requestCard: { flex: 1, borderRadius: 14, borderWidth: 1.5, borderColor: '#EAEAEA', padding: 14, alignItems: 'center', gap: 6 },
+    requestCardActive: { borderColor: SgateColors.gold, backgroundColor: SgateColors.goldPale },
+    requestTitle: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
+    requestTitleActive: { color: SgateColors.goldDeep },
+    radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: '#DDD', alignItems: 'center', justifyContent: 'center' },
     radioActive: { borderColor: SgateColors.gold },
     radioDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: SgateColors.gold },
-    requestTypeDesc: {
-        fontSize: 10, fontFamily: SgateFonts.regular, color: SgateColors.t3,
-        textAlign: 'center', lineHeight: 14,
-    },
+    requestDesc: { fontSize: 10, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center', lineHeight: 14 },
+
+    // Urgent
     urgentCard: {
-        flexDirection: 'row', alignItems: 'center',
-        backgroundColor: SgateColors.card, borderRadius: 16, borderWidth: 1,
-        borderColor: SgateColors.borderSoft, padding: 16, marginBottom: 16, gap: 12,
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 20,
+        borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
     },
-    urgentContent: { flex: 1 },
-    urgentTitle: { fontSize: 14, fontFamily: SgateFonts.semiBold, color: SgateColors.t1, marginBottom: 2 },
-    urgentSubtitle: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
-    modalOverlay: {
-        flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end',
-    },
-    pickerSheet: {
-        backgroundColor: SgateColors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24,
-        padding: 20, paddingBottom: 40, maxHeight: '70%',
-    },
-    pickerHandle: {
-        width: 36, height: 4, borderRadius: 2, backgroundColor: SgateColors.border,
-        alignSelf: 'center', marginBottom: 16,
-    },
-    pickerTitle: {
-        fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 12,
-    },
-    pickerRow: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft,
-    },
-    pickerRowActive: { backgroundColor: SgateColors.goldPale, marginHorizontal: -20, paddingHorizontal: 20 },
-    pickerRowText: { fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
-    pickerRowTextActive: { color: SgateColors.goldDeep, fontFamily: SgateFonts.semiBold },
+    urgentTitle: { fontSize: 14, fontFamily: SgateFonts.semibold, color: '#111', marginBottom: 2 },
+    urgentSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: '#999' },
+
+    // Submit
+    submitBtn: { backgroundColor: SgateColors.gold, borderRadius: 14, height: 52, alignItems: 'center', justifyContent: 'center' },
+    submitBtnDisabled: { backgroundColor: '#E8E8E8' },
+    submitBtnText: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    submitBtnTextDisabled: { color: '#999' },
+
+    // Modals
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+    pickerSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, maxHeight: '70%' },
+    pickerHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: '#E0E0E0', alignSelf: 'center', marginBottom: 16 },
+    pickerTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111', marginBottom: 12 },
+    pickerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
+    pickerRowActive: { backgroundColor: SgateColors.goldPale, marginHorizontal: -20, paddingHorizontal: 20, borderRadius: 0 },
+    pickerRowText: { flex: 1, fontSize: 15, fontFamily: SgateFonts.medium, color: '#111' },
+    pickerRowTextActive: { color: SgateColors.goldDeep, fontFamily: SgateFonts.semibold },
 });
