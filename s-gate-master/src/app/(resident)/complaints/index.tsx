@@ -188,9 +188,9 @@ const S = StyleSheet.create({
     filterScroll: { paddingHorizontal: 16 },
     filterBar: { flexDirection: 'row', backgroundColor: '#F2F2F2', borderRadius: 14, padding: 4 },
     filterItem: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 11 },
-    filterItemActive: { backgroundColor: SgateColors.goldPale },
+    filterItemActive: { backgroundColor: SgateColors.gold },
     filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: '#888' },
-    filterTextActive: { color: SgateColors.goldDeep },
+    filterTextActive: { color: SgateColors.t1 },
 
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     listContent: { padding: 16, paddingBottom: 40 },
