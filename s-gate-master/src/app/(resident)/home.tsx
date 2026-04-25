@@ -141,8 +141,8 @@ export default function ResidentHomeScreen() {
         {
             icon: 'account-check-outline',
             label: 'Pre-Approve',
-            color: '#CC8800',
-            bg: BRAND_YELLOW_BG,
+            color: SgateColors.goldDeep,
+            bg: SgateColors.goldPale,
             onPress: () => setShowPreApprove(true),
         },
         {
@@ -156,7 +156,7 @@ export default function ResidentHomeScreen() {
             icon: 'package-variant',
             label: 'Delivery',
             color: SgateColors.t2,
-            bg: '#F2F2F2',
+            bg: SgateColors.surface,
             onPress: () => router.push('/expect-delivery' as any),
         },
         {
@@ -169,15 +169,15 @@ export default function ResidentHomeScreen() {
         {
             icon: 'receipt-text-outline',
             label: 'Dues',
-            color: SgateColors.green,
-            bg: SgateColors.greenBg,
+            color: SgateColors.red,
+            bg: SgateColors.redBg,
             onPress: () => router.push('/(resident)/society-dues' as any),
         },
         {
             icon: 'account-group-outline',
             label: 'Daily Help',
-            color: SgateColors.violet,
-            bg: '#F3EEFF',
+            color: SgateColors.green,
+            bg: SgateColors.greenBg,
             onPress: () => router.push('/(resident)/daily-help' as any),
         },
         {
@@ -190,8 +190,8 @@ export default function ResidentHomeScreen() {
         {
             icon: 'view-grid-outline',
             label: 'All Tools',
-            color: SgateColors.t1,
-            bg: SgateColors.gold,
+            color: SgateColors.goldDeep,
+            bg: SgateColors.goldPale,
             onPress: () => router.push('/(resident)/all-tools' as any),
         },
     ];
