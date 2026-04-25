@@ -29,7 +29,7 @@ export default function ResidentAllToolsScreen() {
     const communityTools: Tool[] = [
         { icon: 'message-outline' as const,          title: 'Community',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(resident)/communication' },
         { icon: 'book-open-blank-variant' as const,  title: 'Local Directory', bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(resident)/local-directory' },
-        { icon: 'account-group-outline' as const,    title: 'Daily Help',      bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(resident)/daily-help' },
+        { icon: 'account-wrench-outline' as const,    title: 'Daily Help',      bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(resident)/daily-help' },
         { icon: 'calendar-outline' as const,         title: 'Amenities',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(resident)/amenities' },
         { icon: 'poll' as const,                     title: 'Polls',           bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(resident)/elections' },
         { icon: 'folder-outline' as const,           title: 'Documents',       bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(resident)/documents' },

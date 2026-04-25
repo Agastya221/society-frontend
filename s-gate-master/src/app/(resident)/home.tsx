@@ -174,7 +174,7 @@ export default function ResidentHomeScreen() {
             onPress: () => router.push('/(resident)/society-dues' as any),
         },
         {
-            icon: 'account-group-outline',
+            icon: 'account-wrench-outline',
             label: 'Daily Help',
             color: SgateColors.green,
             bg: SgateColors.greenBg,
