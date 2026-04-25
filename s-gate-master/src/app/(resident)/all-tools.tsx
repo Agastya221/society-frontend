@@ -59,7 +59,14 @@ export default function ResidentAllToolsScreen() {
                     <View style={[styles.iconWrap, { backgroundColor: t.bg }]}>
                         <MaterialCommunityIcons name={t.icon} size={26} color={t.color} />
                     </View>
-                    <Text style={styles.tileTitle}>{t.title}</Text>
+                    <Text 
+                        style={styles.tileTitle} 
+                        numberOfLines={1} 
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
+                    >
+                        {t.title}
+                    </Text>
                 </TouchableOpacity>
             ))}
         </View>
@@ -144,7 +151,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     tileTitle: {
-        fontSize: 12,
+        fontSize: 11,
         fontFamily: SgateFonts.semibold,
         color: SgateColors.t1,
         textAlign: 'center',
