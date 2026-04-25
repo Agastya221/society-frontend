@@ -1,59 +1,51 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 
-// ─── Constants ──────────────────────────────────────────────────────────────
-const BRAND_YELLOW = '#FFD60A';
-const BRAND_YELLOW_BG = '#FFFBE6';
-
+// ─── Types ──────────────────────────────────────────────────────────────────
 type DueStatus = 'PAID' | 'PENDING' | 'OVERDUE';
 
 interface DueItem {
-  id: string; 
-  month: string; 
-  year: number; 
+  id: string;
+  month: string;
+  year: number;
   dueDate: string;
-  status: DueStatus; 
-  totalAmount: number; 
+  status: DueStatus;
+  totalAmount: number;
   paidOn?: string;
 }
 
 interface DuesSummary {
-  totalOutstanding: number; 
-  currentMonth: number; 
+  totalOutstanding: number;
+  currentMonth: number;
   overdue: number;
 }
 
 function normaliseDue(raw: any): DueItem {
   const d = new Date(raw.dueDate ?? raw.date ?? new Date());
-  
-  // Logic for status based on isPaid boolean
   let status: DueStatus = 'PENDING';
   if (raw.isPaid || raw.status === 'PAID') status = 'PAID';
   else if (new Date(raw.dueDate) < new Date()) status = 'OVERDUE';
-
   return {
     id:          raw.id,
     month:       d.toLocaleString('default', { month: 'long' }),
     year:        d.getFullYear(),
     dueDate:     raw.dueDate || raw.date || new Date().toISOString(),
-    status:      status,
+    status,
     totalAmount: raw.amount ?? raw.totalAmount ?? 0,
     paidOn:      raw.paidAt ?? raw.paidOn ?? undefined,
   };
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
 function formatDate(iso: string): string {
   if (!iso) return '---';
-  // Handle ISO string or simple YYYY-MM-DD
   const dateStr = iso.split('T')[0];
   const [year, month, day] = dateStr.split('-');
   if (!year || !month || !day) return '---';
@@ -64,70 +56,48 @@ function formatAmount(amount: number): string {
   return '₹' + amount.toLocaleString('en-IN');
 }
 
-// ─── Badge helpers ───────────────────────────────────────────────────────────
+// ─── Badge Config ───────────────────────────────────────────────────────────
+const BADGE_CFG: Record<DueStatus, { bg: string; text: string }> = {
+  PAID:    { bg: '#FEF9C3', text: '#92400E' },
+  PENDING: { bg: '#FEF3C7', text: '#B45309' },
+  OVERDUE: { bg: '#FEE2E2', text: '#B91C1C' },
+};
 
-type BadgeStyle = { bg: string; text: string };
-
-function getBadgeStyle(status: DueStatus): BadgeStyle {
-  switch (status) {
-    case 'PAID':
-      return { bg: SgateColors.greenBg, text: SgateColors.green };
-    case 'PENDING':
-      return { bg: BRAND_YELLOW_BG, text: '#996300' };
-    case 'OVERDUE':
-      return { bg: SgateColors.redBg, text: SgateColors.red };
-    default:
-      return { bg: SgateColors.surface, text: SgateColors.t3 };
-  }
-}
-
-// ─── Due Card ────────────────────────────────────────────────────────────────
-
-interface DueCardProps {
-  item: DueItem;
-  index: number;
-  onPress: () => void;
-}
-
-function DueCard({ item, index, onPress }: DueCardProps) {
-  const badge = getBadgeStyle(item.status);
+// ─── Due Card ───────────────────────────────────────────────────────────────
+function DueCard({ item, index, onPress }: { item: DueItem; index: number; onPress: () => void }) {
+  const badge = BADGE_CFG[item.status] ?? BADGE_CFG.PENDING;
 
   return (
     <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
-      <TouchableOpacity
-        style={styles.dueCard}
-        onPress={onPress}
-        activeOpacity={0.7}
-      >
-        <View style={styles.dueCardRow}>
-          <View style={styles.dueCardLeft}>
-            <View style={styles.dueTitleRow}>
-              <Text style={styles.dueTitle}>
-                {item.month} {item.year}
-              </Text>
-              <View style={[styles.badge, { backgroundColor: badge.bg }]}>
-                <Text style={[styles.badgeText, { color: badge.text }]}>
+      <TouchableOpacity style={S.dueCard} onPress={onPress} activeOpacity={0.7}>
+        <View style={S.dueCardRow}>
+          <View style={{ flex: 1 }}>
+            {/* Title + Badge */}
+            <View style={S.dueTitleRow}>
+              <Text style={S.dueTitle}>{item.month} {item.year}</Text>
+              <View style={[S.badge, { backgroundColor: badge.bg }]}>
+                <Text style={[S.badgeText, { color: badge.text }]}>
                   {item.status.charAt(0) + item.status.slice(1).toLowerCase()}
                 </Text>
               </View>
             </View>
 
-            <Text style={styles.dueMeta} numberOfLines={1}>
-              Due: {formatDate(item.dueDate)}
-            </Text>
-
+            {/* Meta */}
+            <Text style={S.dueMeta}>Due: {formatDate(item.dueDate)}</Text>
             {item.status === 'PAID' && item.paidOn && (
-              <Text style={[styles.dueMeta, { color: SgateColors.green }]}>
-                Paid on {formatDate(item.paidOn)}
-              </Text>
+              <View style={S.paidOnRow}>
+                <MaterialCommunityIcons name="check-circle-outline" size={12} color="#92400E" />
+                <Text style={S.paidOnText}>Paid on {formatDate(item.paidOn)}</Text>
+              </View>
             )}
           </View>
 
-          <View style={styles.dueCardRight}>
-            <Text style={[styles.dueAmount, item.status === 'OVERDUE' && { color: SgateColors.red }]}>
+          {/* Amount */}
+          <View style={S.dueCardRight}>
+            <Text style={[S.dueAmount, item.status === 'OVERDUE' && { color: '#EF4444' }]}>
               {formatAmount(item.totalAmount)}
             </Text>
-            <Feather name="chevron-right" size={16} color={SgateColors.t4} style={styles.chevron} />
+            <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t4} />
           </View>
         </View>
       </TouchableOpacity>
@@ -135,8 +105,7 @@ function DueCard({ item, index, onPress }: DueCardProps) {
   );
 }
 
-// ─── Screen ──────────────────────────────────────────────────────────────────
-
+// ─── Screen ─────────────────────────────────────────────────────────────────
 export default function SocietyDuesScreen() {
   const router = useRouter();
   const [dues, setDues]       = useState<DueItem[]>([]);
@@ -152,13 +121,11 @@ export default function SocietyDuesScreen() {
         const list: any[] = Array.isArray(raw) ? raw : raw?.dues ?? raw?.items ?? [];
         const normalisedList = list.map(normaliseDue);
         setDues(normalisedList);
-        
-        // Dynamic calc for summary regardless of API summary field to ensure it matches the cards
+
         const pendingList = normalisedList.filter(d => d.status !== 'PAID');
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
-
         const overdueList = normalisedList.filter(d => d.status === 'OVERDUE');
         const currentMonthBill = normalisedList.find(d => {
           const date = new Date(d.dueDate);
@@ -180,44 +147,55 @@ export default function SocietyDuesScreen() {
     AppAlert.show('Payment Gateway', 'Redirecting to payment gateway...', [{ text: 'OK' }]);
   }
 
+  const filteredDues = filter === 'ALL' ? dues : dues.filter(d => d.status === filter);
+
   const ListHeader = (
-    <View style={styles.headerContainer}>
-      <Text style={styles.summaryLabel}>Total Outstanding</Text>
-      <Text style={styles.summaryAmount}>{formatAmount(summary.totalOutstanding)}</Text>
-      
-      <View style={styles.summaryGrid}>
-        <View style={styles.summaryBox}>
-          <Text style={styles.boxLabel}>Current Month</Text>
-          <Text style={styles.boxValue}>{formatAmount(summary.currentMonth)}</Text>
-        </View>
-        <View style={[styles.summaryBox, { borderLeftWidth: 1, borderLeftColor: '#F0F0F0' }]}>
-          <Text style={styles.boxLabel}>Overdue</Text>
-          <Text style={[styles.boxValue, { color: SgateColors.red }]}>{formatAmount(summary.overdue)}</Text>
+    <View style={S.listHeader}>
+      {/* ── Summary Hero ──────────────────────────────────────────────── */}
+      <View style={S.heroCard}>
+        <Text style={S.heroLabel}>TOTAL OUTSTANDING</Text>
+        <Text style={S.heroAmount}>{formatAmount(summary.totalOutstanding)}</Text>
+
+        {/* Yellow accent line */}
+        <View style={S.heroAccent} />
+
+        {/* Grid */}
+        <View style={S.gridRow}>
+          <View style={S.gridItem}>
+            <Text style={S.gridLabel}>CURRENT MONTH</Text>
+            <Text style={S.gridValue}>{formatAmount(summary.currentMonth)}</Text>
+          </View>
+          <View style={S.gridDivider} />
+          <View style={S.gridItem}>
+            <Text style={S.gridLabel}>OVERDUE</Text>
+            <Text style={[S.gridValue, summary.overdue > 0 && { color: '#EF4444' }]}>
+              {formatAmount(summary.overdue)}
+            </Text>
+          </View>
         </View>
       </View>
 
-      <TouchableOpacity style={styles.payButton} onPress={handlePayOutstanding} activeOpacity={0.7}>
-        <Text style={styles.payButtonText}>Pay Outstanding</Text>
-        <Feather name="arrow-right" size={18} color={SgateColors.black} />
+      {/* ── Pay Button ────────────────────────────────────────────────── */}
+      <TouchableOpacity style={S.payBtn} onPress={handlePayOutstanding} activeOpacity={0.85}>
+        <Text style={S.payBtnText}>Pay Outstanding</Text>
+        <MaterialCommunityIcons name="arrow-right" size={20} color="#111" />
       </TouchableOpacity>
 
-      <Text style={styles.sectionTitle}>Payment History</Text>
+      {/* ── Payment History ───────────────────────────────────────────── */}
+      <Text style={S.sectionTitle}>Payment History</Text>
 
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false} 
-        contentContainerStyle={styles.filterContainer}
-      >
-        {(['ALL', 'PAID', 'PENDING', 'OVERDUE'] as const).map((f) => {
-          const isActive = filter === f;
+      {/* ── Filter Chips ──────────────────────────────────────────────── */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterRow}>
+        {(['ALL', 'PAID', 'PENDING', 'OVERDUE'] as const).map(f => {
+          const active = filter === f;
           return (
             <TouchableOpacity
               key={f}
-              style={[styles.filterChip, isActive && styles.filterChipActive]}
+              style={[S.chip, active && S.chipActive]}
               onPress={() => setFilter(f)}
-              activeOpacity={0.7}
+              activeOpacity={0.8}
             >
-              <Text style={[styles.filterText, isActive && styles.filterTextActive]}>
+              <Text style={[S.chipText, active && S.chipTextActive]}>
                 {f === 'ALL' ? 'All' : f.charAt(0) + f.slice(1).toLowerCase()}
               </Text>
             </TouchableOpacity>
@@ -227,31 +205,33 @@ export default function SocietyDuesScreen() {
     </View>
   );
 
-  const filteredDues = filter === 'ALL' ? dues : dues.filter(d => d.status === filter);
-
   return (
-    <View style={styles.root}>
-      {/* Header Bar */}
-      <SafeAreaView edges={['top']} style={styles.headerBar}>
-        <View style={styles.headerInner}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Society Dues</Text>
-          <View style={{ width: 40 }} />
-        </View>
-      </SafeAreaView>
+    <View style={S.root}>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+
+      {/* ── Header ────────────────────────────────────────────────────── */}
+      <View style={S.headerBg}>
+        <SafeAreaView edges={['top']}>
+          <View style={S.headerInner}>
+            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <MaterialCommunityIcons name="arrow-left" size={22} color={SgateColors.t1} />
+            </TouchableOpacity>
+            <Text style={S.headerTitle}>Society Dues</Text>
+            <View style={{ width: 32 }} />
+          </View>
+        </SafeAreaView>
+      </View>
 
       {loading ? (
-        <View style={styles.loadingArea}>
-          <ActivityIndicator size="large" color={BRAND_YELLOW} />
+        <View style={S.center}>
+          <ActivityIndicator size="large" color={SgateColors.gold} />
         </View>
       ) : (
         <FlatList
           data={filteredDues}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           ListHeaderComponent={ListHeader}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={S.listContent}
           showsVerticalScrollIndicator={false}
           renderItem={({ item, index }) => (
             <DueCard
@@ -260,203 +240,112 @@ export default function SocietyDuesScreen() {
               onPress={() => router.push(`/(resident)/society-dues/${item.id}` as any)}
             />
           )}
+          ListEmptyComponent={
+            <View style={S.emptyWrap}>
+              <View style={S.emptyIcon}>
+                <MaterialCommunityIcons name="receipt-text-check-outline" size={32} color={SgateColors.goldDeep} />
+              </View>
+              <Text style={S.emptyTitle}>No dues found</Text>
+              <Text style={S.emptySub}>
+                {filter === 'ALL' ? 'Your payment history will appear here.' : `No ${filter.toLowerCase()} dues.`}
+              </Text>
+            </View>
+          }
         />
       )}
     </View>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
+// ─── Styles ─────────────────────────────────────────────────────────────────
+const S = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#FAFAFA' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  headerBar: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  headerInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-  },
-  loadingArea: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  // Header
+  headerBg: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
+  headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
+  headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, textAlign: 'center' },
 
-  headerContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 32,
-    paddingBottom: 20,
-  },
-  summaryLabel: {
-    fontSize: 13,
-    fontFamily: SgateFonts.medium,
-    color: SgateColors.t3,
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  summaryAmount: {
-    fontSize: 38,
-    fontFamily: SgateFonts.extrabold,
-    color: SgateColors.t1,
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 28,
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    backgroundColor: '#FAFAFA',
-    borderRadius: 16,
-    paddingVertical: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    marginBottom: 24,
-  },
-  summaryBox: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  boxLabel: {
-    fontSize: 11,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t3,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  boxValue: {
-    fontSize: 16,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-  },
-  payButton: {
-    backgroundColor: BRAND_YELLOW,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    gap: 10,
-    shadowColor: BRAND_YELLOW,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  payButtonText: {
-    fontSize: 16,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.black,
-  },
+  listContent: { paddingBottom: 40 },
+  listHeader: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 8 },
 
-  sectionTitle: {
-    fontSize: 18,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-    marginTop: 40,
-    marginBottom: 12,
+  // Hero Summary
+  heroCard: {
+    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2,
+    marginBottom: 20,
   },
-  filterContainer: {
-    gap: 8,
-    paddingBottom: 20,
+  heroLabel: {
+    fontSize: 11, fontFamily: SgateFonts.bold, color: '#9CA3AF',
+    letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8,
   },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+  heroAmount: {
+    fontSize: 36, fontFamily: SgateFonts.extrabold, color: '#111827', marginBottom: 16,
+  },
+  heroAccent: {
+    width: 40, height: 3, borderRadius: 2, backgroundColor: SgateColors.gold, marginBottom: 20,
+  },
+  gridRow: { flexDirection: 'row', alignItems: 'center', width: '100%' },
+  gridItem: { flex: 1, alignItems: 'center' },
+  gridDivider: { width: 1, height: 36, backgroundColor: '#EEEEEE' },
+  gridLabel: {
+    fontSize: 10, fontFamily: SgateFonts.bold, color: '#9CA3AF',
+    letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6,
+  },
+  gridValue: { fontSize: 17, fontFamily: SgateFonts.bold, color: '#111827' },
+
+  // Pay Button
+  payBtn: {
+    backgroundColor: SgateColors.gold, borderRadius: 16, height: 54,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    shadowColor: SgateColors.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 4,
+    marginBottom: 32,
+  },
+  payBtnText: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111' },
+
+  // Section Title
+  sectionTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: '#111827', marginBottom: 14 },
+
+  // Filter Chips
+  filterRow: { gap: 8, paddingBottom: 16 },
+  chip: {
+    paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999,
     backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
-  filterChipActive: {
-    backgroundColor: BRAND_YELLOW,
-    borderColor: BRAND_YELLOW,
+  chipActive: {
+    backgroundColor: SgateColors.gold,
+    shadowColor: SgateColors.gold, shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25, shadowRadius: 4, elevation: 3,
   },
-  filterText: {
-    fontSize: 13,
-    fontFamily: SgateFonts.medium,
-    color: SgateColors.t2,
-  },
-  filterTextActive: {
-    color: SgateColors.black,
-    fontFamily: SgateFonts.bold,
-  },
+  chipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: '#6B7280' },
+  chipTextActive: { color: '#111', fontFamily: SgateFonts.bold },
 
   // Due Card
   dueCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginHorizontal: 20,
-    marginBottom: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
+    backgroundColor: '#FFFFFF', borderRadius: 16, marginHorizontal: 20, marginBottom: 12, padding: 16,
+    borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1,
   },
-  dueCardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  dueCardRow: { flexDirection: 'row', alignItems: 'center' },
+  dueTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  dueTitle: { fontSize: 15, fontFamily: SgateFonts.semibold, color: '#111827' },
+  badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, marginLeft: 10 },
+  badgeText: { fontSize: 10, fontFamily: SgateFonts.bold, letterSpacing: 0.3 },
+  dueMeta: { fontSize: 12, fontFamily: SgateFonts.regular, color: '#9CA3AF', marginTop: 2 },
+  paidOnRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  paidOnText: { fontSize: 11, fontFamily: SgateFonts.medium, color: '#92400E' },
+  dueCardRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dueAmount: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111827' },
+
+  // Empty
+  emptyWrap: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 32 },
+  emptyIcon: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  dueCardLeft: {
-    flex: 1,
-  },
-  dueTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dueTitle: {
-    fontSize: 15,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t1,
-  },
-  badge: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginLeft: 8,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontFamily: SgateFonts.bold,
-  },
-  dueMeta: {
-    fontSize: 12,
-    fontFamily: SgateFonts.regular,
-    color: SgateColors.t3,
-    marginTop: 6,
-  },
-  dueCardRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dueAmount: {
-    fontSize: 16,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-  },
-  chevron: {
-    marginTop: 2,
-  },
-  listContent: {
-    paddingBottom: 40,
-  },
+  emptyTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: '#111827', marginBottom: 6 },
+  emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: '#9CA3AF', textAlign: 'center' },
 });
