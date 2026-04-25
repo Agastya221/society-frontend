@@ -160,11 +160,11 @@ export default function ResidentHomeScreen() {
             onPress: () => router.push('/expect-delivery' as any),
         },
         {
-            icon: 'alert-outline',
-            label: 'SOS',
-            color: SgateColors.red,
-            bg: SgateColors.redBg,
-            onPress: () => router.push('/(resident)/emergency/create' as any),
+            icon: 'car-outline',
+            label: 'My Vehicles',
+            color: SgateColors.t2,
+            bg: SgateColors.surface,
+            onPress: () => router.push('/(resident)/vehicles' as any),
         },
         {
             icon: 'receipt-text-outline',
