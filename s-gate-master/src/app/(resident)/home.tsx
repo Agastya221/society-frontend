@@ -207,7 +207,7 @@ export default function ResidentHomeScreen() {
                 <View style={S.headerTop}>
                     <View style={S.brandRow}>
                         <View style={S.logoWrap}>
-                            <SgateBrandMark size={44} />
+                            <SgateBrandMark size={60} />
                         </View>
                         <View>
                             <Text style={S.greetText}>{greeting()}, {firstName} 👋</Text>
@@ -444,9 +444,6 @@ const S = StyleSheet.create({
         flex: 1,
     },
     logoWrap: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
     },
