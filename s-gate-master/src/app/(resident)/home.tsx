@@ -190,8 +190,8 @@ export default function ResidentHomeScreen() {
         {
             icon: 'view-grid-outline',
             label: 'All Tools',
-            color: SgateColors.goldDeep,
-            bg: SgateColors.goldPale,
+            color: SgateColors.t1,
+            bg: SgateColors.gold,
             onPress: () => router.push('/(resident)/all-tools' as any),
         },
     ];
