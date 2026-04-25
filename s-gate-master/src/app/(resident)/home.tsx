@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -139,56 +139,56 @@ export default function ResidentHomeScreen() {
 
     const quickActions: QuickItem[] = [
         {
-            icon: 'user-check',
+            icon: 'account-check-outline',
             label: 'Pre-Approve',
             color: '#CC8800',
             bg: BRAND_YELLOW_BG,
             onPress: () => setShowPreApprove(true),
         },
         {
-            icon: 'credit-card',
+            icon: 'smart-card-outline',
             label: 'My Passes',
             color: SgateColors.blue,
             bg: SgateColors.blueBg,
             onPress: () => router.push('/(resident)/my-passes' as any),
         },
         {
-            icon: 'package',
+            icon: 'package-variant',
             label: 'Delivery',
             color: SgateColors.t2,
             bg: '#F2F2F2',
             onPress: () => router.push('/expect-delivery' as any),
         },
         {
-            icon: 'alert-triangle',
+            icon: 'alert-outline',
             label: 'SOS',
             color: SgateColors.red,
             bg: SgateColors.redBg,
             onPress: () => router.push('/(resident)/emergency/create' as any),
         },
         {
-            icon: 'credit-card',
+            icon: 'receipt-text-outline',
             label: 'Dues',
             color: SgateColors.green,
             bg: SgateColors.greenBg,
             onPress: () => router.push('/(resident)/society-dues' as any),
         },
         {
-            icon: 'users',
+            icon: 'account-group-outline',
             label: 'Daily Help',
             color: SgateColors.violet,
             bg: '#F3EEFF',
             onPress: () => router.push('/(resident)/daily-help' as any),
         },
         {
-            icon: 'message-circle',
+            icon: 'message-outline',
             label: 'Community',
             color: SgateColors.blue,
             bg: SgateColors.blueBg,
             onPress: () => router.push('/(resident)/communication' as any),
         },
         {
-            icon: 'grid',
+            icon: 'view-grid-outline',
             label: 'All Tools',
             color: SgateColors.t1,
             bg: SgateColors.gold,
@@ -207,7 +207,7 @@ export default function ResidentHomeScreen() {
                 <View style={S.headerTop}>
                     <View style={S.brandRow}>
                         <View style={S.logoWrap}>
-                            <SgateBrandMark size={36} />
+                            <SgateBrandMark size={44} />
                         </View>
                         <View>
                             <Text style={S.greetText}>{greeting()}, {firstName} 👋</Text>
@@ -221,7 +221,7 @@ export default function ResidentHomeScreen() {
                         onPress={() => router.push('/notifications' as any)}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <Feather name="bell" size={20} color={SgateColors.t1} />
+                        <MaterialCommunityIcons name="bell-outline" size={22} color={SgateColors.t1} />
                         {unreadCount > 0 && (
                             <View style={S.badge}>
                                 <Text style={S.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -237,7 +237,7 @@ export default function ResidentHomeScreen() {
                         <Text style={S.gateAlertText}>
                             {pendingRequests.length} visitor{pendingRequests.length > 1 ? 's' : ''} waiting at the gate
                         </Text>
-                        <Feather name="chevron-right" size={14} color="#996300" />
+                        <MaterialCommunityIcons name="chevron-right" size={18} color="#996300" />
                     </View>
                 )}
             </Animated.View>
@@ -267,7 +267,7 @@ export default function ResidentHomeScreen() {
                                 activeOpacity={0.65}
                             >
                                 <View style={[S.quickIcon, { backgroundColor: item.bg }]}>
-                                    <Feather name={item.icon as any} size={20} color={item.color} />
+                                    <MaterialCommunityIcons name={item.icon as any} size={26} color={item.color} />
                                 </View>
                                 <Text style={S.quickLabel} numberOfLines={1}>{item.label}</Text>
                             </TouchableOpacity>
@@ -384,7 +384,7 @@ function GateEmpty() {
     return (
         <View style={S.emptyWrap}>
             <View style={S.emptyIcon}>
-                <Feather name="check-circle" size={22} color={SgateColors.green} />
+                <MaterialCommunityIcons name="check-circle-outline" size={22} color={SgateColors.green} />
             </View>
             <Text style={S.emptyTitle}>All clear!</Text>
             <Text style={S.emptySub}>No one is waiting at the gate</Text>
@@ -409,7 +409,7 @@ function GateSkeleton() {
 function ActivityEmpty() {
     return (
         <View style={S.emptyWrap}>
-            <Feather name="clock" size={20} color={SgateColors.t4} />
+            <MaterialCommunityIcons name="clock-outline" size={22} color={SgateColors.t4} />
             <Text style={S.emptySub}>No activity yet today</Text>
         </View>
     );
@@ -447,7 +447,6 @@ const S = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 14,
-        backgroundColor: BRAND_YELLOW,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -547,8 +546,8 @@ const S = StyleSheet.create({
         gap: 8,
     },
     quickIcon: {
-        width: 54,
-        height: 54,
+        width: 56,
+        height: 56,
         borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',

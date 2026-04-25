@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 import { Tabs } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
@@ -113,7 +113,7 @@ function ResidentLayoutInner() {
           options={{
             title: 'Home',
             tabBarLabel: 'Home',
-            tabBarIcon: ({ color }) => <Feather name="home" size={22} color={color} />,
+            tabBarIcon: ({ color }) => <MaterialCommunityIcons name="home-outline" size={22} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -121,7 +121,7 @@ function ResidentLayoutInner() {
           options={{
             title: 'Notice',
             tabBarLabel: 'Notice',
-            tabBarIcon: ({ color }) => <Feather name="file-text" size={22} color={color} />,
+            tabBarIcon: ({ color }) => <MaterialCommunityIcons name="file-document-outline" size={22} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -129,7 +129,7 @@ function ResidentLayoutInner() {
           options={{
             title: 'Delivery',
             tabBarLabel: 'Delivery',
-            tabBarIcon: ({ color }) => <Feather name="package" size={22} color={color} />,
+            tabBarIcon: ({ color }) => <MaterialCommunityIcons name="package-variant" size={22} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -137,7 +137,7 @@ function ResidentLayoutInner() {
           options={{
             title: 'Society',
             tabBarLabel: 'Society',
-            tabBarIcon: ({ color }) => <Feather name="users" size={22} color={color} />,
+            tabBarIcon: ({ color }) => <MaterialCommunityIcons name="account-group-outline" size={22} color={color} />,
           }}
         />
         <Tabs.Screen
@@ -145,7 +145,7 @@ function ResidentLayoutInner() {
           options={{
             title: 'Profile',
             tabBarLabel: 'Profile',
-            tabBarIcon: ({ color }) => <Feather name="user" size={22} color={color} />,
+            tabBarIcon: ({ color }) => <MaterialCommunityIcons name="account-outline" size={22} color={color} />,
           }}
         />
 

@@ -4,7 +4,7 @@
     "slug": "s-gate",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/images/icon.png",
+    "icon": "./assets/images/icons/s-gate-logo-with-bg.png",
     "scheme": "sgate",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -36,8 +36,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./src/assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/icons/s-gate-logo-without-bg.png",
+          "imageWidth": 120,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {

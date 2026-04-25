@@ -1,0 +1,1215 @@
+[32m✔[0m [33mConsole Ninja[0m extension is connected to [33mReact Native / Expo[0m, see [36mhttps://tinyurl.com/2vt8jxzw[0m
+Starting project at C:\Users\javed\Desktop\s-gate-Ag\society-frontend\s-gate-master
+Using src/app as the root directory for Expo Router.
+React Compiler enabled
+Starting Metro Bundler
+Waiting on http://localhost:8082
+Logs for your project will appear below.
+Android node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 2230ms node_modules\expo-router\entry.js (2561 modules)
+ WARN  SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/th3rdwave/react-native-safe-area-context
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Route "./(resident)/profile/_components/AddressCard.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/HouseholdGrid.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileCompletion.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileHeader.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileQrModal.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SectionSkeleton.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SettingRow.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  `expo-notifications` functionality is not fully supported in Expo Go:
+We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
+ ERROR  expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Read more at https://docs.expo.dev/develop/development-builds/introduction/. 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  warnOfExpoGoPushUsage (node_modules\expo-notifications\build\warnOfExpoGoPushUsage.js)
+  addPushTokenListener (node_modules\expo-notifications\build\TokenEmitter.js)
+  <global> (node_modules\expo-notifications\build\DevicePushTokenAutoRegistration.fx.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (node_modules\expo-notifications\build\getExpoPushTokenAsync.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (node_modules\expo-notifications\build\index.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (src\app\_layout.tsx)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  Object.defineProperties$argument_1._layoutTsx.get (src\app)
+  metroContext (src\app)
+  node.loadRoute (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutes.js)
+  useStore (node_modules\expo-router\build\global-state\router-store.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  callComponent.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderWithHooks (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  updateFunctionComponent (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  beginWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performUnitOfWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  workLoopSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderRootSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ ERROR  BiometricAuth is undefined! Ensure the native module is properly linked. 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  <global> (node_modules\@msg91comm\sendotp-react-native\index.ts)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (src\app\login.tsx)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  Object.defineProperties$argument_1.loginTsx.get (src\app)
+  metroContext (src\app)
+  node.loadRoute (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutes.js)
+  useStore (node_modules\expo-router\build\global-state\router-store.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  callComponent.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderWithHooks (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  updateFunctionComponent (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  beginWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performUnitOfWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  workLoopSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderRootSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ GROUP    🚀 PATCH /users/resident-app/fcm-token
+ LOG    ⏱️  Time: 2026-04-25T01:17:35.299Z
+ LOG    📦 Body: {"fcmToken":"cEYPNLrEQki8vGB7LZrdFz:APA91bEPdAtN116KKR4pp0EdJmN3HqH8uCE0l_YOgTpjP_AZfJZSSXXHtp0rbSfaNtDKqawVvIVP82EwPtTNJxY3R6_KCaZKCRNjouUkJLhD2V6RhE8q7XM","deviceType":"android"}
+ GROUP    🚀 PATCH /users/resident-app/fcm-token
+ LOG    ⏱️  Time: 2026-04-25T01:17:35.402Z
+ LOG    📦 Body: {"fcmToken":"cEYPNLrEQki8vGB7LZrdFz:APA91bEPdAtN116KKR4pp0EdJmN3HqH8uCE0l_YOgTpjP_AZfJZSSXXHtp0rbSfaNtDKqawVvIVP82EwPtTNJxY3R6_KCaZKCRNjouUkJLhD2V6RhE8q7XM","deviceType":"android"}
+ WARN  [Layout children]: No route named "notices" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "profile" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "local-directory" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "daily-help" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "elections" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "society-dues" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "communication" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "amenities" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "vehicles" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "documents" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "search-vehicle" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "emergency" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "family" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "staff" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approve" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "my-passes" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ LOG  🚨 ResidentLayout: hasActiveEmergency changed to: false
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:17:35.865Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:17:35.866Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:17:35.866Z
+ GROUP    🚀 GET /community/emergencies/my
+ LOG    ⏱️  Time: 2026-04-25T01:17:35.866Z
+ GROUP    ✅ 200 PATCH /users/resident-app/fcm-token  (17017ms)
+ LOG    📄 Response: {"success":true,"message":"FCM token updated successfully","data":{"success":true}}
+ LOG  📲 FCM token registered
+ GROUP    ✅ 200 PATCH /users/resident-app/fcm-token  (—)
+ LOG    📄 Response: {"success":true,"message":"FCM token updated successfully","data":{"success":true}}
+ LOG  📲 FCM token registered
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (16571ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ GROUP    ✅ 200 GET /gate/entries  (16653ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /gate/entry-requests  (16802ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /community/emergencies/my  (17173ms)
+ LOG    📄 Response: {"success":true,"data":{"emergencies":[{"id":"978f3365-756e-4938-b6f6-3715c7bf4c07","type":"OTHER","status":"FALSE_ALARM","description":null,"location":null,"reportedById":"d294ea34-94af-41d1-bef0-de3d6786c591","flatId":"41e91f0a-3202-44d3-a87a-3c31d6b48ca8","societyId":"4372cae6-f659-4c76-aabb-b3a05867ff18","respondedById":null,"respondedAt":null,"resolvedAt":"2026-04-20T20:37:37.321Z","notes":"Accidental trigger","alertsSent":true,"notifiedUsers":["4f53f9ad-7e3a-4093-9a2e-0890fad81cad","1dbd7fad-8d82-4bd3-99be-431fb8c29246","d4a85add-eb68-4326-9175-d8539b6787c7","51d8737f-b858-42e9-92df-fe83… (9116 chars)
+ GROUP    🚀 GET /community/notices
+ LOG    ⏱️  Time: 2026-04-25T01:19:23.435Z
+ GROUP    ✅ 200 GET /community/notices  (494ms)
+ LOG    📄 Response: {"success":true,"data":{"notices":[{"id":"c3114aef-7b1c-404f-ab5a-11382adefa69","type":"MAINTENANCE","priority":"HIGH","title":"Water Supply Disruption — 12th April (10 AM to 4 PM)","description":"Due to PMC pipeline maintenance work on Baner Road:\n\nDate: 12th April 2026 (Sunday)\nTime: 10:00 AM to 4:00 PM\nAffected: All towers (A, B, C)\n\nPlease store sufficient water in advance. Emergency tanker will be arranged if outage extends beyond 4 PM.\n\nContact maintenance: 9820001234\n\n— Maintenance Team","images":[],"documents":[],"createdById":"4f53f9ad-7e3a-4093-9a2e-0890fad81cad","societyId… (6362 chars)
+ LOG  Notices Response keys: ["success", "data"]
+› Detected a change in metro.config.js. Restart the server to see the new results.
+› Detected a change in babel.config.js. Restart the server to see the new results. You may need to clear the bundler cache with the --clear flag for your changes to take effect.
+Android node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 115ms node_modules\expo-router\entry.js (1 module)
+ WARN  SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/th3rdwave/react-native-safe-area-context
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Route "./(resident)/profile/_components/AddressCard.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/HouseholdGrid.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileCompletion.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileHeader.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileQrModal.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SectionSkeleton.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SettingRow.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  `expo-notifications` functionality is not fully supported in Expo Go:
+We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
+ ERROR  expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Read more at https://docs.expo.dev/develop/development-builds/introduction/. 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  warnOfExpoGoPushUsage (node_modules\expo-notifications\build\warnOfExpoGoPushUsage.js)
+  addPushTokenListener (node_modules\expo-notifications\build\TokenEmitter.js)
+  <global> (node_modules\expo-notifications\build\DevicePushTokenAutoRegistration.fx.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (node_modules\expo-notifications\build\getExpoPushTokenAsync.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (node_modules\expo-notifications\build\index.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (src\app\_layout.tsx)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  Object.defineProperties$argument_1._layoutTsx.get (src\app)
+  metroContext (src\app)
+  node.loadRoute (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutes.js)
+  useStore (node_modules\expo-router\build\global-state\router-store.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  callComponent.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderWithHooks (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  updateFunctionComponent (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  beginWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performUnitOfWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  workLoopSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderRootSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ ERROR  BiometricAuth is undefined! Ensure the native module is properly linked. 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  <global> (node_modules\@msg91comm\sendotp-react-native\index.ts)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (src\app\login.tsx)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  Object.defineProperties$argument_1.loginTsx.get (src\app)
+  metroContext (src\app)
+  node.loadRoute (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutes.js)
+  useStore (node_modules\expo-router\build\global-state\router-store.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  callComponent.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderWithHooks (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  updateFunctionComponent (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  beginWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performUnitOfWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  workLoopSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderRootSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ GROUP    🚀 PATCH /users/resident-app/fcm-token
+ LOG    ⏱️  Time: 2026-04-25T01:27:37.055Z
+ LOG    📦 Body: {"fcmToken":"cEYPNLrEQki8vGB7LZrdFz:APA91bEPdAtN116KKR4pp0EdJmN3HqH8uCE0l_YOgTpjP_AZfJZSSXXHtp0rbSfaNtDKqawVvIVP82EwPtTNJxY3R6_KCaZKCRNjouUkJLhD2V6RhE8q7XM","deviceType":"android"}
+ WARN  [Layout children]: No route named "notices" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "profile" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "local-directory" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "daily-help" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "elections" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "society-dues" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "communication" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "amenities" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "vehicles" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "documents" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "search-vehicle" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "emergency" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "family" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "staff" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approve" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "my-passes" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ LOG  🚨 ResidentLayout: hasActiveEmergency changed to: false
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:27:37.603Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:27:37.603Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:27:37.604Z
+ GROUP    🚀 GET /community/emergencies/my
+ LOG    ⏱️  Time: 2026-04-25T01:27:37.604Z
+ GROUP    🚀 PATCH /users/resident-app/fcm-token
+ LOG    ⏱️  Time: 2026-04-25T01:27:37.614Z
+ LOG    📦 Body: {"fcmToken":"cEYPNLrEQki8vGB7LZrdFz:APA91bEPdAtN116KKR4pp0EdJmN3HqH8uCE0l_YOgTpjP_AZfJZSSXXHtp0rbSfaNtDKqawVvIVP82EwPtTNJxY3R6_KCaZKCRNjouUkJLhD2V6RhE8q7XM","deviceType":"android"}
+ GROUP    ✅ 200 PATCH /users/resident-app/fcm-token  (405ms)
+ LOG    📄 Response: {"success":true,"message":"FCM token updated successfully","data":{"success":true}}
+ LOG  📲 FCM token registered
+ GROUP    ✅ 200 GET /gate/entries  (1036ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /community/emergencies/my  (1084ms)
+ LOG    📄 Response: {"success":true,"data":{"emergencies":[{"id":"978f3365-756e-4938-b6f6-3715c7bf4c07","type":"OTHER","status":"FALSE_ALARM","description":null,"location":null,"reportedById":"d294ea34-94af-41d1-bef0-de3d6786c591","flatId":"41e91f0a-3202-44d3-a87a-3c31d6b48ca8","societyId":"4372cae6-f659-4c76-aabb-b3a05867ff18","respondedById":null,"respondedAt":null,"resolvedAt":"2026-04-20T20:37:37.321Z","notes":"Accidental trigger","alertsSent":true,"notifiedUsers":["4f53f9ad-7e3a-4093-9a2e-0890fad81cad","1dbd7fad-8d82-4bd3-99be-431fb8c29246","d4a85add-eb68-4326-9175-d8539b6787c7","51d8737f-b858-42e9-92df-fe83… (9116 chars)
+ GROUP    ✅ 200 GET /gate/entry-requests  (1158ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 PATCH /users/resident-app/fcm-token  (—)
+ LOG    📄 Response: {"success":true,"message":"FCM token updated successfully","data":{"success":true}}
+ LOG  📲 FCM token registered
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (1249ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+Android node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundling failed 1269ms node_modules\expo-router\entry.js (1 module)
+Unable to resolve "../assets/images/icons/s-gate-logo-without-bg.png" from "src\app\_layout.tsx"
+[0m [90m 187 |[39m         [33m<[39m[33mView[39m style[33m=[39m{{ flex[33m:[39m [35m1[39m[33m,[39m alignItems[33m:[39m [32m'center'[39m[33m,[39m justifyContent[33m:[39m [32m'center'[39m[33m,[39m backgroundColor[33m:[39m [32m'#FFFFFF'[39m }}[33m>[39m
+ [90m 188 |[39m           [33m<[39m[33mImage[39m
+[31m[1m>[22m[39m[90m 189 |[39m             source[33m=[39m{require([32m'../assets/images/icons/s-gate-logo-without-bg.png'[39m)}
+ [90m     |[39m                              [31m[1m^[22m[39m
+ [90m 190 |[39m             style[33m=[39m{{ width[33m:[39m [35m120[39m[33m,[39m height[33m:[39m [35m120[39m[33m,[39m resizeMode[33m:[39m [32m'contain'[39m }}
+ [90m 191 |[39m           [33m/[39m[33m>[39m
+ [90m 192 |[39m         [33m<[39m[33m/[39m[33mView[39m[33m>[39m[0m
+
+Import stack:
+
+ src\app\_layout.tsx
+ | import "../assets/images/icons/s-gate-logo-without-bg.png"
+
+ src\app (require.context)
+
+Android node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 186ms node_modules\expo-router\entry.js (1 module)
+ WARN  SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/th3rdwave/react-native-safe-area-context
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Route "./(resident)/profile/_components/AddressCard.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/HouseholdGrid.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileCompletion.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileHeader.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileQrModal.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SectionSkeleton.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SettingRow.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  `expo-notifications` functionality is not fully supported in Expo Go:
+We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
+ ERROR  expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Read more at https://docs.expo.dev/develop/development-builds/introduction/. 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  warnOfExpoGoPushUsage (node_modules\expo-notifications\build\warnOfExpoGoPushUsage.js)
+  addPushTokenListener (node_modules\expo-notifications\build\TokenEmitter.js)
+  <global> (node_modules\expo-notifications\build\DevicePushTokenAutoRegistration.fx.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (node_modules\expo-notifications\build\getExpoPushTokenAsync.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (node_modules\expo-notifications\build\index.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (src\app\_layout.tsx)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  Object.defineProperties$argument_1._layoutTsx.get (src\app)
+  metroContext (src\app)
+  node.loadRoute (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutes.js)
+  useStore (node_modules\expo-router\build\global-state\router-store.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  callComponent.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderWithHooks (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  updateFunctionComponent (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  beginWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performUnitOfWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  workLoopSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderRootSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ ERROR  BiometricAuth is undefined! Ensure the native module is properly linked. 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  <global> (node_modules\@msg91comm\sendotp-react-native\index.ts)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (src\app\login.tsx)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  Object.defineProperties$argument_1.loginTsx.get (src\app)
+  metroContext (src\app)
+  node.loadRoute (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutes.js)
+  useStore (node_modules\expo-router\build\global-state\router-store.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  callComponent.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderWithHooks (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  updateFunctionComponent (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  beginWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performUnitOfWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  workLoopSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderRootSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ GROUP    🚀 PATCH /users/resident-app/fcm-token
+ LOG    ⏱️  Time: 2026-04-25T01:35:10.758Z
+ LOG    📦 Body: {"fcmToken":"cEYPNLrEQki8vGB7LZrdFz:APA91bEPdAtN116KKR4pp0EdJmN3HqH8uCE0l_YOgTpjP_AZfJZSSXXHtp0rbSfaNtDKqawVvIVP82EwPtTNJxY3R6_KCaZKCRNjouUkJLhD2V6RhE8q7XM","deviceType":"android"}
+ WARN  [Layout children]: No route named "notices" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "profile" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "local-directory" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "daily-help" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "elections" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "society-dues" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "communication" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "amenities" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "vehicles" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "documents" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "search-vehicle" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "emergency" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "family" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "staff" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approve" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "my-passes" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ LOG  🚨 ResidentLayout: hasActiveEmergency changed to: false
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:35:11.302Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:35:11.302Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:35:11.303Z
+ GROUP    🚀 GET /community/emergencies/my
+ LOG    ⏱️  Time: 2026-04-25T01:35:11.303Z
+ GROUP    🚀 PATCH /users/resident-app/fcm-token
+ LOG    ⏱️  Time: 2026-04-25T01:35:11.311Z
+ LOG    📦 Body: {"fcmToken":"cEYPNLrEQki8vGB7LZrdFz:APA91bEPdAtN116KKR4pp0EdJmN3HqH8uCE0l_YOgTpjP_AZfJZSSXXHtp0rbSfaNtDKqawVvIVP82EwPtTNJxY3R6_KCaZKCRNjouUkJLhD2V6RhE8q7XM","deviceType":"android"}
+ GROUP    ✅ 200 PATCH /users/resident-app/fcm-token  (239ms)
+ LOG    📄 Response: {"success":true,"message":"FCM token updated successfully","data":{"success":true}}
+ LOG  📲 FCM token registered
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (499ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ GROUP    ✅ 200 GET /community/emergencies/my  (543ms)
+ LOG    📄 Response: {"success":true,"data":{"emergencies":[{"id":"978f3365-756e-4938-b6f6-3715c7bf4c07","type":"OTHER","status":"FALSE_ALARM","description":null,"location":null,"reportedById":"d294ea34-94af-41d1-bef0-de3d6786c591","flatId":"41e91f0a-3202-44d3-a87a-3c31d6b48ca8","societyId":"4372cae6-f659-4c76-aabb-b3a05867ff18","respondedById":null,"respondedAt":null,"resolvedAt":"2026-04-20T20:37:37.321Z","notes":"Accidental trigger","alertsSent":true,"notifiedUsers":["4f53f9ad-7e3a-4093-9a2e-0890fad81cad","1dbd7fad-8d82-4bd3-99be-431fb8c29246","d4a85add-eb68-4326-9175-d8539b6787c7","51d8737f-b858-42e9-92df-fe83… (9116 chars)
+ GROUP    ✅ 200 PATCH /users/resident-app/fcm-token  (—)
+ LOG    📄 Response: {"success":true,"message":"FCM token updated successfully","data":{"success":true}}
+ LOG  📲 FCM token registered
+ GROUP    ✅ 200 GET /gate/entries  (561ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /gate/entry-requests  (775ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:41:30.618Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:41:30.619Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:41:30.619Z
+ GROUP    ✅ 200 GET /gate/entry-requests  (1346ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /gate/entries  (1422ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (1462ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ WARN  "account-check-outline" is not a valid icon name for family "feather"
+ WARN  "smart-card-outline" is not a valid icon name for family "feather"
+ WARN  "package-variant" is not a valid icon name for family "feather"
+ WARN  "alert-outline" is not a valid icon name for family "feather"
+ WARN  "receipt-text-outline" is not a valid icon name for family "feather"
+ WARN  "account-group-outline" is not a valid icon name for family "feather"
+ WARN  "message-outline" is not a valid icon name for family "feather"
+ WARN  "view-grid-outline" is not a valid icon name for family "feather"
+ WARN  "account-check-outline" is not a valid icon name for family "feather"
+ WARN  "smart-card-outline" is not a valid icon name for family "feather"
+ WARN  "package-variant" is not a valid icon name for family "feather"
+ WARN  "alert-outline" is not a valid icon name for family "feather"
+ WARN  "receipt-text-outline" is not a valid icon name for family "feather"
+ WARN  "account-group-outline" is not a valid icon name for family "feather"
+ WARN  "message-outline" is not a valid icon name for family "feather"
+ WARN  "view-grid-outline" is not a valid icon name for family "feather"
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:42:31.520Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:42:31.521Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:42:31.521Z
+ GROUP    ✅ 200 GET /gate/entries  (719ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ WARN  "account-check-outline" is not a valid icon name for family "feather"
+ WARN  "smart-card-outline" is not a valid icon name for family "feather"
+ WARN  "package-variant" is not a valid icon name for family "feather"
+ WARN  "alert-outline" is not a valid icon name for family "feather"
+ WARN  "receipt-text-outline" is not a valid icon name for family "feather"
+ WARN  "account-group-outline" is not a valid icon name for family "feather"
+ WARN  "message-outline" is not a valid icon name for family "feather"
+ WARN  "view-grid-outline" is not a valid icon name for family "feather"
+ GROUP    ✅ 200 GET /gate/entry-requests  (796ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ WARN  "account-check-outline" is not a valid icon name for family "feather"
+ WARN  "smart-card-outline" is not a valid icon name for family "feather"
+ WARN  "package-variant" is not a valid icon name for family "feather"
+ WARN  "alert-outline" is not a valid icon name for family "feather"
+ WARN  "receipt-text-outline" is not a valid icon name for family "feather"
+ WARN  "account-group-outline" is not a valid icon name for family "feather"
+ WARN  "message-outline" is not a valid icon name for family "feather"
+ WARN  "view-grid-outline" is not a valid icon name for family "feather"
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (845ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ WARN  "account-check-outline" is not a valid icon name for family "feather"
+ WARN  "smart-card-outline" is not a valid icon name for family "feather"
+ WARN  "package-variant" is not a valid icon name for family "feather"
+ WARN  "alert-outline" is not a valid icon name for family "feather"
+ WARN  "receipt-text-outline" is not a valid icon name for family "feather"
+ WARN  "account-group-outline" is not a valid icon name for family "feather"
+ WARN  "message-outline" is not a valid icon name for family "feather"
+ WARN  "view-grid-outline" is not a valid icon name for family "feather"
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:42:48.603Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:42:48.604Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:42:48.604Z
+ GROUP    ✅ 200 GET /gate/entry-requests  (643ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /gate/entries  (717ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (756ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ ERROR  [ReferenceError: Property 'NoNewline' doesn't exist] 
+
+Call Stack
+  <global> (src\app\(resident)\home.tsx)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  runUpdatedModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroHotUpdateModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  define (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  eval (http:\10.246.150.71:8082\src\app\(resident)\home.bundle)
+  inject (node_modules\metro-runtime\src\modules\HMRClient.js)
+  forEach (<native>)
+  injectUpdate (node_modules\metro-runtime\src\modules\HMRClient.js)
+  on$argument_1 (node_modules\metro-runtime\src\modules\HMRClient.js)
+  call (<native>)
+  emit (node_modules\metro-runtime\src\modules\vendor\eventemitter3.js)
+  _ws.onmessage (node_modules\metro-runtime\src\modules\HMRClient.js)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatchEvent (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  _eventEmitter.addListener$argument_1 (node_modules\react-native\Libraries\WebSocket\WebSocket.js)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js)
+  apply (<native>)
+  <anonymous> (node_modules\@babel\runtime\helpers\superPropGet.js)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js)
+Android node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 353ms node_modules\expo-router\entry.js (1 module)
+ WARN  SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/th3rdwave/react-native-safe-area-context
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Route "./(resident)/profile/_components/AddressCard.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/HouseholdGrid.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileCompletion.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileHeader.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileQrModal.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SectionSkeleton.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SettingRow.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  `expo-notifications` functionality is not fully supported in Expo Go:
+We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
+ ERROR  expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Read more at https://docs.expo.dev/develop/development-builds/introduction/. 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  warnOfExpoGoPushUsage (node_modules\expo-notifications\build\warnOfExpoGoPushUsage.js)
+  addPushTokenListener (node_modules\expo-notifications\build\TokenEmitter.js)
+  <global> (node_modules\expo-notifications\build\DevicePushTokenAutoRegistration.fx.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (node_modules\expo-notifications\build\getExpoPushTokenAsync.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (node_modules\expo-notifications\build\index.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (src\app\_layout.tsx)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  Object.defineProperties$argument_1._layoutTsx.get (src\app)
+  metroContext (src\app)
+  node.loadRoute (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutes.js)
+  useStore (node_modules\expo-router\build\global-state\router-store.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  callComponent.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderWithHooks (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  updateFunctionComponent (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  beginWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performUnitOfWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  workLoopSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderRootSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ ERROR  BiometricAuth is undefined! Ensure the native module is properly linked. 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  <global> (node_modules\@msg91comm\sendotp-react-native\index.ts)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (src\app\login.tsx)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  Object.defineProperties$argument_1.loginTsx.get (src\app)
+  metroContext (src\app)
+  node.loadRoute (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutes.js)
+  useStore (node_modules\expo-router\build\global-state\router-store.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  callComponent.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderWithHooks (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  updateFunctionComponent (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  beginWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performUnitOfWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  workLoopSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderRootSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ GROUP    🚀 PATCH /users/resident-app/fcm-token
+ LOG    ⏱️  Time: 2026-04-25T01:47:50.794Z
+ LOG    📦 Body: {"fcmToken":"cEYPNLrEQki8vGB7LZrdFz:APA91bEPdAtN116KKR4pp0EdJmN3HqH8uCE0l_YOgTpjP_AZfJZSSXXHtp0rbSfaNtDKqawVvIVP82EwPtTNJxY3R6_KCaZKCRNjouUkJLhD2V6RhE8q7XM","deviceType":"android"}
+ WARN  [Layout children]: No route named "notices" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "profile" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "local-directory" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "daily-help" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "elections" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "society-dues" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "communication" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "amenities" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "vehicles" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "documents" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "search-vehicle" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "emergency" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "family" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "staff" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approve" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "my-passes" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ LOG  🚨 ResidentLayout: hasActiveEmergency changed to: false
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:47:51.328Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:47:51.328Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:47:51.329Z
+ GROUP    🚀 GET /community/emergencies/my
+ LOG    ⏱️  Time: 2026-04-25T01:47:51.329Z
+ GROUP    🚀 PATCH /users/resident-app/fcm-token
+ LOG    ⏱️  Time: 2026-04-25T01:47:51.337Z
+ LOG    📦 Body: {"fcmToken":"cEYPNLrEQki8vGB7LZrdFz:APA91bEPdAtN116KKR4pp0EdJmN3HqH8uCE0l_YOgTpjP_AZfJZSSXXHtp0rbSfaNtDKqawVvIVP82EwPtTNJxY3R6_KCaZKCRNjouUkJLhD2V6RhE8q7XM","deviceType":"android"}
+ GROUP    ✅ 200 PATCH /users/resident-app/fcm-token  (351ms)
+ LOG    📄 Response: {"success":true,"message":"FCM token updated successfully","data":{"success":true}}
+ LOG  📲 FCM token registered
+ GROUP    ✅ 200 GET /gate/entry-requests  (873ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (919ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ GROUP    ✅ 200 GET /gate/entries  (959ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /community/emergencies/my  (998ms)
+ LOG    📄 Response: {"success":true,"data":{"emergencies":[{"id":"978f3365-756e-4938-b6f6-3715c7bf4c07","type":"OTHER","status":"FALSE_ALARM","description":null,"location":null,"reportedById":"d294ea34-94af-41d1-bef0-de3d6786c591","flatId":"41e91f0a-3202-44d3-a87a-3c31d6b48ca8","societyId":"4372cae6-f659-4c76-aabb-b3a05867ff18","respondedById":null,"respondedAt":null,"resolvedAt":"2026-04-20T20:37:37.321Z","notes":"Accidental trigger","alertsSent":true,"notifiedUsers":["4f53f9ad-7e3a-4093-9a2e-0890fad81cad","1dbd7fad-8d82-4bd3-99be-431fb8c29246","d4a85add-eb68-4326-9175-d8539b6787c7","51d8737f-b858-42e9-92df-fe83… (9116 chars)
+ GROUP    ✅ 200 PATCH /users/resident-app/fcm-token  (—)
+ LOG    📄 Response: {"success":true,"message":"FCM token updated successfully","data":{"success":true}}
+ LOG  📲 FCM token registered
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:48:44.154Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:48:44.155Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:48:44.156Z
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (561ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ GROUP    ✅ 200 GET /gate/entries  (729ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /gate/entry-requests  (849ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:48:54.484Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:48:54.484Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:48:54.485Z
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (496ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ GROUP    ✅ 200 GET /gate/entries  (897ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /gate/entry-requests  (970ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ WARN  [Layout children]: No route named "notices" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "profile" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "local-directory" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "daily-help" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "elections" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "society-dues" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "communication" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "amenities" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "vehicles" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "documents" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "search-vehicle" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "emergency" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "family" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "staff" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approve" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "my-passes" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ LOG  🚨 ResidentLayout: hasActiveEmergency changed to: false
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:53:00.257Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:53:00.258Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:53:00.258Z
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:53:01.367Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:53:01.368Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:53:01.369Z
+ GROUP    ✅ 200 GET /gate/entry-requests  (532ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (602ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ GROUP    ✅ 200 GET /gate/entries  (644ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ WARN  [Layout children]: No route named "flats" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "guards", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats/[id]", "flats/index", "gate-pass/create", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "gate-pass" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "guards", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats/[id]", "flats/index", "gate-pass/create", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "onboarding-requests" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "guards", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats/[id]", "flats/index", "gate-pass/create", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "community" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "guards", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats/[id]", "flats/index", "gate-pass/create", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "elections" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "guards", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats/[id]", "flats/index", "gate-pass/create", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "notices" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "profile" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "local-directory" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "daily-help" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "elections" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "society-dues" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "communication" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "amenities" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "vehicles" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "documents" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "search-vehicle" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "emergency" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "family" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "staff" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approve" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "my-passes" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ LOG  🚨 ResidentLayout: hasActiveEmergency changed to: false
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:58:12.986Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:58:12.987Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:58:12.987Z
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T01:58:12.989Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T01:58:12.989Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T01:58:12.990Z
+ GROUP    🚀 GET /community/emergencies/my
+ LOG    ⏱️  Time: 2026-04-25T01:58:12.990Z
+ GROUP    🚀 PATCH /users/resident-app/fcm-token
+ LOG    ⏱️  Time: 2026-04-25T01:58:13.006Z
+ LOG    📦 Body: {"fcmToken":"cEYPNLrEQki8vGB7LZrdFz:APA91bEPdAtN116KKR4pp0EdJmN3HqH8uCE0l_YOgTpjP_AZfJZSSXXHtp0rbSfaNtDKqawVvIVP82EwPtTNJxY3R6_KCaZKCRNjouUkJLhD2V6RhE8q7XM","deviceType":"android"}
+ GROUP    ✅ 200 GET /gate/entry-requests  (1191ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /gate/entries  (1262ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /gate/entry-requests  (—)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (1341ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (—)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ GROUP    ✅ 200 GET /gate/entries  (—)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 PATCH /users/resident-app/fcm-token  (1847ms)
+ LOG    📄 Response: {"success":true,"message":"FCM token updated successfully","data":{"success":true}}
+ LOG  📲 FCM token registered
+ GROUP    ✅ 200 GET /community/emergencies/my  (1876ms)
+ LOG    📄 Response: {"success":true,"data":{"emergencies":[{"id":"978f3365-756e-4938-b6f6-3715c7bf4c07","type":"OTHER","status":"FALSE_ALARM","description":null,"location":null,"reportedById":"d294ea34-94af-41d1-bef0-de3d6786c591","flatId":"41e91f0a-3202-44d3-a87a-3c31d6b48ca8","societyId":"4372cae6-f659-4c76-aabb-b3a05867ff18","respondedById":null,"respondedAt":null,"resolvedAt":"2026-04-20T20:37:37.321Z","notes":"Accidental trigger","alertsSent":true,"notifiedUsers":["4f53f9ad-7e3a-4093-9a2e-0890fad81cad","1dbd7fad-8d82-4bd3-99be-431fb8c29246","d4a85add-eb68-4326-9175-d8539b6787c7","51d8737f-b858-42e9-92df-fe83… (9116 chars)
+Unable to resolve "../../assets/images/icons/s-gate-logo-without-bg.png" from "src\app\_layout.tsx"
+[0m [90m 187 |[39m         [33m<[39m[33mView[39m style[33m=[39m{{ flex[33m:[39m [35m1[39m[33m,[39m alignItems[33m:[39m [32m'center'[39m[33m,[39m justifyContent[33m:[39m [32m'center'[39m[33m,[39m backgroundColor[33m:[39m [32m'#FFFFFF'[39m }}[33m>[39m
+ [90m 188 |[39m           [33m<[39m[33mImage[39m
+[31m[1m>[22m[39m[90m 189 |[39m             source[33m=[39m{require([32m'../../assets/images/icons/s-gate-logo-without-bg.png'[39m)}
+ [90m     |[39m                              [31m[1m^[22m[39m
+ [90m 190 |[39m             style[33m=[39m{{ width[33m:[39m [35m120[39m[33m,[39m height[33m:[39m [35m120[39m[33m,[39m resizeMode[33m:[39m [32m'contain'[39m }}
+ [90m 191 |[39m           [33m/[39m[33m>[39m
+ [90m 192 |[39m         [33m<[39m[33m/[39m[33mView[39m[33m>[39m[0m
+
+Import stack:
+
+ src\app\_layout.tsx
+ | import "../../assets/images/icons/s-gate-logo-without-bg.png"
+
+ src\app (require.context)
+
+ GROUP    🚀 GET /community/emergencies/my
+ LOG    ⏱️  Time: 2026-04-25T01:59:24.876Z
+ GROUP    ✅ 200 GET /community/emergencies/my  (661ms)
+ LOG    📄 Response: {"success":true,"data":{"emergencies":[{"id":"978f3365-756e-4938-b6f6-3715c7bf4c07","type":"OTHER","status":"FALSE_ALARM","description":null,"location":null,"reportedById":"d294ea34-94af-41d1-bef0-de3d6786c591","flatId":"41e91f0a-3202-44d3-a87a-3c31d6b48ca8","societyId":"4372cae6-f659-4c76-aabb-b3a05867ff18","respondedById":null,"respondedAt":null,"resolvedAt":"2026-04-20T20:37:37.321Z","notes":"Accidental trigger","alertsSent":true,"notifiedUsers":["4f53f9ad-7e3a-4093-9a2e-0890fad81cad","1dbd7fad-8d82-4bd3-99be-431fb8c29246","d4a85add-eb68-4326-9175-d8539b6787c7","51d8737f-b858-42e9-92df-fe83… (9116 chars)
+Android Bundling failed 10ms node_modules\expo-router\entry.js (1 module)
+Unable to resolve "../../assets/images/icons/s-gate-logo-without-bg.png" from "src\app\_layout.tsx"
+[0m [90m 187 |[39m         [33m<[39m[33mView[39m style[33m=[39m{{ flex[33m:[39m [35m1[39m[33m,[39m alignItems[33m:[39m [32m'center'[39m[33m,[39m justifyContent[33m:[39m [32m'center'[39m[33m,[39m backgroundColor[33m:[39m [32m'#FFFFFF'[39m }}[33m>[39m
+ [90m 188 |[39m           [33m<[39m[33mImage[39m
+[31m[1m>[22m[39m[90m 189 |[39m             source[33m=[39m{require([32m'../../assets/images/icons/s-gate-logo-without-bg.png'[39m)}
+ [90m     |[39m                              [31m[1m^[22m[39m
+ [90m 190 |[39m             style[33m=[39m{{ width[33m:[39m [35m120[39m[33m,[39m height[33m:[39m [35m120[39m[33m,[39m resizeMode[33m:[39m [32m'contain'[39m }}
+ [90m 191 |[39m           [33m/[39m[33m>[39m
+ [90m 192 |[39m         [33m<[39m[33m/[39m[33mView[39m[33m>[39m[0m
+
+Import stack:
+
+ src\app\_layout.tsx
+ | import "../../assets/images/icons/s-gate-logo-without-bg.png"
+
+ src\app (require.context)
+
+Android node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 131ms node_modules\expo-router\entry.js (1 module)
+ WARN  SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/th3rdwave/react-native-safe-area-context
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Route "./(resident)/profile/_components/AddressCard.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/HouseholdGrid.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileCompletion.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileHeader.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileQrModal.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SectionSkeleton.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SettingRow.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  `expo-notifications` functionality is not fully supported in Expo Go:
+We recommend you instead use a development build to avoid limitations. Learn more: https://expo.fyi/dev-client.
+ ERROR  expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Read more at https://docs.expo.dev/develop/development-builds/introduction/. 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  warnOfExpoGoPushUsage (node_modules\expo-notifications\build\warnOfExpoGoPushUsage.js)
+  addPushTokenListener (node_modules\expo-notifications\build\TokenEmitter.js)
+  <global> (node_modules\expo-notifications\build\DevicePushTokenAutoRegistration.fx.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (node_modules\expo-notifications\build\getExpoPushTokenAsync.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (node_modules\expo-notifications\build\index.js)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (src\app\_layout.tsx)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  Object.defineProperties$argument_1._layoutTsx.get (src\app)
+  metroContext (src\app)
+  node.loadRoute (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutes.js)
+  useStore (node_modules\expo-router\build\global-state\router-store.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  callComponent.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderWithHooks (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  updateFunctionComponent (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  beginWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performUnitOfWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  workLoopSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderRootSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ ERROR  BiometricAuth is undefined! Ensure the native module is properly linked. 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  <global> (node_modules\@msg91comm\sendotp-react-native\index.ts)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  <global> (src\app\login.tsx)
+  loadModuleImplementation (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  guardedLoadModule (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  metroRequire (node_modules\expo\node_modules\@expo\cli\build\metro-require\require.js)
+  Object.defineProperties$argument_1.loginTsx.get (src\app)
+  metroContext (src\app)
+  node.loadRoute (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getDirectoryTree (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutesCore.js)
+  getRoutes (node_modules\expo-router\build\getRoutes.js)
+  useStore (node_modules\expo-router\build\global-state\router-store.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  callComponent.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderWithHooks (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  updateFunctionComponent (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  beginWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performUnitOfWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  workLoopSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  renderRootSync (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ GROUP    🚀 PATCH /users/resident-app/fcm-token
+ LOG    ⏱️  Time: 2026-04-25T02:01:40.575Z
+ LOG    📦 Body: {"fcmToken":"cEYPNLrEQki8vGB7LZrdFz:APA91bEPdAtN116KKR4pp0EdJmN3HqH8uCE0l_YOgTpjP_AZfJZSSXXHtp0rbSfaNtDKqawVvIVP82EwPtTNJxY3R6_KCaZKCRNjouUkJLhD2V6RhE8q7XM","deviceType":"android"}
+ WARN  [Layout children]: No route named "notices" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "profile" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "local-directory" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "daily-help" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "elections" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "society-dues" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "communication" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "amenities" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "vehicles" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "documents" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "search-vehicle" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "emergency" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "family" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approvals" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "staff" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "pre-approve" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ WARN  [Layout children]: No route named "my-passes" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ LOG  🚨 ResidentLayout: hasActiveEmergency changed to: false
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T02:01:41.117Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T02:01:41.118Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T02:01:41.118Z
+ GROUP    🚀 GET /community/emergencies/my
+ LOG    ⏱️  Time: 2026-04-25T02:01:41.119Z
+ GROUP    🚀 PATCH /users/resident-app/fcm-token
+ LOG    ⏱️  Time: 2026-04-25T02:01:41.126Z
+ LOG    📦 Body: {"fcmToken":"cEYPNLrEQki8vGB7LZrdFz:APA91bEPdAtN116KKR4pp0EdJmN3HqH8uCE0l_YOgTpjP_AZfJZSSXXHtp0rbSfaNtDKqawVvIVP82EwPtTNJxY3R6_KCaZKCRNjouUkJLhD2V6RhE8q7XM","deviceType":"android"}
+ GROUP    ✅ 200 PATCH /users/resident-app/fcm-token  (952ms)
+ LOG    📄 Response: {"success":true,"message":"FCM token updated successfully","data":{"success":true}}
+ LOG  📲 FCM token registered
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (963ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ GROUP    ✅ 200 GET /gate/entry-requests  (1005ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /gate/entries  (1045ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /community/emergencies/my  (1081ms)
+ LOG    📄 Response: {"success":true,"data":{"emergencies":[{"id":"978f3365-756e-4938-b6f6-3715c7bf4c07","type":"OTHER","status":"FALSE_ALARM","description":null,"location":null,"reportedById":"d294ea34-94af-41d1-bef0-de3d6786c591","flatId":"41e91f0a-3202-44d3-a87a-3c31d6b48ca8","societyId":"4372cae6-f659-4c76-aabb-b3a05867ff18","respondedById":null,"respondedAt":null,"resolvedAt":"2026-04-20T20:37:37.321Z","notes":"Accidental trigger","alertsSent":true,"notifiedUsers":["4f53f9ad-7e3a-4093-9a2e-0890fad81cad","1dbd7fad-8d82-4bd3-99be-431fb8c29246","d4a85add-eb68-4326-9175-d8539b6787c7","51d8737f-b858-42e9-92df-fe83… (9116 chars)
+ GROUP    ✅ 200 PATCH /users/resident-app/fcm-token  (—)
+ LOG    📄 Response: {"success":true,"message":"FCM token updated successfully","data":{"success":true}}
+ LOG  📲 FCM token registered
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-04-25T02:01:58.871Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-04-25T02:01:58.871Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-04-25T02:01:58.872Z
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (494ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":0}}
+ GROUP    ✅ 200 GET /gate/entries  (567ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /gate/entry-requests  (640ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}

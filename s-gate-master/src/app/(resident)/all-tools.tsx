@@ -57,7 +57,7 @@ export default function ResidentAllToolsScreen() {
             {tools.map((t, idx) => (
                 <TouchableOpacity key={idx} style={styles.tile} onPress={() => nav(t.route)}>
                     <View style={[styles.iconWrap, { backgroundColor: t.bg }]}>
-                        <MaterialCommunityIcons name={t.icon} size={24} color={t.color} />
+                        <MaterialCommunityIcons name={t.icon} size={26} color={t.color} />
                     </View>
                     <Text style={styles.tileTitle}>{t.title}</Text>
                 </TouchableOpacity>
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
         minHeight: 100,
     },
     iconWrap: {
-        width: 44, height: 44,
+        width: 48, height: 48,
         borderRadius: 14,
         alignItems: 'center', justifyContent: 'center',
         marginBottom: 10,
