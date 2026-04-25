@@ -207,7 +207,7 @@ export default function ResidentHomeScreen() {
                 <View style={S.headerTop}>
                     <View style={S.brandRow}>
                         <View style={S.logoWrap}>
-                            <SgateBrandMark size={50} />
+                            <SgateBrandMark size={48} />
                         </View>
                         <View>
                             <Text style={S.greetText}>{greeting()}, {firstName} 👋</Text>
