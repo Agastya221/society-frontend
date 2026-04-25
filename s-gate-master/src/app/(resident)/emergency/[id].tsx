@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { EmergencyResponse, getEmergencyById } from '../../../services/emergency';
@@ -32,7 +33,7 @@ export default function EmergencyDetailScreen() {
     if (isLoading) {
         return (
             <SafeAreaView className="flex-1 bg-white dark:bg-black items-center justify-center">
-                <ActivityIndicator size="large" color="#ef4444" />
+                <AppLoader />
             </SafeAreaView>
         );
     }

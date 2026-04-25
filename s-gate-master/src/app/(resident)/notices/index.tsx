@@ -2,10 +2,11 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
-    ActivityIndicator, Animated, Dimensions, FlatList,
+Animated, Dimensions, FlatList,
     Modal, PanResponder, Pressable, ScrollView, StyleSheet,
     Text, TouchableOpacity, View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../../services/api';
 import { SgateColors, SgateFonts, SgateRadius } from '../../../constants/Sgate-theme';
@@ -300,9 +301,7 @@ export default function NoticesScreen() {
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
             {loading ? (
-                <View style={S.center}>
-                    <ActivityIndicator size="large" color={SgateColors.gold} />
-                </View>
+                <AppLoader />
             ) : (
                 <FlatList
                     data={filteredNotices}

@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet,
   Share, ScrollView, ActivityIndicator, StatusBar, Platform } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -119,7 +120,7 @@ export default function DocumentDetailScreen() {
           </View>
         </SafeAreaView>
       </View>
-      <View style={S.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+      <AppLoader />
     </View>
   );
 

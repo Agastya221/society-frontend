@@ -2,6 +2,7 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as SecureStore from 'expo-secure-store';
 import api from '@/services/api';
@@ -93,8 +94,7 @@ export default function RegistrationStatusScreen() {
     if (loading) {
         return (
             <SafeAreaView edges={['top']} className="flex-1 bg-gray-50 items-center justify-center">
-                <ActivityIndicator size="large" color="#4f46e5" />
-                <Text className="text-gray-400 mt-4 text-sm">Checking registration status...</Text>
+                <AppLoader />
             </SafeAreaView>
         );
     }

@@ -1,7 +1,8 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Linking, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Linking, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import api from '../../../services/api';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
@@ -157,7 +158,7 @@ export default function CategoryContacts() {
       <ScreenHeader title={category ?? 'Category'} />
 
       {loading ? (
-        <View style={styles.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+        <AppLoader />
       ) : (
         <FlatList data={filtered} keyExtractor={item => item.id} renderItem={renderContact}
           contentContainerStyle={styles.listContent}

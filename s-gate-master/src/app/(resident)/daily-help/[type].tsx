@@ -1,7 +1,8 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../../services/api';
 
@@ -111,7 +112,7 @@ export default function DailyHelpTypeList() {
       </SafeAreaView>
 
       {loading ? (
-        <View style={s.center}><ActivityIndicator size="large" color={C.gold} /></View>
+        <AppLoader />
       ) : (
         <FlatList data={filtered} keyExtractor={item => item.id} renderItem={renderItem}
           contentContainerStyle={s.listContent}

@@ -14,6 +14,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
@@ -98,9 +99,7 @@ export default function GuardsScreen() {
 
     if (loading) {
         return (
-            <View style={styles.centerWrap}>
-                <ActivityIndicator size="large" color={SgateColors.gold} />
-            </View>
+            <AppLoader />
         );
     }
 

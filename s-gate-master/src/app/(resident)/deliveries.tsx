@@ -2,13 +2,13 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
+FlatList,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -293,9 +293,7 @@ export default function DeliveriesScreen() {
 
             {/* ── Content (spinner while loading, list when ready) ─────── */}
             {loading ? (
-                <View style={[styles.center, { flex: 1 }]}>
-                    <ActivityIndicator size="large" color={SgateColors.gold} />
-                </View>
+                <AppLoader />
             ) : (
                 <FlatList
                     data={activeData}

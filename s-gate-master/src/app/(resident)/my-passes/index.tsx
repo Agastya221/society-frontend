@@ -2,8 +2,7 @@ import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { 
-    ActivityIndicator,
-    FlatList,
+FlatList,
     Modal,
     RefreshControl,
     StyleSheet,
@@ -13,6 +12,7 @@ import {
     StatusBar,
     Platform,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
@@ -453,9 +453,7 @@ export default function PassesScreen() {
             <View style={{ flex: 1 }}>
                 {activeTab === 'Pre-Approvals' ? (
                     paLoading ? (
-                        <View style={styles.centered}>
-                            <ActivityIndicator size="large" color={SgateColors.gold} />
-                        </View>
+                        <AppLoader />
                     ) : (
                         <FlatList
                             data={paEntries}
@@ -475,9 +473,7 @@ export default function PassesScreen() {
                     )
                 ) : (
                     invLoading ? (
-                        <View style={styles.centered}>
-                            <ActivityIndicator size="large" color={SgateColors.gold} />
-                        </View>
+                        <AppLoader />
                     ) : (
                         <FlatList
                             data={[

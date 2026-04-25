@@ -2,7 +2,8 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Modal, RefreshControl, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SourceBadge } from '../../components/SourceBadge';
@@ -104,9 +105,7 @@ export default function GatePassesScreen() {
 
     if (isLoading && !isRefreshing) {
         return (
-            <View className="flex-1 bg-slate-50 items-center justify-center">
-                 <ActivityIndicator size="large" color="#4f46e5" />
-            </View>
+            <AppLoader />
         );
     }
 

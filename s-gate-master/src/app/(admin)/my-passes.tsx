@@ -3,8 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 import {
-    ActivityIndicator,
-    Alert,
+Alert,
     FlatList,
     Modal,
     StyleSheet,
@@ -12,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import {
@@ -204,9 +204,7 @@ export default function AdminMyPassesScreen() {
                     <Text style={styles.headerTitle}>My Pre-Approvals</Text>
                     <View style={{ width: 40 }} />
                 </View>
-                <View style={styles.centered}>
-                    <ActivityIndicator size="large" color={SgateColors.gold} />
-                </View>
+                <AppLoader />
             </SafeAreaView>
         );
     }

@@ -1,7 +1,8 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import api from '../../../services/api';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
@@ -85,7 +86,7 @@ export default function LocalDirectoryIndex() {
       <ScreenHeader title="Local Directory" />
 
       {loading ? (
-        <View style={styles.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+        <AppLoader />
       ) : (
         <FlatList data={filtered} keyExtractor={item => item.name} renderItem={renderItem}
           contentContainerStyle={styles.listContent}

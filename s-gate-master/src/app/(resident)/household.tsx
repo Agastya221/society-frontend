@@ -14,6 +14,7 @@ import {
     TouchableWithoutFeedback,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { AppAlert } from '../../components/ui/AppAlert';
@@ -255,7 +256,7 @@ export default function HouseholdScreen() {
     const displayUser = profile ?? user as any;
     const gateId = displayUser?.id ? formatGateId(displayUser.id) : '#------';
 
-    if (loading) return <View className="flex-1 bg-gray-50 items-center justify-center"><ActivityIndicator size="large" color="#ca8a04" /></View>;
+    if (loading) return <AppLoader />;
 
     return (
         <View className="flex-1 bg-gray-50">

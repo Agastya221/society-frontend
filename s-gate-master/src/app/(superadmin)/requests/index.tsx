@@ -10,6 +10,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '@/services/api';
 
@@ -161,9 +162,7 @@ export default function RequestsListScreen() {
             </View>
 
             {loading ? (
-                <View className="flex-1 items-center justify-center">
-                    <ActivityIndicator size="large" color="#4f46e5" />
-                </View>
+                <AppLoader />
             ) : (
                 <FlatList
                     data={requests}

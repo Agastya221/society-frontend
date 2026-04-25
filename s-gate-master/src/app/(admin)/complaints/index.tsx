@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
 import { Complaint, ComplaintStatus, deleteComplaint, fetchComplaints } from '../../../services/complaints';
@@ -155,8 +156,7 @@ export default function AdminComplaintsScreen() {
 
             {isLoading ? (
                 <View className="flex-1 items-center justify-center">
-                    <ActivityIndicator size="large" color="#4f46e5" />
-                    <Text className="text-gray-500 dark:text-gray-400 mt-4">Loading complaints...</Text>
+                    <AppLoader />
                 </View>
             ) : (
                 <FlatList

@@ -1,7 +1,8 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, RefreshControl, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, RefreshControl, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ImageCarousel } from '../../../components/ui/ImageCarousel';
@@ -106,9 +107,7 @@ export default function ComplaintDetailScreen() {
         return (
             <View style={S.root}>
                 <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-                <View style={S.center}>
-                    <ActivityIndicator size="large" color={SgateColors.gold} />
-                </View>
+                <AppLoader />
             </View>
         );
     }

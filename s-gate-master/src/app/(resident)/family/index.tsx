@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../../../components/ui/Card';
 import api from '../../../services/api';
@@ -135,9 +136,7 @@ export default function FamilyScreen() {
             </View>
 
             {loading ? (
-                <View className="flex-1 justify-center items-center">
-                    <ActivityIndicator size="large" color="#6366f1" />
-                </View>
+                <AppLoader />
             ) : (
                 <FlatList
                     data={family}

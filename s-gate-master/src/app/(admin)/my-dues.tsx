@@ -2,14 +2,14 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
+FlatList,
     RefreshControl,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
@@ -105,9 +105,7 @@ export default function MyDuesScreen() {
         return (
             <SafeAreaView style={styles.safe} edges={['top']}>
                 <Header onBack={() => router.back()} />
-                <View style={styles.centered}>
-                    <ActivityIndicator size="large" color={SgateColors.gold} />
-                </View>
+                <AppLoader />
             </SafeAreaView>
         );
     }

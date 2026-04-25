@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import api from '../../../services/api';
@@ -238,9 +239,7 @@ export default function EmergencyListScreen() {
       </View>
 
       {isLoading && !isRefreshing ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#ef4444" />
-        </View>
+        <AppLoader />
       ) : (
         <FlatList
           data={emergencies}

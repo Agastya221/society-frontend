@@ -2,7 +2,8 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
 import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
 import { Complaint, ComplaintStatus, deleteComplaint, fetchComplaints } from '../../../services/complaints';
@@ -115,9 +116,7 @@ export default function ComplaintsScreen() {
 
             {/* ── Content ─────────────────────────────────────────────────── */}
             {isLoading ? (
-                <View style={S.center}>
-                    <ActivityIndicator size="large" color={SgateColors.gold} />
-                </View>
+                <AppLoader />
             ) : (
                 <FlatList
                     data={filteredComplaints}

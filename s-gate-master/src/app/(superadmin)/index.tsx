@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -222,8 +223,7 @@ export default function SuperAdminDashboard() {
     if (loading) {
         return (
             <SafeAreaView edges={['top']} className="flex-1 bg-slate-50 items-center justify-center">
-                <ActivityIndicator size="large" color="#4f46e5" />
-                <Text className="text-slate-400 mt-4 text-sm">Loading dashboard...</Text>
+                <AppLoader />
             </SafeAreaView>
         );
     }

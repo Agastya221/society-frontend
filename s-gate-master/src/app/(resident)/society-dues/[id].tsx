@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Platform
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -189,9 +190,7 @@ export default function SocietyDueDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingRoot}>
-        <ActivityIndicator size="large" color={BRAND_YELLOW} />
-      </View>
+      <AppLoader />
     );
   }
 

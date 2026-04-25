@@ -2,13 +2,13 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
-import { ActivityIndicator,
-    FlatList,
+import { FlatList,
     Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
     View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import {
@@ -233,9 +233,7 @@ export default function PreApprovalsScreen() {
                     <Text style={styles.headerTitle}>Pre-Approvals</Text>
                     
                 </View>
-                <View style={styles.centered}>
-                    <ActivityIndicator size="large" color={SgateColors.gold} />
-                </View>
+                <AppLoader />
             </SafeAreaView>
         );
     }

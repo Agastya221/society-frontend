@@ -13,6 +13,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
@@ -279,9 +280,7 @@ export default function AdminCommunityScreen() {
             </View>
 
             {loading ? (
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color={SgateColors.gold} />
-                </View>
+                <AppLoader />
             ) : (
                 <FlatList
                     data={posts}

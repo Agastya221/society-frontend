@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator,
-} from 'react-native';
+  View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -224,7 +224,7 @@ export default function ElectionsScreen() {
       <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
       {loading ? (
-        <View style={S.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+        <AppLoader />
       ) : (
         <FlatList<ElectionItem>
           data={filtered}

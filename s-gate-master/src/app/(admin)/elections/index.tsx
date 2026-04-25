@@ -13,6 +13,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
@@ -296,7 +297,7 @@ export default function AdminElectionsScreen() {
     if (loading) {
         return (
             <SafeAreaView edges={['top']} style={styles.centerSafe}>
-                <ActivityIndicator size="large" color={SgateColors.gold} />
+                <AppLoader />
             </SafeAreaView>
         );
     }

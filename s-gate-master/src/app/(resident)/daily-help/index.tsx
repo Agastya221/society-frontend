@@ -1,7 +1,8 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../../services/api';
 
@@ -107,7 +108,7 @@ export default function DailyHelpIndex() {
             <Text style={s.headerTitle}>Daily Help</Text>
           </View>
         </SafeAreaView>
-        <View style={s.center}><ActivityIndicator size="large" color={C.gold} /></View>
+        <AppLoader />
       </View>
     );
   }

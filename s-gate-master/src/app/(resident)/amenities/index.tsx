@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator,
-} from 'react-native';
+  View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { AppScreenLayout } from '../../../components/ui/AppScreenLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -115,9 +115,7 @@ export default function AmenitiesScreen() {
 
   if (loading) return (
     <AppScreenLayout title="Amenities" rightElement={myBookingsBtn}>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color={SgateColors.gold} />
-      </View>
+      <AppLoader />
     </AppScreenLayout>
   );
 

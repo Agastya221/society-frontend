@@ -2,14 +2,14 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
+FlatList,
   Platform, StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppAlert } from '../../../components/ui/AppAlert';
@@ -222,9 +222,7 @@ export default function MyVehiclesScreen() {
 
       {/* ── Content ───────────────────────────────────────────────────── */}
       {loading ? (
-        <View style={S.center}>
-          <ActivityIndicator size="large" color={SgateColors.gold} />
-        </View>
+        <AppLoader />
       ) : vehicles.length === 0 ? (
         <View style={S.emptyContainer}>
           <View style={S.emptyIconCircle}>

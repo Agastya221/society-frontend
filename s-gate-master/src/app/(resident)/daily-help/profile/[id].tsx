@@ -2,9 +2,10 @@ import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
-  ActivityIndicator, Linking, ScrollView, Share, StyleSheet,
+Linking, ScrollView, Share, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
 import api from '../../../../services/api';
@@ -91,7 +92,7 @@ export default function DailyHelpProfile() {
             
           </View>
         </SafeAreaView>
-        <View style={s.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+        <AppLoader />
       </View>
     );
   }

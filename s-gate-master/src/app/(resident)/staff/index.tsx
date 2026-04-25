@@ -2,8 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Image,
+Image,
     Linking,
     RefreshControl,
     ScrollView,
@@ -12,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../../services/api';
 
@@ -224,9 +224,7 @@ export default function StaffScreen() {
             </SafeAreaView>
 
             {loading ? (
-                <View style={styles.centered}>
-                    <ActivityIndicator size="large" color="#ca8a04" />
-                </View>
+                <AppLoader />
             ) : (
                 <ScrollView
                     style={{ flex: 1 }}

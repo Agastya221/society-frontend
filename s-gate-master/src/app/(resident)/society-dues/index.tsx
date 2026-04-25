@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, StatusBar } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, StatusBar } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -223,9 +224,7 @@ export default function SocietyDuesScreen() {
       </View>
 
       {loading ? (
-        <View style={S.center}>
-          <ActivityIndicator size="large" color={SgateColors.gold} />
-        </View>
+        <AppLoader />
       ) : (
         <FlatList
           data={filteredDues}

@@ -2,7 +2,8 @@ import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { Clipboard, Linking, ScrollView, Share, StyleSheet,
-  Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+  Text, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SgateColors, SgateFonts } from "../../../../constants/Sgate-theme";
 import { ScreenHeader } from "../../../../components/ui/ScreenHeader";
 import api from "../../../../services/api";
@@ -120,7 +121,7 @@ export default function ContactProfile() {
     return (
       <View style={styles.root}>
         <ScreenHeader title="Details" />
-        <View style={styles.center}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+        <AppLoader />
       </View>
     );
   }

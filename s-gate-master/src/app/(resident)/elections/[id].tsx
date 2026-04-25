@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -189,7 +190,7 @@ export default function ElectionDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: SgateColors.bg }}>
         <View style={D.headerContainer}><SafeAreaView edges={['top']} /></View>
-        <View style={D.notFound}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+        <AppLoader />
       </View>
     );
   }

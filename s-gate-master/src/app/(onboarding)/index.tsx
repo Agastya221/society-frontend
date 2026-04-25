@@ -2,7 +2,8 @@ import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '@/services/api';
@@ -40,8 +41,7 @@ export default function OnboardingIndex() {
     if (checking) {
         return (
             <SafeAreaView edges={['top']} className="flex-1 bg-white items-center justify-center">
-                <ActivityIndicator size="large" color="#4f46e5" />
-                <Text className="text-gray-400 mt-4 text-sm">Checking your status...</Text>
+                <AppLoader />
             </SafeAreaView>
         );
     }

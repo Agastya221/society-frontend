@@ -8,6 +8,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -234,9 +235,7 @@ export default function VisitorsScreen() {
     // ── Loading state ────────────────────────────────────────────────────
     if (loading) {
         return (
-            <View className="flex-1 items-center justify-center bg-gray-50" style={{ paddingTop: insets.top }}>
-                <ActivityIndicator size="large" color="#ca8a04" />
-            </View>
+            <AppLoader />
         );
     }
 

@@ -15,6 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
@@ -191,7 +192,7 @@ export default function OnboardingRequestsScreen() {
 
             {/* List */}
             {loading ? (
-                <View style={styles.centerWrap}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+                <AppLoader />
             ) : (
                 <FlatList
                     data={requests}
@@ -370,7 +371,7 @@ export default function OnboardingRequestsScreen() {
                     {viewerUrl ? (
                         <Image source={{ uri: viewerUrl }} style={styles.viewerImage} resizeMode="contain" />
                     ) : (
-                        <ActivityIndicator size="large" color="#FFF" />
+                        <AppLoader />
                     )}
                 </View>
             </Modal>

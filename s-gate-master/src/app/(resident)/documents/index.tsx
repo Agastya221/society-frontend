@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppAlert } from '../../../components/ui/AppAlert';
@@ -305,9 +306,7 @@ export default function DocumentsScreen() {
 
       {/* ── Content ───────────────────────────────────────────────────── */}
       {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={SgateColors.gold} />
-        </View>
+        <AppLoader />
       ) : (
         <ScrollView
           contentContainerStyle={styles.scrollContent}

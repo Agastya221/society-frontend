@@ -12,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -513,9 +514,7 @@ export default function SocietyScreen() {
 
             {/* ── Content (spinner while loading, lists when ready) ────── */}
             {isTabLoading ? (
-                <View style={[S.center, { flex: 1 }]}>
-                    <ActivityIndicator size="large" color={SgateColors.gold} />
-                </View>
+                <AppLoader />
             ) : (
                 <>
                     {/* ── Visitors List ────────────────────────────────────────── */}

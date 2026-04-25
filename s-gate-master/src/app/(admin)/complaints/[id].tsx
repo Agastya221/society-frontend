@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, RefreshControl, ScrollView, Share, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, RefreshControl, ScrollView, Share, Text, TouchableOpacity, View } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ComplaintStatusBadge } from '../../../components/complaints/ComplaintStatusBadge';
 import { PriorityBadge } from '../../../components/complaints/PriorityBadge';
@@ -121,8 +122,7 @@ export default function AdminComplaintDetailScreen() {
     if (isLoading) {
         return (
             <SafeAreaView className="flex-1 bg-white dark:bg-black items-center justify-center">
-                <ActivityIndicator size="large" color="#4f46e5" />
-                <Text className="text-gray-500 dark:text-gray-400 mt-4">Loading details...</Text>
+                <AppLoader />
             </SafeAreaView>
         );
     }

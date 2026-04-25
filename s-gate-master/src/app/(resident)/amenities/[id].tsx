@@ -1,8 +1,8 @@
 import React, { useCallback, useRef, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator,
-  Animated, Modal,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Modal,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { Calendar } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppScreenLayout } from '../../../components/ui/AppScreenLayout';
@@ -175,7 +175,7 @@ export default function AmenityDetailScreen() {
 
   if (loading) return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: SgateColors.bg }}>
-      <View style={S.notFound}><ActivityIndicator size="large" color={SgateColors.gold} /></View>
+      <AppLoader />
     </SafeAreaView>
   );
 

@@ -1,7 +1,8 @@
 import React, { useCallback, useRef, useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Animated,
+  View, Text, FlatList, TouchableOpacity, StyleSheet, Animated,
 } from 'react-native';
+import { AppLoader } from '@/components/ui/AppLoader';
 import { AppScreenLayout } from '../../../components/ui/AppScreenLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -251,9 +252,7 @@ export default function MyBookingsScreen() {
 
       {/* List */}
       {loading ? (
-        <View style={S.loadingContainer}>
-          <ActivityIndicator size="large" color={SgateColors.gold} />
-        </View>
+        <AppLoader />
       ) : (
         <FlatList
           data={filtered}

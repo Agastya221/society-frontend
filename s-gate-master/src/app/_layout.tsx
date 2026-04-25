@@ -5,7 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { Image, Platform, View } from "react-native";
+import { Platform } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
@@ -13,6 +13,7 @@ import { useSoraFonts } from "../hooks/useFonts";
 import { useAuthStore } from "../store/useAuthStore";
 import api from "../services/api";
 import { AppAlertProvider } from "../components/ui/AppAlert";
+import { AppLoader } from "../components/ui/AppLoader";
 
 // Show notifications while app is in foreground
 Notifications.setNotificationHandler({
@@ -184,12 +185,7 @@ export default function RootLayout() {
   if (isLoading || !onboardingChecked) {
     return (
       <SafeAreaProvider>
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
-          <Image
-            source={require('../../assets/images/icons/s-gate-logo-without-bg.png')}
-            style={{ width: 120, height: 120, resizeMode: 'contain' }}
-          />
-        </View>
+        <AppLoader />
         <StatusBar style="dark" />
       </SafeAreaProvider>
     );
