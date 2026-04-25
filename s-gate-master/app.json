@@ -14,10 +14,8 @@
     "android": {
       "package": "com.sgate.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./src/assets/images/android-icon-foreground.png",
-        "backgroundImage": "./src/assets/images/android-icon-background.png",
-        "monochromeImage": "./src/assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/images/icons/s-gate-logo-with-bg.png"
       },
       "navigationBar": {
         "visible": true,
@@ -36,7 +34,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icons/s-gate-logo-without-bg.png",
+          "image": "./assets/images/icons/s-gate-logo-with-bg.png",
           "imageWidth": 120,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
