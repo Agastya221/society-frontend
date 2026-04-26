@@ -331,13 +331,35 @@ export default function SettingsScreen() {
                 </View>
 
                 {/* ── Footer ──────────────────────────────────────────── */}
-                <View style={styles.footer}>
-                    <Text style={styles.footerBrand}>s-gate</Text>
-                    <View style={styles.footerLinks}>
-                        <Text style={styles.footerLink}>Terms & Conditions</Text>
-                        <Text style={styles.footerSep}> | </Text>
-                        <Text style={styles.footerLink}>Privacy Policy</Text>
+                <View style={styles.footerSection}>
+                    <View style={styles.footerCard}>
+                        <TouchableOpacity
+                            style={styles.footerRow}
+                            activeOpacity={0.6}
+                            onPress={() => Linking.openURL('https://sgate.app/terms')}
+                        >
+                            <View style={styles.footerRowLeft}>
+                                <MaterialCommunityIcons name="file-document-outline" size={20} color={SgateColors.t2} />
+                                <Text style={styles.footerRowText}>Terms & Conditions</Text>
+                            </View>
+                            <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t4} />
+                        </TouchableOpacity>
+
+                        <View style={styles.footerDivider} />
+
+                        <TouchableOpacity
+                            style={styles.footerRow}
+                            activeOpacity={0.6}
+                            onPress={() => Linking.openURL('https://sgate.app/privacy')}
+                        >
+                            <View style={styles.footerRowLeft}>
+                                <MaterialCommunityIcons name="shield-check-outline" size={20} color={SgateColors.t2} />
+                                <Text style={styles.footerRowText}>Privacy Policy</Text>
+                            </View>
+                            <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t4} />
+                        </TouchableOpacity>
                     </View>
+
                     <Text style={styles.footerVersion}>Version 1.0.0</Text>
                 </View>
             </ScrollView>
@@ -418,7 +440,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingBottom: 40,
+        paddingBottom: 20,
     },
 
     // Dividers
@@ -477,38 +499,46 @@ const styles = StyleSheet.create({
     },
 
     // Footer
-    footer: {
-        alignItems: 'center',
-        paddingVertical: 32,
-        paddingHorizontal: 20,
+    footerSection: {
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 4,
     },
-    footerBrand: {
-        fontSize: 22,
-        fontFamily: SgateFonts.extrabold,
-        color: SgateColors.t1,
-        marginBottom: 8,
-        letterSpacing: -0.5,
+    footerCard: {
+        backgroundColor: SgateColors.card,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.04)',
+        overflow: 'hidden',
     },
-    footerLinks: {
+    footerRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 6,
+        justifyContent: 'space-between',
+        paddingVertical: 15,
+        paddingHorizontal: 16,
     },
-    footerLink: {
-        fontSize: 13,
+    footerRowLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    footerRowText: {
+        fontSize: 15,
         fontFamily: SgateFonts.medium,
-        color: SgateColors.blue,
-        textDecorationLine: 'underline',
+        color: SgateColors.t1,
     },
-    footerSep: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
+    footerDivider: {
+        height: 1,
+        backgroundColor: 'rgba(0,0,0,0.04)',
+        marginHorizontal: 16,
     },
     footerVersion: {
-        fontSize: 12,
+        textAlign: 'center',
+        marginTop: 10,
+        fontSize: 13,
         fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
+        color: SgateColors.t4,
     },
 
     // Modal
