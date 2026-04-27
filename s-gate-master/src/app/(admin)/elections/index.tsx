@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -258,7 +258,7 @@ export default function AdminElectionsScreen() {
                     {/* Footer */}
                     <View style={styles.cardFooter}>
                         <View style={styles.footerLeft}>
-                            <Feather name="users" size={13} color={SgateColors.t4} />
+                            <MaterialCommunityIcons name="account-group-outline" size={13} color={SgateColors.t4} />
                             <Text style={styles.totalVotes}>{item.totalVotes} total votes</Text>
                         </View>
                         {!!item.endDate && (
@@ -276,7 +276,7 @@ export default function AdminElectionsScreen() {
                                 onPress={() => handleClosePoll(item)}
                                 activeOpacity={0.75}
                             >
-                                <Feather name="x-circle" size={14} color={SgateColors.t2} />
+                                <MaterialCommunityIcons name="close-circle-outline" size={14} color={SgateColors.t2} />
                                 <Text style={styles.closeBtnText}>Close Poll</Text>
                             </TouchableOpacity>
                         )}
@@ -285,7 +285,7 @@ export default function AdminElectionsScreen() {
                             onPress={() => handleDeletePoll(item)}
                             activeOpacity={0.75}
                         >
-                            <Feather name="trash-2" size={14} color={SgateColors.red} />
+                            <MaterialCommunityIcons name="trash-can-outline" size={14} color={SgateColors.red} />
                             <Text style={styles.deleteBtnText}>Delete</Text>
                         </TouchableOpacity>
                     </View>
@@ -307,7 +307,7 @@ export default function AdminElectionsScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Polls & Elections</Text>
                 <TouchableOpacity
@@ -315,7 +315,7 @@ export default function AdminElectionsScreen() {
                     style={styles.addBtn}
                     activeOpacity={0.8}
                 >
-                    <Feather name="plus" size={22} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="plus" size={22} color={SgateColors.t1} />
                 </TouchableOpacity>
             </View>
 
@@ -345,7 +345,7 @@ export default function AdminElectionsScreen() {
                 onRefresh={onRefresh}
                 ListEmptyComponent={
                     <View style={styles.emptyWrap}>
-                        <Feather name="bar-chart-2" size={56} color={SgateColors.t4} />
+                        <MaterialCommunityIcons name="poll" size={56} color={SgateColors.t4} />
                         <Text style={styles.emptyTitle}>No polls yet</Text>
                         <Text style={styles.emptySub}>Create the first one.</Text>
                     </View>
@@ -363,7 +363,7 @@ export default function AdminElectionsScreen() {
                     <View style={styles.createModalHeader}>
                         <Text style={styles.createModalTitle}>New Poll</Text>
                         <TouchableOpacity onPress={() => setCreateVisible(false)}>
-                            <Feather name="x" size={22} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="close" size={22} color={SgateColors.t3} />
                         </TouchableOpacity>
                     </View>
                     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -399,14 +399,14 @@ export default function AdminElectionsScreen() {
                                 />
                                 {options.length > 2 && (
                                     <TouchableOpacity onPress={() => removeOption(idx)} style={styles.removeOptionBtn}>
-                                        <Feather name="x" size={16} color={SgateColors.red} />
+                                        <MaterialCommunityIcons name="close" size={16} color={SgateColors.red} />
                                     </TouchableOpacity>
                                 )}
                             </View>
                         ))}
                         {options.length < 6 && (
                             <TouchableOpacity style={styles.addOptionBtn} onPress={addOption}>
-                                <Feather name="plus" size={15} color={SgateColors.blue} />
+                                <MaterialCommunityIcons name="plus" size={15} color={SgateColors.blue} />
                                 <Text style={styles.addOptionText}>Add option</Text>
                             </TouchableOpacity>
                         )}
@@ -426,7 +426,7 @@ export default function AdminElectionsScreen() {
                             activeOpacity={0.8}
                         >
                             <View style={[styles.checkbox, allowMultiple && styles.checkboxChecked]}>
-                                {allowMultiple && <Feather name="check" size={12} color="#FFFFFF" />}
+                                {allowMultiple && <MaterialCommunityIcons name="check" size={12} color="#FFFFFF" />}
                             </View>
                             <Text style={styles.multipleToggleText}>Allow multiple selections</Text>
                         </TouchableOpacity>

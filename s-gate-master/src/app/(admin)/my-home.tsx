@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -49,7 +49,7 @@ export default function MyHomeScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>My Home</Text>
                 <View style={{ width: 40 }} />
@@ -63,7 +63,7 @@ export default function MyHomeScreen() {
                     {/* ── Flat badge ────────────────────────────────────────── */}
                     <Animated.View entering={FadeInDown.delay(0).springify()} style={styles.flatBadgeWrap}>
                         <View style={styles.flatBadge}>
-                            <Feather name="home" size={14} color={SgateColors.goldDeep} style={{ marginRight: 6 }} />
+                            <MaterialCommunityIcons name="home-outline" size={14} color={SgateColors.goldDeep} style={{ marginRight: 6 }} />
                             <Text style={styles.flatBadgeText}>{flatLabel ?? 'Your Flat'}</Text>
                         </View>
                         <Text style={styles.flatSubText}>{user?.society?.name ?? 'Your Society'}</Text>
@@ -105,7 +105,7 @@ export default function MyHomeScreen() {
 
                     {/* ── Info banner ───────────────────────────────────────── */}
                     <Animated.View entering={FadeInDown.delay(180).springify()} style={styles.infoBanner}>
-                        <Feather name="info" size={14} color={SgateColors.blue} style={{ marginRight: 8, marginTop: 1 }} />
+                        <MaterialCommunityIcons name="information-outline" size={14} color={SgateColors.blue} style={{ marginRight: 8, marginTop: 1 }} />
                         <Text style={styles.infoBannerText}>
                             As a society manager you also have full resident privileges. Use these features for your personal flat.
                         </Text>
@@ -124,13 +124,13 @@ export default function MyHomeScreen() {
 
 // ─── Action tile ──────────────────────────────────────────────────────────────
 function ActionTile({ title, icon, bg, iconColor, onPress }: {
-    title: string; icon: keyof typeof Feather.glyphMap;
+    title: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
     bg: string; iconColor: string; onPress: () => void;
 }) {
     return (
         <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.75}>
             <View style={[styles.tileIcon, { backgroundColor: bg }]}>
-                <Feather name={icon} size={22} color={iconColor} />
+                <MaterialCommunityIcons name={icon} size={22} color={iconColor} />
             </View>
             <Text style={styles.tileTitle}>{title}</Text>
             <Text style={styles.tileSub}>Manage</Text>

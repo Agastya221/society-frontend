@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
@@ -10,7 +10,7 @@ import Animated, {
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
 interface SgateQuickActionProps {
-  icon: keyof typeof Feather.glyphMap;
+  icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
   label: string;
   bgColor: string;
   iconColor: string;
@@ -51,7 +51,7 @@ export function SgateQuickAction({
     >
       <Animated.View style={[styles.card, animStyle]}>
         <View style={[styles.iconBubble, { backgroundColor: bgColor }]}>
-          <Feather name={icon} size={22} color={iconColor} />
+          <MaterialCommunityIcons name={icon} size={24} color={iconColor} />
         </View>
         <Text style={styles.label}>{label}</Text>
       </Animated.View>

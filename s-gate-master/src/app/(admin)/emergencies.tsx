@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -36,7 +36,7 @@ interface Emergency {
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const TYPE_META: Record<string, { icon: keyof typeof Feather.glyphMap; bg: string; color: string; label: string }> = {
+const TYPE_META: Record<string, { icon: React.ComponentProps<typeof MaterialCommunityIcons>['name']; bg: string; color: string; label: string }> = {
     MEDICAL:       { icon: 'heart',        bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Medical' },
     FIRE:          { icon: 'alert-octagon',bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Fire' },
     SECURITY:      { icon: 'shield-off',   bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Security' },
@@ -151,7 +151,7 @@ export default function AdminEmergenciesScreen() {
                     {/* Top row */}
                     <View style={styles.cardTop}>
                         <View style={[styles.iconWrap, { backgroundColor: meta.bg }]}>
-                            <Feather name={meta.icon} size={20} color={meta.color} />
+                            <MaterialCommunityIcons name={meta.icon} size={20} color={meta.color} />
                         </View>
                         <View style={styles.cardInfo}>
                             <View style={styles.cardTitleRow}>
@@ -176,7 +176,7 @@ export default function AdminEmergenciesScreen() {
                     {/* Location */}
                     {!!item.location && (
                         <View style={styles.locationRow}>
-                            <Feather name="map-pin" size={12} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="map-marker-outline" size={12} color={SgateColors.t3} />
                             <Text style={styles.locationText}>{item.location}</Text>
                         </View>
                     )}
@@ -198,7 +198,7 @@ export default function AdminEmergenciesScreen() {
                                     onPress={() => handleAcknowledge(item.id)}
                                     activeOpacity={0.75}
                                 >
-                                    <Feather name="eye" size={14} color={SgateColors.goldDeep} />
+                                    <MaterialCommunityIcons name="eye-outline" size={14} color={SgateColors.goldDeep} />
                                     <Text style={styles.ackBtnText}>Acknowledge</Text>
                                 </TouchableOpacity>
                             )}
@@ -207,7 +207,7 @@ export default function AdminEmergenciesScreen() {
                                 onPress={() => { setResolveTarget(item); setResolveNote(''); }}
                                 activeOpacity={0.75}
                             >
-                                <Feather name="check" size={14} color={SgateColors.green} />
+                                <MaterialCommunityIcons name="check" size={14} color={SgateColors.green} />
                                 <Text style={styles.resolveBtnText}>Mark Resolved</Text>
                             </TouchableOpacity>
                         </View>
@@ -230,7 +230,7 @@ export default function AdminEmergenciesScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <View style={styles.headerTitleWrap}>
                     <Text style={styles.headerTitle}>Emergencies</Text>
@@ -270,7 +270,7 @@ export default function AdminEmergenciesScreen() {
                 onRefresh={onRefresh}
                 ListEmptyComponent={
                     <View style={styles.emptyWrap}>
-                        <Feather name="shield" size={56} color={SgateColors.t4} />
+                        <MaterialCommunityIcons name="shield-outline" size={56} color={SgateColors.t4} />
                         <Text style={styles.emptyTitle}>No emergencies</Text>
                         <Text style={styles.emptySub}>Society is safe.</Text>
                     </View>

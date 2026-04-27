@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
                         </View>
                         <View style={styles.headerRight}>
                             <TouchableOpacity style={styles.bellBtn} onPress={() => nav('/(admin)/notifications')}>
-                                <Feather name="bell" size={21} color={SgateColors.t1} />
+                                <MaterialCommunityIcons name="bell-outline" size={22} color={SgateColors.t1} />
                                 {unreadCount > 0 && (
                                     <View style={styles.badge}>
                                         <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -243,26 +243,26 @@ export default function AdminDashboard() {
                     {/* ── Admin Stats Grid ──────────────────────────────────── */}
                     <Animated.View entering={FadeInDown.delay(120).springify()} style={styles.statsWrap}>
                         <View style={styles.statsGrid}>
-                            <StatCard label="Total Flats" value={stats?.totalFlats ?? 0} icon="home" color={SgateColors.blue} bg={SgateColors.blueBg} loading={loading} />
-                            <StatCard label="Residents" value={stats?.activeResidents ?? 0} icon="users" color={SgateColors.green} bg={SgateColors.greenBg} loading={loading} />
-                            <StatCard label="Entries Today" value={stats?.todayEntries ?? 0} icon="activity" color={SgateColors.goldDeep} bg={SgateColors.goldPale} loading={loading} />
-                            <StatCard label="Open Complaints" value={stats?.pendingComplaints ?? 0} icon="alert-circle" color={SgateColors.red} bg={SgateColors.redBg} loading={loading} />
+                            <StatCard label="Total Flats" value={stats?.totalFlats ?? 0} icon="home-outline" color={SgateColors.blue} bg={SgateColors.blueBg} loading={loading} />
+                            <StatCard label="Residents" value={stats?.activeResidents ?? 0} icon="account-group-outline" color={SgateColors.green} bg={SgateColors.greenBg} loading={loading} />
+                            <StatCard label="Entries Today" value={stats?.todayEntries ?? 0} icon="chart-line" color={SgateColors.goldDeep} bg={SgateColors.goldPale} loading={loading} />
+                            <StatCard label="Open Complaints" value={stats?.pendingComplaints ?? 0} icon="alert-circle-outline" color={SgateColors.red} bg={SgateColors.redBg} loading={loading} />
                         </View>
                     </Animated.View>
 
                     {/* ── Quick Actions ──────────────────────────── */}
                     <Animated.View entering={FadeInDown.delay(160).springify()} style={[styles.quickRow, { marginBottom: 0 }]}>
-                        <SgateQuickAction icon="user-check" label={'Pre-\nApprove'} bgColor={SgateColors.goldPale} iconColor={SgateColors.goldDeep} onPress={() => setShowPreApprove(true)} />
-                        <SgateQuickAction icon="credit-card" label={'My\nPasses'} bgColor={SgateColors.blueBg} iconColor={SgateColors.blue} onPress={() => nav('/(admin)/my-passes')} />
-                        <SgateQuickAction icon="dollar-sign" label={'My\nDues'} bgColor={SgateColors.surface} iconColor={SgateColors.t2} onPress={() => nav('/(admin)/my-dues')} />
-                        <SgateQuickAction icon="alert-triangle" label={'SOS\nAlert'} bgColor={SgateColors.redBg} iconColor={SgateColors.red} onPress={() => nav('/(admin)/emergencies')} />
+                        <SgateQuickAction icon="account-check-outline" label={'Pre-\nApprove'} bgColor={SgateColors.goldPale} iconColor={SgateColors.goldDeep} onPress={() => setShowPreApprove(true)} />
+                        <SgateQuickAction icon="smart-card-outline" label={'My\nPasses'} bgColor={SgateColors.blueBg} iconColor={SgateColors.blue} onPress={() => nav('/(admin)/my-passes')} />
+                        <SgateQuickAction icon="receipt-text-outline" label={'My\nDues'} bgColor={SgateColors.surface} iconColor={SgateColors.t2} onPress={() => nav('/(admin)/my-dues')} />
+                        <SgateQuickAction icon="alert-outline" label={'SOS\nAlert'} bgColor={SgateColors.redBg} iconColor={SgateColors.red} onPress={() => nav('/(admin)/emergencies')} />
                     </Animated.View>
 
                     <Animated.View entering={FadeInDown.delay(200).springify()} style={[styles.quickRow, { marginTop: 18, marginBottom: 28 }]}>
-                        <SgateQuickAction icon="check-circle" label={'Gate\nPasses'} bgColor={SgateColors.goldPale} iconColor={SgateColors.goldDeep} onPress={() => nav('/(admin)/gate-passes')} />
-                        <SgateQuickAction icon="users" label={'Residents'} bgColor={SgateColors.blueBg} iconColor={SgateColors.blue} onPress={() => nav('/(admin)/onboarding-requests')} />
-                        <SgateQuickAction icon="shield" label={'Guards'} bgColor={SgateColors.greenBg} iconColor={SgateColors.green} onPress={() => nav('/(admin)/guards')} />
-                        <SgateQuickAction icon="grid" label={'All\nTools'} bgColor={SgateColors.surface} iconColor={SgateColors.t2} onPress={() => nav('/(admin)/all-tools')} />
+                        <SgateQuickAction icon="clipboard-check-outline" label={'Gate\nPasses'} bgColor={SgateColors.goldPale} iconColor={SgateColors.goldDeep} onPress={() => nav('/(admin)/gate-passes')} />
+                        <SgateQuickAction icon="account-group-outline" label={'Residents'} bgColor={SgateColors.blueBg} iconColor={SgateColors.blue} onPress={() => nav('/(admin)/onboarding-requests')} />
+                        <SgateQuickAction icon="shield-outline" label={'Guards'} bgColor={SgateColors.greenBg} iconColor={SgateColors.green} onPress={() => nav('/(admin)/guards')} />
+                        <SgateQuickAction icon="view-grid-outline" label={'All\nTools'} bgColor={SgateColors.surface} iconColor={SgateColors.t2} onPress={() => nav('/(admin)/all-tools')} />
                     </Animated.View>
 
                     {/* ── Society Approvals (Admin Power) ────────────────────── */}
@@ -347,7 +347,7 @@ function StatCard({ label, value, icon, color, bg, loading }: any) {
     return (
         <View style={styles.statCard}>
             <View style={[styles.statIconWrap, { backgroundColor: bg }]}>
-                 <Feather name={icon} size={16} color={color} />
+                 <MaterialCommunityIcons name={icon} size={16} color={color} />
             </View>
             <Text style={styles.statValue}>{loading ? '—' : value}</Text>
             <Text style={styles.statLabel}>{label.toUpperCase()}</Text>
@@ -359,7 +359,7 @@ function LargeAction({ title, sub, icon, bg, color, onPress }: any) {
     return (
         <TouchableOpacity style={styles.largeTile} onPress={onPress}>
             <View style={[styles.largeTileIcon, { backgroundColor: bg }]}>
-                <Feather name={icon} size={22} color={color} />
+                <MaterialCommunityIcons name={icon} size={22} color={color} />
             </View>
             <Text style={styles.largeTileTitle}>{title}</Text>
             <Text style={styles.largeTileSub}>{sub}</Text>
@@ -402,7 +402,7 @@ function GateEmpty() {
     return (
         <View style={styles.emptyWrap}>
             <View style={styles.emptyIcon}>
-                <Feather name="check-circle" size={26} color={SgateColors.green} />
+                <MaterialCommunityIcons name="check-circle-outline" size={26} color={SgateColors.green} />
             </View>
             <Text style={styles.emptyTitle}>All clear!</Text>
             <Text style={styles.emptySub}>No one is waiting at the gate</Text>
@@ -427,7 +427,7 @@ function GateSkeleton() {
 function ActivityEmpty() {
     return (
         <View style={styles.activityEmptyWrap}>
-            <Feather name="clock" size={20} color={SgateColors.t4} />
+            <MaterialCommunityIcons name="clock-outline" size={20} color={SgateColors.t4} />
             <Text style={styles.activityEmptyText}>No activity yet today</Text>
         </View>
     );

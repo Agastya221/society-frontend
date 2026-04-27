@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -145,13 +145,13 @@ export default function NoticesScreen() {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
                 ListHeaderComponent={
                     <TouchableOpacity style={styles.addBtn} onPress={() => { resetForm(); setModalVisible(true); }} activeOpacity={0.8}>
-                        <Feather name="plus" size={18} color="#FFFFFF" />
+                        <MaterialCommunityIcons name="plus" size={18} color="#FFFFFF" />
                         <Text style={styles.addBtnText}>Create New Notice</Text>
                     </TouchableOpacity>
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyWrap}>
-                        <Feather name="bell-off" size={48} color={SgateColors.t4} />
+                        <MaterialCommunityIcons name="bell-off-outline" size={48} color={SgateColors.t4} />
                         <Text style={styles.emptyTitle}>No notices yet</Text>
                         <Text style={styles.emptySub}>Create the first one.</Text>
                     </View>
@@ -166,7 +166,7 @@ export default function NoticesScreen() {
                                     <View style={styles.cardTopLeft}>
                                         {item.isPinned && (
                                             <View style={styles.pinBadge}>
-                                                <Feather name="bookmark" size={11} color={SgateColors.gold} />
+                                                <MaterialCommunityIcons name="bookmark-outline" size={11} color={SgateColors.gold} />
                                             </View>
                                         )}
                                         <View style={[styles.typePill, { backgroundColor: ts.bg }]}>
@@ -179,10 +179,10 @@ export default function NoticesScreen() {
                                     </View>
                                     <View style={styles.cardActions}>
                                         <TouchableOpacity onPress={() => handleTogglePin(item.id)} hitSlop={8}>
-                                            <Feather name="bookmark" size={17} color={item.isPinned ? SgateColors.gold : SgateColors.t4} />
+                                            <MaterialCommunityIcons name="bookmark-outline" size={17} color={item.isPinned ? SgateColors.gold : SgateColors.t4} />
                                         </TouchableOpacity>
                                         <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={8}>
-                                            <Feather name="trash-2" size={17} color={SgateColors.red} />
+                                            <MaterialCommunityIcons name="trash-can-outline" size={17} color={SgateColors.red} />
                                         </TouchableOpacity>
                                     </View>
                                 </View>
@@ -205,7 +205,7 @@ export default function NoticesScreen() {
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>New Notice</Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <Feather name="x" size={22} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="close" size={22} color={SgateColors.t3} />
                         </TouchableOpacity>
                     </View>
 

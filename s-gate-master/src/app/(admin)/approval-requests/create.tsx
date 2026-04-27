@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -83,7 +83,7 @@ export default function CreateApprovalRequestScreen() {
                     onPress={() => router.back()}
                     className="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-200 items-center justify-center active:scale-95"
                 >
-                    <Feather name="arrow-left" size={20} color="#64748b" />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color="#64748b" />
                 </TouchableOpacity>
                 <View>
                     <Text className="text-2xl font-bold text-slate-900 tracking-tight">New Request</Text>
@@ -97,7 +97,7 @@ export default function CreateApprovalRequestScreen() {
             >
                 {/* Info Banner */}
                 <View className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 mb-6 flex-row gap-3">
-                    <Feather name="info" size={20} className="text-indigo-600 dark:text-indigo-400 mt-0.5" />
+                    <MaterialCommunityIcons name="information-outline" size={20} className="text-indigo-600 dark:text-indigo-400 mt-0.5" />
                     <View className="flex-1">
                         <Text className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 mb-1">
                             Compliance Notice

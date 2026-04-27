@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -197,14 +197,14 @@ export default function AdminVehiclesScreen() {
                 </View>
 
                 <View style={styles.detailsRow}>
-                    <Feather name={item.type === 'BIKE' ? 'navigation' : 'truck'} size={14} color={SgateColors.t3} />
+                    <MaterialCommunityIcons name={item.type === 'BIKE' ? 'car-outline' : 'truck-outline'} size={14} color={SgateColors.t3} />
                     <Text style={styles.detailsText}>
                         {item.makeModel ?? item.type} {item.color ? `· ${item.color}` : ''}
                     </Text>
                     {!!item.parkingSlot && (
                         <>
                             <Text style={styles.detailsText}>·</Text>
-                            <Feather name="map-pin" size={13} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="map-marker-outline" size={13} color={SgateColors.t3} />
                             <Text style={styles.detailsText}>Slot {item.parkingSlot}</Text>
                         </>
                     )}
@@ -232,7 +232,7 @@ export default function AdminVehiclesScreen() {
                         style={styles.callBtn} 
                         onPress={() => Alert.alert('Call', `Calling ${item.resident?.phone}...`)}
                     >
-                        <Feather name="phone" size={14} color={SgateColors.blue} />
+                        <MaterialCommunityIcons name="phone-outline" size={14} color={SgateColors.blue} />
                         <Text style={styles.callText}>Call</Text>
                     </TouchableOpacity>
 
@@ -240,7 +240,7 @@ export default function AdminVehiclesScreen() {
                         style={styles.violationBtn}
                         onPress={() => setIssueTarget(item)}
                     >
-                        <Feather name="alert-triangle" size={14} color={SgateColors.red} />
+                        <MaterialCommunityIcons name="alert-outline" size={14} color={SgateColors.red} />
                         <Text style={styles.violationText}>Issue Ticket</Text>
                     </TouchableOpacity>
                 </View>
@@ -271,7 +271,7 @@ export default function AdminVehiclesScreen() {
                     
                     {!!item.penaltyAmount && isOpen && (
                         <View style={styles.penaltyRow}>
-                            <Feather name="alert-octagon" size={13} color={SgateColors.red} />
+                            <MaterialCommunityIcons name="alert-octagon-outline" size={13} color={SgateColors.red} />
                             <Text style={styles.penaltyText}>Penalty: {item.penaltyAmount} INR {item.addedToInvoice ? '(Invoiced)' : ''}</Text>
                         </View>
                     )}
@@ -296,7 +296,7 @@ export default function AdminVehiclesScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Parking Enforcement</Text>
                 <View style={{ width: 40 }} />
@@ -317,7 +317,7 @@ export default function AdminVehiclesScreen() {
                 <>
                     <View style={styles.searchSection}>
                         <View style={styles.searchBox}>
-                            <Feather name="search" size={18} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="magnify" size={18} color={SgateColors.t3} />
                             <TextInput
                                 style={styles.searchInput}
                                 placeholder="Search plate (e.g. MH12AB) or sticker"
@@ -342,7 +342,7 @@ export default function AdminVehiclesScreen() {
                         ListEmptyComponent={
                             hasSearched && !searching ? (
                                 <View style={styles.emptyWrap}>
-                                    <Feather name="shield-off" size={48} color={SgateColors.t4} />
+                                    <MaterialCommunityIcons name="shield-off-outline" size={48} color={SgateColors.t4} />
                                     <Text style={styles.emptyTitle}>Vehicle Not Found</Text>
                                     <Text style={styles.emptySub}>Not registered in society directory.</Text>
                                     <TouchableOpacity 
@@ -370,7 +370,7 @@ export default function AdminVehiclesScreen() {
                     ListEmptyComponent={
                         !loadingVios ? (
                             <View style={styles.emptyWrap}>
-                                <Feather name="check-circle" size={48} color={SgateColors.t4} />
+                                <MaterialCommunityIcons name="check-circle-outline" size={48} color={SgateColors.t4} />
                                 <Text style={styles.emptyTitle}>All Clear</Text>
                                 <Text style={styles.emptySub}>No active parking violations.</Text>
                             </View>

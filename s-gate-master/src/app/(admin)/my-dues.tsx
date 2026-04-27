@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -134,7 +134,7 @@ export default function MyDuesScreen() {
 
                         {isMock && (
                             <View style={styles.mockBanner}>
-                                <Feather name="info" size={13} color={SgateColors.goldDeep} style={{ marginRight: 6 }} />
+                                <MaterialCommunityIcons name="information-outline" size={13} color={SgateColors.goldDeep} style={{ marginRight: 6 }} />
                                 <Text style={styles.mockBannerText}>Preview data — dues feature coming soon</Text>
                             </View>
                         )}
@@ -145,7 +145,7 @@ export default function MyDuesScreen() {
                 contentContainerStyle={styles.listContent}
                 ListEmptyComponent={
                     <View style={styles.empty}>
-                        <Feather name="credit-card" size={48} color={SgateColors.t4} />
+                        <MaterialCommunityIcons name="credit-card-outline" size={48} color={SgateColors.t4} />
                         <Text style={styles.emptyTitle}>No Dues Found</Text>
                         <Text style={styles.emptySubtitle}>Your maintenance dues will appear here.</Text>
                     </View>
@@ -159,7 +159,7 @@ function Header({ onBack }: { onBack: () => void }) {
     return (
         <View style={styles.header}>
             <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-                <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>My Dues</Text>
             <View style={{ width: 40 }} />

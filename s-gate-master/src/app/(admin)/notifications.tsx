@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
@@ -26,7 +26,7 @@ interface AdminNotification {
 }
 
 // ─── Icon/colour config ───────────────────────────────────────────────────────
-const TYPE_META: Record<string, { icon: keyof typeof Feather.glyphMap; bg: string; fg: string }> = {
+const TYPE_META: Record<string, { icon: React.ComponentProps<typeof MaterialCommunityIcons>['name']; bg: string; fg: string }> = {
     ENTRY_REQUEST:     { icon: 'alert-triangle', bg: SgateColors.goldPale, fg: SgateColors.goldDeep },
     DELIVERY_REQUEST:  { icon: 'package',        bg: SgateColors.blueBg,   fg: SgateColors.blue },
     EMERGENCY_ALERT:   { icon: 'shield',         bg: SgateColors.redBg,    fg: SgateColors.red },
@@ -155,7 +155,7 @@ export default function AdminNotificationsScreen() {
                         onPress={() => handlePress(n)}
                     >
                         <View style={[styles.iconBubble, { backgroundColor: meta.bg }]}>
-                            <Feather name={meta.icon} size={18} color={meta.fg} />
+                            <MaterialCommunityIcons name={meta.icon} size={18} color={meta.fg} />
                         </View>
                         <View style={styles.rowText}>
                             <Text style={styles.rowTitle} numberOfLines={1}>{n.title}</Text>
@@ -185,7 +185,7 @@ export default function AdminNotificationsScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Notifications</Text>
                 {unreadCount > 0 && (

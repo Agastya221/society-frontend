@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
@@ -28,11 +28,11 @@ import type {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const TYPE_CONFIG: Record<PreApprovedType, {
-    label: string; icon: React.ComponentProps<typeof Feather>['name']; color: string; bg: string;
+    label: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>['name']; color: string; bg: string;
 }> = {
-    CAB:      { label: 'Cab',      icon: 'navigation', color: SgateColors.blue,      bg: SgateColors.blueBg   },
-    DELIVERY: { label: 'Delivery', icon: 'package',    color: SgateColors.green,     bg: SgateColors.greenBg  },
-    HELP:     { label: 'Help',     icon: 'tool',       color: SgateColors.goldDeep,  bg: SgateColors.goldPale },
+    CAB:      { label: 'Cab',      icon: 'car-outline',       color: SgateColors.blue,      bg: SgateColors.blueBg   },
+    DELIVERY: { label: 'Delivery', icon: 'package-variant',   color: SgateColors.green,     bg: SgateColors.greenBg  },
+    HELP:     { label: 'Help',     icon: 'wrench-outline',    color: SgateColors.goldDeep,  bg: SgateColors.goldPale },
 };
 
 const STATUS_CONFIG: Record<PreApprovedStatus, { label: string; color: string; bg: string }> = {
@@ -135,7 +135,7 @@ export default function AdminMyPassesScreen() {
             <View style={styles.card}>
                 <View style={styles.cardTop}>
                     <View style={[styles.typeBubble, { backgroundColor: typeConf.bg }]}>
-                        <Feather name={typeConf.icon} size={20} color={typeConf.color} />
+                        <MaterialCommunityIcons name={typeConf.icon} size={20} color={typeConf.color} />
                     </View>
 
                     <View style={styles.cardInfo}>
@@ -154,13 +154,13 @@ export default function AdminMyPassesScreen() {
                             </View>
                             {item.mode === 'SAFE' && (
                                 <View style={[styles.typePill, { backgroundColor: SgateColors.blueBg }]}>
-                                    <Feather name="shield" size={10} color={SgateColors.blue} style={{ marginRight: 3 }} />
+                                    <MaterialCommunityIcons name="shield-outline" size={10} color={SgateColors.blue} style={{ marginRight: 3 }} />
                                     <Text style={[styles.typePillText, { color: SgateColors.blue }]}>Safe</Text>
                                 </View>
                             )}
                             {item.schedule.scheduleType === 'RECURRING' && (
                                 <View style={[styles.typePill, { backgroundColor: SgateColors.surface }]}>
-                                    <Feather name="repeat" size={10} color={SgateColors.t3} style={{ marginRight: 3 }} />
+                                    <MaterialCommunityIcons name="repeat" size={10} color={SgateColors.t3} style={{ marginRight: 3 }} />
                                     <Text style={[styles.typePillText, { color: SgateColors.t3 }]}>Recurring</Text>
                                 </View>
                             )}
@@ -168,7 +168,7 @@ export default function AdminMyPassesScreen() {
 
                         {!!schedInfo && (
                             <View style={styles.schedRow}>
-                                <Feather name="clock" size={11} color={SgateColors.t4} style={{ marginRight: 4 }} />
+                                <MaterialCommunityIcons name="clock-outline" size={12} color={SgateColors.t4} style={{ marginRight: 4 }} />
                                 <Text style={styles.schedText} numberOfLines={1}>{schedInfo}</Text>
                             </View>
                         )}
@@ -179,7 +179,7 @@ export default function AdminMyPassesScreen() {
                         onPress={() => setMenuEntry(item)}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <Feather name="more-vertical" size={18} color={SgateColors.t3} />
+                        <MaterialCommunityIcons name="dots-vertical" size={18} color={SgateColors.t3} />
                     </TouchableOpacity>
                 </View>
 
@@ -199,7 +199,7 @@ export default function AdminMyPassesScreen() {
             <SafeAreaView style={styles.safe} edges={['top']}>
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>My Pre-Approvals</Text>
                     <View style={{ width: 40 }} />
@@ -213,11 +213,11 @@ export default function AdminMyPassesScreen() {
         <SafeAreaView style={styles.safe} edges={['top']}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>My Pre-Approvals</Text>
                 <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
-                    <Feather name="plus" size={20} color={SgateColors.card} />
+                    <MaterialCommunityIcons name="plus" size={20} color={SgateColors.card} />
                 </TouchableOpacity>
             </View>
 
@@ -231,7 +231,7 @@ export default function AdminMyPassesScreen() {
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
                     <View style={styles.empty}>
-                        <Feather name="shield" size={52} color={SgateColors.t4} />
+                        <MaterialCommunityIcons name="shield-outline" size={52} color={SgateColors.t4} />
                         <Text style={styles.emptyTitle}>No Pre-Approvals</Text>
                         <Text style={styles.emptySubtitle}>
                             Pre-approve cabs, deliveries, or regular helpers so they can enter without manual approval.
@@ -254,29 +254,29 @@ export default function AdminMyPassesScreen() {
 
                         <TouchableOpacity style={styles.actionItem} onPress={() => { setMenuEntry(null); setSheetVisible(true); }}>
                             <View style={[styles.actionIcon, { backgroundColor: SgateColors.blueBg }]}>
-                                <Feather name="refresh-cw" size={18} color={SgateColors.blue} />
+                                <MaterialCommunityIcons name="refresh" size={18} color={SgateColors.blue} />
                             </View>
                             <Text style={styles.actionLabel}>Repeat This</Text>
-                            <Feather name="chevron-right" size={16} color={SgateColors.t4} />
+                            <MaterialCommunityIcons name="chevron-right" size={16} color={SgateColors.t4} />
                         </TouchableOpacity>
 
                         {menuEntry?.status === 'ACTIVE' && (
                             <TouchableOpacity style={styles.actionItem} onPress={() => menuEntry && handleCancel(menuEntry)}>
                                 <View style={[styles.actionIcon, { backgroundColor: SgateColors.redBg }]}>
-                                    <Feather name="x-circle" size={18} color={SgateColors.red} />
+                                    <MaterialCommunityIcons name="close-circle-outline" size={18} color={SgateColors.red} />
                                 </View>
                                 <Text style={[styles.actionLabel, { color: SgateColors.red }]}>Cancel Pre-Approval</Text>
-                                <Feather name="chevron-right" size={16} color={SgateColors.t4} />
+                                <MaterialCommunityIcons name="chevron-right" size={16} color={SgateColors.t4} />
                             </TouchableOpacity>
                         )}
 
                         {menuEntry?.status !== 'ACTIVE' && (
                             <TouchableOpacity style={styles.actionItem} onPress={() => menuEntry && handleDelete(menuEntry)}>
                                 <View style={[styles.actionIcon, { backgroundColor: SgateColors.redBg }]}>
-                                    <Feather name="trash-2" size={18} color={SgateColors.red} />
+                                    <MaterialCommunityIcons name="trash-can-outline" size={18} color={SgateColors.red} />
                                 </View>
                                 <Text style={[styles.actionLabel, { color: SgateColors.red }]}>Delete Entry</Text>
-                                <Feather name="chevron-right" size={16} color={SgateColors.t4} />
+                                <MaterialCommunityIcons name="chevron-right" size={16} color={SgateColors.t4} />
                             </TouchableOpacity>
                         )}
 

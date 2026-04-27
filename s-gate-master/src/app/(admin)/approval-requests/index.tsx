@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
@@ -50,11 +50,11 @@ export default function ApprovalRequestsListScreen() {
             <View className="bg-white dark:bg-zinc-900 px-4 pt-4 pb-3 border-b border-zinc-200 dark:border-zinc-800">
                 <View className="flex-row items-center justify-between mb-4">
                     <TouchableOpacity onPress={() => router.back()}>
-                        <Feather name="arrow-left" size={24} className="text-zinc-900 dark:text-white" />
+                        <MaterialCommunityIcons name="arrow-left" size={24} className="text-zinc-900 dark:text-white" />
                     </TouchableOpacity>
                     <Text className="text-xl font-bold text-zinc-900 dark:text-white">Approval Requests</Text>
                     <TouchableOpacity onPress={() => router.push('/(admin)/approval-requests/create' as any)}>
-                        <Feather name="plus" size={24} className="text-indigo-600 dark:text-indigo-400" />
+                        <MaterialCommunityIcons name="plus" size={24} className="text-indigo-600 dark:text-indigo-400" />
                     </TouchableOpacity>
                 </View>
 
@@ -120,15 +120,15 @@ export default function ApprovalRequestsListScreen() {
                             {/* Meta Info */}
                             <View className="flex-row items-center gap-3">
                                 <View className="flex-row items-center gap-1">
-                                    <Feather name="home" size={12} className="text-zinc-400" />
+                                    <MaterialCommunityIcons name="home-outline" size={12} className="text-zinc-400" />
                                     <Text className="text-xs text-zinc-500">Flat {item.flat?.flatNumber ?? 'N/A'}</Text>
                                 </View>
                                 <View className="flex-row items-center gap-1">
-                                    <Feather name="user" size={12} className="text-zinc-400" />
+                                    <MaterialCommunityIcons name="account-outline" size={12} className="text-zinc-400" />
                                     <Text className="text-xs text-zinc-500">{item.requestedBy?.name ?? 'N/A'}</Text>
                                 </View>
                                 <View className="flex-row items-center gap-1">
-                                    <Feather name="clock" size={12} className="text-zinc-400" />
+                                    <MaterialCommunityIcons name="clock-outline" size={12} className="text-zinc-400" />
                                     <Text className="text-xs text-zinc-500">{formatDate(item.createdAt)}</Text>
                                 </View>
                             </View>
@@ -159,7 +159,7 @@ export default function ApprovalRequestsListScreen() {
                 )}
                 ListEmptyComponent={
                     <View className="items-center justify-center py-12">
-                        <Feather name="inbox" size={48} className="text-zinc-300 dark:text-zinc-700 mb-3" />
+                        <MaterialCommunityIcons name="inbox-outline" size={48} className="text-zinc-300 dark:text-zinc-700 mb-3" />
                         <Text className="text-zinc-500 dark:text-zinc-400">No {filter.toLowerCase()} requests</Text>
                     </View>
                 }

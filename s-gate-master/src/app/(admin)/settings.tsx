@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -15,6 +15,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SettingRow } from '@/components/ui/SettingRow';
 import { useAuthStore } from '@/store/useAuthStore';
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -115,21 +116,21 @@ export default function SettingsScreen() {
                         <ToggleRow
                             label="Auto-approve domestic staff"
                             sub="Daily helpers bypass manual approval"
-                            icon="user"
+                            icon="account-outline"
                             value={autoStaff}
                             onValueChange={setAutoStaff}
                         />
                         <ToggleRow
                             label="Auto-approve delivery agents"
                             sub="Amazon, Swiggy, Zomato etc."
-                            icon="package"
+                            icon="package-variant"
                             value={autoDelivery}
                             onValueChange={setAutoDelivery}
                         />
                         <ToggleRow
                             label="Auto-approve registered cabs"
                             sub="Ola, Uber & other cab services"
-                            icon="navigation"
+                            icon="car-outline"
                             value={autoCab}
                             onValueChange={setAutoCab}
                             isLast
@@ -142,18 +143,18 @@ export default function SettingsScreen() {
                 <Animated.View entering={FadeInDown.delay(240).springify()}>
                     <Text style={styles.sectionLabel}>GATE MANAGEMENT</Text>
                     <View style={styles.menuCard}>
-                        <MenuItem
-                            icon="map-pin"
-                            label="Manage Gate Points"
-                            sub="Configure entry/exit gates"
+                        <SettingRow
+                            icon="map-marker-outline"
+                            title="Manage Gate Points"
+                            subtitle="Configure entry/exit gates"
                             onPress={() => router.push('/(admin)/gate-points')}
                         />
-                        <MenuItem
-                            icon="users"
-                            label="Guard Management"
-                            sub="Add and manage security guards"
+                        <SettingRow
+                            icon="account-group-outline"
+                            title="Guard Management"
+                            subtitle="Add and manage security guards"
                             onPress={() => router.push('/(admin)/guards')}
-                            isLast
+                            showDivider={false}
                         />
                     </View>
                 </Animated.View>
@@ -162,12 +163,12 @@ export default function SettingsScreen() {
                 <Animated.View entering={FadeInDown.delay(320).springify()}>
                     <Text style={styles.sectionLabel}>MORE</Text>
                     <View style={styles.menuCard}>
-                        <MenuItem
-                            icon="download"
-                            label="Export Society Data"
-                            sub="Download resident & entry reports"
+                        <SettingRow
+                            icon="download-outline"
+                            title="Export Society Data"
+                            subtitle="Download resident & entry reports"
                             onPress={() => Alert.alert('Coming Soon', 'Data export feature is coming in the next update.')}
-                            isLast
+                            showDivider={false}
                         />
                     </View>
                 </Animated.View>
@@ -209,14 +210,14 @@ function ConfigInput({ label, value, onChangeText, keyboardType, placeholder }: 
 }
 
 function ToggleRow({ label, sub, icon, value, onValueChange, isLast }: {
-    label: string; sub: string; icon: keyof typeof Feather.glyphMap;
+    label: string; sub: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
     value: boolean; onValueChange: (v: boolean) => void; isLast?: boolean;
 }) {
     return (
         <View style={[styles.toggleRow, !isLast && styles.toggleRowBorder]}>
             <View style={styles.toggleLeft}>
                 <View style={styles.toggleIcon}>
-                    <Feather name={icon} size={15} color={SgateColors.t2} />
+                    <MaterialCommunityIcons name={icon} size={16} color={SgateColors.t2} />
                 </View>
                 <View style={styles.toggleTexts}>
                     <Text style={styles.toggleLabel}>{label}</Text>
@@ -233,29 +234,6 @@ function ToggleRow({ label, sub, icon, value, onValueChange, isLast }: {
     );
 }
 
-function MenuItem({ icon, label, sub, onPress, isLast }: {
-    icon: keyof typeof Feather.glyphMap; label: string; sub: string;
-    onPress: () => void; isLast?: boolean;
-}) {
-    return (
-        <TouchableOpacity
-            style={[styles.menuItem, !isLast && styles.menuItemBorder]}
-            onPress={onPress}
-            activeOpacity={0.7}
-        >
-            <View style={styles.menuLeft}>
-                <View style={styles.menuIconWrap}>
-                    <Feather name={icon} size={16} color={SgateColors.t3} />
-                </View>
-                <View>
-                    <Text style={styles.menuLabel}>{label}</Text>
-                    <Text style={styles.menuSub}>{sub}</Text>
-                </View>
-            </View>
-            <Feather name="chevron-right" size={18} color={SgateColors.t4} />
-        </TouchableOpacity>
-    );
-}
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
@@ -364,12 +342,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         marginBottom: 20,
     },
-    menuItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14 },
-    menuItemBorder: { borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-    menuLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-    menuIconWrap: { width: 32, height: 32, borderRadius: 10, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
-    menuLabel: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
-    menuSub: { fontSize: 11, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 1 },
+
 
     version: { textAlign: 'center', fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 8 },
 });

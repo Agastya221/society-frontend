@@ -24,14 +24,16 @@ function formatGateId(id: string): string {
 
 interface ProfileHeaderProps {
     user: User;
+    role?: 'resident' | 'admin';
     onEditPress: () => void;
     onQrPress?: () => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ProfileHeader({ user, onEditPress, onQrPress }: ProfileHeaderProps) {
-    const name = user.name || 'Resident';
+export function ProfileHeader({ user, role = 'resident', onEditPress, onQrPress }: ProfileHeaderProps) {
+    const isAdmin = role === 'admin';
+    const name = user.name || (isAdmin ? 'Admin' : 'Resident');
     const initials = getInitials(name);
     const gateId = formatGateId(user.id);
     const hasPhoto = !!user.photoUrl;
@@ -44,7 +46,7 @@ export function ProfileHeader({ user, onEditPress, onQrPress }: ProfileHeaderPro
                     {hasPhoto ? (
                         <Image source={{ uri: user.photoUrl! }} style={styles.avatarImage} />
                     ) : (
-                        <View style={styles.avatarFallback}>
+                        <View style={[styles.avatarFallback, isAdmin && styles.avatarFallbackAdmin]}>
                             <Text style={styles.avatarText}>{initials}</Text>
                         </View>
                     )}
@@ -56,21 +58,34 @@ export function ProfileHeader({ user, onEditPress, onQrPress }: ProfileHeaderPro
                 <Text style={styles.name} numberOfLines={1}>{name}</Text>
 
                 <View style={styles.idRow}>
-                    <View style={styles.idPill}>
-                        <Text style={styles.idLabel}>s-gate ID </Text>
-                        <Text style={styles.idValue}>{gateId}</Text>
-                        <TouchableOpacity 
-                            hitSlop={8} 
-                            style={styles.idInfoBtn}
-                            onPress={() => AppAlert.show('About s-gate ID', 'This is your unique residential identifier used by security. Show this to the guards for fast-track entry to the society.')}
-                        >
-                            <Feather name="info" size={12} color={SgateColors.t3} />
-                        </TouchableOpacity>
-                    </View>
+                    {isAdmin ? (
+                        /* ── Admin: Role badge ───────────────────────────── */
+                        <View style={styles.adminBadge}>
+                            <MaterialCommunityIcons name="shield-check" size={14} color={SgateColors.goldDeep} style={{ marginRight: 4 }} />
+                            <Text style={styles.adminBadgeText}>
+                                {user.role ? user.role.replace(/_/g, ' ') : 'Admin'}
+                            </Text>
+                        </View>
+                    ) : (
+                        /* ── Resident: s-gate ID pill + QR ───────────────── */
+                        <>
+                            <View style={styles.idPill}>
+                                <Text style={styles.idLabel}>s-gate ID </Text>
+                                <Text style={styles.idValue}>{gateId}</Text>
+                                <TouchableOpacity 
+                                    hitSlop={8} 
+                                    style={styles.idInfoBtn}
+                                    onPress={() => AppAlert.show('About s-gate ID', 'This is your unique residential identifier used by security. Show this to the guards for fast-track entry to the society.')}
+                                >
+                                    <Feather name="info" size={12} color={SgateColors.t3} />
+                                </TouchableOpacity>
+                            </View>
 
-                    <TouchableOpacity onPress={onQrPress} style={styles.qrBtn} activeOpacity={0.7}>
-                        <MaterialCommunityIcons name="qrcode-scan" size={20} color={SgateColors.t1} />
-                    </TouchableOpacity>
+                            <TouchableOpacity onPress={onQrPress} style={styles.qrBtn} activeOpacity={0.7}>
+                                <MaterialCommunityIcons name="qrcode-scan" size={20} color={SgateColors.t1} />
+                            </TouchableOpacity>
+                        </>
+                    )}
                 </View>
             </View>
         </View>
@@ -106,6 +121,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    avatarFallbackAdmin: {
+        backgroundColor: SgateColors.gold,
+    },
     avatarText: {
         fontSize: 24,
         fontFamily: SgateFonts.bold,
@@ -124,6 +142,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
+
+    // ── Resident: s-gate ID pill ──────────────────────────────────────────
     idPill: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -154,5 +174,21 @@ const styles = StyleSheet.create({
         backgroundColor: SgateColors.surface,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+
+    // ── Admin: Role badge ─────────────────────────────────────────────────
+    adminBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: SgateColors.goldPale,
+        borderRadius: 16,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+    },
+    adminBadgeText: {
+        fontSize: 12,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.goldDeep,
+        textTransform: 'uppercase',
     },
 });

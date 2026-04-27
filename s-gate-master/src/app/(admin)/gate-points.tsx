@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Alert, FlatList, Modal, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -96,7 +96,7 @@ export default function GatePointsScreen() {
                             <View className="flex-row items-center justify-between mb-4">
                                 <View className="flex-row items-center gap-4">
                                     <View className={`p-3 rounded-full ${item.active ? 'bg-green-100' : 'bg-zinc-100'}`}>
-                                        <Feather name="map-pin" size={24} color={item.active ? '#15803d' : '#a1a1aa'} />
+                                        <MaterialCommunityIcons name="map-marker-outline" size={24} color={item.active ? '#15803d' : '#a1a1aa'} />
                                     </View>
                                     <View>
                                         <Text className="text-lg font-bold text-zinc-900 dark:text-white">{item.name}</Text>
@@ -116,7 +116,7 @@ export default function GatePointsScreen() {
                                     className="flex-row items-center"
                                     onPress={() => handleEdit(item)}
                                 >
-                                    <Feather name="edit-2" size={16} color="#71717a" />
+                                    <MaterialCommunityIcons name="pencil-outline" size={16} color="#71717a" />
                                     <Text className="ml-1 text-zinc-600 dark:text-zinc-400 font-medium">Edit</Text>
                                 </TouchableOpacity>
                                 
@@ -124,7 +124,7 @@ export default function GatePointsScreen() {
                                     className="flex-row items-center"
                                     onPress={() => handleDelete(item)}
                                 >
-                                    <Feather name="trash-2" size={16} color="#ef4444" />
+                                    <MaterialCommunityIcons name="trash-can-outline" size={16} color="#ef4444" />
                                     <Text className="ml-1 text-red-600 font-medium">Delete</Text>
                                 </TouchableOpacity>
                             </View>
@@ -143,7 +143,7 @@ export default function GatePointsScreen() {
                             {editingId ? 'Edit Gate' : 'New Gate'}
                         </Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <Feather name="x" size={24} color="#71717a" />
+                            <MaterialCommunityIcons name="close" size={24} color="#71717a" />
                         </TouchableOpacity>
                     </View>
 

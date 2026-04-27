@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -173,7 +173,7 @@ export default function OnboardingRequestsScreen() {
             <View style={styles.header}>
                 <View style={styles.headerTop}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
-                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Onboarding Requests</Text>
                     <View style={{ width: 40 }} />
@@ -202,7 +202,7 @@ export default function OnboardingRequestsScreen() {
                         tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
                     ListEmptyComponent={
                         <View style={styles.emptyWrap}>
-                            <Feather name="inbox" size={48} color={SgateColors.t4} />
+                            <MaterialCommunityIcons name="inbox-outline" size={48} color={SgateColors.t4} />
                             <Text style={styles.emptyTitle}>
                                 No {activeTab === 'PENDING_APPROVAL' ? 'pending' : activeTab.toLowerCase().replace('_', ' ')} requests
                             </Text>
@@ -232,15 +232,15 @@ export default function OnboardingRequestsScreen() {
 
                                         <View style={styles.metaRow}>
                                             <View style={styles.metaItem}>
-                                                <Feather name="home" size={12} color={SgateColors.t4} />
+                                                <MaterialCommunityIcons name="home-outline" size={12} color={SgateColors.t4} />
                                                 <Text style={styles.metaText}>{item.flat.block.name} - {item.flat.number}</Text>
                                             </View>
                                             <View style={styles.metaItem}>
-                                                <Feather name="calendar" size={12} color={SgateColors.t4} />
+                                                <MaterialCommunityIcons name="calendar-outline" size={12} color={SgateColors.t4} />
                                                 <Text style={styles.metaText}>{formatDate(item.createdAt)}</Text>
                                             </View>
                                             <View style={styles.metaItem}>
-                                                <Feather name="file" size={12} color={SgateColors.t4} />
+                                                <MaterialCommunityIcons name="file-outline" size={12} color={SgateColors.t4} />
                                                 <Text style={styles.metaText}>{item.documents.length} docs</Text>
                                             </View>
                                         </View>
@@ -258,7 +258,7 @@ export default function OnboardingRequestsScreen() {
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>Request Details</Text>
                         <TouchableOpacity onPress={() => { setDetailVisible(false); setActionType(null); }}>
-                            <Feather name="x" size={22} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="close" size={22} color={SgateColors.t3} />
                         </TouchableOpacity>
                     </View>
 
@@ -285,7 +285,7 @@ export default function OnboardingRequestsScreen() {
                                                 style={styles.docIcon} 
                                                 onPress={() => openDocument(doc.s3Key)}
                                             >
-                                                <Feather name="image" size={15} color={SgateColors.gold} />
+                                                <MaterialCommunityIcons name="image-outline" size={15} color={SgateColors.gold} />
                                             </TouchableOpacity>
                                             
                                             <TouchableOpacity 
@@ -300,7 +300,7 @@ export default function OnboardingRequestsScreen() {
                                                     style={[styles.checkbox, isSelected && styles.checkboxActive]}
                                                     onPress={() => toggleDocSelection(doc.type)}
                                                 >
-                                                    {isSelected && <Feather name="check" size={14} color="#FFF" />}
+                                                    {isSelected && <MaterialCommunityIcons name="check" size={14} color="#FFF" />}
                                                 </TouchableOpacity>
                                             ) : (
                                                 <View style={styles.docBadge}>
@@ -366,7 +366,7 @@ export default function OnboardingRequestsScreen() {
             <Modal visible={viewerVisible} transparent animationType="fade" onRequestClose={() => setViewerVisible(false)}>
                 <View style={styles.viewerWrapper}>
                     <TouchableOpacity style={styles.viewerClose} onPress={() => setViewerVisible(false)}>
-                        <Feather name="x" size={28} color="#FFF" />
+                        <MaterialCommunityIcons name="close" size={28} color="#FFF" />
                     </TouchableOpacity>
                     {viewerUrl ? (
                         <Image source={{ uri: viewerUrl }} style={styles.viewerImage} resizeMode="contain" />

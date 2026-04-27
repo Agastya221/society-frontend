@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -65,7 +65,7 @@ export default function BroadcastAndIntercomScreen() {
     const renderBroadcastTab = () => (
         <Animated.View entering={FadeInDown.duration(300)} style={styles.formWrap}>
             <View style={styles.infoBox}>
-                <Feather name="zap" size={20} color={SgateColors.goldDeep} />
+                <MaterialCommunityIcons name="flash-outline" size={20} color={SgateColors.goldDeep} />
                 <Text style={styles.infoText}>
                     Broadcasts instantly send Push Notifications directly to residents' mobile devices.
                 </Text>
@@ -123,7 +123,7 @@ export default function BroadcastAndIntercomScreen() {
                     <ActivityIndicator color={isEmergency ? SgateColors.red : '#FFF'} />
                 ) : (
                     <View style={styles.submitRow}>
-                        <Feather name="send" size={16} color={isEmergency ? SgateColors.red : '#FFF'} />
+                        <MaterialCommunityIcons name="send-outline" size={16} color={isEmergency ? SgateColors.red : '#FFF'} />
                         <Text style={[styles.submitText, isEmergency && { color: SgateColors.red }]}>Send Push Notification</Text>
                     </View>
                 )}
@@ -134,7 +134,7 @@ export default function BroadcastAndIntercomScreen() {
     const renderIntercomTab = () => (
         <Animated.View entering={FadeInDown.duration(300)} style={styles.intercomWrap}>
             <View style={styles.searchBox}>
-                <Feather name="search" size={18} color={SgateColors.t4} />
+                <MaterialCommunityIcons name="magnify" size={18} color={SgateColors.t4} />
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search by Flat or Name..."
@@ -154,7 +154,7 @@ export default function BroadcastAndIntercomScreen() {
                         <View style={styles.contactRow}>
                             {item.isGuard ? (
                                 <View style={[styles.contactAvatar, { backgroundColor: SgateColors.blueBg }]}>
-                                    <Feather name="shield" size={18} color={SgateColors.blue} />
+                                    <MaterialCommunityIcons name="shield-outline" size={18} color={SgateColors.blue} />
                                 </View>
                             ) : (
                                 <Avatar name={item.name} size={42} />
@@ -164,14 +164,14 @@ export default function BroadcastAndIntercomScreen() {
                                 <Text style={styles.contactFlat}>{item.isGuard ? 'Security' : `Flat ${item.flat}`}</Text>
                             </View>
                             <TouchableOpacity style={styles.callBtn} onPress={() => handleCall(item.phone)}>
-                                <Feather name="phone" size={18} color={SgateColors.green} />
+                                <MaterialCommunityIcons name="phone-outline" size={18} color={SgateColors.green} />
                             </TouchableOpacity>
                         </View>
                     </Animated.View>
                 )}
                 ListEmptyComponent={
                     <View style={styles.emptyWrap}>
-                        <Feather name="user-x" size={40} color={SgateColors.t4} />
+                        <MaterialCommunityIcons name="account-cancel-outline" size={40} color={SgateColors.t4} />
                         <Text style={styles.emptyText}>No contacts found.</Text>
                     </View>
                 }

@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,29 +12,29 @@ export default function AllToolsScreen() {
     const [showPreApprove, setShowPreApprove] = useState(false);
 
     const adminTools = [
-        { icon: 'briefcase' as const,      title: 'Staff',           bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/staff' },
-        { icon: 'radio' as const,          title: 'Broadcast',       bg: SgateColors.redBg,     color: SgateColors.red,      route: '/(admin)/broadcast' },
-        { icon: 'check-circle' as const,   title: 'Gate Passes',    bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/gate-passes' },
-        { icon: 'alert-circle' as const,   title: 'Complaints',      bg: SgateColors.redBg,     color: SgateColors.red,      route: '/(admin)/complaints' },
-        { icon: 'shield' as const,         title: 'Guards',          bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(admin)/guards' },
-        { icon: 'users' as const,          title: 'Residents',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/onboarding-requests' },
-        { icon: 'zap' as const,            title: 'Emergencies',     bg: SgateColors.redBg,     color: SgateColors.red,      route: '/(admin)/emergencies' },
-        { icon: 'message-square' as const, title: 'Community',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/community' },
-        { icon: 'bar-chart-2' as const,    title: 'Polls',           bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/elections' },
-        { icon: 'bell' as const,           title: 'Notices',         bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(admin)/notices' },
-        { icon: 'credit-card' as const,    title: 'Payments',        bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(admin)/payments' },
-        { icon: 'home' as const,           title: 'Flats',           bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/flats' },
-        { icon: 'truck' as const,          title: 'Vehicles',        bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/vehicles' },
-        { icon: 'settings' as const,       title: 'Settings',        bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(admin)/settings' },
+        { icon: 'briefcase-outline' as const,      title: 'Staff',           bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/staff' },
+        { icon: 'bullhorn-outline' as const,       title: 'Broadcast',       bg: SgateColors.redBg,     color: SgateColors.red,      route: '/(admin)/broadcast' },
+        { icon: 'clipboard-check-outline' as const,title: 'Gate Passes',    bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/gate-passes' },
+        { icon: 'alert-circle-outline' as const,   title: 'Complaints',      bg: SgateColors.redBg,     color: SgateColors.red,      route: '/(admin)/complaints' },
+        { icon: 'shield-outline' as const,         title: 'Guards',          bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(admin)/guards' },
+        { icon: 'account-group-outline' as const,  title: 'Residents',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/onboarding-requests' },
+        { icon: 'flash-outline' as const,          title: 'Emergencies',     bg: SgateColors.redBg,     color: SgateColors.red,      route: '/(admin)/emergencies' },
+        { icon: 'message-outline' as const,        title: 'Community',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/community' },
+        { icon: 'poll' as const,                   title: 'Polls',           bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/elections' },
+        { icon: 'bell-outline' as const,           title: 'Notices',         bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(admin)/notices' },
+        { icon: 'credit-card-outline' as const,    title: 'Payments',        bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(admin)/payments' },
+        { icon: 'home-city-outline' as const,      title: 'Flats',           bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/flats' },
+        { icon: 'car-outline' as const,            title: 'Vehicles',        bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/vehicles' },
+        { icon: 'cog-outline' as const,            title: 'Settings',        bg: SgateColors.surface,   color: SgateColors.t2,       route: '/(admin)/settings' },
     ];
 
     const personalTools = [
-        { icon: 'user-check' as const,     title: 'Pre-Approve',     bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: 'MODAL' },
-        { icon: 'shield' as const,         title: 'My Passes',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/my-passes' },
-        { icon: 'dollar-sign' as const,    title: 'My Dues',         bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(admin)/my-dues' },
-        { icon: 'package' as const,        title: 'Expect Delivery', bg: SgateColors.surface,   color: SgateColors.t2,       route: '/expect-delivery' },
-        { icon: 'truck' as const,          title: 'My Vehicles',     bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/my-home/vehicles' },
-        { icon: 'coffee' as const,         title: 'My Amenities',    bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/my-home/amenities' },
+        { icon: 'account-check-outline' as const,  title: 'Pre-Approve',     bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: 'MODAL' },
+        { icon: 'smart-card-outline' as const,     title: 'My Passes',       bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/my-passes' },
+        { icon: 'receipt-text-outline' as const,    title: 'My Dues',         bg: SgateColors.greenBg,   color: SgateColors.green,    route: '/(admin)/my-dues' },
+        { icon: 'package-variant' as const,         title: 'Expect Delivery', bg: SgateColors.surface,   color: SgateColors.t2,       route: '/expect-delivery' },
+        { icon: 'car-outline' as const,             title: 'My Vehicles',     bg: SgateColors.blueBg,    color: SgateColors.blue,     route: '/(admin)/my-home/vehicles' },
+        { icon: 'coffee-outline' as const,          title: 'My Amenities',    bg: SgateColors.goldPale,  color: SgateColors.goldDeep, route: '/(admin)/my-home/amenities' },
     ];
 
     const nav = (route: string) => {
@@ -50,7 +50,7 @@ export default function AllToolsScreen() {
         <SafeAreaView edges={['top']} style={styles.safe}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>All Admin Tools</Text>
                 <View style={{ width: 40 }} />
@@ -62,9 +62,9 @@ export default function AllToolsScreen() {
                     {adminTools.map((t, idx) => (
                         <TouchableOpacity key={idx} style={styles.tile} onPress={() => nav(t.route)}>
                             <View style={[styles.iconWrap, { backgroundColor: t.bg }]}>
-                                <Feather name={t.icon} size={22} color={t.color} />
+                                <MaterialCommunityIcons name={t.icon} size={26} color={t.color} />
                             </View>
-                            <Text style={styles.tileTitle}>{t.title}</Text>
+                            <Text style={styles.tileTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t.title}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -74,9 +74,9 @@ export default function AllToolsScreen() {
                     {personalTools.map((t, idx) => (
                         <TouchableOpacity key={idx} style={styles.tile} onPress={() => nav(t.route)}>
                             <View style={[styles.iconWrap, { backgroundColor: t.bg }]}>
-                                <Feather name={t.icon} size={22} color={t.color} />
+                                <MaterialCommunityIcons name={t.icon} size={26} color={t.color} />
                             </View>
-                            <Text style={styles.tileTitle}>{t.title}</Text>
+                            <Text style={styles.tileTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{t.title}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -133,13 +133,13 @@ const styles = StyleSheet.create({
         minHeight: 100,
     },
     iconWrap: {
-        width: 44, height: 44,
+        width: 48, height: 48,
         borderRadius: 14,
         alignItems: 'center', justifyContent: 'center',
         marginBottom: 10,
     },
     tileTitle: {
-        fontSize: 12,
+        fontSize: 11,
         fontFamily: SgateFonts.semibold,
         color: SgateColors.t1,
         textAlign: 'center',

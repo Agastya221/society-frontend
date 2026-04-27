@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -112,13 +112,13 @@ export default function GuardsScreen() {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
                 ListHeaderComponent={
                     <TouchableOpacity style={styles.addBtn} onPress={() => { resetForm(); setModalVisible(true); }} activeOpacity={0.8}>
-                        <Feather name="plus" size={18} color="#FFFFFF" />
+                        <MaterialCommunityIcons name="plus" size={18} color="#FFFFFF" />
                         <Text style={styles.addBtnText}>Add New Guard</Text>
                     </TouchableOpacity>
                 }
                 ListEmptyComponent={
                     <View style={styles.emptyWrap}>
-                        <Feather name="shield-off" size={48} color={SgateColors.t4} />
+                        <MaterialCommunityIcons name="shield-off-outline" size={48} color={SgateColors.t4} />
                         <Text style={styles.emptyTitle}>No guards yet</Text>
                         <Text style={styles.emptySub}>Add your first guard.</Text>
                     </View>
@@ -147,7 +147,7 @@ export default function GuardsScreen() {
                                 </View>
 
                                 <View style={styles.metaRow}>
-                                    <Feather name="calendar" size={12} color={SgateColors.t4} />
+                                    <MaterialCommunityIcons name="calendar-outline" size={12} color={SgateColors.t4} />
                                     <Text style={styles.metaText}>Joined {formatDate(item.createdAt)}</Text>
                                 </View>
 
@@ -172,13 +172,13 @@ export default function GuardsScreen() {
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>New Guard</Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <Feather name="x" size={22} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="close" size={22} color={SgateColors.t3} />
                         </TouchableOpacity>
                     </View>
 
                     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                         <View style={styles.infoBanner}>
-                            <Feather name="info" size={15} color={SgateColors.goldDeep} />
+                            <MaterialCommunityIcons name="information-outline" size={15} color={SgateColors.goldDeep} />
                             <Text style={styles.infoBannerText}>Guards log in via OTP only. No password is needed.</Text>
                         </View>
 

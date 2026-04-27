@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
 import { Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import Animated, {
@@ -25,11 +25,11 @@ const TAB_LABELS: Record<string, string> = {
 
 // ─── Fallback icons ──────────────────────────────────────────────────────────
 const TAB_ICONS: Record<string, string> = {
-  index: 'home',
-  'gate-passes': 'clipboard',
-  staff: 'briefcase',
-  broadcast: 'radio',
-  profile: 'user',
+  index: 'home-outline',
+  'gate-passes': 'clipboard-text-outline',
+  staff: 'briefcase-outline',
+  broadcast: 'bullhorn-outline',
+  profile: 'account-outline',
 };
 
 // Extract base route name
@@ -140,7 +140,7 @@ function AdminTab({ label, iconName, isFocused, options, onPress, onLongPress }:
             color: iconColor,
             size: 22,
           }) ?? (
-            <Feather name={iconName as any} size={22} color={iconColor} />
+            <MaterialCommunityIcons name={iconName as any} size={22} color={iconColor} />
           )}
         </Animated.View>
         <Text

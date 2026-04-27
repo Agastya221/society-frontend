@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -196,7 +196,7 @@ export default function AdminCommunityScreen() {
                 <View style={styles.card}>
                     <View style={styles.cardTopRow}>
                         {item.isPinned && (
-                            <Feather name="bookmark" size={14} color={SgateColors.goldDeep} style={{ marginRight: 4 }} />
+                            <MaterialCommunityIcons name="bookmark-outline" size={14} color={SgateColors.goldDeep} style={{ marginRight: 4 }} />
                         )}
                         <View style={[styles.categoryBadge, { backgroundColor: cfg.bg }]}>
                             <Text style={[styles.categoryBadgeText, { color: cfg.fg }]}>{cfg.label}</Text>
@@ -208,7 +208,7 @@ export default function AdminCommunityScreen() {
                             hitSlop={8}
                             style={styles.menuBtn}
                         >
-                            <Feather name="more-vertical" size={16} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="dots-vertical" size={16} color={SgateColors.t3} />
                         </TouchableOpacity>
                     </View>
 
@@ -226,11 +226,11 @@ export default function AdminCommunityScreen() {
                         </Text>
                         <View style={styles.statsRow}>
                             <View style={styles.statItem}>
-                                <Feather name="message-circle" size={13} color={SgateColors.t3} />
+                                <MaterialCommunityIcons name="message-outline" size={13} color={SgateColors.t3} />
                                 <Text style={styles.statText}> {item.commentCount}</Text>
                             </View>
                             <View style={styles.statItem}>
-                                <Feather name="heart" size={13} color={SgateColors.t3} />
+                                <MaterialCommunityIcons name="heart-outline" size={13} color={SgateColors.t3} />
                                 <Text style={styles.statText}> {item.likes}</Text>
                             </View>
                         </View>
@@ -245,7 +245,7 @@ export default function AdminCommunityScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Community</Text>
                 <TouchableOpacity
@@ -253,7 +253,7 @@ export default function AdminCommunityScreen() {
                     style={styles.createBtn}
                     activeOpacity={0.8}
                 >
-                    <Feather name="edit-2" size={16} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="pencil-outline" size={16} color={SgateColors.t1} />
                 </TouchableOpacity>
             </View>
 
@@ -292,7 +292,7 @@ export default function AdminCommunityScreen() {
                     onRefresh={onRefresh}
                     ListEmptyComponent={
                         <View style={styles.empty}>
-                            <Feather name="message-square" size={44} color={SgateColors.t4} />
+                            <MaterialCommunityIcons name="message-outline" size={44} color={SgateColors.t4} />
                             <Text style={styles.emptyText}>No posts yet</Text>
                         </View>
                     }
@@ -319,8 +319,8 @@ export default function AdminCommunityScreen() {
                             style={styles.menuItem}
                             onPress={() => menuTarget && handlePin(menuTarget)}
                         >
-                            <Feather
-                                name="bookmark"
+                            <MaterialCommunityIcons
+                                name="bookmark-outline"
                                 size={18}
                                 color={menuTarget?.isPinned ? SgateColors.goldDeep : SgateColors.t2}
                             />
@@ -333,7 +333,7 @@ export default function AdminCommunityScreen() {
                             style={styles.menuItem}
                             onPress={() => menuTarget && handleDelete(menuTarget)}
                         >
-                            <Feather name="trash-2" size={18} color={SgateColors.red} />
+                            <MaterialCommunityIcons name="trash-can-outline" size={18} color={SgateColors.red} />
                             <Text style={[styles.menuItemText, { color: SgateColors.red }]}>Delete Post</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={[styles.menuItem, { marginTop: 4 }]} onPress={() => setMenuTarget(null)}>
@@ -356,7 +356,7 @@ export default function AdminCommunityScreen() {
                     <View style={styles.createModalHeader}>
                         <Text style={styles.createModalTitle}>New Announcement</Text>
                         <TouchableOpacity onPress={() => setCreateVisible(false)}>
-                            <Feather name="x" size={22} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="close" size={22} color={SgateColors.t3} />
                         </TouchableOpacity>
                     </View>
                     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">

@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
@@ -208,10 +208,10 @@ export default function PaymentsScreen() {
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Finance & Billing</Text>
                 <TouchableOpacity style={styles.navActionBtn} onPress={() => setShowGenerateModal(true)}>
-                    <Feather name="file-plus" size={20} color={SgateColors.goldDeep} />
+                    <MaterialCommunityIcons name="file-plus-outline" size={20} color={SgateColors.goldDeep} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.navActionBtn} onPress={() => setShowPenaltyModal(true)}>
-                    <Feather name="alert-triangle" size={20} color={SgateColors.red} />
+                    <MaterialCommunityIcons name="alert-outline" size={20} color={SgateColors.red} />
                 </TouchableOpacity>
             </View>
 
@@ -257,7 +257,7 @@ export default function PaymentsScreen() {
                 }
                 ListEmptyComponent={
                     <View style={styles.empty}>
-                        <Feather name="credit-card" size={48} color={SgateColors.t4} />
+                        <MaterialCommunityIcons name="credit-card-outline" size={48} color={SgateColors.t4} />
                         <Text style={styles.emptyTitle}>No Records</Text>
                         <Text style={styles.emptySubtitle}>No dues found for the selected filter.</Text>
                     </View>
@@ -294,11 +294,11 @@ export default function PaymentsScreen() {
                                 {selectedDue.status !== 'PAID' && (
                                     <View style={{ gap: 8, flexDirection: 'row', marginTop: 12 }}>
                                         <TouchableOpacity style={[styles.reminderBtn, { flex: 1 }]} onPress={() => handleMarkPaid(selectedDue)}>
-                                            <Feather name="check" size={16} color={SgateColors.card} style={{ marginRight: 8 }} />
+                                            <MaterialCommunityIcons name="check" size={16} color={SgateColors.card} style={{ marginRight: 8 }} />
                                             <Text style={styles.reminderBtnText}>Mark Paid</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity style={[styles.reminderBtn, { flex: 1, backgroundColor: SgateColors.red }]} onPress={() => handleWaive(selectedDue)}>
-                                            <Feather name="trash-2" size={16} color={SgateColors.card} style={{ marginRight: 8 }} />
+                                            <MaterialCommunityIcons name="trash-can-outline" size={16} color={SgateColors.card} style={{ marginRight: 8 }} />
                                             <Text style={styles.reminderBtnText}>Waive</Text>
                                         </TouchableOpacity>
                                     </View>
@@ -306,7 +306,7 @@ export default function PaymentsScreen() {
                                 
                                 {selectedDue.status !== 'PAID' && (
                                     <TouchableOpacity style={[styles.reminderBtn, { marginTop: 8 }]} onPress={() => handleSendReminder(selectedDue)}>
-                                        <Feather name="bell" size={16} color={SgateColors.card} style={{ marginRight: 8 }} />
+                                        <MaterialCommunityIcons name="bell-outline" size={16} color={SgateColors.card} style={{ marginRight: 8 }} />
                                         <Text style={styles.reminderBtnText}>Send Reminder</Text>
                                     </TouchableOpacity>
                                 )}
@@ -325,7 +325,7 @@ export default function PaymentsScreen() {
                 <TouchableOpacity style={styles.overlayCenter} activeOpacity={1} onPress={() => setShowGenerateModal(false)}>
                     <View style={styles.dialogBox} onStartShouldSetResponder={() => true}>
                         <View style={[styles.dialogIconWrap, { backgroundColor: SgateColors.goldPale }]}>
-                            <Feather name="file-plus" size={24} color={SgateColors.goldDeep} />
+                            <MaterialCommunityIcons name="file-plus-outline" size={24} color={SgateColors.goldDeep} />
                         </View>
                         <Text style={styles.dialogTitle}>Generate Invoices</Text>
                         <Text style={styles.dialogSub}>Bulk generate maintenance bills for all occupied flats in the society.</Text>
@@ -357,7 +357,7 @@ export default function PaymentsScreen() {
                 <TouchableOpacity style={styles.overlayCenter} activeOpacity={1} onPress={() => setShowPenaltyModal(false)}>
                     <View style={styles.dialogBox} onStartShouldSetResponder={() => true}>
                         <View style={[styles.dialogIconWrap, { backgroundColor: SgateColors.redBg }]}>
-                            <Feather name="alert-triangle" size={24} color={SgateColors.red} />
+                            <MaterialCommunityIcons name="alert-outline" size={24} color={SgateColors.red} />
                         </View>
                         <Text style={styles.dialogTitle}>Apply Late Penalty</Text>
                         <Text style={styles.dialogSub}>Bulk apply a fast late penalty to all flats currently marked as Overdue.</Text>
@@ -389,11 +389,11 @@ export default function PaymentsScreen() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function SummaryCard({ label, amount, color, bg, icon }: {
-    label: string; amount: number; color: string; bg: string; icon: keyof typeof Feather.glyphMap;
+    label: string; amount: number; color: string; bg: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 }) {
     return (
         <View style={[styles.summaryCard, { backgroundColor: bg }]}>
-            <Feather name={icon} size={16} color={color} style={{ marginBottom: 6 }} />
+            <MaterialCommunityIcons name={icon} size={16} color={color} style={{ marginBottom: 6 }} />
             <Text style={[styles.summaryAmount, { color }]}>
                 ₹{amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : String(amount)}
             </Text>

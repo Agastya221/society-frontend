@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Modal, ScrollView, SectionList, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -156,7 +156,7 @@ export default function FlatsScreen() {
         <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
             <View className="p-4 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
                 <View className="flex-row items-center bg-zinc-100 dark:bg-zinc-800 rounded-lg px-3 py-2">
-                    <Feather name="search" size={20} color="#71717a" />
+                    <MaterialCommunityIcons name="magnify" size={20} color="#71717a" />
                     <TextInput
                         className="flex-1 ml-2 text-base text-zinc-900 dark:text-zinc-100"
                         placeholder="Search flats, blocks or owners..."
@@ -194,10 +194,10 @@ export default function FlatsScreen() {
                         </View>
                         <View className="flex-row gap-4">
                             <TouchableOpacity onPress={() => handleEdit(item)}>
-                                <Feather name="edit-2" size={18} color="#71717a" />
+                                <MaterialCommunityIcons name="pencil-outline" size={18} color="#71717a" />
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => handleDelete(item.id)}>
-                                <Feather name="trash-2" size={18} color="#ef4444" />
+                                <MaterialCommunityIcons name="trash-can-outline" size={18} color="#ef4444" />
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -214,7 +214,7 @@ export default function FlatsScreen() {
                             {editingId ? 'Edit Flat' : 'New Flat'}
                         </Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <Feather name="x" size={24} color="#71717a" />
+                            <MaterialCommunityIcons name="close" size={24} color="#71717a" />
                         </TouchableOpacity>
                     </View>
 

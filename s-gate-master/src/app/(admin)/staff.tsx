@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -62,15 +62,15 @@ export default function StaffManagementScreen() {
 
                 <View style={styles.cardMetrics}>
                     <View style={styles.metric}>
-                        <Feather name="clock" size={14} color={SgateColors.t3} />
+                        <MaterialCommunityIcons name="clock-outline" size={14} color={SgateColors.t3} />
                         <Text style={styles.metricText}>{item.shiftStart} - {item.shiftEnd}</Text>
                     </View>
                     <View style={styles.metric}>
-                        <Feather name="briefcase" size={14} color={SgateColors.t3} />
+                        <MaterialCommunityIcons name="briefcase-outline" size={14} color={SgateColors.t3} />
                         <Text style={styles.metricText}>₹{item.salary.toLocaleString()}/mo</Text>
                     </View>
                     <View style={styles.metric}>
-                        <Feather name="home" size={14} color={SgateColors.t3} />
+                        <MaterialCommunityIcons name="home-outline" size={14} color={SgateColors.t3} />
                         <Text style={styles.metricText}>{item.assignedFlats.length > 1 ? `${item.assignedFlats.length} Flats` : item.assignedFlats[0]}</Text>
                     </View>
                 </View>
@@ -130,7 +130,7 @@ export default function StaffManagementScreen() {
                     <Text style={styles.headerSub}>Manage society workers</Text>
                 </View>
                 <TouchableOpacity style={styles.addBtn} onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
-                    <Feather name="plus" size={20} color="white" />
+                    <MaterialCommunityIcons name="plus" size={20} color="white" />
                 </TouchableOpacity>
             </View>
 
@@ -162,7 +162,7 @@ export default function StaffManagementScreen() {
                     renderItem={activeTab === 'DIRECTORY' ? renderStaffCard : renderAttendanceCard}
                     ListEmptyComponent={
                         <View style={styles.empty}>
-                            <Feather name="users" size={40} color={SgateColors.t4} />
+                            <MaterialCommunityIcons name="account-group-outline" size={40} color={SgateColors.t4} />
                             <Text style={styles.emptyText}>No staff records found</Text>
                         </View>
                     }

@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -130,7 +130,7 @@ export default function GatePassesScreen() {
                 }
                 ListEmptyComponent={
                     <View className="items-center justify-center py-20 mt-20">
-                        <Feather name="inbox" size={48} color="#cbd5e1" />
+                        <MaterialCommunityIcons name="inbox-outline" size={48} color="#cbd5e1" />
                         <Text className="text-slate-400 mt-4 text-center font-medium">No gate passes found</Text>
                     </View>
                 }
@@ -161,14 +161,14 @@ export default function GatePassesScreen() {
                                 <View className="flex-row items-center gap-2 mt-1.5 flex-wrap">
                                     {item.flat ? (
                                         <>
-                                            <Feather name="home" size={14} className="text-slate-400" />
+                                            <MaterialCommunityIcons name="home-outline" size={14} className="text-slate-400" />
                                             <Text className="text-slate-500 text-sm font-medium">
                                                 {item.flat.block?.name || ''} {item.flat.flatNumber}
                                             </Text>
                                             <Text className="text-slate-300">•</Text>
                                         </>
                                     ) : null}
-                                    <Feather name="clock" size={14} className="text-slate-400" />
+                                    <MaterialCommunityIcons name="clock-outline" size={14} className="text-slate-400" />
                                     <Text className="text-slate-500 text-sm font-medium">
                                         {new Date(item.validFrom).toLocaleDateString()}
                                     </Text>

@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
@@ -20,35 +20,35 @@ export default function AdminLayout() {
                     name="index"
                     options={{
                         title: 'Home',
-                        tabBarIcon: ({ color }) => <Feather name="home" size={22} color={color} />,
+                        tabBarIcon: ({ color }) => <MaterialCommunityIcons name="home-outline" size={22} color={color} />,
                     }}
                 />
                 <Tabs.Screen
                     name="gate-passes"
                     options={{
                         title: 'Passes',
-                        tabBarIcon: ({ color }) => <Feather name="clipboard" size={22} color={color} />,
+                        tabBarIcon: ({ color }) => <MaterialCommunityIcons name="clipboard-text-outline" size={22} color={color} />,
                     }}
                 />
                 <Tabs.Screen
                     name="staff"
                     options={{
                         title: 'Staff',
-                        tabBarIcon: ({ color }) => <Feather name="briefcase" size={22} color={color} />,
+                        tabBarIcon: ({ color }) => <MaterialCommunityIcons name="briefcase-outline" size={22} color={color} />,
                     }}
                 />
                 <Tabs.Screen
                     name="broadcast"
                     options={{
                         title: 'Alerts',
-                        tabBarIcon: ({ color }) => <Feather name="radio" size={22} color={color} />,
+                        tabBarIcon: ({ color }) => <MaterialCommunityIcons name="bullhorn-outline" size={22} color={color} />,
                     }}
                 />
                 <Tabs.Screen
                     name="profile"
                     options={{
                         title: 'Profile',
-                        tabBarIcon: ({ color }) => <Feather name="user" size={22} color={color} />,
+                        tabBarIcon: ({ color }) => <MaterialCommunityIcons name="account-outline" size={22} color={color} />,
                     }}
                 />
 

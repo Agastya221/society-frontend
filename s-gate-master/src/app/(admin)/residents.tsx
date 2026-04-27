@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -204,14 +204,14 @@ export default function ResidentsScreen() {
 
                             <View className="flex-row gap-4 mb-3 mt-1">
                                 <View className="flex-row items-center">
-                                    <Feather name="home" size={14} color="#71717a" />
+                                    <MaterialCommunityIcons name="home-outline" size={14} color="#71717a" />
                                     <Text className="ml-1 text-zinc-600 dark:text-zinc-400">
                                         Flat {flat ? `${flat.number} (${flat.block})` : 'Unknown'}
                                     </Text>
                                 </View>
                                 {item.type === 'RENTER' && (
                                     <View className="flex-row items-center">
-                                        <Feather name={item.agreementUrl ? "file-text" : "alert-triangle"} size={14} color={item.agreementUrl ? "#15803d" : "#ef4444"} />
+                                        <MaterialCommunityIcons name={item.agreementUrl ? "file-document-outline" : "alert-outline"} size={14} color={item.agreementUrl ? "#15803d" : "#ef4444"} />
                                         <Text className={`ml-1 text-xs ${item.agreementUrl ? 'text-green-600' : 'text-red-600'}`}>
                                             {item.agreementUrl ? 'Agreement Verified' : 'No Agreement'}
                                         </Text>
@@ -224,7 +224,7 @@ export default function ResidentsScreen() {
                                     onPress={() => handleEdit(item)}
                                     className="flex-row items-center bg-zinc-100 dark:bg-zinc-800 px-3 py-2 rounded-lg"
                                 >
-                                    <Feather name="edit-2" size={14} color="#71717a" />
+                                    <MaterialCommunityIcons name="pencil-outline" size={14} color="#71717a" />
                                     <Text className="ml-2 font-medium text-zinc-700 dark:text-zinc-300">Edit Profile</Text>
                                 </TouchableOpacity>
                             </View>
@@ -243,7 +243,7 @@ export default function ResidentsScreen() {
                             {editingId ? 'Edit Resident' : 'Register Resident'}
                         </Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <Feather name="x" size={24} color="#71717a" />
+                            <MaterialCommunityIcons name="close" size={24} color="#71717a" />
                         </TouchableOpacity>
                     </View>
 
@@ -304,7 +304,7 @@ export default function ResidentsScreen() {
                                     onPress={handleMockFilePick}
                                     className={`p-4 rounded-xl border-dashed border-2 mb-6 items-center flex-row justify-center gap-2 ${agreementUrl ? 'border-green-500 bg-green-50' : 'border-zinc-300 bg-zinc-50'}`}
                                 >
-                                    <Feather name={agreementUrl ? "check" : "upload"} size={20} color={agreementUrl ? "#15803d" : "#71717a"} />
+                                    <MaterialCommunityIcons name={agreementUrl ? "check" : "upload-outline"} size={20} color={agreementUrl ? "#15803d" : "#71717a"} />
                                     <Text className={agreementUrl ? "text-green-700 font-bold" : "text-zinc-500"}>
                                         {agreementUrl ? "Agreement Uploaded" : "Upload Agreement (File Picker)"}
                                     </Text>
