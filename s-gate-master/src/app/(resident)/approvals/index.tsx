@@ -15,7 +15,7 @@ import { ActivityIndicator,
     View } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
@@ -90,6 +90,7 @@ function PhotoCell({ id, type, photoKey, color }: { id: string; type: string; ph
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ApprovalsScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [requests, setRequests]     = useState<EntryRequest[]>([]);
     const [loading, setLoading]       = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -251,16 +252,16 @@ export default function ApprovalsScreen() {
     // ── Loading state ────────────────────────────────────────────────────────
     if (loading) {
         return (
-            <SafeAreaView edges={['top']} style={styles.centerSafe}>
+            <View style={[styles.centerSafe, { paddingTop: insets.top }]}>
                 <AppLoader />
-            </SafeAreaView>
+            </View>
         );
     }
 
     // ── Error state ──────────────────────────────────────────────────────────
     if (error && requests.length === 0) {
         return (
-            <SafeAreaView edges={['top']} style={styles.centerSafe}>
+            <View style={[styles.centerSafe, { paddingTop: insets.top }]}>
                 <Feather name="alert-circle" size={48} color={SgateColors.red} />
                 <Text style={styles.errorText}>{error}</Text>
                 <TouchableOpacity
@@ -269,28 +270,22 @@ export default function ApprovalsScreen() {
                 >
                     <Text style={styles.retryText}>Retry</Text>
                 </TouchableOpacity>
-            </SafeAreaView>
+            </View>
         );
     }
 
     // ── Main render ──────────────────────────────────────────────────────────
     return (
-        <SafeAreaView edges={['top']} style={styles.safe}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
+        <View style={styles.safe}>
+            {/* Header — identical to Deliveries screen */}
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity
+                    onPress={() => router.back()}
+                    accessibilityLabel="Go back"
+                >
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
-                <View style={styles.headerTitleWrap}>
-                    <Text style={styles.headerTitle}>Visitor Approvals</Text>
-                    {requests.length > 0 && (
-                        <View style={styles.liveBadge}>
-                            <View style={styles.liveDot} />
-                            <Text style={styles.liveText}>LIVE</Text>
-                        </View>
-                    )}
-                </View>
-                
+                <Text style={styles.headerTitle}>Visitor Approvals</Text>
             </View>
 
             <FlatList
@@ -350,7 +345,7 @@ export default function ApprovalsScreen() {
                     </View>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -371,51 +366,22 @@ const styles = StyleSheet.create({
         gap: 12,
     },
 
-    // ── Header ───────────────────────────────────────────────────────────────
+    // ── Header (matches Deliveries screen exactly) ────────────────────────────
     header: {
-        backgroundColor: SgateColors.card,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
         borderBottomWidth: 1,
         borderBottomColor: SgateColors.borderSoft,
     },
-    headerBackBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerTitleWrap: {
+    headerTitle: {
+        fontSize: 18,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t1,
+        marginLeft: 12,
         flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-    },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-    liveBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: '#FEF2F2',
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 20,
-    },
-    liveDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: SgateColors.red,
-    },
-    liveText: {
-        fontSize: 10,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.red,
-        letterSpacing: 0.5,
     },
 
     // ── List ─────────────────────────────────────────────────────────────────
