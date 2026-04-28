@@ -18,14 +18,15 @@ import { getAllGatePasses, type GatePass } from '@/services/gatePass';
 
 // ─── Filter tabs ──────────────────────────────────────────────────────────────
 
-type Filter = 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED';
-const FILTERS: Filter[] = ['ALL', 'PENDING', 'APPROVED', 'REJECTED'];
+type Filter = 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+const FILTERS: Filter[] = ['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'EXPIRED'];
 
 const FILTER_LABELS: Record<Filter, string> = {
     ALL: 'All',
     PENDING: 'Pending',
     APPROVED: 'Approved',
     REJECTED: 'Rejected',
+    EXPIRED: 'Expired',
 };
 
 // ─── Status colors ────────────────────────────────────────────────────────────
@@ -282,8 +283,6 @@ const S = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 16,
         backgroundColor: SgateColors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
     },
     headerTitle: {
         fontSize: 18,
@@ -305,8 +304,6 @@ const S = StyleSheet.create({
     chipBar: {
         backgroundColor: SgateColors.card,
         paddingBottom: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
     },
     chipScroll: {
         paddingHorizontal: 20,
