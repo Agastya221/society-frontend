@@ -90,10 +90,14 @@ export const createGatePass = async (payload: CreateGatePassPayload): Promise<Ga
  */
 export const getAllGatePasses = async (societyId?: string): Promise<GatePass[]> => {
     try {
-        const response = await api.get<{ success: boolean; data: GatePass[] }>('/gate/passes', {
+        const response = await api.get<{ success: boolean; data: any }>('/gate/passes', {
             params: societyId ? { societyId } : {}
         });
-        return response.data.data;
+        // API may return { gatePasses: [...] } or a raw array inside data.data
+        const raw = response.data.data;
+        if (Array.isArray(raw)) return raw;
+        if (raw?.gatePasses && Array.isArray(raw.gatePasses)) return raw.gatePasses;
+        return [];
     } catch (error: any) {
         handleApiError(error, 'fetch gate passes');
         throw error;
