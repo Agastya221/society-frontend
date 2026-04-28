@@ -200,10 +200,24 @@ export default function CreateApprovalRequestScreen() {
 
                 {/* Cancel */}
                 <TouchableOpacity
-                    onPress={() => router.back()}
+                    onPress={() => {
+                        if (title.trim() || description.trim() || flatNumber) {
+                            Alert.alert(
+                                'Discard Request?',
+                                'You have unsaved changes. Are you sure you want to go back?',
+                                [
+                                    { text: 'Keep Editing', style: 'cancel' },
+                                    { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+                                ],
+                            );
+                        } else {
+                            router.back();
+                        }
+                    }}
                     style={S.cancelBtn}
                     activeOpacity={0.8}
                 >
+                    <Feather name="x" size={16} color={SgateColors.t2} />
                     <Text style={S.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
             </ScrollView>
@@ -329,11 +343,16 @@ const S = StyleSheet.create({
     submitBtnDisabled: { opacity: 0.6 },
     submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     cancelBtn: {
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
         paddingVertical: 16,
         borderRadius: 14,
-        backgroundColor: SgateColors.surface,
+        backgroundColor: SgateColors.card,
         marginTop: 10,
+        borderWidth: 1.5,
+        borderColor: SgateColors.borderSoft,
     },
     cancelBtnText: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
 });
