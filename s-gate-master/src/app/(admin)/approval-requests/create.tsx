@@ -192,7 +192,7 @@ export default function CreateApprovalRequestScreen() {
                     activeOpacity={0.8}
                     disabled={submitting}
                 >
-                    <Feather name="send" size={16} color="#fff" />
+                    <Feather name="send" size={16} color={SgateColors.t1} />
                     <Text style={S.submitBtnText}>
                         {submitting ? 'Submitting...' : 'Submit Request'}
                     </Text>
@@ -327,7 +327,7 @@ const S = StyleSheet.create({
         }),
     },
     submitBtnDisabled: { opacity: 0.6 },
-    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#fff' },
+    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     cancelBtn: {
         alignItems: 'center',
         paddingVertical: 16,
