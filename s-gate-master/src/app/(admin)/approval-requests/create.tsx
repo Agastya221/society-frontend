@@ -1,34 +1,59 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import {
+    Alert,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { createGatePass } from '../../../services/gatePass';
 
-// Mocking FLATS locally if not exported from data/index.tsx
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { createGatePass } from '@/services/gatePass';
+
+// ─── Mock flats ───────────────────────────────────────────────────────────────
 const FLATS = [
     { id: '1', flatNumber: '101', block: 'A', ownerName: 'Rahul Sharma' },
     { id: '2', flatNumber: '102', block: 'A', ownerName: 'Priya Verma' },
     { id: '3', flatNumber: '201', block: 'B', ownerName: 'Amit Patel' },
     { id: '4', flatNumber: '305', block: 'C', ownerName: 'Suresh Raina' },
-]; 
+];
+
+const REQUEST_TYPES = ['Entry', 'Gate_Pass', 'Special_Access'] as const;
+type RequestType = (typeof REQUEST_TYPES)[number];
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function CreateApprovalRequestScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    
-    // State
-    const [type, setType] = useState<'Entry' | 'Gate_Pass' | 'Special_Access'>('Entry');
+
+    const [type, setType] = useState<RequestType>('Entry');
     const [flatNumber, setFlatNumber] = useState('');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async () => {
-        // ... validation ...
+        if (!title.trim()) {
+            Alert.alert('Validation', 'Title is required.');
+            return;
+        }
+        if (!description.trim() || description.trim().length < 20) {
+            Alert.alert('Validation', 'Description must be at least 20 characters.');
+            return;
+        }
+        if (!flatNumber) {
+            Alert.alert('Validation', 'Please select a flat.');
+            return;
+        }
 
-        // Create new request
+        setSubmitting(true);
         try {
             await createGatePass({
                 type: type as any,
@@ -42,181 +67,273 @@ export default function CreateApprovalRequestScreen() {
             Alert.alert(
                 'Request Submitted',
                 'Your approval request has been submitted and is now pending review.',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => router.back()
-                    }
-                ]
+                [{ text: 'OK', onPress: () => router.back() }],
             );
         } catch (err: any) {
             Alert.alert('Error', err.message || 'Failed to submit request');
+        } finally {
+            setSubmitting(false);
         }
     };
 
     return (
-        <View className="flex-1">
-            <LinearGradient
-                colors={['#f8fafc', '#f1f5f9', '#e2e8f0']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
-            />
-
-            {/* Header */}
-             <Animated.View 
-                entering={FadeInDown.delay(100).springify()} 
-                className="px-6 pb-6 flex-row items-center gap-4 z-10"
-                style={{ 
-                    position: 'absolute', 
-                    top: 0, 
-                    left: 0, 
-                    right: 0, 
-                    zIndex: 10,
-                    paddingTop: insets.top + 10,
-                    backgroundColor: '#f8fafc', 
-                    borderBottomWidth: 1,
-                    borderBottomColor: '#f1f5f9'
-                }}
-            >
-                <TouchableOpacity 
-                    onPress={() => router.back()}
-                    className="w-10 h-10 rounded-full bg-white shadow-sm border border-slate-200 items-center justify-center active:scale-95"
-                >
-                    <MaterialCommunityIcons name="arrow-left" size={24} color="#64748b" />
-                </TouchableOpacity>
-                <View>
-                    <Text className="text-2xl font-bold text-slate-900 tracking-tight">New Request</Text>
-                    <Text className="text-slate-500 text-xs font-medium">Create approval for entry/move-in</Text>
+        <View style={S.root}>
+            {/* ── Header (matches Notices pattern) ─────────────────────── */}
+            <View style={[S.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={S.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={S.backButton}>
+                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={S.headerTitle} numberOfLines={1}>New Request</Text>
+                        <Text style={S.headerSub} numberOfLines={1}>Create approval for entry/move-in</Text>
+                    </View>
                 </View>
-            </Animated.View>
+            </View>
 
-            <ScrollView 
-                className="flex-1" 
-                contentContainerStyle={{ padding: 16, paddingTop: insets.top + 80, paddingBottom: 16 + insets.bottom }}
+            {/* ── Spacer ───────────────────────────────────────────────── */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
+
+            {/* ── Form ─────────────────────────────────────────────────── */}
+            <ScrollView
+                style={S.scroll}
+                contentContainerStyle={[S.scrollContent, { paddingBottom: 32 + insets.bottom }]}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
             >
                 {/* Info Banner */}
-                <View className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 mb-6 flex-row gap-3">
-                    <MaterialCommunityIcons name="information-outline" size={20} className="text-indigo-600 dark:text-indigo-400 mt-0.5" />
-                    <View className="flex-1">
-                        <Text className="text-sm font-semibold text-indigo-900 dark:text-indigo-100 mb-1">
-                            Compliance Notice
-                        </Text>
-                        <Text className="text-xs text-indigo-700 dark:text-indigo-300">
-                            Admin-initiated requests follow the same approval lifecycle as guard requests. 
+                <View style={S.infoBanner}>
+                    <Feather name="info" size={18} color={SgateColors.goldDeep} />
+                    <View style={{ flex: 1 }}>
+                        <Text style={S.infoTitle}>Compliance Notice</Text>
+                        <Text style={S.infoText}>
+                            Admin-initiated requests follow the same approval lifecycle as guard requests.
                             This ensures proper audit trail and accountability.
                         </Text>
                     </View>
                 </View>
 
                 {/* Request Type */}
-                <View className="mb-4">
-                    <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                        Request Type <Text className="text-red-500">*</Text>
-                    </Text>
-                    <View className="flex-row gap-2">
-                        {(['Entry', 'Gate_Pass', 'Special_Access'] as const).map(t => (
+                <Text style={S.label}>
+                    Request Type <Text style={S.required}>*</Text>
+                </Text>
+                <View style={S.typeRow}>
+                    {REQUEST_TYPES.map(t => {
+                        const active = type === t;
+                        return (
                             <TouchableOpacity
                                 key={t}
                                 onPress={() => setType(t)}
-                                className={`flex-1 py-3 rounded-xl border-2 ${
-                                    type === t
-                                        ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950/30'
-                                        : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
-                                }`}
+                                style={[S.typeChip, active && S.typeChipActive]}
+                                activeOpacity={0.7}
                             >
-                                <Text className={`text-center text-sm font-semibold ${
-                                    type === t
-                                        ? 'text-indigo-600 dark:text-indigo-400'
-                                        : 'text-zinc-600 dark:text-zinc-400'
-                                }`}>
+                                <Text style={[S.typeChipText, active && S.typeChipTextActive]}>
                                     {t.replace('_', ' ')}
                                 </Text>
                             </TouchableOpacity>
-                        ))}
-                    </View>
+                        );
+                    })}
                 </View>
 
-                {/* Flat Selection - Simple list */}
-                <View className="mb-4">
-                    <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                        Flat Number <Text className="text-red-500">*</Text>
-                    </Text>
-                    <ScrollView className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl max-h-40">
-                        {FLATS.map((flat) => (
+                {/* Flat Selection */}
+                <Text style={S.label}>
+                    Flat Number <Text style={S.required}>*</Text>
+                </Text>
+                <View style={S.flatList}>
+                    {FLATS.map(flat => {
+                        const active = flatNumber === flat.flatNumber;
+                        return (
                             <TouchableOpacity
                                 key={flat.id}
                                 onPress={() => setFlatNumber(flat.flatNumber)}
-                                className={`p-3 border-b border-zinc-100 dark:border-zinc-800 ${
-                                    flatNumber === flat.flatNumber ? 'bg-indigo-50 dark:bg-indigo-950/30' : ''
-                                }`}
+                                style={[S.flatItem, active && S.flatItemActive]}
+                                activeOpacity={0.7}
                             >
-                                <Text className={`text-sm ${
-                                    flatNumber === flat.flatNumber 
-                                        ? 'text-indigo-600 dark:text-indigo-400 font-semibold' 
-                                        : 'text-zinc-900 dark:text-white'
-                                }`}>
+                                <Text style={[S.flatText, active && S.flatTextActive]}>
                                     {flat.block}-{flat.flatNumber} ({flat.ownerName})
                                 </Text>
+                                {active && <Feather name="check" size={16} color={SgateColors.goldDeep} />}
                             </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                        );
+                    })}
                 </View>
 
                 {/* Title */}
-                <View className="mb-4">
-                    <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                        Title <Text className="text-red-500">*</Text>
-                    </Text>
-                    <TextInput
-                        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-white"
-                        placeholder="e.g., Emergency Maintenance Access"
-                        placeholderTextColor="#a1a1aa"
-                        value={title}
-                        onChangeText={setTitle}
-                    />
-                </View>
+                <Text style={S.label}>
+                    Title <Text style={S.required}>*</Text>
+                </Text>
+                <TextInput
+                    style={S.input}
+                    placeholder="e.g., Emergency Maintenance Access"
+                    placeholderTextColor={SgateColors.t4}
+                    value={title}
+                    onChangeText={setTitle}
+                />
 
                 {/* Description */}
-                <View className="mb-6">
-                    <Text className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                        Description / Reason <Text className="text-red-500">*</Text>
-                    </Text>
-                    <TextInput
-                        className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-zinc-900 dark:text-white h-32"
-                        placeholder="Provide detailed reason for this request..."
-                        placeholderTextColor="#a1a1aa"
-                        multiline
-                        textAlignVertical="top"
-                        value={description}
-                        onChangeText={setDescription}
-                    />
-                    <Text className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-                        Min. 20 characters
-                    </Text>
-                </View>
+                <Text style={S.label}>
+                    Description / Reason <Text style={S.required}>*</Text>
+                </Text>
+                <TextInput
+                    style={[S.input, S.textArea]}
+                    placeholder="Provide detailed reason for this request..."
+                    placeholderTextColor={SgateColors.t4}
+                    multiline
+                    textAlignVertical="top"
+                    value={description}
+                    onChangeText={setDescription}
+                />
+                <Text style={S.hint}>Min. 20 characters</Text>
 
-                {/* Submit Button */}
+                {/* Submit */}
                 <TouchableOpacity
                     onPress={handleSubmit}
-                    className="bg-indigo-600 py-4 rounded-xl items-center shadow-sm"
+                    style={[S.submitBtn, submitting && S.submitBtnDisabled]}
                     activeOpacity={0.8}
+                    disabled={submitting}
                 >
-                    <Text className="text-white font-bold text-base">
-                        Submit Request
+                    <Feather name="send" size={16} color="#fff" />
+                    <Text style={S.submitBtnText}>
+                        {submitting ? 'Submitting...' : 'Submit Request'}
                     </Text>
                 </TouchableOpacity>
 
+                {/* Cancel */}
                 <TouchableOpacity
                     onPress={() => router.back()}
-                    className="bg-zinc-200 dark:bg-zinc-800 py-4 rounded-xl items-center mt-3"
+                    style={S.cancelBtn}
                     activeOpacity={0.8}
                 >
-                    <Text className="text-zinc-700 dark:text-zinc-300 font-semibold text-base">
-                        Cancel
-                    </Text>
+                    <Text style={S.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
             </ScrollView>
         </View>
     );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const S = StyleSheet.create({
+    root: { flex: 1, backgroundColor: SgateColors.bg },
+
+    // Header (identical to Notices pattern)
+    headerWrapper: {
+        backgroundColor: SgateColors.card,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
+    },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20 },
+    backButton: { marginRight: 12 },
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+
+    // Scroll
+    scroll: { flex: 1 },
+    scrollContent: { paddingHorizontal: 20, paddingTop: 16 },
+
+    // Info banner
+    infoBanner: {
+        flexDirection: 'row',
+        gap: 12,
+        backgroundColor: SgateColors.goldPale,
+        borderRadius: 14,
+        padding: 14,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: 'rgba(212,175,55,0.15)',
+    },
+    infoTitle: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 4 },
+    infoText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t2, lineHeight: 18 },
+
+    // Labels
+    label: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 10 },
+    required: { color: '#EF4444' },
+    hint: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 6, marginBottom: 20 },
+
+    // Type chips
+    typeRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
+    typeChip: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 12,
+        borderWidth: 1.5,
+        borderColor: SgateColors.borderSoft,
+        backgroundColor: SgateColors.card,
+        alignItems: 'center',
+    },
+    typeChipActive: {
+        borderColor: SgateColors.gold,
+        backgroundColor: SgateColors.goldPale,
+    },
+    typeChipText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+    typeChipTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
+
+    // Flat list
+    flatList: {
+        backgroundColor: SgateColors.card,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+        marginBottom: 24,
+        overflow: 'hidden',
+    },
+    flatItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: SgateColors.borderSoft,
+    },
+    flatItemActive: { backgroundColor: SgateColors.goldPale },
+    flatText: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1 },
+    flatTextActive: { fontFamily: SgateFonts.semibold, color: SgateColors.goldDeep },
+
+    // Input
+    input: {
+        backgroundColor: SgateColors.card,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 14,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t1,
+        marginBottom: 20,
+    },
+    textArea: { height: 120, textAlignVertical: 'top', marginBottom: 0 },
+
+    // Buttons
+    submitBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        backgroundColor: SgateColors.gold,
+        paddingVertical: 16,
+        borderRadius: 14,
+        ...Platform.select({
+            ios: { shadowColor: SgateColors.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+            android: { elevation: 4 },
+        }),
+    },
+    submitBtnDisabled: { opacity: 0.6 },
+    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#fff' },
+    cancelBtn: {
+        alignItems: 'center',
+        paddingVertical: 16,
+        borderRadius: 14,
+        backgroundColor: SgateColors.surface,
+        marginTop: 10,
+    },
+    cancelBtnText: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
+});

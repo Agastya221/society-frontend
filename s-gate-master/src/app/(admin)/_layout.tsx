@@ -70,6 +70,9 @@ export default function AdminLayout() {
                 <Tabs.Screen name="notifications" options={{ href: null }} />
                 <Tabs.Screen name="community" options={{ href: null }} />
                 <Tabs.Screen name="elections" options={{ href: null }} />
+                <Tabs.Screen name="my-dues" options={{ href: null }} />
+                <Tabs.Screen name="my-passes" options={{ href: null }} />
+                <Tabs.Screen name="vehicles" options={{ href: null }} />
             </Tabs>
         </View>
     );
