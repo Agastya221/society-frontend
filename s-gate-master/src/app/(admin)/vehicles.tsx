@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -6,6 +6,7 @@ import {
     Alert,
     FlatList,
     Modal,
+    Platform,
     ScrollView,
     StyleSheet,
     Switch,
@@ -14,7 +15,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
@@ -66,6 +67,7 @@ const VIOLATION_TYPES = [
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function AdminVehiclesScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [tab, setTab] = useState<'LOOKUP' | 'VIOLATIONS'>('LOOKUP');
 
     // Lookup State
@@ -292,15 +294,17 @@ export default function AdminVehiclesScreen() {
     };
 
     return (
-        <SafeAreaView edges={['top']} style={styles.safe}>
+        <View style={styles.safe}>
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Parking Enforcement</Text>
-                <View style={{ width: 40 }} />
             </View>
+
+            {/* Spacer */}
+            <View style={styles.spacer} />
 
             {/* Tabs */}
             <View style={styles.tabRow}>
@@ -457,18 +461,27 @@ export default function AdminVehiclesScreen() {
                 </View>
             </Modal>
 
-        </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
     header: {
-        backgroundColor: SgateColors.card, flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
     },
-    backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+    spacer: { height: 6 },
     
     tabRow: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10, backgroundColor: SgateColors.card },
     tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },

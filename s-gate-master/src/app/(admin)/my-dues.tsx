@@ -1,8 +1,9 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
 FlatList,
+    Platform,
     RefreshControl,
     StyleSheet,
     Text,
@@ -10,7 +11,7 @@ FlatList,
     View,
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -43,6 +44,7 @@ const MOCK_DUES: Due[] = [
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function MyDuesScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { user } = useAuthStore();
     const [dues, setDues]           = useState<Due[]>([]);
     const [loading, setLoading]     = useState(true);
@@ -103,16 +105,29 @@ export default function MyDuesScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.safe} edges={['top']}>
-                <Header onBack={() => router.back()} />
+            <View style={styles.safe}>
+                <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                    <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>My Dues</Text>
+                </View>
                 <AppLoader />
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.safe} edges={['top']}>
-            <Header onBack={() => router.back()} />
+        <View style={styles.safe}>
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>My Dues</Text>
+            </View>
+
+            {/* Spacer */}
+            <View style={styles.spacer} />
 
             <FlatList
                 data={dues}
@@ -151,21 +166,11 @@ export default function MyDuesScreen() {
                     </View>
                 }
             />
-        </SafeAreaView>
-    );
-}
-
-function Header({ onBack }: { onBack: () => void }) {
-    return (
-        <View style={styles.header}>
-            <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-                <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>My Dues</Text>
-            <View style={{ width: 40 }} />
         </View>
     );
 }
+
+// Header sub-component removed — inlined above
 
 function SummaryCard({ label, amount, color, bg }: {
     label: string; amount: number; color: string; bg: string;
@@ -183,16 +188,20 @@ const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
 
     header: {
-        backgroundColor: SgateColors.card,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 13,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
     },
-    backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+    spacer: { height: 6 },
 
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 

@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -6,6 +6,7 @@ import {
     Alert,
     FlatList,
     Modal,
+    Platform,
     StyleSheet,
     Text,
     TextInput,
@@ -14,7 +15,7 @@ import {
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
@@ -70,6 +71,7 @@ const FILTERS: { key: string; label: string }[] = [
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function AdminEmergenciesScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [emergencies, setEmergencies] = useState<Emergency[]>([]);
     const [loading, setLoading]         = useState(true);
     const [refreshing, setRefreshing]   = useState(false);
@@ -219,30 +221,30 @@ export default function AdminEmergenciesScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView edges={['top']} style={styles.centerSafe}>
+            <View style={[styles.centerSafe, { paddingTop: insets.top }]}>
                 <AppLoader />
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView edges={['top']} style={styles.root}>
+        <View style={styles.root}>
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
-                <View style={styles.headerTitleWrap}>
-                    <Text style={styles.headerTitle}>Emergencies</Text>
-                    {activeCount > 0 && (
-                        <View style={styles.liveBadge}>
-                            <View style={styles.liveDot} />
-                            <Text style={styles.liveText}>{activeCount} ACTIVE</Text>
-                        </View>
-                    )}
-                </View>
-                <View style={{ width: 40 }} />
+                <Text style={styles.headerTitle}>Emergencies</Text>
+                {activeCount > 0 && (
+                    <View style={styles.liveBadge}>
+                        <View style={styles.liveDot} />
+                        <Text style={styles.liveText}>{activeCount} ACTIVE</Text>
+                    </View>
+                )}
             </View>
+
+            {/* Spacer */}
+            <View style={styles.spacer} />
 
             {/* Filter tabs */}
             <View style={styles.filterRow}>
@@ -321,7 +323,7 @@ export default function AdminEmergenciesScreen() {
                     </View>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -331,17 +333,19 @@ const styles = StyleSheet.create({
     centerSafe: { flex: 1, backgroundColor: SgateColors.bg, alignItems: 'center', justifyContent: 'center' },
 
     header: {
-        backgroundColor: SgateColors.card,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
     },
-    backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-    headerTitleWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
     liveBadge: {
         flexDirection: 'row', alignItems: 'center', gap: 4,
         backgroundColor: SgateColors.redBg,
@@ -349,6 +353,8 @@ const styles = StyleSheet.create({
     },
     liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: SgateColors.red },
     liveText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.red, letterSpacing: 0.5 },
+
+    spacer: { height: 6 },
 
     filterRow: {
         flexDirection: 'row',

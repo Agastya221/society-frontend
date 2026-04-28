@@ -1,11 +1,12 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     FlatList,
     Modal,
+    Platform,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -38,6 +39,7 @@ export default function GuardsScreen() {
     const [loading, setLoading]     = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const insets = useSafeAreaInsets();
+    const router = useRouter();
 
     // Modal state
     const [isModalVisible, setModalVisible] = useState(false);
@@ -105,6 +107,17 @@ export default function GuardsScreen() {
 
     return (
         <View style={styles.root}>
+            {/* Header */}
+            <View style={[styles.headerBar, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                </TouchableOpacity>
+                <Text style={styles.headerBarTitle}>Guard Management</Text>
+            </View>
+
+            {/* Spacer */}
+            <View style={styles.spacer} />
+
             <FlatList
                 data={guards}
                 keyExtractor={item => item.id}
@@ -213,6 +226,24 @@ export default function GuardsScreen() {
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: SgateColors.bg },
     centerWrap: { flex: 1, backgroundColor: SgateColors.bg, alignItems: 'center', justifyContent: 'center' },
+
+    // Header
+    headerBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
+    },
+    headerBarTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+    spacer: { height: 6 },
+
     listContent: { padding: 20, flexGrow: 1 },
 
     // Add button

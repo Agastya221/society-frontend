@@ -1,10 +1,10 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
@@ -19,6 +19,7 @@ const formatTime = (iso?: string) => {
 
 export default function StaffManagementScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [activeTab, setActiveTab] = useState<'DIRECTORY' | 'ATTENDANCE'>('DIRECTORY');
     const [staff, setStaff] = useState<StaffMember[]>([]);
     const [attendance, setAttendance] = useState<StaffAttendance[]>([]);
@@ -122,17 +123,20 @@ export default function StaffManagementScreen() {
     };
 
     return (
-        <SafeAreaView edges={['top']} style={styles.safe}>
+        <View style={styles.safe}>
             {/* Header */}
-            <View style={styles.header}>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.headerTitle}>Staff & Payroll</Text>
-                    <Text style={styles.headerSub}>Manage society workers</Text>
-                </View>
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Staff & Payroll</Text>
                 <TouchableOpacity style={styles.addBtn} onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
                     <MaterialCommunityIcons name="plus" size={20} color="white" />
                 </TouchableOpacity>
             </View>
+
+            {/* Spacer */}
+            <View style={styles.spacer} />
 
             {/* Tabs */}
             <View style={styles.tabsWrap}>
@@ -168,24 +172,28 @@ export default function StaffManagementScreen() {
                     }
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
     header: {
-        backgroundColor: SgateColors.card,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-        paddingTop: 10,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
     },
-    backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
-    headerTitle: { fontSize: 22, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 },
-    headerSub: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
     addBtn: { width: 40, height: 40, borderRadius: 14, backgroundColor: SgateColors.t1, alignItems: 'center', justifyContent: 'center' },
+    spacer: { height: 6 },
     
     tabsWrap: {
         flexDirection: 'row',

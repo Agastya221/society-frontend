@@ -1,11 +1,12 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     FlatList,
     Modal,
+    Platform,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -56,6 +57,7 @@ export default function NoticesScreen() {
     const [isModalVisible, setModalVisible] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const insets = useSafeAreaInsets();
+    const router = useRouter();
 
     // Form
     const [title, setTitle]       = useState('');
@@ -138,6 +140,17 @@ export default function NoticesScreen() {
 
     return (
         <View style={styles.root}>
+            {/* Header */}
+            <View style={[styles.headerBar, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                </TouchableOpacity>
+                <Text style={styles.headerBarTitle}>Notices</Text>
+            </View>
+
+            {/* Spacer */}
+            <View style={styles.spacer} />
+
             <FlatList
                 data={notices}
                 keyExtractor={item => item.id}
@@ -263,6 +276,24 @@ export default function NoticesScreen() {
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: SgateColors.bg },
     centerWrap: { flex: 1, backgroundColor: SgateColors.bg, alignItems: 'center', justifyContent: 'center' },
+
+    // Header
+    headerBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
+    },
+    headerBarTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+    spacer: { height: 6 },
+
     listContent: { padding: 20, flexGrow: 1 },
 
     addBtn: { backgroundColor: SgateColors.black, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 },

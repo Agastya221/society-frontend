@@ -1,8 +1,9 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -10,7 +11,7 @@ import {
     View,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -29,6 +30,7 @@ const FLAT_ACTIONS = [
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function MyHomeScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { user } = useAuthStore();
     const [showPreApprove, setShowPreApprove] = useState(false);
 
@@ -45,15 +47,17 @@ export default function MyHomeScreen() {
     };
 
     return (
-        <SafeAreaView edges={['top']} style={styles.safe}>
+        <View style={styles.safe}>
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>My Home</Text>
-                <View style={{ width: 40 }} />
             </View>
+
+            {/* Spacer */}
+            <View style={styles.spacer} />
 
             <ScrollView
                 style={styles.scroll}
@@ -118,7 +122,7 @@ export default function MyHomeScreen() {
                 visible={showPreApprove}
                 onClose={() => setShowPreApprove(false)}
             />
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -143,25 +147,23 @@ const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
 
     header: {
-        backgroundColor: SgateColors.card,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 13,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
     },
-    backBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        alignItems: 'center', justifyContent: 'center',
-    },
-    headerTitle: {
-        flex: 1, textAlign: 'center',
-        fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1,
-    },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+    spacer: { height: 6 },
 
     scroll: { flex: 1 },
-    scrollContent: { paddingTop: 20, paddingHorizontal: 20 },
+    scrollContent: { paddingTop: 14, paddingHorizontal: 20 },
 
     // Flat badge
     flatBadgeWrap: { marginBottom: 24 },

@@ -1,8 +1,9 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Alert,
+    Platform,
     ScrollView,
     StyleSheet,
     Switch,
@@ -52,11 +53,16 @@ export default function SettingsScreen() {
     };
 
     return (
-        <View style={[styles.safe, { paddingTop: insets.top }]}>
-            {/* ── Header ──────────────────────────────────────────────────── */}
-            <View style={styles.header}>
+        <View style={[styles.safe]}>            {/* ── Header ──────────────────────────────────────────────────── */}
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                </TouchableOpacity>
                 <Text style={styles.headerTitle}>Society Settings</Text>
             </View>
+
+            {/* ── Spacer ──────────────────────────────────────────────────── */}
+            <View style={styles.spacer} />
 
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
@@ -240,16 +246,23 @@ const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
 
     header: {
-        backgroundColor: SgateColors.card,
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
     },
-    headerTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
 
+    spacer: { height: 6 },
     scroll: { flex: 1 },
-    scrollContent: { paddingTop: 20, paddingHorizontal: 20 },
+    scrollContent: { paddingTop: 14, paddingHorizontal: 20 },
 
     sectionLabel: {
         ...SgateTypography.microLabel,

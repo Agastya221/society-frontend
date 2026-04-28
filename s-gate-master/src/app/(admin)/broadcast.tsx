@@ -1,9 +1,9 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Linking, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert, FlatList, Linking, Platform, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
@@ -22,6 +22,7 @@ const MOCK_INTERCOM = [
 
 export default function BroadcastAndIntercomScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [activeTab, setActiveTab] = useState<'BROADCAST' | 'INTERCOM'>('BROADCAST');
     
     // Broadcast State
@@ -180,13 +181,17 @@ export default function BroadcastAndIntercomScreen() {
     );
 
     return (
-        <SafeAreaView edges={['top']} style={styles.safe}>
-            <View style={styles.header}>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.headerTitle}>Communicate</Text>
-                    <Text style={styles.headerSub}>Broadcast & Intercom</Text>
-                </View>
+        <View style={styles.safe}>
+            {/* Header */}
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Communicate</Text>
             </View>
+
+            {/* Spacer */}
+            <View style={styles.spacer} />
 
             <View style={styles.tabsWrap}>
                 <TouchableOpacity
@@ -204,23 +209,27 @@ export default function BroadcastAndIntercomScreen() {
             </View>
 
             {activeTab === 'BROADCAST' ? renderBroadcastTab() : renderIntercomTab()}
-        </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
     header: {
-        backgroundColor: SgateColors.card,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-        paddingTop: 10,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
     },
-    backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
-    headerTitle: { fontSize: 22, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 },
-    headerSub: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+    spacer: { height: 6 },
 
     tabsWrap: {
         flexDirection: 'row',

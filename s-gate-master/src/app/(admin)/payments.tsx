@@ -1,5 +1,5 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
@@ -49,6 +49,7 @@ const FILTER_TABS: FilterTab[] = ['ALL', 'PENDING', 'OVERDUE', 'PAID'];
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PaymentsScreen() {
     const insets = useSafeAreaInsets();
+    const router = useRouter();
 
     const [dues, setDues]                 = useState<FlatDue[]>([]);
     const [loading, setLoading]           = useState(true);
@@ -193,8 +194,11 @@ export default function PaymentsScreen() {
 
     if (loading) {
         return (
-            <View style={[styles.safe, { paddingTop: insets.top }]}>
-                <View style={styles.header}>
+            <View style={styles.safe}>
+                <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                    <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
                     <Text style={styles.headerTitle}>Finance & Billing</Text>
                 </View>
                 <AppLoader />
@@ -203,9 +207,12 @@ export default function PaymentsScreen() {
     }
 
     return (
-        <View style={[styles.safe, { paddingTop: insets.top }]}>
+        <View style={styles.safe}>
             {/* ── Header ──────────────────────────────────────────────────── */}
-            <View style={styles.header}>
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                </TouchableOpacity>
                 <Text style={styles.headerTitle}>Finance & Billing</Text>
                 <TouchableOpacity style={styles.navActionBtn} onPress={() => setShowGenerateModal(true)}>
                     <MaterialCommunityIcons name="file-plus-outline" size={20} color={SgateColors.goldDeep} />
@@ -214,6 +221,9 @@ export default function PaymentsScreen() {
                     <MaterialCommunityIcons name="alert-outline" size={20} color={SgateColors.red} />
                 </TouchableOpacity>
             </View>
+
+            {/* ── Spacer ──────────────────────────────────────────────────── */}
+            <View style={styles.spacer} />
 
             <FlatList
                 data={filtered}
@@ -416,18 +426,21 @@ const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
 
     header: {
-        backgroundColor: SgateColors.card,
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
         gap: 10,
     },
-    headerTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, flex: 1 },
-    mockChip: { backgroundColor: SgateColors.goldPale, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-    mockChipText: { fontSize: 11, fontFamily: SgateFonts.semibold, color: SgateColors.goldDeep },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+    spacer: { height: 6 },
 
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     listContent: { padding: 16, flexGrow: 1 },

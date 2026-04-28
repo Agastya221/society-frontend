@@ -206,48 +206,48 @@ export default function ApprovalRequestsListScreen() {
     // ── Render ────────────────────────────────────────────────────────────
     return (
         <View style={S.root}>
-            {/* ── Header (matches Deliveries screen) ───────────────────── */}
-            <View style={[S.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    accessibilityLabel="Go back"
-                >
-                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={S.headerTitle}>Approval Requests</Text>
-                <TouchableOpacity
-                    onPress={() => router.push('/(admin)/approval-requests/create' as any)}
-                    accessibilityLabel="Create request"
-                    style={S.headerAction}
-                >
-                    <Feather name="plus" size={20} color={SgateColors.t1} />
-                </TouchableOpacity>
+            {/* ── Header + Filters (matches Resident Notices screen) ──── */}
+            <View style={[S.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={S.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={S.backButton}>
+                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={S.headerTitle} numberOfLines={1}>Approval Requests</Text>
+                        <Text style={S.headerSub} numberOfLines={1}>Gate pass & move-in/out approvals</Text>
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => router.push('/(admin)/approval-requests/create' as any)}
+                        accessibilityLabel="Create request"
+                        style={S.headerAction}
+                    >
+                        <Feather name="plus" size={18} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                </View>
+
+                <View style={S.filtersContainer}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filtersScroll}>
+                        {FILTERS.map(f => {
+                            const active = f === filter;
+                            return (
+                                <TouchableOpacity
+                                    key={f}
+                                    style={[S.chip, active && S.chipActive]}
+                                    onPress={() => setFilter(f)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Text style={[S.chipText, active && S.chipTextActive]}>
+                                        {FILTER_LABELS[f]}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+                </View>
             </View>
 
-            {/* ── Filter chips (horizontal scroll) ─────────────────────── */}
-            <View style={S.chipBar}>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={S.chipScroll}
-                >
-                    {FILTERS.map(f => {
-                        const active = f === filter;
-                        return (
-                            <TouchableOpacity
-                                key={f}
-                                style={[S.chip, active && S.chipActive]}
-                                onPress={() => setFilter(f)}
-                                activeOpacity={0.7}
-                            >
-                                <Text style={[S.chipText, active && S.chipTextActive]}>
-                                    {FILTER_LABELS[f]}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </ScrollView>
-            </View>
+            {/* Persistent spacer — content never touches header */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
             {/* ── List ─────────────────────────────────────────────────── */}
             <FlatList
@@ -271,26 +271,25 @@ export default function ApprovalRequestsListScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const S = StyleSheet.create({
-    root: {
-        flex: 1,
-        backgroundColor: SgateColors.bg,
-    },
+    root: { flex: 1, backgroundColor: SgateColors.bg },
 
-    // ── Header (identical to Deliveries) ─────────────────────────────────
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
+    // ── Header & Filters (identical to Resident Notices) ─────────────────
+    headerWrapper: {
         backgroundColor: SgateColors.card,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
     },
-    headerTitle: {
-        fontSize: 18,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.t1,
-        marginLeft: 12,
-        flex: 1,
-    },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    backButton: { marginRight: 12 },
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
     headerAction: {
         width: 36,
         height: 36,
@@ -298,43 +297,20 @@ const S = StyleSheet.create({
         backgroundColor: SgateColors.surface,
         alignItems: 'center',
         justifyContent: 'center',
+        marginLeft: 12,
     },
 
-    // ── Filter chips ─────────────────────────────────────────────────────
-    chipBar: {
-        backgroundColor: SgateColors.card,
-        paddingBottom: 14,
-    },
-    chipScroll: {
-        paddingHorizontal: 20,
-        gap: 8,
-    },
-    chip: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 22,
-        backgroundColor: SgateColors.surface,
-    },
-    chipActive: {
-        backgroundColor: SgateColors.gold,
-        ...Platform.select({
-            ios: { shadowColor: SgateColors.gold, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4 },
-            android: { elevation: 3 },
-        }),
-    },
-    chipText: {
-        fontSize: 13,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.t3,
-    },
-    chipTextActive: {
-        color: SgateColors.t1,
-    },
+    filtersContainer: { paddingLeft: 20 },
+    filtersScroll: { flexDirection: 'row', gap: 10, paddingRight: 20 },
+    chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface },
+    chipActive: { backgroundColor: SgateColors.gold },
+    chipText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
+    chipTextActive: { color: SgateColors.t1, fontFamily: SgateFonts.bold },
 
     // ── List ─────────────────────────────────────────────────────────────
     listContent: {
         paddingHorizontal: 20,
-        paddingTop: 16,
+        paddingBottom: 40,
     },
     listContentEmpty: {
         flex: 1,

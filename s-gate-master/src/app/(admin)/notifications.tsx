@@ -1,15 +1,17 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
     Alert,
     FlatList,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateBrandMark } from '@/components/Sgate/SgateBrandMark';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
@@ -56,6 +58,7 @@ type ListRow       = SectionHeader | SectionItem;
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function AdminNotificationsScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [notifications, setNotifications] = useState<AdminNotification[]>([]);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -183,9 +186,9 @@ export default function AdminNotificationsScreen() {
     return (
         <View style={styles.root}>
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Notifications</Text>
                 {unreadCount > 0 && (
@@ -193,8 +196,10 @@ export default function AdminNotificationsScreen() {
                         <Text style={styles.markAll}>Mark all read</Text>
                     </TouchableOpacity>
                 )}
-                {unreadCount === 0 && <View style={{ width: 80 }} />}
             </View>
+
+            {/* Spacer */}
+            <View style={styles.spacer} />
 
             <FlatList
                 data={rows}
@@ -219,18 +224,21 @@ const styles = StyleSheet.create({
     emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
 
     header: {
-        backgroundColor: SgateColors.card,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
     },
-    backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, flex: 1, marginLeft: 4 },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
     markAll: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.blue },
+    spacer: { height: 6 },
 
     sectionTitle: {
         ...SgateTypography.microLabel,
