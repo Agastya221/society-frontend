@@ -270,10 +270,10 @@ const S = StyleSheet.create({
     },
     typeChipActive: {
         borderColor: SgateColors.gold,
-        backgroundColor: SgateColors.goldPale,
+        backgroundColor: SgateColors.gold,
     },
     typeChipText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-    typeChipTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
+    typeChipTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Flat list
     flatList: {
