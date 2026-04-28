@@ -2,7 +2,6 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Alert,
     Platform,
     ScrollView,
     StyleSheet,
@@ -15,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { createGatePass } from '@/services/gatePass';
+import { AppAlert } from '@/components/ui/AppAlert';
 
 // ─── Mock flats ───────────────────────────────────────────────────────────────
 const FLATS = [
@@ -41,15 +41,15 @@ export default function CreateApprovalRequestScreen() {
 
     const handleSubmit = async () => {
         if (!title.trim()) {
-            Alert.alert('Validation', 'Title is required.');
+            AppAlert.show('Missing Title', 'Please enter a title for your request.');
             return;
         }
         if (!description.trim() || description.trim().length < 20) {
-            Alert.alert('Validation', 'Description must be at least 20 characters.');
+            AppAlert.show('Description Too Short', 'Please provide a description with at least 20 characters.');
             return;
         }
         if (!flatNumber) {
-            Alert.alert('Validation', 'Please select a flat.');
+            AppAlert.show('No Flat Selected', 'Please select the flat this request applies to.');
             return;
         }
 
@@ -64,13 +64,13 @@ export default function CreateApprovalRequestScreen() {
                 flatId: flatNumber,
             });
 
-            Alert.alert(
-                'Request Submitted',
+            AppAlert.show(
+                'Request Submitted ✓',
                 'Your approval request has been submitted and is now pending review.',
-                [{ text: 'OK', onPress: () => router.back() }],
+                [{ text: 'Done', onPress: () => router.back() }],
             );
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Failed to submit request');
+            AppAlert.show('Something Went Wrong', err.message || 'Failed to submit request. Please try again.');
         } finally {
             setSubmitting(false);
         }
@@ -201,8 +201,8 @@ export default function CreateApprovalRequestScreen() {
                 {/* Cancel */}
                 <TouchableOpacity
                     onPress={() => {
-                        if (title.trim() || description.trim() || flatNumber) {
-                            Alert.alert(
+                         if (title.trim() || description.trim() || flatNumber) {
+                            AppAlert.show(
                                 'Discard Request?',
                                 'You have unsaved changes. Are you sure you want to go back?',
                                 [
