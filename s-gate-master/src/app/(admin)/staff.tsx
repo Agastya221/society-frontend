@@ -1,14 +1,14 @@
+import { AppLoader } from '@/components/ui/AppLoader';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AppLoader } from '@/components/ui/AppLoader';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { Avatar } from '@/components/ui/Avatar';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { getStaffAttendance, getStaffList, StaffAttendance, StaffMember } from '@/services/staffService';
 
 // Helpers
@@ -42,40 +42,54 @@ export default function StaffManagementScreen() {
 
     const renderStaffCard = ({ item, index }: { item: StaffMember; index: number }) => (
         <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-            <View style={styles.card}>
+            <TouchableOpacity style={styles.card} activeOpacity={0.97}>
                 <View style={styles.cardHeader}>
                     <Avatar name={item.name} size={46} />
                     <View style={styles.cardInfo}>
-                        <Text style={styles.staffName}>{item.name}</Text>
+                        <Text style={styles.staffName} numberOfLines={1}>{item.name}</Text>
                         <View style={styles.roleWrap}>
-                            <View style={styles.roleDot} />
                             <Text style={styles.staffRole}>{item.role}</Text>
+                            {item.phone && (
+                                <>
+                                    <View style={styles.roleDot} />
+                                    <Text style={styles.staffPhone}>{item.phone}</Text>
+                                </>
+                            )}
                         </View>
+                        {item.agencyName && (
+                            <Text style={styles.agencyText} numberOfLines={1}>
+                                Agency: {item.agencyName}
+                            </Text>
+                        )}
                     </View>
                     <View style={[styles.statusBadge, item.status === 'ACTIVE' ? styles.statusActive : styles.statusInactive]}>
                         <Text style={[styles.statusText, item.status === 'ACTIVE' ? styles.statusTextActive : styles.statusTextInactive]}>
-                            {item.status}
+                            {item.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                         </Text>
                     </View>
                 </View>
 
-                <View style={styles.divider} />
-
                 <View style={styles.cardMetrics}>
                     <View style={styles.metric}>
-                        <MaterialCommunityIcons name="clock-outline" size={14} color={SgateColors.t3} />
-                        <Text style={styles.metricText}>{item.shiftStart} - {item.shiftEnd}</Text>
+                        <Feather name="clock" size={13} color={SgateColors.t3} />
+                        <Text style={styles.metricText}>
+                            {item.shiftStart ? `${item.shiftStart} – ${item.shiftEnd}` : 'No shift'}
+                        </Text>
                     </View>
                     <View style={styles.metric}>
-                        <MaterialCommunityIcons name="briefcase-outline" size={14} color={SgateColors.t3} />
-                        <Text style={styles.metricText}>₹{item.salary ? item.salary.toLocaleString() : '--'}/mo</Text>
+                        <Feather name="briefcase" size={13} color={SgateColors.t3} />
+                        <Text style={styles.metricText}>
+                            {item.salary ? `₹${item.salary.toLocaleString()}/mo` : 'Not set'}
+                        </Text>
                     </View>
                     <View style={styles.metric}>
-                        <MaterialCommunityIcons name="home-outline" size={14} color={SgateColors.t3} />
-                        <Text style={styles.metricText}>{item.assignedFlats.length > 1 ? `${item.assignedFlats.length} Flats` : item.assignedFlats[0]}</Text>
+                        <Feather name="home" size={13} color={SgateColors.t3} />
+                        <Text style={styles.metricText}>
+                            {item.assignedFlats?.length > 1 ? `${item.assignedFlats.length} Flats` : (item.assignedFlats?.[0] || 'Not assigned')}
+                        </Text>
                     </View>
                 </View>
-            </View>
+            </TouchableOpacity>
         </Animated.View>
     );
 
@@ -124,35 +138,39 @@ export default function StaffManagementScreen() {
 
     return (
         <View style={styles.safe}>
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Staff & Payroll</Text>
-                <TouchableOpacity style={styles.addBtn} onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
-                    <MaterialCommunityIcons name="plus" size={20} color="white" />
-                </TouchableOpacity>
+            {/* Header + Tabs (single block, no gap) */}
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Staff & Payroll</Text>
+                    <TouchableOpacity style={styles.addBtn} onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
+                        <Feather name="plus" size={18} color="#fff" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Premium underline tabs */}
+                <View style={styles.tabsWrap}>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'DIRECTORY' && styles.tabActive]}
+                        onPress={() => { Haptics.selectionAsync(); setActiveTab('DIRECTORY'); }}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[styles.tabText, activeTab === 'DIRECTORY' && styles.tabTextActive]}>Directory</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'ATTENDANCE' && styles.tabActive]}
+                        onPress={() => { Haptics.selectionAsync(); setActiveTab('ATTENDANCE'); }}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[styles.tabText, activeTab === 'ATTENDANCE' && styles.tabTextActive]}>Today's Logs</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
-            {/* Spacer */}
+            {/* Spacer — breathing room below fixed header+tabs */}
             <View style={styles.spacer} />
-
-            {/* Tabs */}
-            <View style={styles.tabsWrap}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'DIRECTORY' && styles.tabActive]}
-                    onPress={() => { Haptics.selectionAsync(); setActiveTab('DIRECTORY'); }}
-                >
-                    <Text style={[styles.tabText, activeTab === 'DIRECTORY' && styles.tabTextActive]}>Directory</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'ATTENDANCE' && styles.tabActive]}
-                    onPress={() => { Haptics.selectionAsync(); setActiveTab('ATTENDANCE'); }}
-                >
-                    <Text style={[styles.tabText, activeTab === 'ATTENDANCE' && styles.tabTextActive]}>Today's Logs</Text>
-                </TouchableOpacity>
-            </View>
 
             {/* Content */}
             {loading ? (
@@ -178,66 +196,73 @@ export default function StaffManagementScreen() {
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
-    header: {
+
+    // Header wrapper (contains header row + tabs as one block)
+    headerWrapper: {
+        backgroundColor: SgateColors.card,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
+    },
+    headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 16,
-        backgroundColor: SgateColors.card,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 4,
-        zIndex: 1,
+        paddingBottom: 14,
     },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-    addBtn: { width: 40, height: 40, borderRadius: 14, backgroundColor: SgateColors.t1, alignItems: 'center', justifyContent: 'center' },
-    spacer: { height: 6 },
-    
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+    addBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: SgateColors.gold, alignItems: 'center', justifyContent: 'center' },
+    spacer: { height: 6, backgroundColor: SgateColors.bg },
+
+    // Premium underline tabs
     tabsWrap: {
         flexDirection: 'row',
-        backgroundColor: SgateColors.card,
-        paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        paddingHorizontal: 20,
     },
-    tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-    tabActive: { borderBottomColor: SgateColors.goldDeep },
-    tabText: { fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.t3 },
-    tabTextActive: { color: SgateColors.goldDeep },
+    tab: {
+        flex: 1,
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderBottomWidth: 3,
+        borderBottomColor: 'transparent',
+    },
+    tabActive: { borderBottomColor: SgateColors.gold },
+    tabText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+    tabTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     list: { padding: 20, paddingBottom: 100 },
     card: {
         backgroundColor: SgateColors.card,
-        borderRadius: 20,
+        borderRadius: 16,
         padding: 16,
-        marginBottom: 16,
+        marginBottom: 14,
         borderWidth: 1,
         borderColor: SgateColors.borderSoft,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.03,
-        shadowRadius: 8,
     },
-    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    cardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
     cardInfo: { flex: 1 },
-    staffName: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    roleWrap: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
-    roleDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: SgateColors.goldDeep },
-    staffRole: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-    
-    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-    statusActive: { backgroundColor: SgateColors.greenBg },
+    staffName: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    roleWrap: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
+    staffRole: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+    roleDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: SgateColors.t4 },
+    staffPhone: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    agencyText: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.t3, marginTop: 4 },
+
+    statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+    statusActive: { backgroundColor: '#E8F8F1' },
     statusInactive: { backgroundColor: SgateColors.redBg },
-    statusText: { fontSize: 10, fontFamily: SgateFonts.bold },
-    statusTextActive: { color: SgateColors.green },
+    statusText: { fontSize: 11, fontFamily: SgateFonts.semibold },
+    statusTextActive: { color: '#16A34A' },
     statusTextInactive: { color: SgateColors.red },
 
-    divider: { height: 1, backgroundColor: SgateColors.borderSoft, marginVertical: 14 },
-    cardMetrics: { flexDirection: 'row', justifyContent: 'space-between' },
-    metric: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    metricText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
+    cardMetrics: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
+    metric: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    metricText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
 
     attTimes: { flexDirection: 'row', gap: 12, marginTop: 16 },
     timeBox: { flex: 1, backgroundColor: SgateColors.bg, borderRadius: 12, padding: 12, alignItems: 'center' },
