@@ -68,7 +68,7 @@ export default function StaffManagementScreen() {
                     </View>
                     <View style={styles.metric}>
                         <MaterialCommunityIcons name="briefcase-outline" size={14} color={SgateColors.t3} />
-                        <Text style={styles.metricText}>₹{item.salary.toLocaleString()}/mo</Text>
+                        <Text style={styles.metricText}>₹{item.salary ? item.salary.toLocaleString() : '--'}/mo</Text>
                     </View>
                     <View style={styles.metric}>
                         <MaterialCommunityIcons name="home-outline" size={14} color={SgateColors.t3} />

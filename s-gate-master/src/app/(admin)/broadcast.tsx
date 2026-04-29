@@ -6,9 +6,10 @@ import { ActivityIndicator, Alert, FlatList, Linking, Platform, StyleSheet, Swit
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { Avatar } from '@/components/ui/Avatar';
 import api from '@/services/api';
+import { AppAlert } from '@/components/ui/AppAlert';
 
 // Mock data for intercom directory
 const MOCK_INTERCOM = [
@@ -37,18 +38,18 @@ export default function BroadcastAndIntercomScreen() {
 
     const handleBroadcast = async () => {
         if (!title.trim() || !message.trim()) {
-            Alert.alert('Error', 'Please enter a title and message.');
+            AppAlert.show('Missing Information', 'Please enter a title and message.');
             return;
         }
         setSubmitting(true);
         try {
             await api.post('/admin/broadcast', { title, message, isEmergency, target });
-            Alert.alert('Success', `Broadcast sent to ${target.replace('_', ' ')} successfully.`);
+            AppAlert.show('Broadcast Sent ✓', `Push notification sent to ${target.replace('_', ' ')}.`);
             setTitle('');
             setMessage('');
             setIsEmergency(false);
         } catch {
-            Alert.alert('Error', 'Failed to send broadcast.');
+            AppAlert.show('Error', 'Failed to send broadcast. Please try again.');
         } finally {
             setSubmitting(false);
         }
@@ -66,23 +67,31 @@ export default function BroadcastAndIntercomScreen() {
     const renderBroadcastTab = () => (
         <Animated.View entering={FadeInDown.duration(300)} style={styles.formWrap}>
             <View style={styles.infoBox}>
-                <MaterialCommunityIcons name="flash-outline" size={20} color={SgateColors.goldDeep} />
-                <Text style={styles.infoText}>
-                    Broadcasts instantly send Push Notifications directly to residents' mobile devices.
-                </Text>
+                <Feather name="info" size={18} color={SgateColors.goldDeep} />
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.infoText}>
+                        Broadcast sends push notifications to residents instantly.
+                    </Text>
+                </View>
             </View>
 
-            <Text style={styles.formLabel}>TARGET AUDIENCE</Text>
+            <Text style={styles.formLabel}>
+                Target Audience <Text style={styles.requiredStar}>*</Text>
+            </Text>
             <View style={styles.targetRow}>
                 {['ALL', 'BLOCK_A', 'BLOCK_B'].map(t => (
                     <TouchableOpacity key={t} onPress={() => setTarget(t as any)}
-                        style={[styles.targetChip, target === t && styles.targetChipActive]}>
+                        style={[styles.targetChip, target === t && styles.targetChipActive]}
+                        activeOpacity={0.7}
+                    >
                         <Text style={[styles.targetText, target === t && styles.targetTextActive]}>{t.replace('_', ' ')}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
 
-            <Text style={styles.formLabel}>TITLE *</Text>
+            <Text style={styles.formLabel}>
+                Title <Text style={styles.requiredStar}>*</Text>
+            </Text>
             <TextInput
                 style={styles.input}
                 placeholder="e.g., Water supply interruption"
@@ -91,7 +100,9 @@ export default function BroadcastAndIntercomScreen() {
                 onChangeText={setTitle}
             />
 
-            <Text style={styles.formLabel}>MESSAGE *</Text>
+            <Text style={styles.formLabel}>
+                Message <Text style={styles.requiredStar}>*</Text>
+            </Text>
             <TextInput
                 style={[styles.input, { height: 110, textAlignVertical: 'top' }]}
                 placeholder="Type the broadcast message..."
@@ -104,28 +115,28 @@ export default function BroadcastAndIntercomScreen() {
             <View style={styles.switchRow}>
                 <View>
                     <Text style={styles.switchTitle}>Emergency Override</Text>
-                    <Text style={styles.switchSub}>Bypass 'Do Not Disturb' settings</Text>
+                    <Text style={styles.switchSub}>Bypass DND</Text>
                 </View>
                 <Switch 
                     value={isEmergency} 
                     onValueChange={setIsEmergency}
-                    trackColor={{ false: SgateColors.border, true: SgateColors.red + '60' }}
-                    thumbColor={isEmergency ? SgateColors.red : SgateColors.surface}
+                    trackColor={{ false: SgateColors.borderSoft, true: SgateColors.gold }}
+                    thumbColor={'#FFF'}
                 />
             </View>
 
             <TouchableOpacity 
-                style={[styles.submitBtn, submitting && { opacity: 0.6 }, isEmergency && { backgroundColor: SgateColors.redBg }]}
+                style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
                 onPress={handleBroadcast}
                 disabled={submitting}
                 activeOpacity={0.8}
             >
                 {submitting ? (
-                    <ActivityIndicator color={isEmergency ? SgateColors.red : '#FFF'} />
+                    <ActivityIndicator color={SgateColors.t1} />
                 ) : (
                     <View style={styles.submitRow}>
-                        <MaterialCommunityIcons name="send-outline" size={16} color={isEmergency ? SgateColors.red : '#FFF'} />
-                        <Text style={[styles.submitText, isEmergency && { color: SgateColors.red }]}>Send Push Notification</Text>
+                        <Feather name="send" size={16} color={SgateColors.t1} />
+                        <Text style={styles.submitText}>Send Notification</Text>
                     </View>
                 )}
             </TouchableOpacity>
@@ -239,30 +250,31 @@ const styles = StyleSheet.create({
         borderBottomColor: SgateColors.borderSoft,
     },
     tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-    tabActive: { borderBottomColor: SgateColors.goldDeep },
-    tabText: { fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.t3 },
-    tabTextActive: { color: SgateColors.goldDeep },
+    tabActive: { borderBottomColor: SgateColors.gold },
+    tabText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+    tabTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     formWrap: { padding: 20 },
-    infoBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: SgateColors.goldPale, padding: 14, borderRadius: 12, marginBottom: 20 },
-    infoText: { flex: 1, fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.goldDeep, lineHeight: 18 },
+    infoBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: SgateColors.goldPale, padding: 14, borderRadius: 14, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)' },
+    infoText: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t2, lineHeight: 18 },
 
-    formLabel: { ...SgateTypography.microLabel, color: SgateColors.t3, marginBottom: 8, marginTop: 4 },
-    input: { backgroundColor: SgateColors.surface, borderWidth: 1.5, borderColor: SgateColors.border, borderRadius: 16, padding: 15, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1, marginBottom: 16 },
+    formLabel: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 10 },
+    requiredStar: { color: '#EF4444' },
+    input: { backgroundColor: SgateColors.card, borderWidth: 1, borderColor: SgateColors.borderSoft, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1, marginBottom: 20 },
 
-    targetRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-    targetChip: { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: SgateColors.border, alignItems: 'center' },
-    targetChipActive: { backgroundColor: SgateColors.black, borderColor: SgateColors.black },
-    targetText: { fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t3 },
-    targetTextActive: { color: '#FFF' },
+    targetRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
+    targetChip: { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: SgateColors.borderSoft, backgroundColor: SgateColors.card, alignItems: 'center' },
+    targetChipActive: { borderColor: SgateColors.gold, backgroundColor: SgateColors.gold },
+    targetText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+    targetTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
-    switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: SgateColors.surface, borderWidth: 1.5, borderColor: SgateColors.border, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 24, marginTop: 8 },
-    switchTitle: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    switchSub: { fontSize: 11, fontFamily: SgateFonts.medium, color: SgateColors.t3, marginTop: 2 },
+    switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: SgateColors.card, borderWidth: 1, borderColor: SgateColors.borderSoft, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 24 },
+    switchTitle: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    switchSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
 
-    submitBtn: { backgroundColor: SgateColors.black, borderRadius: 16, paddingVertical: 18, alignItems: 'center', justifyContent: 'center' },
+    submitBtn: { backgroundColor: SgateColors.gold, borderRadius: 14, paddingVertical: 16, alignItems: 'center', justifyContent: 'center' },
     submitRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    submitText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFF' },
+    submitText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     intercomWrap: { padding: 20, flex: 1 },
     searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderRadius: 16, paddingHorizontal: 16, height: 50, marginBottom: 20 },
