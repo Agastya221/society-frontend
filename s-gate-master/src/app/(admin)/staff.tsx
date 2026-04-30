@@ -3,7 +3,7 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -21,6 +21,7 @@ export default function StaffManagementScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const [activeTab, setActiveTab] = useState<'DIRECTORY' | 'ATTENDANCE'>('DIRECTORY');
+    const [searchQuery, setSearchQuery] = useState('');
     const [staff, setStaff] = useState<StaffMember[]>([]);
     const [attendance, setAttendance] = useState<StaffAttendance[]>([]);
     const [loading, setLoading] = useState(true);
@@ -136,6 +137,14 @@ export default function StaffManagementScreen() {
         );
     };
 
+    const filteredStaff = staff.filter(s => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return s.name.toLowerCase().includes(q) || 
+               s.role.toLowerCase().includes(q) || 
+               (s.phone && s.phone.includes(q));
+    });
+
     return (
         <View style={styles.safe}>
             {/* Header + Tabs (single block, no gap) */}
@@ -177,11 +186,29 @@ export default function StaffManagementScreen() {
                 <AppLoader />
             ) : (
                 <FlatList
-                    data={staff}
+                    data={filteredStaff}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.list}
                     showsVerticalScrollIndicator={false}
                     renderItem={activeTab === 'DIRECTORY' ? renderStaffCard : renderAttendanceCard}
+                    ListHeaderComponent={
+                        <View style={styles.searchWrap}>
+                            <Feather name="search" size={18} color={SgateColors.t3} />
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Search by name, role, or phone..."
+                                placeholderTextColor={SgateColors.t4}
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                                autoCorrect={false}
+                            />
+                            {searchQuery.length > 0 && (
+                                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                                    <Feather name="x-circle" size={16} color={SgateColors.t4} />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    }
                     ListEmptyComponent={
                         <View style={styles.empty}>
                             <MaterialCommunityIcons name="account-group-outline" size={40} color={SgateColors.t4} />
@@ -236,6 +263,27 @@ const styles = StyleSheet.create({
     tabTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     list: { padding: 20, paddingBottom: 100 },
+    
+    // Search Box
+    searchWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: SgateColors.card,
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        height: 48,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+    },
+    searchInput: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 14,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t1,
+    },
+
     card: {
         backgroundColor: SgateColors.card,
         borderRadius: 16,

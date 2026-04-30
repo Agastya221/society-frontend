@@ -2,7 +2,7 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Linking, Platform, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Linking, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -65,82 +65,95 @@ export default function BroadcastAndIntercomScreen() {
     );
 
     const renderBroadcastTab = () => (
-        <Animated.View entering={FadeInDown.duration(300)} style={styles.formWrap}>
-            <View style={styles.infoBox}>
-                <Feather name="info" size={18} color={SgateColors.goldDeep} />
-                <View style={{ flex: 1 }}>
+        <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.formWrap}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+        >
+            <Animated.View entering={FadeInDown.duration(300)}>
+                {/* Info Banner */}
+                <View style={styles.infoBox}>
+                    <Feather name="info" size={18} color="#FACC15" />
                     <Text style={styles.infoText}>
                         Broadcast sends push notifications to residents instantly.
                     </Text>
                 </View>
-            </View>
 
-            <Text style={styles.formLabel}>
-                Target Audience <Text style={styles.requiredStar}>*</Text>
-            </Text>
-            <View style={styles.targetRow}>
-                {['ALL', 'BLOCK_A', 'BLOCK_B'].map(t => (
-                    <TouchableOpacity key={t} onPress={() => setTarget(t as any)}
-                        style={[styles.targetChip, target === t && styles.targetChipActive]}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={[styles.targetText, target === t && styles.targetTextActive]}>{t.replace('_', ' ')}</Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-
-            <Text style={styles.formLabel}>
-                Title <Text style={styles.requiredStar}>*</Text>
-            </Text>
-            <TextInput
-                style={styles.input}
-                placeholder="e.g., Water supply interruption"
-                placeholderTextColor={SgateColors.t4}
-                value={title}
-                onChangeText={setTitle}
-            />
-
-            <Text style={styles.formLabel}>
-                Message <Text style={styles.requiredStar}>*</Text>
-            </Text>
-            <TextInput
-                style={[styles.input, { height: 110, textAlignVertical: 'top' }]}
-                placeholder="Type the broadcast message..."
-                placeholderTextColor={SgateColors.t4}
-                multiline
-                value={message}
-                onChangeText={setMessage}
-            />
-
-            <View style={styles.switchRow}>
-                <View>
-                    <Text style={styles.switchTitle}>Emergency Override</Text>
-                    <Text style={styles.switchSub}>Bypass DND</Text>
+                {/* Target Audience */}
+                <Text style={styles.formLabel}>
+                    Target Audience <Text style={styles.requiredStar}>*</Text>
+                </Text>
+                <View style={styles.targetRow}>
+                    {['ALL', 'BLOCK_A', 'BLOCK_B'].map(t => (
+                        <TouchableOpacity key={t} onPress={() => { Haptics.selectionAsync(); setTarget(t as any); }}
+                            style={[styles.targetChip, target === t && styles.targetChipActive]}
+                            activeOpacity={0.7}
+                        >
+                            <Text style={[styles.targetText, target === t && styles.targetTextActive]}>
+                                {t.replace('_', ' ')}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
-                <Switch 
-                    value={isEmergency} 
-                    onValueChange={setIsEmergency}
-                    trackColor={{ false: SgateColors.borderSoft, true: SgateColors.gold }}
-                    thumbColor={'#FFF'}
-                />
-            </View>
 
-            <TouchableOpacity 
-                style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
-                onPress={handleBroadcast}
-                disabled={submitting}
-                activeOpacity={0.8}
-            >
-                {submitting ? (
-                    <ActivityIndicator color={SgateColors.t1} />
-                ) : (
-                    <View style={styles.submitRow}>
-                        <Feather name="send" size={16} color={SgateColors.t1} />
-                        <Text style={styles.submitText}>Send Notification</Text>
+                {/* Title */}
+                <Text style={styles.formLabel}>
+                    Title <Text style={styles.requiredStar}>*</Text>
+                </Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="e.g., Water supply interruption"
+                    placeholderTextColor="#AAA"
+                    value={title}
+                    onChangeText={setTitle}
+                />
+
+                {/* Message */}
+                <Text style={styles.formLabel}>
+                    Message <Text style={styles.requiredStar}>*</Text>
+                </Text>
+                <TextInput
+                    style={[styles.input, styles.textarea]}
+                    placeholder="Type the broadcast message..."
+                    placeholderTextColor="#AAA"
+                    multiline
+                    value={message}
+                    onChangeText={setMessage}
+                />
+
+                {/* Emergency Override */}
+                <View style={styles.switchRow}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.switchTitle}>Emergency Override</Text>
+                        <Text style={styles.switchSub}>Bypass Do Not Disturb settings</Text>
                     </View>
-                )}
-            </TouchableOpacity>
-        </Animated.View>
+                    <Switch 
+                        value={isEmergency} 
+                        onValueChange={setIsEmergency}
+                        trackColor={{ false: '#E5E7EB', true: '#FACC15' }}
+                        thumbColor="#FFF"
+                    />
+                </View>
+
+                {/* Submit */}
+                <TouchableOpacity 
+                    style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
+                    onPress={handleBroadcast}
+                    disabled={submitting}
+                    activeOpacity={0.8}
+                >
+                    {submitting ? (
+                        <ActivityIndicator color={SgateColors.t1} />
+                    ) : (
+                        <View style={styles.submitRow}>
+                            <Feather name="send" size={18} color={SgateColors.t1} />
+                            <Text style={styles.submitText}>Send Notification</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
+            </Animated.View>
+        </ScrollView>
     );
 
     const renderIntercomTab = () => (
@@ -193,30 +206,31 @@ export default function BroadcastAndIntercomScreen() {
 
     return (
         <View style={styles.safe}>
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Communicate</Text>
-            </View>
+            {/* Header + Tabs (unified block) */}
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Communicate</Text>
+                </View>
 
-            {/* Spacer */}
-            <View style={styles.spacer} />
-
-            <View style={styles.tabsWrap}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'BROADCAST' && styles.tabActive]}
-                    onPress={() => { Haptics.selectionAsync(); setActiveTab('BROADCAST'); }}
-                >
-                    <Text style={[styles.tabText, activeTab === 'BROADCAST' && styles.tabTextActive]}>Broadcast</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'INTERCOM' && styles.tabActive]}
-                    onPress={() => { Haptics.selectionAsync(); setActiveTab('INTERCOM'); }}
-                >
-                    <Text style={[styles.tabText, activeTab === 'INTERCOM' && styles.tabTextActive]}>Intercom</Text>
-                </TouchableOpacity>
+                <View style={styles.tabsWrap}>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'BROADCAST' && styles.tabActive]}
+                        onPress={() => { Haptics.selectionAsync(); setActiveTab('BROADCAST'); }}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[styles.tabText, activeTab === 'BROADCAST' && styles.tabTextActive]}>Broadcast</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'INTERCOM' && styles.tabActive]}
+                        onPress={() => { Haptics.selectionAsync(); setActiveTab('INTERCOM'); }}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[styles.tabText, activeTab === 'INTERCOM' && styles.tabTextActive]}>Intercom</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {activeTab === 'BROADCAST' ? renderBroadcastTab() : renderIntercomTab()}
@@ -226,55 +240,138 @@ export default function BroadcastAndIntercomScreen() {
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
-    header: {
+
+    // ── Header + Tabs (unified block) ────────────────────────────
+    headerWrapper: {
+        backgroundColor: SgateColors.card,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        zIndex: 10,
+    },
+    headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 16,
-        backgroundColor: SgateColors.card,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 4,
-        zIndex: 1,
+        paddingBottom: 14,
     },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-    spacer: { height: 6 },
+    headerTitle: {
+        fontSize: 20,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        marginLeft: 12,
+        flex: 1,
+    },
 
+    // ── Tabs ─────────────────────────────────────────────────────
     tabsWrap: {
         flexDirection: 'row',
-        backgroundColor: SgateColors.card,
-        paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        paddingHorizontal: 20,
     },
-    tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-    tabActive: { borderBottomColor: SgateColors.gold },
-    tabText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-    tabTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    tab: {
+        flex: 1,
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderBottomWidth: 3,
+        borderBottomColor: 'transparent',
+    },
+    tabActive: { borderBottomColor: '#FACC15' },
+    tabText: { fontSize: 14, fontFamily: SgateFonts.medium, color: '#888' },
+    tabTextActive: { fontFamily: SgateFonts.bold, color: '#111' },
 
-    formWrap: { padding: 20 },
-    infoBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: SgateColors.goldPale, padding: 14, borderRadius: 14, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(212,175,55,0.15)' },
-    infoText: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t2, lineHeight: 18 },
+    // ── Broadcast Form ───────────────────────────────────────────
+    formWrap: { padding: 20, paddingBottom: 40 },
 
-    formLabel: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 10 },
+    infoBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: '#FFF9E6',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderRadius: 14,
+        marginBottom: 24,
+    },
+    infoText: {
+        flex: 1,
+        fontSize: 14,
+        fontFamily: SgateFonts.regular,
+        color: '#555',
+        lineHeight: 20,
+    },
+
+    formLabel: {
+        fontSize: 13,
+        fontFamily: SgateFonts.semibold,
+        color: '#666',
+        marginBottom: 8,
+    },
     requiredStar: { color: '#EF4444' },
-    input: { backgroundColor: SgateColors.card, borderWidth: 1, borderColor: SgateColors.borderSoft, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1, marginBottom: 20 },
 
-    targetRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
-    targetChip: { flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: SgateColors.borderSoft, backgroundColor: SgateColors.card, alignItems: 'center' },
-    targetChipActive: { borderColor: SgateColors.gold, backgroundColor: SgateColors.gold },
-    targetText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-    targetTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    input: {
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#EAEAEA',
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        fontSize: 14,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t1,
+        marginBottom: 16,
+    },
+    textarea: {
+        minHeight: 120,
+        textAlignVertical: 'top',
+        paddingTop: 14,
+    },
 
-    switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: SgateColors.card, borderWidth: 1, borderColor: SgateColors.borderSoft, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 24 },
-    switchTitle: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
-    switchSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+    // ── Target Audience Chips ────────────────────────────────────
+    targetRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+    targetChip: {
+        flex: 1,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#F3F4F6',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    targetChipActive: {
+        backgroundColor: '#FACC15',
+    },
+    targetText: { fontSize: 13, fontFamily: SgateFonts.medium, color: '#777' },
+    targetTextActive: { fontFamily: SgateFonts.semibold, color: '#111' },
 
-    submitBtn: { backgroundColor: SgateColors.gold, borderRadius: 14, paddingVertical: 16, alignItems: 'center', justifyContent: 'center' },
+    // ── Emergency Toggle ────────────────────────────────────────
+    switchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+        borderRadius: 14,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        marginBottom: 24,
+    },
+    switchTitle: { fontSize: 15, fontFamily: SgateFonts.medium, color: '#111' },
+    switchSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: '#777', marginTop: 2 },
+
+    // ── Primary Button ──────────────────────────────────────────
+    submitBtn: {
+        backgroundColor: '#FACC15',
+        height: 54,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
+        elevation: 2,
+    },
     submitRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    submitText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    submitText: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111' },
 
     intercomWrap: { padding: 20, flex: 1 },
     searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderRadius: 16, paddingHorizontal: 16, height: 50, marginBottom: 20 },
