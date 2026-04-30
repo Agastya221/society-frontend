@@ -1,4 +1,4 @@
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -157,51 +157,65 @@ export default function BroadcastAndIntercomScreen() {
     );
 
     const renderIntercomTab = () => (
-        <Animated.View entering={FadeInDown.duration(300)} style={styles.intercomWrap}>
-            <View style={styles.searchBox}>
-                <MaterialCommunityIcons name="magnify" size={18} color={SgateColors.t4} />
+        <View style={styles.intercomWrap}>
+            {/* Search */}
+            <View style={styles.searchBar}>
+                <Feather name="search" size={16} color={SgateColors.t3} />
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="Search by Flat or Name..."
+                    placeholder="Search by name or flat"
                     placeholderTextColor={SgateColors.t4}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
+                    autoCorrect={false}
                 />
+                {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Feather name="x" size={16} color={SgateColors.t3} />
+                    </TouchableOpacity>
+                )}
             </View>
 
+            {/* List */}
             <FlatList
                 data={filteredIntercom}
                 keyExtractor={item => item.id}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 100 }}
+                contentContainerStyle={styles.listContent}
                 renderItem={({ item, index }) => (
-                    <Animated.View entering={FadeInDown.delay(index * 40)}>
-                        <View style={styles.contactRow}>
-                            {item.isGuard ? (
-                                <View style={[styles.contactAvatar, { backgroundColor: SgateColors.blueBg }]}>
-                                    <MaterialCommunityIcons name="shield-outline" size={18} color={SgateColors.blue} />
+                    <Animated.View entering={FadeInDown.delay(index * 40).springify()}>
+                        <TouchableOpacity style={styles.contactCard} activeOpacity={0.7}>
+                            <Avatar name={item.name} size={44} color={item.isGuard ? SgateColors.blue : SgateColors.gold} />
+                            <View style={styles.contactMid}>
+                                <Text style={styles.contactName} numberOfLines={1}>{item.name}</Text>
+                                <View style={styles.contactMeta}>
+                                    <Feather name={item.isGuard ? 'shield' : 'home'} size={12} color={SgateColors.t3} />
+                                    <Text style={styles.contactFlat}>
+                                        {item.isGuard ? 'Security' : `Flat ${item.flat}`}
+                                    </Text>
                                 </View>
-                            ) : (
-                                <Avatar name={item.name} size={42} />
-                            )}
-                            <View style={styles.contactInfo}>
-                                <Text style={styles.contactName}>{item.name}</Text>
-                                <Text style={styles.contactFlat}>{item.isGuard ? 'Security' : `Flat ${item.flat}`}</Text>
                             </View>
-                            <TouchableOpacity style={styles.callBtn} onPress={() => handleCall(item.phone)}>
-                                <MaterialCommunityIcons name="phone-outline" size={18} color={SgateColors.green} />
+                            <TouchableOpacity
+                                style={styles.callBtn}
+                                onPress={() => handleCall(item.phone)}
+                                activeOpacity={0.6}
+                            >
+                                <Feather name="phone" size={16} color={SgateColors.green} />
                             </TouchableOpacity>
-                        </View>
+                        </TouchableOpacity>
                     </Animated.View>
                 )}
                 ListEmptyComponent={
                     <View style={styles.emptyWrap}>
-                        <MaterialCommunityIcons name="account-cancel-outline" size={40} color={SgateColors.t4} />
-                        <Text style={styles.emptyText}>No contacts found.</Text>
+                        <View style={styles.emptyIcon}>
+                            <Feather name="users" size={28} color={SgateColors.t3} />
+                        </View>
+                        <Text style={styles.emptyTitle}>No residents found</Text>
+                        <Text style={styles.emptySub}>Try searching a different name or flat</Text>
                     </View>
                 }
             />
-        </Animated.View>
+        </View>
     );
 
     return (
@@ -373,17 +387,66 @@ const styles = StyleSheet.create({
     submitRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     submitText: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111' },
 
-    intercomWrap: { padding: 20, flex: 1 },
-    searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderRadius: 16, paddingHorizontal: 16, height: 50, marginBottom: 20 },
-    searchInput: { flex: 1, marginLeft: 10, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
-    
-    contactRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, padding: 14, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: SgateColors.borderSoft },
-    contactAvatar: { width: 42, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-    contactInfo: { flex: 1, marginLeft: 12 },
-    contactName: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    contactFlat: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.t3, marginTop: 2 },
-    callBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: SgateColors.greenBg, alignItems: 'center', justifyContent: 'center' },
+    // ── Intercom Tab ─────────────────────────────────────────────
+    intercomWrap: { flex: 1 },
 
-    emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
-    emptyText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3, marginTop: 12 },
+    searchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: SgateColors.surface,
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        height: 46,
+        marginHorizontal: 20,
+        marginTop: 16,
+        marginBottom: 6,
+    },
+    searchInput: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 14,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t1,
+    },
+
+    listContent: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 40 },
+
+    contactCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: SgateColors.card,
+        padding: 14,
+        borderRadius: 16,
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    contactMid: { flex: 1, marginLeft: 12 },
+    contactName: { fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    contactMeta: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
+    contactFlat: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    callBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: SgateColors.greenBg,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    emptyWrap: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 40 },
+    emptyIcon: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: SgateColors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, textAlign: 'center', marginBottom: 4 },
+    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center' },
 });
