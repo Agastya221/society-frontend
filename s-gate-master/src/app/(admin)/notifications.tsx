@@ -65,8 +65,20 @@ export default function AdminNotificationsScreen() {
     const fetchNotifications = useCallback(async () => {
         try {
             const res = await api.get('/admin/notifications', { params: { limit: 50 } });
-            const data = res.data?.data ?? res.data?.notifications ?? [];
-            setNotifications(Array.isArray(data) ? data : []);
+            const payload = res.data?.data ?? res.data;
+            const notificationsArray = Array.isArray(payload) ? payload : (payload?.notifications ?? []);
+            
+            const mapped = notificationsArray.map((n: any) => ({
+                id: n.id,
+                type: n.category ?? n.type ?? 'SYSTEM',
+                title: n.title,
+                body: n.message ?? n.body ?? '',
+                isRead: n.isRead,
+                createdAt: n.createdAt,
+                data: n.data,
+            }));
+            
+            setNotifications(mapped);
         } catch (err) {
             console.error('Admin notifications fetch error:', err);
         }

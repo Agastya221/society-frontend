@@ -18,8 +18,18 @@ export const getNotifications = async (
     params?: GetNotificationsParams
 ): Promise<Notification[]> => {
     const res = await api.get(`${getBasePath()}/notifications`, { params });
-    const data = res.data?.data;
-    return Array.isArray(data) ? data : (data?.notifications ?? []);
+    const payload = res.data?.data ?? res.data;
+    const notificationsArray = Array.isArray(payload) ? payload : (payload?.notifications ?? []);
+    
+    return notificationsArray.map((n: any) => ({
+        id: n.id,
+        type: n.category ?? n.type ?? 'SYSTEM',
+        title: n.title,
+        body: n.message ?? n.body ?? '',
+        isRead: n.isRead,
+        createdAt: n.createdAt,
+        data: n.data,
+    }));
 };
 
 export const getUnreadCount = async (): Promise<number> => {
