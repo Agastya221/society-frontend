@@ -1,15 +1,34 @@
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, FlatList, RefreshControl, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+    Alert,
+    FlatList,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
 import { Complaint, ComplaintStatus, deleteComplaint, fetchComplaints } from '../../../services/complaints';
 
+const FILTER_TABS: { key: ComplaintStatus | 'ALL'; label: string }[] = [
+    { key: 'ALL', label: 'All' },
+    { key: 'OPEN', label: 'Open' },
+    { key: 'IN_PROGRESS', label: 'In Progress' },
+    { key: 'RESOLVED', label: 'Resolved' },
+    { key: 'CLOSED', label: 'Closed' },
+];
+
 export default function AdminComplaintsScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [filterStatus, setFilterStatus] = useState<ComplaintStatus | 'ALL'>('ALL');
     const [complaints, setComplaints] = useState<Complaint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -112,50 +131,44 @@ export default function AdminComplaintsScreen() {
         filterStatus === 'ALL' ? true : c.status === filterStatus
     );
 
-    const FilterChip = ({ status, label }: { status: ComplaintStatus | 'ALL', label: string }) => (
-        <TouchableOpacity
-            onPress={() => setFilterStatus(status)}
-            className={`px-4 py-2 rounded-full mr-2 border ${
-                filterStatus === status
-                    ? 'bg-indigo-600 border-indigo-600'
-                    : 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700'
-            }`}
-        >
-            <Text className={`text-xs font-bold ${
-                filterStatus === status ? 'text-white' : 'text-gray-600 dark:text-gray-400'
-            }`}>
-                {label}
-            </Text>
-        </TouchableOpacity>
-    );
-
     return (
-        <SafeAreaView className="flex-1 bg-gray-50 dark:bg-black" edges={['top']}>
-            <View className="px-5 py-2 flex-row items-center gap-3 bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800">
-                <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800">
-                    <Ionicons name="arrow-back" size={24} className="text-gray-700 dark:text-gray-300" />
+        <View style={styles.root}>
+            {/* ── Header ─────────────────────────────────────────────────── */}
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-900 dark:text-gray-100">All Complaints</Text>
+                <Text style={styles.headerTitle}>All Complaints</Text>
             </View>
 
+            {/* ── Error ──────────────────────────────────────────────────── */}
             {error ? (
-                <View className="bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 p-4">
-                    <Text className="text-red-600 dark:text-red-400 text-sm text-center">{error}</Text>
+                <View style={styles.errorBar}>
+                    <Text style={styles.errorText}>{error}</Text>
                 </View>
             ) : null}
 
-            <View className="py-4 bg-white dark:bg-zinc-900/50">
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20 }}>
-                    <FilterChip status="ALL" label="All" />
-                    <FilterChip status="OPEN" label="Open" />
-                    <FilterChip status="IN_PROGRESS" label="In Progress" />
-                    <FilterChip status="RESOLVED" label="Resolved" />
-                    <FilterChip status="CLOSED" label="Closed" />
+            {/* ── Filter Tabs ────────────────────────────────────────────── */}
+            <View style={styles.filterWrapper}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+                    {FILTER_TABS.map(tab => (
+                        <TouchableOpacity
+                            key={tab.key}
+                            onPress={() => setFilterStatus(tab.key)}
+                            style={[styles.filterChip, filterStatus === tab.key && styles.filterChipActive]}
+                            activeOpacity={0.75}
+                        >
+                            <Text style={[styles.filterChipText, filterStatus === tab.key && styles.filterChipTextActive]}>
+                                {tab.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
                 </ScrollView>
             </View>
 
+            {/* ── Content ────────────────────────────────────────────────── */}
             {isLoading ? (
-                <View className="flex-1 items-center justify-center">
+                <View style={styles.centered}>
                     <AppLoader />
                 </View>
             ) : (
@@ -173,25 +186,85 @@ export default function AdminComplaintsScreen() {
                             isDeleting={deletingId === item.id}
                         />
                     )}
-                    contentContainerStyle={{ padding: 20 }}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl
                             refreshing={isRefreshing}
                             onRefresh={handleRefresh}
-                            tintColor="#4f46e5"
-                            colors={['#4f46e5']}
+                            tintColor={SgateColors.gold}
+                            colors={[SgateColors.gold]}
                         />
                     }
                     ListEmptyComponent={
-                        <View className="items-center justify-center py-20">
-                            <Ionicons name="checkmark-circle-outline" size={64} color="#d1d5db" />
-                            <Text className="text-gray-400 mt-4 text-center">
+                        <View style={styles.emptyWrap}>
+                            <MaterialCommunityIcons name="check-circle-outline" size={48} color={SgateColors.t4} />
+                            <Text style={styles.emptyTitle}>
                                 {filterStatus === 'ALL' ? 'No complaints found' : `No ${filterStatus.toLowerCase().replace('_', ' ')} complaints`}
+                            </Text>
+                            <Text style={styles.emptySub}>
+                                Complaints submitted by residents will appear here.
                             </Text>
                         </View>
                     }
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 }
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+    root: { flex: 1, backgroundColor: SgateColors.bg },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
+    },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+
+    // Error
+    errorBar: {
+        backgroundColor: SgateColors.redBg,
+        borderBottomWidth: 1,
+        borderBottomColor: SgateColors.borderSoft,
+        padding: 12,
+    },
+    errorText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.red, textAlign: 'center' },
+
+    // Filter
+    filterWrapper: {
+        backgroundColor: SgateColors.card,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: SgateColors.borderSoft,
+    },
+    filterRow: { paddingHorizontal: 20, gap: 8 },
+    filterChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: SgateColors.surface,
+    },
+    filterChipActive: { backgroundColor: SgateColors.black },
+    filterChipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    filterChipTextActive: { color: '#FFFFFF' },
+
+    // List
+    listContent: { padding: 20, flexGrow: 1 },
+
+    // Empty
+    emptyWrap: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 32 },
+    emptyTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginTop: 10, textAlign: 'center' },
+    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 4, textAlign: 'center' },
+});

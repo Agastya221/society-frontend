@@ -1,5 +1,5 @@
 import { AppLoader } from '@/components/ui/AppLoader';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -72,19 +72,19 @@ export default function StaffManagementScreen() {
 
                 <View style={styles.cardMetrics}>
                     <View style={styles.metric}>
-                        <Feather name="clock" size={13} color={SgateColors.t3} />
+                        <MaterialCommunityIcons name="clock-outline" size={13} color={SgateColors.t3} />
                         <Text style={styles.metricText}>
                             {item.shiftStart ? `${item.shiftStart} – ${item.shiftEnd}` : 'No shift'}
                         </Text>
                     </View>
                     <View style={styles.metric}>
-                        <Feather name="briefcase" size={13} color={SgateColors.t3} />
+                        <MaterialCommunityIcons name="briefcase-outline" size={13} color={SgateColors.t3} />
                         <Text style={styles.metricText}>
                             {item.salary ? `₹${item.salary.toLocaleString()}/mo` : 'Not set'}
                         </Text>
                     </View>
                     <View style={styles.metric}>
-                        <Feather name="home" size={13} color={SgateColors.t3} />
+                        <MaterialCommunityIcons name="home-outline" size={13} color={SgateColors.t3} />
                         <Text style={styles.metricText}>
                             {item.assignedFlats?.length > 1 ? `${item.assignedFlats.length} Flats` : (item.assignedFlats?.[0] || 'Not assigned')}
                         </Text>
@@ -151,11 +151,11 @@ export default function StaffManagementScreen() {
             <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
                 <View style={styles.headerTop}>
                     <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Staff & Payroll</Text>
                     <TouchableOpacity style={styles.addBtn} onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
-                        <Feather name="plus" size={18} color="#fff" />
+                        <MaterialCommunityIcons name="plus" size={18} color="#fff" />
                     </TouchableOpacity>
                 </View>
 
@@ -193,7 +193,7 @@ export default function StaffManagementScreen() {
                     renderItem={activeTab === 'DIRECTORY' ? renderStaffCard : renderAttendanceCard}
                     ListHeaderComponent={
                         <View style={styles.searchWrap}>
-                            <Feather name="search" size={18} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="magnify" size={18} color={SgateColors.t3} />
                             <TextInput
                                 style={styles.searchInput}
                                 placeholder="Search by name, role, or phone..."
@@ -204,7 +204,7 @@ export default function StaffManagementScreen() {
                             />
                             {searchQuery.length > 0 && (
                                 <TouchableOpacity onPress={() => setSearchQuery('')}>
-                                    <Feather name="x-circle" size={16} color={SgateColors.t4} />
+                                    <MaterialCommunityIcons name="close-circle" size={16} color={SgateColors.t4} />
                                 </TouchableOpacity>
                             )}
                         </View>

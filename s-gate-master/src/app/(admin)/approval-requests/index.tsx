@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -41,13 +41,13 @@ function statusStyle(status: string): { bg: string; color: string } {
     }
 }
 
-function typeStyle(type: string): { bg: string; color: string; icon: keyof typeof Feather.glyphMap } {
+function typeStyle(type: string): { bg: string; color: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'] } {
     const t = type?.toUpperCase() ?? '';
-    if (t.includes('MOVE'))       return { bg: '#EDE9FE', color: '#7C3AED', icon: 'truck' };
-    if (t.includes('MATERIAL'))   return { bg: SgateColors.blueBg, color: SgateColors.blue, icon: 'package' };
-    if (t.includes('MAINTENANCE'))return { bg: SgateColors.greenBg, color: SgateColors.green, icon: 'tool' };
-    if (t.includes('VEHICLE'))    return { bg: SgateColors.goldPale, color: SgateColors.goldDeep, icon: 'truck' };
-    return { bg: SgateColors.surface, color: SgateColors.t2, icon: 'file-text' };
+    if (t.includes('MOVE'))       return { bg: '#EDE9FE', color: '#7C3AED', icon: 'truck-outline' };
+    if (t.includes('MATERIAL'))   return { bg: SgateColors.blueBg, color: SgateColors.blue, icon: 'package-variant' };
+    if (t.includes('MAINTENANCE'))return { bg: SgateColors.greenBg, color: SgateColors.green, icon: 'wrench-outline' };
+    if (t.includes('VEHICLE'))    return { bg: SgateColors.goldPale, color: SgateColors.goldDeep, icon: 'car-outline' };
+    return { bg: SgateColors.surface, color: SgateColors.t2, icon: 'file-document-outline' };
 }
 
 // ─── Date helper ──────────────────────────────────────────────────────────────
@@ -111,7 +111,7 @@ export default function ApprovalRequestsListScreen() {
                         {/* Icon + Info */}
                         <View style={S.cardTop}>
                             <View style={[S.iconBubble, { backgroundColor: type.bg }]}>
-                                <Feather name={type.icon as any} size={20} color={type.color} />
+                                <MaterialCommunityIcons name={type.icon as any} size={20} color={type.color} />
                             </View>
 
                             <View style={S.cardInfo}>
@@ -137,19 +137,19 @@ export default function ApprovalRequestsListScreen() {
                         {/* Meta row */}
                         <View style={S.metaRow}>
                             <View style={S.metaItem}>
-                                <Feather name="home" size={12} color={SgateColors.t4} />
+                                <MaterialCommunityIcons name="home-outline" size={12} color={SgateColors.t4} />
                                 <Text style={S.metaText}>
                                     {item.flat?.flatNumber ? `Flat ${item.flat.flatNumber}` : 'N/A'}
                                 </Text>
                             </View>
                             <View style={S.metaItem}>
-                                <Feather name="user" size={12} color={SgateColors.t4} />
+                                <MaterialCommunityIcons name="account-outline" size={12} color={SgateColors.t4} />
                                 <Text style={S.metaText}>
                                     {item.requestedBy?.name ?? 'N/A'}
                                 </Text>
                             </View>
                             <View style={S.metaItem}>
-                                <Feather name="clock" size={12} color={SgateColors.t4} />
+                                <MaterialCommunityIcons name="clock-outline" size={12} color={SgateColors.t4} />
                                 <Text style={S.metaText}>
                                     {formatDate(item.createdAt)}
                                 </Text>
@@ -164,7 +164,7 @@ export default function ApprovalRequestsListScreen() {
                                     onPress={() => {/* Cancel logic */}}
                                     activeOpacity={0.75}
                                 >
-                                    <Feather name="x" size={14} color={SgateColors.t2} />
+                                    <MaterialCommunityIcons name="close" size={14} color={SgateColors.t2} />
                                     <Text style={S.actionSecondaryText}>Cancel</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
@@ -172,7 +172,7 @@ export default function ApprovalRequestsListScreen() {
                                     onPress={() => router.push(`/(admin)/approval-requests/${item.id}` as any)}
                                     activeOpacity={0.75}
                                 >
-                                    <Feather name="eye" size={14} color={SgateColors.t1} />
+                                    <MaterialCommunityIcons name="eye-outline" size={14} color={SgateColors.t1} />
                                     <Text style={S.actionPrimaryText}>View Details</Text>
                                 </TouchableOpacity>
                             </View>
@@ -194,7 +194,7 @@ export default function ApprovalRequestsListScreen() {
         () => (
             <View style={S.emptyWrap}>
                 <View style={S.emptyIcon}>
-                    <Feather name="inbox" size={40} color={SgateColors.t4} />
+                    <MaterialCommunityIcons name="inbox" size={40} color={SgateColors.t4} />
                 </View>
                 <Text style={S.emptyTitle}>All caught up</Text>
                 <Text style={S.emptySub}>No {emptyLabel} requests at the moment</Text>
@@ -210,7 +210,7 @@ export default function ApprovalRequestsListScreen() {
             <View style={[S.headerWrapper, { paddingTop: insets.top + 16 }]}>
                 <View style={S.headerTop}>
                     <TouchableOpacity onPress={() => router.back()} style={S.backButton}>
-                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
                         <Text style={S.headerTitle} numberOfLines={1}>Approval Requests</Text>
@@ -221,7 +221,7 @@ export default function ApprovalRequestsListScreen() {
                         accessibilityLabel="Create request"
                         style={S.headerAction}
                     >
-                        <Feather name="plus" size={18} color={SgateColors.t1} />
+                        <MaterialCommunityIcons name="plus" size={18} color={SgateColors.t1} />
                     </TouchableOpacity>
                 </View>
 

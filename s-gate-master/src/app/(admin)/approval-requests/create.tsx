@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -82,7 +82,7 @@ export default function CreateApprovalRequestScreen() {
             <View style={[S.headerWrapper, { paddingTop: insets.top + 16 }]}>
                 <View style={S.headerTop}>
                     <TouchableOpacity onPress={() => router.back()} style={S.backButton}>
-                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
                         <Text style={S.headerTitle} numberOfLines={1}>New Request</Text>
@@ -103,7 +103,7 @@ export default function CreateApprovalRequestScreen() {
             >
                 {/* Info Banner */}
                 <View style={S.infoBanner}>
-                    <Feather name="info" size={18} color={SgateColors.goldDeep} />
+                    <MaterialCommunityIcons name="information-outline" size={18} color={SgateColors.goldDeep} />
                     <View style={{ flex: 1 }}>
                         <Text style={S.infoTitle}>Compliance Notice</Text>
                         <Text style={S.infoText}>
@@ -152,7 +152,7 @@ export default function CreateApprovalRequestScreen() {
                                 <Text style={[S.flatText, active && S.flatTextActive]}>
                                     {flat.block}-{flat.flatNumber} ({flat.ownerName})
                                 </Text>
-                                {active && <Feather name="check" size={16} color={SgateColors.goldDeep} />}
+                                {active && <MaterialCommunityIcons name="check" size={16} color={SgateColors.goldDeep} />}
                             </TouchableOpacity>
                         );
                     })}
@@ -192,7 +192,7 @@ export default function CreateApprovalRequestScreen() {
                     activeOpacity={0.8}
                     disabled={submitting}
                 >
-                    <Feather name="send" size={16} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="send" size={16} color={SgateColors.t1} />
                     <Text style={S.submitBtnText}>
                         {submitting ? 'Submitting...' : 'Submit Request'}
                     </Text>
@@ -217,7 +217,7 @@ export default function CreateApprovalRequestScreen() {
                     style={S.cancelBtn}
                     activeOpacity={0.8}
                 >
-                    <Feather name="x" size={16} color={SgateColors.t2} />
+                    <MaterialCommunityIcons name="close" size={16} color={SgateColors.t2} />
                     <Text style={S.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
             </ScrollView>
@@ -268,7 +268,7 @@ const S = StyleSheet.create({
 
     // Labels
     label: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 10 },
-    required: { color: '#EF4444' },
+    required: { color: SgateColors.red },
     hint: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 6, marginBottom: 20 },
 
     // Type chips

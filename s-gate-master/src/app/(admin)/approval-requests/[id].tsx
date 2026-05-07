@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -58,7 +58,7 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
     return (
         <View style={styles.infoRow}>
             <View style={styles.infoLeft}>
-                <Feather name={icon as any} size={16} color="#999" />
+                <MaterialCommunityIcons name={icon as any} size={16} color={SgateColors.t3} />
                 <Text style={styles.infoLabel}>{label}</Text>
             </View>
             <Text style={styles.infoValue} numberOfLines={1}>{value}</Text>
@@ -100,7 +100,7 @@ export default function ApprovalRequestDetailScreen() {
             {/* ── Header ─────────────────────────────────────────────── */}
             <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
                 <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Request Details</Text>
             </View>
@@ -163,7 +163,7 @@ export default function ApprovalRequestDetailScreen() {
                 {request.status === 'PENDING' && (
                     <View style={styles.actionsWrap}>
                         <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.8}>
-                            <Feather name="edit-2" size={16} color={SgateColors.t1} />
+                            <MaterialCommunityIcons name="pencil-outline" size={16} color={SgateColors.t1} />
                             <Text style={styles.primaryBtnText}>Edit Request</Text>
                         </TouchableOpacity>
 
@@ -181,7 +181,7 @@ export default function ApprovalRequestDetailScreen() {
                                 );
                             }}
                         >
-                            <Feather name="x-circle" size={16} color="#DC2626" />
+                            <MaterialCommunityIcons name="close-circle-outline" size={16} color={SgateColors.red} />
                             <Text style={styles.dangerBtnText}>Cancel Request</Text>
                         </TouchableOpacity>
                     </View>
@@ -321,15 +321,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        backgroundColor: '#FEE2E2',
+        backgroundColor: SgateColors.redBg,
         borderWidth: 1,
-        borderColor: '#FECACA',
+        borderColor: SgateColors.borderSoft,
         paddingVertical: 16,
         borderRadius: 14,
     },
     dangerBtnText: {
         fontSize: 15,
         fontFamily: SgateFonts.bold,
-        color: '#DC2626',
+        color: SgateColors.red,
     },
 });

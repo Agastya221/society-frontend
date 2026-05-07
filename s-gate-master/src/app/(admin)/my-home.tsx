@@ -1,4 +1,4 @@
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -51,7 +51,7 @@ export default function MyHomeScreen() {
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
                 <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>My Home</Text>
             </View>

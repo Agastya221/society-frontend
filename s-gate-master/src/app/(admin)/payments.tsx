@@ -1,4 +1,4 @@
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
@@ -197,7 +197,7 @@ export default function PaymentsScreen() {
             <View style={styles.safe}>
                 <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
                     <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Finance & Billing</Text>
                 </View>

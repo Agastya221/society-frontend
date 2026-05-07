@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -74,7 +74,7 @@ export default function BroadcastAndIntercomScreen() {
             <Animated.View entering={FadeInDown.duration(300)}>
                 {/* Info Banner */}
                 <View style={styles.infoBox}>
-                    <Feather name="info" size={18} color="#FACC15" />
+                    <MaterialCommunityIcons name="information-outline" size={18} color={SgateColors.goldDeep} />
                     <Text style={styles.infoText}>
                         Broadcast sends push notifications to residents instantly.
                     </Text>
@@ -104,7 +104,7 @@ export default function BroadcastAndIntercomScreen() {
                 <TextInput
                     style={styles.input}
                     placeholder="e.g., Water supply interruption"
-                    placeholderTextColor="#AAA"
+                    placeholderTextColor={SgateColors.t4}
                     value={title}
                     onChangeText={setTitle}
                 />
@@ -131,7 +131,7 @@ export default function BroadcastAndIntercomScreen() {
                     <Switch 
                         value={isEmergency} 
                         onValueChange={setIsEmergency}
-                        trackColor={{ false: '#E5E7EB', true: '#FACC15' }}
+                        trackColor={{ false: SgateColors.border, true: SgateColors.gold }}
                         thumbColor="#FFF"
                     />
                 </View>
@@ -147,7 +147,7 @@ export default function BroadcastAndIntercomScreen() {
                         <ActivityIndicator color={SgateColors.t1} />
                     ) : (
                         <View style={styles.submitRow}>
-                            <Feather name="send" size={18} color={SgateColors.t1} />
+                            <MaterialCommunityIcons name="send" size={18} color={SgateColors.t1} />
                             <Text style={styles.submitText}>Send Notification</Text>
                         </View>
                     )}
@@ -160,7 +160,7 @@ export default function BroadcastAndIntercomScreen() {
         <View style={styles.intercomWrap}>
             {/* Search */}
             <View style={styles.searchBar}>
-                <Feather name="search" size={16} color={SgateColors.t3} />
+                <MaterialCommunityIcons name="magnify" size={16} color={SgateColors.t3} />
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Search by name or flat"
@@ -171,7 +171,7 @@ export default function BroadcastAndIntercomScreen() {
                 />
                 {searchQuery.length > 0 && (
                     <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                        <Feather name="x" size={16} color={SgateColors.t3} />
+                        <MaterialCommunityIcons name="close" size={16} color={SgateColors.t3} />
                     </TouchableOpacity>
                 )}
             </View>
@@ -189,7 +189,7 @@ export default function BroadcastAndIntercomScreen() {
                             <View style={styles.contactMid}>
                                 <Text style={styles.contactName} numberOfLines={1}>{item.name}</Text>
                                 <View style={styles.contactMeta}>
-                                    <Feather name={item.isGuard ? 'shield' : 'home'} size={12} color={SgateColors.t3} />
+                                    <MaterialCommunityIcons name={item.isGuard ? 'shield-outline' : 'home-outline'} size={12} color={SgateColors.t3} />
                                     <Text style={styles.contactFlat}>
                                         {item.isGuard ? 'Security' : `Flat ${item.flat}`}
                                     </Text>
@@ -200,7 +200,7 @@ export default function BroadcastAndIntercomScreen() {
                                 onPress={() => handleCall(item.phone)}
                                 activeOpacity={0.6}
                             >
-                                <Feather name="phone" size={16} color={SgateColors.green} />
+                                <MaterialCommunityIcons name="phone" size={16} color={SgateColors.green} />
                             </TouchableOpacity>
                         </TouchableOpacity>
                     </Animated.View>
@@ -208,7 +208,7 @@ export default function BroadcastAndIntercomScreen() {
                 ListEmptyComponent={
                     <View style={styles.emptyWrap}>
                         <View style={styles.emptyIcon}>
-                            <Feather name="users" size={28} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="account-group-outline" size={28} color={SgateColors.t3} />
                         </View>
                         <Text style={styles.emptyTitle}>No residents found</Text>
                         <Text style={styles.emptySub}>Try searching a different name or flat</Text>
@@ -224,7 +224,7 @@ export default function BroadcastAndIntercomScreen() {
             <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
                 <View style={styles.headerTop}>
                     <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Communicate</Text>
                 </View>
@@ -288,9 +288,9 @@ const styles = StyleSheet.create({
         borderBottomWidth: 3,
         borderBottomColor: 'transparent',
     },
-    tabActive: { borderBottomColor: '#FACC15' },
-    tabText: { fontSize: 14, fontFamily: SgateFonts.medium, color: '#888' },
-    tabTextActive: { fontFamily: SgateFonts.bold, color: '#111' },
+    tabActive: { borderBottomColor: SgateColors.gold },
+    tabText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+    tabTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // ── Broadcast Form ───────────────────────────────────────────
     formWrap: { padding: 20, paddingBottom: 40 },
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        backgroundColor: '#FFF9E6',
+        backgroundColor: SgateColors.goldPale,
         paddingHorizontal: 16,
         paddingVertical: 14,
         borderRadius: 14,
@@ -309,22 +309,22 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 14,
         fontFamily: SgateFonts.regular,
-        color: '#555',
+        color: SgateColors.t2,
         lineHeight: 20,
     },
 
     formLabel: {
         fontSize: 13,
         fontFamily: SgateFonts.semibold,
-        color: '#666',
+        color: SgateColors.t3,
         marginBottom: 8,
     },
-    requiredStar: { color: '#EF4444' },
+    requiredStar: { color: SgateColors.red },
 
     input: {
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#EAEAEA',
+        backgroundColor: SgateColors.card,
+        borderWidth: 1.5,
+        borderColor: SgateColors.border,
         borderRadius: 14,
         paddingHorizontal: 16,
         paddingVertical: 14,
@@ -345,35 +345,35 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#F3F4F6',
+        backgroundColor: SgateColors.surface,
         alignItems: 'center',
         justifyContent: 'center',
     },
     targetChipActive: {
-        backgroundColor: '#FACC15',
+        backgroundColor: SgateColors.gold,
     },
-    targetText: { fontSize: 13, fontFamily: SgateFonts.medium, color: '#777' },
-    targetTextActive: { fontFamily: SgateFonts.semibold, color: '#111' },
+    targetText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+    targetTextActive: { fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
 
     // ── Emergency Toggle ────────────────────────────────────────
     switchRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: SgateColors.card,
         borderWidth: 1,
-        borderColor: '#F0F0F0',
+        borderColor: SgateColors.borderSoft,
         borderRadius: 14,
         paddingHorizontal: 16,
         paddingVertical: 16,
         marginBottom: 24,
     },
-    switchTitle: { fontSize: 15, fontFamily: SgateFonts.medium, color: '#111' },
-    switchSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: '#777', marginTop: 2 },
+    switchTitle: { fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
+    switchSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
 
     // ── Primary Button ──────────────────────────────────────────
     submitBtn: {
-        backgroundColor: '#FACC15',
+        backgroundColor: SgateColors.gold,
         height: 54,
         borderRadius: 16,
         alignItems: 'center',
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     submitRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    submitText: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111' },
+    submitText: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // ── Intercom Tab ─────────────────────────────────────────────
     intercomWrap: { flex: 1 },

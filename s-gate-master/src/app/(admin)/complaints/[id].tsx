@@ -1,13 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Modal, RefreshControl, ScrollView, Share, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import { ComplaintStatusBadge } from '../../../components/complaints/ComplaintStatusBadge';
 import { PriorityBadge } from '../../../components/complaints/PriorityBadge';
 import { ImageCarousel } from '../../../components/ui/ImageCarousel';
-import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 import { Complaint, ComplaintStatus, fetchComplaintDetails, updateComplaint } from '../../../services/complaints';
 import { getStaffList, StaffMember } from '../../../services/staffService';
 
@@ -83,10 +83,6 @@ export default function AdminComplaintDetailScreen() {
     const handleUpdateStatus = async (newStatus: ComplaintStatus) => {
         if (!complaint) return;
         
-        // If resolving, we might need a note (simplified here: just status)
-        // If moving to RESOLVED, maybe prompt for note? 
-        // For this iteration, we'll just update status directly.
-        
         setIsUpdating(true);
         try {
            const updated = await updateComplaint(complaint.id, { 
@@ -121,86 +117,74 @@ export default function AdminComplaintDetailScreen() {
 
     if (isLoading) {
         return (
-            <SafeAreaView className="flex-1 bg-white dark:bg-black items-center justify-center">
+            <View style={S.loadingWrap}>
                 <AppLoader />
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (error || !complaint) {
         return (
-            <SafeAreaView className="flex-1 bg-white dark:bg-black items-center justify-center">
-                <Text className="text-red-500 dark:text-red-400 mb-4">{error || 'Complaint not found'}</Text>
-                <TouchableOpacity onPress={() => router.back()} className="bg-indigo-600 px-6 py-3 rounded-lg">
-                     <Text className="text-white font-bold">Go Back</Text>
+            <View style={S.loadingWrap}>
+                <Text style={S.errorText}>{error || 'Complaint not found'}</Text>
+                <TouchableOpacity onPress={() => router.back()} style={S.errorBtn}>
+                     <Text style={S.errorBtnText}>Go Back</Text>
                 </TouchableOpacity>
-            </SafeAreaView>
+            </View>
         );
     }
 
     // Logic for "Reported By"
     const getReportedByText = () => {
         if (complaint.isAnonymous) {
-             const c = complaint as any;
-            // Admin can see who reported even if anonymous? 
-            // Usually yes, but let's respect the flag unless requirement says otherwise.
-            // Requirement said "but admin can updated..." implies admin view.
-            // Let's show "Anonymous (Hidden)" or similar if real name is available in data.
-            // If API hides it, we can't show it.
             return 'Anonymous';
         }
         return complaint.reportedBy?.name || 'Unknown';
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-white dark:bg-black" edges={['top']}>
-            {/* Header */}
-            <View className="px-5 py-3 flex-row items-center justify-between border-b border-gray-100 dark:border-zinc-800">
-                 <View className="flex-row items-center gap-3">
-                    <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800">
-                        <Ionicons name="arrow-back" size={24} className="text-gray-700 dark:text-gray-300" />
+        <View style={S.root}>
+            {/* ── Header ─────────────────────────────────────────────── */}
+            <View style={[S.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <View style={S.headerLeft}>
+                    <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
-                    <Text className="font-bold text-lg text-gray-900 dark:text-white">Admin View</Text>
-                 </View>
-                 <TouchableOpacity onPress={handleShare} className="h-10 w-10 items-center justify-center rounded-full bg-indigo-50 dark:bg-indigo-900/30">
-                    <Ionicons name="share-social-outline" size={22} className="text-indigo-600 dark:text-indigo-400" />
-                 </TouchableOpacity>
+                    <Text style={S.headerTitle}>Admin View</Text>
+                </View>
+                <TouchableOpacity onPress={handleShare} style={S.shareButton}>
+                    <MaterialCommunityIcons name="share-variant-outline" size={20} color={SgateColors.goldDeep} />
+                </TouchableOpacity>
             </View>
 
             <ScrollView 
-                className="flex-1"
+                style={S.scroll}
                 contentContainerStyle={{ paddingBottom: 100 }}
-                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
+                refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
+                showsVerticalScrollIndicator={false}
             >
-                {/* Main Content */}
-                <View className="px-5 py-6">
+                <View style={S.content}>
                     {/* Status & ID */}
-                    <View className="flex-row justify-between items-start mb-4">
-                        <View>
-                            <Text className="text-xs text-indigo-600 dark:text-indigo-400 font-bold uppercase mb-1">
+                    <View style={S.titleRow}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={S.categoryLabel}>
                                 {complaint.category} • {complaint.ticketNumber || 'NO ID'}
                             </Text>
-                            <Text className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
-                                {complaint.title}
-                            </Text>
+                            <Text style={S.titleText}>{complaint.title}</Text>
                         </View>
                         <ComplaintStatusBadge status={complaint.status} />
                     </View>
 
                     {/* Priority & Date */}
-                    <View className="flex-row items-center gap-3 mb-6">
+                    <View style={S.metaRow}>
                         <PriorityBadge priority={complaint.priority} />
-                        <View className="h-1 w-1 rounded-full bg-gray-300 dark:bg-zinc-700" />
-                        <Text className="text-sm text-gray-500 dark:text-gray-400">
-                            {new Date(complaint.createdAt).toLocaleString()}
-                        </Text>
+                        <View style={S.dot} />
+                        <Text style={S.metaDate}>{new Date(complaint.createdAt).toLocaleString()}</Text>
                     </View>
 
                     {/* Description */}
-                    <View className="bg-gray-50 dark:bg-zinc-900 p-4 rounded-xl mb-6">
-                        <Text className="text-gray-800 dark:text-gray-200 text-base leading-relaxed">
-                            {complaint.description}
-                        </Text>
+                    <View style={S.descCard}>
+                        <Text style={S.descText}>{complaint.description}</Text>
                     </View>
 
                     {/* Images */}
@@ -210,49 +194,46 @@ export default function AdminComplaintDetailScreen() {
                             : (complaint.images || []).map(path => `${IMAGE_BASE_URL}/${path}`);
 
                         return imageSources.length > 0 ? (
-                            <View className="mb-6">
+                            <View style={{ marginBottom: 20 }}>
                                 <ImageCarousel images={imageSources as string[]} height={300} resizeMode="contain" />
                             </View>
                         ) : null;
                     })()}
 
                     {/* ACTIONS SECTION (Admin Only) */}
-                    <View className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900/50 rounded-xl p-4 mb-6">
-                        <Text className="text-sm font-bold text-indigo-900 dark:text-indigo-200 uppercase mb-3">
-                            Admin Actions
-                        </Text>
-                        
-                        <View className="flex-row gap-3">
-                            <View className="flex-1">
-                                <PrimaryButton 
-                                    title="Update Status" 
-                                    onPress={() => setShowStatusModal(true)} 
-                                    variant="outline"
-                                />
-                            </View>
-                            <View className="flex-1">
-                                <PrimaryButton 
-                                    title="Assign Staff" 
-                                    onPress={() => setShowAssignModal(true)} 
-                                    variant="outline"
-                                />
-                            </View>
+                    <View style={S.actionsCard}>
+                        <Text style={S.actionsTitle}>ADMIN ACTIONS</Text>
+                        <View style={S.actionsRow}>
+                            <TouchableOpacity
+                                style={S.actionBtn}
+                                onPress={() => setShowStatusModal(true)}
+                                activeOpacity={0.75}
+                            >
+                                <MaterialCommunityIcons name="sync" size={16} color={SgateColors.t1} />
+                                <Text style={S.actionBtnText}>Update Status</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={S.actionBtn}
+                                onPress={() => setShowAssignModal(true)}
+                                activeOpacity={0.75}
+                            >
+                                <MaterialCommunityIcons name="account-plus-outline" size={16} color={SgateColors.t1} />
+                                <Text style={S.actionBtnText}>Assign Staff</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
 
                     {/* Resolution info if resolved */}
                     {complaint.status === 'RESOLVED' && (
-                        <View className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6">
-                            <View className="flex-row items-center gap-2 mb-2">
-                                <Ionicons name="checkmark-circle" size={20} color="#15803d" />
-                                <Text className="font-bold text-green-800 dark:text-green-300">Resolved</Text>
+                        <View style={S.resolvedCard}>
+                            <View style={S.resolvedHeader}>
+                                <MaterialCommunityIcons name="check-circle" size={20} color={SgateColors.green} />
+                                <Text style={S.resolvedTitle}>Resolved</Text>
                             </View>
                             {complaint.resolution && (
-                                <Text className="text-green-700 dark:text-green-400 text-sm mb-2">
-                                    {complaint.resolution}
-                                </Text>
+                                <Text style={S.resolvedNote}>{complaint.resolution}</Text>
                             )}
-                            <Text className="text-green-600 dark:text-green-500 text-xs">
+                            <Text style={S.resolvedDate}>
                                 Resolved on {complaint.resolvedAt ? new Date(complaint.resolvedAt).toLocaleString() : 'Unknown date'}
                                 {complaint.resolvedBy ? ` by ${complaint.resolvedBy.name}` : ''}
                             </Text>
@@ -260,168 +241,301 @@ export default function AdminComplaintDetailScreen() {
                     )}
 
                     {/* Details Card */}
-                    <View className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl p-4 shadow-sm">
-                        <Text className="text-base font-bold text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-100 dark:border-zinc-800 pb-2">
-                            Ticket Information
-                        </Text>
+                    <View style={S.card}>
+                        <Text style={S.cardSectionTitle}>Ticket Information</Text>
                         
-                        <View className="space-y-4">
-                            <View className="flex-row justify-between">
-                                <Text className="text-gray-500 dark:text-gray-400 text-sm">Reported By</Text>
-                                <View className="items-end">
-                                    <Text className="text-gray-900 dark:text-gray-100 font-medium">
-                                        {getReportedByText()}
-                                    </Text>
-                                    {!complaint.isAnonymous && complaint.reportedBy?.phone && (
-                                        <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">{complaint.reportedBy.phone}</Text>
-                                    )}
-                                </View>
-                            </View>
-
-                            <View className="flex-row justify-between">
-                                <Text className="text-gray-500 dark:text-gray-400 text-sm">Flat/Unit</Text>
-                                <Text className="text-gray-900 dark:text-gray-100 font-medium">
-                                    {complaint.flat?.flatNumber || 'Not Associated'}
-                                </Text>
-                            </View>
-
-                            {complaint.location && (
-                                <View className="flex-row justify-between">
-                                    <Text className="text-gray-500 dark:text-gray-400 text-sm">Location</Text>
-                                    <Text className="text-gray-900 dark:text-gray-100 font-medium">{complaint.location}</Text>
-                                </View>
-                            )}
-
-                             <View className="flex-row justify-between">
-                                <Text className="text-gray-500 dark:text-gray-400 text-sm">Created</Text>
-                                <Text className="text-gray-900 dark:text-gray-100 font-medium">
-                                    {new Date(complaint.createdAt).toLocaleString()}
-                                </Text>
-                            </View>
-
-                            {/* Assignment Info with explicit value for admins */}
-                            <View className="flex-row justify-between">
-                                <Text className="text-gray-500 dark:text-gray-400 text-sm">Assigned To</Text>
-                                <View className="items-end">
-                                    <Text className="text-gray-900 dark:text-gray-100 font-medium">
-                                        {complaint.assignedTo?.name || 'Unassigned'}
-                                    </Text>
-                                    {complaint.assignedTo?.role && (
-                                        <Text className="text-gray-500 dark:text-gray-400 text-xs">{complaint.assignedTo.role}</Text>
-                                    )}
-                                </View>
-                            </View>
-
-                             {complaint.assignedAt && (
-                                <View className="flex-row justify-between">
-                                    <Text className="text-gray-500 dark:text-gray-400 text-sm">Assigned On</Text>
-                                    <Text className="text-gray-900 dark:text-gray-100 font-medium">
-                                        {new Date(complaint.assignedAt).toLocaleString()}
-                                    </Text>
-                                </View>
-                            )}
-
-                            <View className="flex-row justify-between">
-                                <Text className="text-gray-500 dark:text-gray-400 text-sm">Last Updated</Text>
-                                <Text className="text-gray-900 dark:text-gray-100 font-medium">
-                                    {new Date(complaint.updatedAt).toLocaleString()}
-                                </Text>
-                            </View>
-                        </View>
+                        <InfoRow label="Reported By" value={getReportedByText()} />
+                        {!complaint.isAnonymous && complaint.reportedBy?.phone && (
+                            <InfoRow label="" value={complaint.reportedBy.phone} small />
+                        )}
+                        <InfoRow label="Flat/Unit" value={complaint.flat?.flatNumber || 'Not Associated'} />
+                        {complaint.location && <InfoRow label="Location" value={complaint.location} />}
+                        <InfoRow label="Created" value={new Date(complaint.createdAt).toLocaleString()} />
+                        <InfoRow label="Assigned To" value={complaint.assignedTo?.name || 'Unassigned'} />
+                        {complaint.assignedTo?.role && (
+                            <InfoRow label="" value={complaint.assignedTo.role} small />
+                        )}
+                        {complaint.assignedAt && (
+                            <InfoRow label="Assigned On" value={new Date(complaint.assignedAt).toLocaleString()} />
+                        )}
+                        <InfoRow label="Last Updated" value={new Date(complaint.updatedAt).toLocaleString()} />
                     </View>
                 </View>
             </ScrollView>
 
             {/* STATUS MODAL */}
             <Modal visible={showStatusModal} transparent animationType="fade">
-                 <View className="flex-1 bg-black/60 items-center justify-center p-4">
-                     <View className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6">
-                        <Text className="text-lg font-bold text-gray-900 dark:text-white mb-4">Update Status</Text>
+                <View style={S.modalOverlay}>
+                    <View style={S.modalCard}>
+                        <Text style={S.modalTitle}>Update Status</Text>
                         
-                        <View className="gap-3">
-                            {['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].map((status) => (
-                                <TouchableOpacity 
-                                    key={status}
-                                    onPress={() => {
-                                        if (status === 'RESOLVED') {
-                                            // Handle resolution flow if needed
-                                            // For V1, just update immediately similar to others
-                                            handleUpdateStatus(status as ComplaintStatus);
-                                        } else {
-                                            handleUpdateStatus(status as ComplaintStatus);
-                                        }
-                                    }}
-                                    className={`p-4 rounded-xl border ${
-                                        complaint.status === status 
-                                            ? 'bg-indigo-50 border-indigo-500 dark:bg-indigo-900/30' 
-                                            : 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700'
-                                    }`}
-                                >
-                                    <Text className={`font-semibold ${
-                                         complaint.status === status ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-200'
-                                    }`}>
-                                        {status.replace('_', ' ')}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                        <View style={{ gap: 10 }}>
+                            {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as ComplaintStatus[]).map((status) => {
+                                const isActive = complaint.status === status;
+                                return (
+                                    <TouchableOpacity 
+                                        key={status}
+                                        onPress={() => handleUpdateStatus(status)}
+                                        style={[S.statusOption, isActive && S.statusOptionActive]}
+                                        activeOpacity={0.75}
+                                    >
+                                        <Text style={[S.statusOptionText, isActive && S.statusOptionTextActive]}>
+                                            {status.replace('_', ' ')}
+                                        </Text>
+                                        {isActive && <MaterialCommunityIcons name="check" size={18} color={SgateColors.goldDeep} />}
+                                    </TouchableOpacity>
+                                );
+                            })}
                         </View>
 
-                        <TouchableOpacity onPress={() => setShowStatusModal(false)} className="mt-4 p-3 items-center">
-                            <Text className="text-gray-500 font-medium">Cancel</Text>
+                        <TouchableOpacity onPress={() => setShowStatusModal(false)} style={S.modalCancel}>
+                            <Text style={S.modalCancelText}>Cancel</Text>
                         </TouchableOpacity>
-                     </View>
-                 </View>
+                    </View>
+                </View>
             </Modal>
 
             {/* ASSIGNMENT MODAL */}
             <Modal visible={showAssignModal} transparent animationType="slide">
-                 <View className="flex-1 bg-black/60 justify-end">
-                     <View className="bg-white dark:bg-zinc-900 rounded-t-3xl p-6 h-3/4">
-                        <View className="flex-row justify-between items-center mb-4">
-                            <Text className="text-xl font-bold text-gray-900 dark:text-white">Assign Staff</Text>
+                <View style={S.bottomSheetOverlay}>
+                    <View style={S.bottomSheet}>
+                        <View style={S.bottomSheetHeader}>
+                            <Text style={S.bottomSheetTitle}>Assign Staff</Text>
                             <TouchableOpacity onPress={() => setShowAssignModal(false)}>
-                                <Ionicons name="close" size={24} color="#6b7280" />
+                                <MaterialCommunityIcons name="close" size={24} color={SgateColors.t3} />
                             </TouchableOpacity>
                         </View>
 
-                        {/* List of staff */}
-                        <ScrollView className="flex-1">
+                        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
                             {staffList.length === 0 ? (
-                                <Text className="text-center text-gray-500 mt-10">No staff members found.</Text>
+                                <Text style={S.staffEmpty}>No staff members found.</Text>
                             ) : (
-                                staffList.map((staff) => (
-                                    <TouchableOpacity 
-                                        key={staff.id}
-                                        onPress={() => handleAssignStaff(staff.id)}
-                                        className={`flex-row items-center p-4 mb-3 rounded-xl border ${
-                                            complaint.assignedTo?.id === staff.id
-                                                ? 'bg-indigo-50 border-indigo-500 dark:bg-indigo-900/30'
-                                                : 'bg-gray-50 dark:bg-zinc-800 border-gray-100 dark:border-zinc-700'
-                                        }`}
-                                    >
-                                        <View className="h-10 w-10 bg-gray-200 dark:bg-zinc-700 rounded-full items-center justify-center mr-3">
-                                            <Text className="text-gray-600 dark:text-gray-300 font-bold">
-                                                {staff.name.charAt(0)}
-                                            </Text>
-                                        </View>
-                                        <View>
-                                            <Text className="font-bold text-gray-900 dark:text-white">{staff.name}</Text>
-                                            <Text className="text-xs text-gray-500">{staff.role} • {staff.phone}</Text>
-                                        </View>
-                                        {complaint.assignedTo?.id === staff.id && (
-                                            <View className="ml-auto">
-                                                <Ionicons name="checkmark-circle" size={24} color="#4f46e5" />
+                                staffList.map((staff) => {
+                                    const isAssigned = complaint.assignedTo?.id === staff.id;
+                                    return (
+                                        <TouchableOpacity 
+                                            key={staff.id}
+                                            onPress={() => handleAssignStaff(staff.id)}
+                                            style={[S.staffItem, isAssigned && S.staffItemActive]}
+                                            activeOpacity={0.75}
+                                        >
+                                            <View style={S.staffAvatar}>
+                                                <Text style={S.staffAvatarText}>
+                                                    {staff.name.charAt(0)}
+                                                </Text>
                                             </View>
-                                        )}
-                                    </TouchableOpacity>
-                                ))
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={S.staffName}>{staff.name}</Text>
+                                                <Text style={S.staffSub}>{staff.role} • {staff.phone}</Text>
+                                            </View>
+                                            {isAssigned && (
+                                                <MaterialCommunityIcons name="check-circle" size={24} color={SgateColors.goldDeep} />
+                                            )}
+                                        </TouchableOpacity>
+                                    );
+                                })
                             )}
                         </ScrollView>
-                     </View>
-                 </View>
+                    </View>
+                </View>
             </Modal>
-
-             <View style={{ height: insets.bottom, backgroundColor: 'white' }} className="dark:bg-zinc-900" />
-        </SafeAreaView>
+        </View>
     );
 }
+
+// ── InfoRow sub-component ────────────────────────────────────────────────
+function InfoRow({ label, value, small }: { label: string; value: string; small?: boolean }) {
+    return (
+        <View style={S.infoRow}>
+            {label ? <Text style={S.infoLabel}>{label}</Text> : <View style={{ flex: 1 }} />}
+            <Text style={[S.infoValue, small && S.infoValueSmall]}>{value}</Text>
+        </View>
+    );
+}
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+const S = StyleSheet.create({
+    root: { flex: 1, backgroundColor: SgateColors.bg },
+    loadingWrap: { flex: 1, backgroundColor: SgateColors.bg, alignItems: 'center', justifyContent: 'center' },
+    errorText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.red, marginBottom: 16 },
+    errorBtn: {
+        backgroundColor: SgateColors.gold,
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 14,
+    },
+    errorBtnText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+
+    // Header
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        backgroundColor: SgateColors.card,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 4,
+        zIndex: 1,
+    },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    shareButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: SgateColors.goldPale,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // Content
+    scroll: { flex: 1 },
+    content: { padding: 20 },
+
+    // Title
+    titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+    categoryLabel: { ...SgateTypography.microLabel, color: SgateColors.goldDeep, marginBottom: 4 },
+    titleText: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1, lineHeight: 28 },
+
+    // Meta
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
+    dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: SgateColors.border },
+    metaDate: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+
+    // Description
+    descCard: { backgroundColor: SgateColors.surface, padding: 16, borderRadius: 16, marginBottom: 20 },
+    descText: { fontSize: 15, fontFamily: SgateFonts.regular, color: SgateColors.t1, lineHeight: 24 },
+
+    // Actions Card
+    actionsCard: {
+        backgroundColor: SgateColors.goldPale,
+        borderWidth: 1,
+        borderColor: 'rgba(212,175,55,0.15)',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+    },
+    actionsTitle: { ...SgateTypography.microLabel, color: SgateColors.goldDeep, marginBottom: 12 },
+    actionsRow: { flexDirection: 'row', gap: 10 },
+    actionBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        backgroundColor: SgateColors.gold,
+        borderRadius: 14,
+        paddingVertical: 14,
+    },
+    actionBtnText: { fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+
+    // Resolved Card
+    resolvedCard: {
+        backgroundColor: SgateColors.greenBg,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+    },
+    resolvedHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+    resolvedTitle: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.green },
+    resolvedNote: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t2, marginBottom: 8, lineHeight: 20 },
+    resolvedDate: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+
+    // Card
+    card: {
+        backgroundColor: SgateColors.card,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 20,
+    },
+    cardSectionTitle: {
+        fontSize: 15,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        marginBottom: 14,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: SgateColors.borderSoft,
+    },
+
+    // InfoRow
+    infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+    infoLabel: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, flex: 1 },
+    infoValue: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1, textAlign: 'right', maxWidth: '55%' },
+    infoValueSmall: { fontSize: 12, color: SgateColors.t3 },
+
+    // Status Modal
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+    modalCard: {
+        backgroundColor: SgateColors.card,
+        borderRadius: 20,
+        padding: 24,
+        width: '100%',
+        maxWidth: 380,
+    },
+    modalTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 16 },
+    statusOption: {
+        padding: 16,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: SgateColors.borderSoft,
+        backgroundColor: SgateColors.card,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    statusOptionActive: {
+        backgroundColor: SgateColors.goldPale,
+        borderColor: SgateColors.gold,
+    },
+    statusOptionText: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
+    statusOptionTextActive: { color: SgateColors.goldDeep, fontFamily: SgateFonts.bold },
+    modalCancel: { marginTop: 16, alignItems: 'center', padding: 12 },
+    modalCancelText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+
+    // Assignment Bottom Sheet
+    bottomSheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    bottomSheet: {
+        backgroundColor: SgateColors.card,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        maxHeight: '75%',
+    },
+    bottomSheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+    bottomSheetTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    staffEmpty: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center', marginTop: 40 },
+    staffItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 14,
+        marginBottom: 10,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+        backgroundColor: SgateColors.surface,
+    },
+    staffItemActive: {
+        backgroundColor: SgateColors.goldPale,
+        borderColor: SgateColors.gold,
+    },
+    staffAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: SgateColors.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    staffAvatarText: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t2 },
+    staffName: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    staffSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+});
