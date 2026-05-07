@@ -263,7 +263,7 @@ export default function AdminMyPassesScreen() {
                                 <MaterialCommunityIcons name="refresh" size={16} color={SgateColors.blue} />
                             </View>
                             <Text style={styles.actionLabel}>Repeat This</Text>
-                            <Feather name="chevron-right" size={16} color={SgateColors.t4} />
+                            <MaterialCommunityIcons name="chevron-right" size={16} color={SgateColors.t4} />
                         </TouchableOpacity>
 
                         {menuEntry?.status === 'ACTIVE' && (

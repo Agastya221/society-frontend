@@ -89,10 +89,12 @@ export default function FlatsScreen() {
     }, [user?.societyId]);
 
     const filteredFlats = useMemo(() => {
+        const query = (search || '').toLowerCase();
+        if (!query) return flats;
         return flats.filter(f =>
-            f.number.includes(search) ||
-            f.ownerName.toLowerCase().includes(search.toLowerCase()) ||
-            f.block.toLowerCase().includes(search.toLowerCase())
+            (f.number || '').toLowerCase().includes(query) ||
+            (f.ownerName || '').toLowerCase().includes(query) ||
+            (f.block || '').toLowerCase().includes(query)
         );
     }, [flats, search]);
 
