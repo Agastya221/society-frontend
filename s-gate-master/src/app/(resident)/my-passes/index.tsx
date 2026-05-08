@@ -11,6 +11,7 @@ FlatList,
     View,
     StatusBar,
     Platform,
+    Image,
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -386,7 +387,11 @@ export default function PassesScreen() {
     const renderEmptyState = () => (
         <View style={styles.empty}>
             <View style={styles.iconCircle}>
-                <Feather name="shield" size={60} color={SgateColors.t4} />
+                <Image 
+                    source={require('../../../../assets/images/icons/s-gate-logo-without-bg.png')} 
+                    style={{ width: 64, height: 64, opacity: 0.6 }} 
+                    resizeMode="contain" 
+                />
             </View>
             <Text style={styles.emptyTitle}>
                 {activeTab === 'Pre-Approvals' ? 'No Pre-Approvals' : 'No Invites Yet'}
@@ -419,7 +424,7 @@ export default function PassesScreen() {
                     <TouchableOpacity style={styles.headerIconBtn} onPress={() => router.back()}>
                         <Feather name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitleMain}>Passes</Text>
+                    <Text style={styles.headerTitleMain}>My Passes</Text>
                     <TouchableOpacity 
                         style={styles.headerIconBtnCircle} 
                         onPress={() => setSheetVisible(true)}

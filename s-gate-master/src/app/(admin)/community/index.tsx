@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row', alignItems: 'center',
         backgroundColor: SgateColors.card,
-        paddingHorizontal: 16, paddingVertical: 12,
+        paddingHorizontal: 20, paddingVertical: 12,
         borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft,
     },
     backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
@@ -427,16 +427,16 @@ const styles = StyleSheet.create({
     createBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
 
     filterContainer: { backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-    filterContent: { paddingHorizontal: 16, paddingVertical: 8 },
+    filterContent: { paddingHorizontal: 20, paddingVertical: 8 },
 
     chip: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, marginRight: 8 },
-    chipActive: { backgroundColor: SgateColors.black },
+    chipActive: { backgroundColor: SgateColors.gold },
     chipInactive: { backgroundColor: SgateColors.surface },
     chipText: { fontSize: 13, fontFamily: SgateFonts.semibold },
-    chipTextActive: { color: SgateColors.card },
+    chipTextActive: { color: SgateColors.t1 },
     chipTextInactive: { color: SgateColors.t2 },
 
-    listContent: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32, backgroundColor: SgateColors.bg },
+    listContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 32, backgroundColor: SgateColors.bg },
 
     card: {
         backgroundColor: SgateColors.card,
@@ -497,8 +497,8 @@ const styles = StyleSheet.create({
     },
     chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
     submitBtn: {
-        backgroundColor: SgateColors.black, borderRadius: 16,
+        backgroundColor: SgateColors.gold, borderRadius: 16,
         paddingVertical: 17, alignItems: 'center',
     },
-    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 });

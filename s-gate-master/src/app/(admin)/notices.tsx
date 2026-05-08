@@ -134,34 +134,38 @@ export default function NoticesScreen() {
         return SgateColors.t4;
     };
 
-    if (loading) {
-        return <AppLoader />;
-    }
-
     return (
         <View style={styles.root}>
             {/* Header */}
-            <View style={[styles.headerBar, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerBarTitle}>Notices</Text>
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle} numberOfLines={1}>Notices</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>Society updates & alerts</Text>
+                    </View>
+                </View>
             </View>
 
-            {/* Spacer */}
-            <View style={styles.spacer} />
+            {/* Persistent spacer — content never touches header */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
-            <FlatList
+            {loading ? (
+                <AppLoader />
+            ) : (
+                <FlatList
                 data={notices}
                 keyExtractor={item => item.id}
                 contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
-                ListHeaderComponent={
-                    <TouchableOpacity style={styles.addBtn} onPress={() => { resetForm(); setModalVisible(true); }} activeOpacity={0.8}>
-                        <MaterialCommunityIcons name="plus" size={18} color="#FFFFFF" />
-                        <Text style={styles.addBtnText}>Create New Notice</Text>
-                    </TouchableOpacity>
-                }
+                    ListHeaderComponent={
+                        <TouchableOpacity style={styles.addBtn} onPress={() => { resetForm(); setModalVisible(true); }} activeOpacity={0.8}>
+                            <MaterialCommunityIcons name="plus" size={18} color={SgateColors.t1} />
+                            <Text style={styles.addBtnText}>Create New Notice</Text>
+                        </TouchableOpacity>
+                    }
                 ListEmptyComponent={
                     <View style={styles.emptyWrap}>
                         <MaterialCommunityIcons name="bell-off-outline" size={48} color={SgateColors.t4} />
@@ -211,6 +215,7 @@ export default function NoticesScreen() {
                     );
                 }}
             />
+            )}
 
             {/* ── Create Modal ────────────────────────────────────────────── */}
             <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet">
@@ -278,26 +283,27 @@ const styles = StyleSheet.create({
     centerWrap: { flex: 1, backgroundColor: SgateColors.bg, alignItems: 'center', justifyContent: 'center' },
 
     // Header
-    headerBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        backgroundColor: SgateColors.card,
+    headerWrapper: { 
+        backgroundColor: SgateColors.card, 
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 4,
-        zIndex: 1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
     },
-    headerBarTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-    spacer: { height: 6 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20 },
+    backButton: { marginRight: 12 },
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
 
     listContent: { padding: 20, flexGrow: 1 },
 
-    addBtn: { backgroundColor: SgateColors.black, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 },
-    addBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    addBtn: { backgroundColor: SgateColors.gold, borderRadius: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 },
+    addBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Card
     card: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 16, marginBottom: 10 },
@@ -331,13 +337,13 @@ const styles = StyleSheet.create({
 
     chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 },
     chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, borderWidth: 1.5, borderColor: SgateColors.border },
-    chipSelected: { backgroundColor: SgateColors.black, borderColor: SgateColors.black },
+    chipSelected: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
     chipText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-    chipTextSelected: { color: '#FFFFFF' },
+    chipTextSelected: { color: SgateColors.t1 },
 
     switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: SgateColors.surface, borderWidth: 1.5, borderColor: SgateColors.border, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 24 },
     switchLabel: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
 
-    submitBtn: { backgroundColor: SgateColors.black, borderRadius: 16, paddingVertical: 17, alignItems: 'center', justifyContent: 'center' },
-    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    submitBtn: { backgroundColor: SgateColors.gold, borderRadius: 16, paddingVertical: 17, alignItems: 'center', justifyContent: 'center' },
+    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 });

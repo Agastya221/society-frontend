@@ -11,6 +11,7 @@ FlatList,
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 
 import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
 import type { Entry } from '../../types/api';
@@ -62,6 +63,7 @@ export default function DeliveriesScreen() {
     const [activeTab, setActiveTab] = useState<Tab>('At Gate');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [sheetVisible, setSheetVisible] = useState(false);
 
     const [expected, setExpected] = useState<ExpectedDelivery[]>([]);
     const [atGate, setAtGate] = useState<Entry[]>([]);
@@ -313,10 +315,17 @@ export default function DeliveriesScreen() {
             <TouchableOpacity
                 style={[styles.fab, { bottom: 24 + insets.bottom }]}
                 activeOpacity={0.85}
-                onPress={() => router.push('/(resident)/expect-delivery' as any)}
+                onPress={() => setSheetVisible(true)}
             >
                 <Feather name="plus" size={24} color={SgateColors.black} />
             </TouchableOpacity>
+
+            <PreApproveSheet
+                visible={sheetVisible}
+                initialType="DELIVERY"
+                onClose={() => setSheetVisible(false)}
+                onSuccess={() => { setSheetVisible(false); fetchAll(); }}
+            />
         </View>
     );
 }

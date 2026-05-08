@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         backgroundColor: SgateColors.surface,
     },
-    filterChipActive: { backgroundColor: SgateColors.black },
+    filterChipActive: { backgroundColor: SgateColors.gold },
     filterChipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
     filterChipTextActive: { color: '#FFFFFF' },
 

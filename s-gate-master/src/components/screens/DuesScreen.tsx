@@ -229,7 +229,6 @@ export default function DuesScreen({ role }: DuesScreenProps) {
               <Feather name="arrow-left" size={22} color={SgateColors.t1} />
             </TouchableOpacity>
             <Text style={S.headerTitle}>{TITLE}</Text>
-            <View style={{ width: 32 }} />
           </View>
         </SafeAreaView>
       </View>
@@ -279,7 +278,7 @@ const S = StyleSheet.create({
   headerBg: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
   headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
-  headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, textAlign: 'center' },
+  headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
 
   listContent: { paddingBottom: 40 },
   listHeader: { paddingHorizontal: 20, paddingTop: 28, paddingBottom: 8 },

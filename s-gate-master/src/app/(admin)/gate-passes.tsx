@@ -350,11 +350,11 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 12,
         borderRadius: 14,
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    approveBtnText: { fontSize: 14, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    approveBtnText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Empty
     emptyWrap: { alignItems: 'center', paddingVertical: 60 },

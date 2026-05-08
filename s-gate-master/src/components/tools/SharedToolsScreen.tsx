@@ -40,7 +40,7 @@ function ToolCard({ tool, onPress }: { tool: ToolItem; onPress: () => void }) {
 export default function SharedToolsScreen({ role }: SharedToolsScreenProps) {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const [showPreApprove, setShowPreApprove] = useState(false);
+    const [preApproveConfig, setPreApproveConfig] = useState<{ visible: boolean; type?: 'GUEST' | 'CAB' | 'DELIVERY' | 'SERVICE' }>({ visible: false });
 
     const sections = getSectionsForRole(role);
 
@@ -50,7 +50,9 @@ export default function SharedToolsScreen({ role }: SharedToolsScreenProps) {
         if (tool.route.startsWith('MODAL:')) {
             const modalId = tool.route.split(':')[1];
             if (modalId === 'preapprove') {
-                setShowPreApprove(true);
+                setPreApproveConfig({ visible: true });
+            } else if (modalId === 'preapprove_delivery') {
+                setPreApproveConfig({ visible: true, type: 'DELIVERY' });
             }
             return;
         }
@@ -98,8 +100,9 @@ export default function SharedToolsScreen({ role }: SharedToolsScreenProps) {
 
             {/* ── Pre-Approve Modal ────────────────────────────────────── */}
             <PreApproveSheet
-                visible={showPreApprove}
-                onClose={() => setShowPreApprove(false)}
+                visible={preApproveConfig.visible}
+                initialType={preApproveConfig.type as any}
+                onClose={() => setPreApproveConfig({ visible: false })}
             />
         </View>
     );

@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
@@ -90,6 +90,7 @@ const MOCK_POLLS: Poll[] = [
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function AdminElectionsScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [polls, setPolls]             = useState<Poll[]>([]);
     const [loading, setLoading]         = useState(true);
     const [refreshing, setRefreshing]   = useState(false);
@@ -294,19 +295,11 @@ export default function AdminElectionsScreen() {
         );
     };
 
-    if (loading) {
-        return (
-            <SafeAreaView edges={['top']} style={styles.centerSafe}>
-                <AppLoader />
-            </SafeAreaView>
-        );
-    }
-
     return (
-        <SafeAreaView edges={['top']} style={styles.root}>
+        <View style={styles.root}>
             {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
                     <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Polls & Elections</Text>
@@ -315,7 +308,7 @@ export default function AdminElectionsScreen() {
                     style={styles.addBtn}
                     activeOpacity={0.8}
                 >
-                    <MaterialCommunityIcons name="plus" size={22} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="plus" size={18} color="#fff" />
                 </TouchableOpacity>
             </View>
 
@@ -335,22 +328,26 @@ export default function AdminElectionsScreen() {
                 ))}
             </View>
 
-            <FlatList
-                data={filtered}
-                keyExtractor={(item) => item.id}
-                renderItem={renderPoll}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <MaterialCommunityIcons name="poll" size={56} color={SgateColors.t4} />
-                        <Text style={styles.emptyTitle}>No polls yet</Text>
-                        <Text style={styles.emptySub}>Create the first one.</Text>
-                    </View>
-                }
-            />
+            {loading ? (
+                <AppLoader />
+            ) : (
+                <FlatList
+                    data={filtered}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderPoll}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    ListEmptyComponent={
+                        <View style={styles.emptyWrap}>
+                            <MaterialCommunityIcons name="poll" size={56} color={SgateColors.t4} />
+                            <Text style={styles.emptyTitle}>No polls yet</Text>
+                            <Text style={styles.emptySub}>Create the first one.</Text>
+                        </View>
+                    }
+                />
+            )}
 
             {/* Create poll modal */}
             <Modal
@@ -447,24 +444,22 @@ export default function AdminElectionsScreen() {
                     </ScrollView>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: SgateColors.bg },
-    centerSafe: { flex: 1, backgroundColor: SgateColors.bg, alignItems: 'center', justifyContent: 'center' },
 
     header: {
         backgroundColor: SgateColors.card,
         flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: 16, paddingVertical: 14,
-        borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft,
+        paddingHorizontal: 20,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 4, zIndex: 1,
     },
-    backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, flex: 1, marginLeft: 4 },
-    addBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, flex: 1, marginLeft: 12 },
+    addBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: SgateColors.gold, alignItems: 'center', justifyContent: 'center' },
 
     filterRow: {
         flexDirection: 'row',
@@ -473,9 +468,9 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface },
-    filterTabActive: { backgroundColor: SgateColors.black },
+    filterTabActive: { backgroundColor: SgateColors.gold },
     filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-    filterTextActive: { color: '#FFFFFF' },
+    filterTextActive: { color: SgateColors.t1 },
 
     listContent: { padding: 20, paddingBottom: 60, flexGrow: 1 },
 
@@ -568,12 +563,12 @@ const styles = StyleSheet.create({
         borderWidth: 2, borderColor: SgateColors.border,
         alignItems: 'center', justifyContent: 'center',
     },
-    checkboxChecked: { backgroundColor: SgateColors.black, borderColor: SgateColors.black },
+    checkboxChecked: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
     multipleToggleText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
 
     submitBtn: {
-        backgroundColor: SgateColors.black, borderRadius: 16,
+        backgroundColor: SgateColors.gold, borderRadius: 16,
         paddingVertical: 17, alignItems: 'center',
     },
-    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 });

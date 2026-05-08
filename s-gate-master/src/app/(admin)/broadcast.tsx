@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, Linking, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Linking, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -220,32 +220,38 @@ export default function BroadcastAndIntercomScreen() {
 
     return (
         <View style={styles.safe}>
-            {/* Header + Tabs (unified block) */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+            {/* Header */}
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + (Platform.OS === 'ios' ? 4 : 10) }]}>
                 <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                    <TouchableOpacity onPress={() => router.back()} style={styles.headerIconBtn} accessibilityLabel="Go back">
                         <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Communicate</Text>
+                    <Text style={styles.headerTitleMain}>Alerts</Text>
                 </View>
 
-                <View style={styles.tabsWrap}>
-                    <TouchableOpacity
-                        style={[styles.tab, activeTab === 'BROADCAST' && styles.tabActive]}
-                        onPress={() => { Haptics.selectionAsync(); setActiveTab('BROADCAST'); }}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={[styles.tabText, activeTab === 'BROADCAST' && styles.tabTextActive]}>Broadcast</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.tab, activeTab === 'INTERCOM' && styles.tabActive]}
-                        onPress={() => { Haptics.selectionAsync(); setActiveTab('INTERCOM'); }}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={[styles.tabText, activeTab === 'INTERCOM' && styles.tabTextActive]}>Intercom</Text>
-                    </TouchableOpacity>
+                {/* Segmented Control */}
+                <View style={styles.tabWrapper}>
+                    <View style={styles.segmentedContainer}>
+                        <TouchableOpacity
+                            style={[styles.segment, activeTab === 'BROADCAST' && styles.segmentActive]}
+                            onPress={() => { Haptics.selectionAsync(); setActiveTab('BROADCAST'); }}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.segmentText, activeTab === 'BROADCAST' && styles.segmentTextActive]}>Broadcast</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.segment, activeTab === 'INTERCOM' && styles.segmentActive]}
+                            onPress={() => { Haptics.selectionAsync(); setActiveTab('INTERCOM'); }}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.segmentText, activeTab === 'INTERCOM' && styles.segmentTextActive]}>Intercom</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
+
+            {/* Persistent spacer */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
             {activeTab === 'BROADCAST' ? renderBroadcastTab() : renderIntercomTab()}
         </View>
@@ -257,43 +263,61 @@ const styles = StyleSheet.create({
 
     // ── Header + Tabs (unified block) ────────────────────────────
     headerWrapper: {
-        backgroundColor: SgateColors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-        zIndex: 10,
+        backgroundColor: '#FFF',
     },
     headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingBottom: 14,
+        paddingBottom: 16,
     },
-    headerTitle: {
+    headerIconBtn: {
+        width: 32,
+        height: 32,
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+    },
+    headerTitleMain: {
+        flex: 1,
         fontSize: 20,
         fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
         marginLeft: 12,
-        flex: 1,
     },
 
     // ── Tabs ─────────────────────────────────────────────────────
-    tabsWrap: {
-        flexDirection: 'row',
+    tabWrapper: {
+        backgroundColor: '#FFF',
         paddingHorizontal: 20,
+        paddingBottom: 12,
     },
-    tab: {
+    segmentedContainer: {
+        flexDirection: 'row',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+        padding: 4,
+    },
+    segment: {
         flex: 1,
-        paddingVertical: 12,
+        paddingVertical: 10,
         alignItems: 'center',
-        borderBottomWidth: 3,
-        borderBottomColor: 'transparent',
+        borderRadius: 10,
     },
-    tabActive: { borderBottomColor: SgateColors.gold },
-    tabText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-    tabTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    segmentActive: {
+        backgroundColor: SgateColors.gold,
+    },
+    segmentText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t2,
+    },
+    segmentTextActive: {
+        color: SgateColors.t1,
+        fontFamily: SgateFonts.bold,
+    },
 
     // ── Broadcast Form ───────────────────────────────────────────
-    formWrap: { padding: 20, paddingBottom: 40 },
+    formWrap: { padding: 20, paddingTop: 12, paddingBottom: 40 },
 
     infoBox: {
         flexDirection: 'row',

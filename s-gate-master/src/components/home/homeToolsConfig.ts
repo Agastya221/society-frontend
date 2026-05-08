@@ -52,7 +52,7 @@ export const homeQuickActions: HomeQuickAction[] = [
         color: SgateColors.t2,
         bg: SgateColors.surface,
         roles: ['resident'],
-        route: '/expect-delivery',
+        route: 'MODAL:preapprove_delivery',
     },
     {
         id: 'myVehicles',

@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
 
     // Add button
     addBtn: {
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         borderRadius: 16,
         paddingVertical: 16,
         flexDirection: 'row',
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
         gap: 8,
         marginBottom: 20,
     },
-    addBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    addBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Card
     card: {
@@ -308,8 +308,8 @@ const styles = StyleSheet.create({
         flex: 1.2,
         paddingVertical: 14,
         borderRadius: 14,
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         alignItems: 'center',
     },
-    modalConfirmText: { fontSize: 14, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    modalConfirmText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 });

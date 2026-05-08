@@ -213,7 +213,7 @@ export default function AdminMyPassesScreen() {
                 <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
                     <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>My Pre-Approvals</Text>
+                <Text style={styles.headerTitle}>My Passes</Text>
                 <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
                     <MaterialCommunityIcons name="plus" size={18} color="#fff" />
                 </TouchableOpacity>
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: SgateColors.t1,
+        backgroundColor: SgateColors.gold,
         alignItems: 'center',
         justifyContent: 'center',
     },

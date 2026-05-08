@@ -402,14 +402,14 @@ const styles = StyleSheet.create({
 
     // Header
     header: { backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft, paddingBottom: 12 },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 },
     headerBackBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
     headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Tabs
-    tabRow: { paddingHorizontal: 16, gap: 8 },
+    tabRow: { paddingHorizontal: 20, gap: 8 },
     tab: { paddingHorizontal: 18, paddingVertical: 9, borderRadius: 20, backgroundColor: SgateColors.surface },
-    tabActive: { backgroundColor: SgateColors.black },
+    tabActive: { backgroundColor: SgateColors.gold },
     tabText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
     tabTextActive: { color: '#FFFFFF' },
 
@@ -468,11 +468,11 @@ const styles = StyleSheet.create({
     reasonBtnRow: { flexDirection: 'row', gap: 10 },
     reasonCancelBtn: { flex: 1, backgroundColor: SgateColors.surface, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
     reasonCancelText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
-    reasonSubmitBtn: { flex: 1, backgroundColor: SgateColors.black, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+    reasonSubmitBtn: { flex: 1, backgroundColor: SgateColors.gold, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
     reasonSubmitText: { fontSize: 14, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
 
     checkbox: { width: 22, height: 22, borderRadius: 6, borderWidth: 1.5, borderColor: SgateColors.border, alignItems: 'center', justifyContent: 'center' },
-    checkboxActive: { backgroundColor: SgateColors.black, borderColor: SgateColors.black },
+    checkboxActive: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
 
     viewerWrapper: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
     viewerClose: { position: 'absolute', top: 50, right: 20, zIndex: 10, padding: 10, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 20 },

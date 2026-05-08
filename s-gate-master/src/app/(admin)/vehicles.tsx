@@ -485,15 +485,15 @@ const styles = StyleSheet.create({
     
     tabRow: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10, backgroundColor: SgateColors.card },
     tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-    tabActive: { borderBottomColor: SgateColors.black },
-    tabText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-    tabTextActive: { color: SgateColors.black },
+    tabActive: { borderBottomColor: SgateColors.gold },
+    tabText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+    tabTextActive: { color: SgateColors.t1 },
 
     searchSection: { padding: 20 },
     searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderRadius: 12, paddingHorizontal: 14, height: 50, borderWidth: 1, borderColor: SgateColors.border, marginBottom: 12 },
     searchInput: { flex: 1, marginLeft: 10, fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    searchBtn: { backgroundColor: SgateColors.black, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-    searchBtnText: { color: '#fff', fontSize: 15, fontFamily: SgateFonts.bold },
+    searchBtn: { backgroundColor: SgateColors.gold, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    searchBtnText: { color: SgateColors.t1, fontSize: 15, fontFamily: SgateFonts.bold },
 
     listContent: { padding: 20, paddingBottom: 60, flexGrow: 1 },
 
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     emptyWrap: { alignItems: 'center', marginTop: 40 },
     emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 16, marginBottom: 8 },
     emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center', marginBottom: 16 },
-    issueUnknownBtn: { backgroundColor: SgateColors.black, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
+    issueUnknownBtn: { backgroundColor: SgateColors.gold, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
     issueUnknownText: { color: '#fff', fontSize: 14, fontFamily: SgateFonts.bold },
 
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
     inputArea: { backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border, borderRadius: 12, padding: 14, fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1, height: 80, textAlignVertical: 'top' },
     tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     tag: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border },
-    tagActive: { backgroundColor: SgateColors.black, borderColor: SgateColors.black },
+    tagActive: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
     tagText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
     tagTextActive: { color: '#fff' },
     rowFields: { flexDirection: 'row', gap: 16, alignItems: 'center' },

@@ -137,7 +137,7 @@ export default function RootLayout() {
       }
 
       if (role === 'ADMIN') {
-        if (!inAdminGroup) router.replace('/(admin)');
+        if (!inAdminGroup && !inResidentGroup) router.replace('/(admin)');
         return;
       }
 

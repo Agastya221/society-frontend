@@ -56,6 +56,7 @@ export interface PreApproveSheetProps {
     visible: boolean;
     onClose: () => void;
     onSuccess?: (result: { type: InviteType; id?: string }) => void;
+    initialType?: InviteType;
 }
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -1679,7 +1680,7 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
 }
 
 
-export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheetProps) {
+export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: PreApproveSheetProps) {
     const { user, role } = useAuthStore();
     
     // Nested sheet state
@@ -1795,7 +1796,9 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
     useEffect(() => {
         if (visible) {
             // 1. Instantly flush all UI state to default
-            setStep('select'); setTab('once'); setIsPrivate(false);
+            setStep(initialType ? 'form' : 'select'); 
+            setTab('once'); setIsPrivate(false);
+            setInviteType(initialType ?? 'GUEST');
             setDigits(['','','','']);
             setSurpriseDelivery(false); setCompany('');
             setSelectedGuestsToManage([]);
@@ -1804,10 +1807,10 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
             setSubmitting(false);
             setGeneratedPasses([]);
 
-            floatScale.value = 0;
-            selectOp.value    = 1;
+            floatScale.value = initialType ? 1 : 0;
+            selectOp.value    = initialType ? 0 : 1;
             guestTypeOp.value = 0; guestTypeX.value = 0;
-            formOp.value = 0; formX.value = 0;
+            formOp.value = initialType ? 1 : 0; formX.value = 0;
             guestListOp.value = 0; guestListX.value = 0;
             guestsOp.value = 0; guestsX.value = 0;
             partyThemeOp.value = 0; partyThemeX.value = 0;
@@ -1818,13 +1821,15 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
             // 2. Animate entrance
             isClosing.current = false;
             sheetY.value      = SH;
-            sheetH.value      = H_SELECT;
+            sheetH.value      = initialType ? H_FORM : H_SELECT;
             sheetY.value      = withSpring(0, SPRING_SMOOTH);
             backdropOp.value  = withTiming(1, { duration: 280 });
-            anims.forEach((a, i) => {
-                a.value = 0;
-                a.value = withDelay(i * 60, withSpring(1, SPRING_SNAPPY));
-            });
+            if (!initialType) {
+                anims.forEach((a, i) => {
+                    a.value = 0;
+                    a.value = withDelay(i * 60, withSpring(1, SPRING_SNAPPY));
+                });
+            }
 
             // Handle Android back button
             const onBackPress = () => {
@@ -1980,7 +1985,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
         formOp.value     = withTiming(0, { duration: 180 });
         floatScale.value = withTiming(0, { duration: 150 });
         // If we came from guest_type, go back there; else go to main select
-        if (inviteType === 'GUEST') {
+        if (inviteType === 'GUEST' && !initialType) {
             sheetH.value      = withSpring(H_GUEST_TYPE, SPRING_SMOOTH);
             setTimeout(() => {
                 setStep('guest_type');
@@ -1990,6 +1995,10 @@ export function PreApproveSheet({ visible, onClose, onSuccess }: PreApproveSheet
                 floatScale.value  = withDelay(60, withSpring(1, SPRING_SNAPPY));
             }, 140);
         } else {
+            if (initialType) {
+                handleClose();
+                return;
+            }
             sheetH.value = withSpring(H_SELECT, SPRING_SMOOTH);
             setTimeout(() => {
                 setStep('select');

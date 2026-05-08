@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -219,65 +219,65 @@ export default function AdminEmergenciesScreen() {
         );
     };
 
-    if (loading) {
-        return (
-            <View style={[styles.centerSafe, { paddingTop: insets.top }]}>
-                <AppLoader />
-            </View>
-        );
-    }
-
     return (
         <View style={styles.root}>
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Emergencies</Text>
-                {activeCount > 0 && (
-                    <View style={styles.liveBadge}>
-                        <View style={styles.liveDot} />
-                        <Text style={styles.liveText}>{activeCount} ACTIVE</Text>
-                    </View>
-                )}
-            </View>
-
-            {/* Spacer */}
-            <View style={styles.spacer} />
-
-            {/* Filter tabs */}
-            <View style={styles.filterRow}>
-                {FILTERS.map((f) => (
-                    <TouchableOpacity
-                        key={f.key}
-                        style={[styles.filterTab, filter === f.key && styles.filterTabActive]}
-                        onPress={() => setFilter(f.key)}
-                        activeOpacity={0.75}
-                    >
-                        <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>
-                            {f.label}
-                        </Text>
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
-                ))}
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle} numberOfLines={1}>Emergencies</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>Active SOS & resolved alerts</Text>
+                    </View>
+                    {activeCount > 0 && (
+                        <View style={styles.liveBadge}>
+                            <View style={styles.liveDot} />
+                            <Text style={styles.liveText}>{activeCount} ACTIVE</Text>
+                        </View>
+                    )}
+                </View>
+                {/* Filter tabs */}
+                <View style={styles.filterRow}>
+                    {FILTERS.map((f) => (
+                        <TouchableOpacity
+                            key={f.key}
+                            style={[styles.filterTab, filter === f.key && styles.filterTabActive]}
+                            onPress={() => setFilter(f.key)}
+                            activeOpacity={0.75}
+                        >
+                            <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>
+                                {f.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
 
-            <FlatList
-                data={filtered}
-                keyExtractor={(item) => item.id}
-                renderItem={renderItem}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <MaterialCommunityIcons name="shield-outline" size={56} color={SgateColors.t4} />
-                        <Text style={styles.emptyTitle}>No emergencies</Text>
-                        <Text style={styles.emptySub}>Society is safe.</Text>
-                    </View>
-                }
-            />
+            {/* Persistent spacer */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
+
+            {loading ? (
+                <AppLoader />
+            ) : (
+                <FlatList
+                    data={filtered}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    ListEmptyComponent={
+                        <View style={styles.emptyWrap}>
+                            <MaterialCommunityIcons name="shield-outline" size={56} color={SgateColors.t4} />
+                            <Text style={styles.emptyTitle}>No emergencies</Text>
+                            <Text style={styles.emptySub}>Society is safe.</Text>
+                        </View>
+                    }
+                />
+            )}
 
             {/* Resolve Modal */}
             <Modal
@@ -332,20 +332,23 @@ const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: SgateColors.bg },
     centerSafe: { flex: 1, backgroundColor: SgateColors.bg, alignItems: 'center', justifyContent: 'center' },
 
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        backgroundColor: SgateColors.card,
+    // Header
+    headerWrapper: { 
+        backgroundColor: SgateColors.card, 
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 4,
-        zIndex: 1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
     },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    backButton: { marginRight: 12 },
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
     liveBadge: {
         flexDirection: 'row', alignItems: 'center', gap: 4,
         backgroundColor: SgateColors.redBg,
@@ -358,18 +361,16 @@ const styles = StyleSheet.create({
 
     filterRow: {
         flexDirection: 'row',
-        backgroundColor: SgateColors.card,
         paddingHorizontal: 20,
-        paddingBottom: 12,
         gap: 8,
     },
     filterTab: {
         paddingHorizontal: 16, paddingVertical: 8,
         borderRadius: 20, backgroundColor: SgateColors.surface,
     },
-    filterTabActive: { backgroundColor: SgateColors.black },
+    filterTabActive: { backgroundColor: SgateColors.gold },
     filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-    filterTextActive: { color: '#FFFFFF' },
+    filterTextActive: { color: SgateColors.t1 },
 
     listContent: { padding: 20, paddingBottom: 60, flexGrow: 1 },
 

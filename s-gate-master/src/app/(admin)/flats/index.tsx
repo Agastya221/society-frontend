@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
 
     // Add button
     addBtn: {
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         borderRadius: 14,
         paddingVertical: 14,
         flexDirection: 'row',
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         gap: 8,
     },
-    addBtnText: { fontSize: 14, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    addBtnText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Section header
     sectionHeader: {
@@ -442,8 +442,8 @@ const styles = StyleSheet.create({
         flex: 1.2,
         paddingVertical: 14,
         borderRadius: 14,
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         alignItems: 'center',
     },
-    modalConfirmText: { fontSize: 14, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    modalConfirmText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 });

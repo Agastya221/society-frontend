@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
 
     // Add button
     addBtn: {
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         borderRadius: 16,
         paddingVertical: 16,
         flexDirection: 'row',
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
         gap: 8,
         marginBottom: 20,
     },
-    addBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    addBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Card
     card: {
@@ -465,9 +465,9 @@ const styles = StyleSheet.create({
 
     chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, borderWidth: 1.5, borderColor: SgateColors.border },
-    chipSelected: { backgroundColor: SgateColors.black, borderColor: SgateColors.black },
+    chipSelected: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
     chipText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-    chipTextSelected: { color: '#FFFFFF' },
+    chipTextSelected: { color: SgateColors.t1 },
 
     // Upload
     uploadBtn: {
@@ -486,6 +486,6 @@ const styles = StyleSheet.create({
     uploadBtnText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
 
     // Submit
-    submitBtn: { backgroundColor: SgateColors.black, borderRadius: 16, paddingVertical: 17, alignItems: 'center', justifyContent: 'center' },
-    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    submitBtn: { backgroundColor: SgateColors.gold, borderRadius: 16, paddingVertical: 17, alignItems: 'center', justifyContent: 'center' },
+    submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 });

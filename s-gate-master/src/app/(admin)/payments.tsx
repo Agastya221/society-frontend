@@ -211,7 +211,7 @@ export default function PaymentsScreen() {
             {/* ── Header ──────────────────────────────────────────────────── */}
             <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
                 <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Finance & Billing</Text>
                 <TouchableOpacity style={styles.navActionBtn} onPress={() => setShowGenerateModal(true)}>
@@ -457,9 +457,9 @@ const styles = StyleSheet.create({
         backgroundColor: SgateColors.card,
         borderWidth: 1, borderColor: SgateColors.borderSoft,
     },
-    filterChipActive: { backgroundColor: SgateColors.black, borderColor: SgateColors.black },
+    filterChipActive: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
     filterChipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
-    filterChipTextActive: { color: SgateColors.card },
+    filterChipTextActive: { color: SgateColors.t1 },
 
     sectionLabel: { ...SgateTypography.microLabel, color: SgateColors.t3, marginBottom: 10 },
 
@@ -511,12 +511,12 @@ const styles = StyleSheet.create({
     detailLabel: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
     detailValue: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
     reminderBtn: {
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         borderRadius: 16, paddingVertical: 15,
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
         marginBottom: 10,
     },
-    reminderBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.card },
+    reminderBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     dismissBtn: { paddingVertical: 12, alignItems: 'center' },
     dismissBtnText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
 
@@ -563,9 +563,9 @@ const styles = StyleSheet.create({
     dialogBtnGhostText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t2 },
     dialogBtnPrimary: {
         flex: 1,
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         paddingVertical: 16, borderRadius: 16,
         alignItems: 'center', justifyContent: 'center',
     },
-    dialogBtnPrimaryText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.card },
+    dialogBtnPrimaryText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 });

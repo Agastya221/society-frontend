@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
     },
     saveBtn: {
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         borderRadius: 14,
         paddingVertical: 14,
         alignItems: 'center',
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     saveBtnDisabled: { opacity: 0.5 },
-    saveBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    saveBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Toggle card
     toggleCard: {

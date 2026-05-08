@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
 
     // Buttons
     primaryBtn: {
-        backgroundColor: SgateColors.black,
+        backgroundColor: SgateColors.gold,
         borderRadius: 16,
         paddingVertical: 16,
         flexDirection: 'row',
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
         gap: 8,
         marginBottom: 10,
     },
-    primaryBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    primaryBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     secondaryBtn: {
         backgroundColor: SgateColors.surface,
         borderRadius: 16,

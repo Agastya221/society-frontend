@@ -65,7 +65,7 @@ export const allTools: ToolItem[] = [
     // ═══════════════════════════════════════════════════════════════════════
     { id: 'pre-approve',     icon: 'account-check-outline',    label: 'Pre-Approve',     bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['resident'], section: 'essentials', route: 'MODAL:preapprove' },
     { id: 'my-passes',       icon: 'smart-card-outline',       label: 'My Passes',       bg: SgateColors.blueBg,    color: SgateColors.blue,     roles: ['resident'], section: 'essentials', route: '/(resident)/my-passes' },
-    { id: 'expect-delivery', icon: 'package-variant',          label: 'Expect Delivery', bg: SgateColors.surface,   color: SgateColors.t2,       roles: ['resident'], section: 'essentials', route: '/expect-delivery' },
+    { id: 'expect-delivery', icon: 'package-variant',          label: 'Expect Delivery', bg: SgateColors.surface,   color: SgateColors.t2,       roles: ['resident'], section: 'essentials', route: 'MODAL:preapprove_delivery' },
     { id: 'sos-alert',       icon: 'alert-outline',            label: 'SOS Alert',       bg: SgateColors.redBg,     color: SgateColors.red,      roles: ['resident'], section: 'essentials', route: '/(resident)/emergency/create' },
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -93,9 +93,9 @@ export const allTools: ToolItem[] = [
     { id: 'admin-preapprove',  icon: 'account-check-outline',   label: 'Pre-Approve',     bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['admin'], section: 'admin-personal', route: 'MODAL:preapprove' },
     { id: 'admin-mypasses',   icon: 'smart-card-outline',      label: 'My Passes',       bg: SgateColors.blueBg,    color: SgateColors.blue,     roles: ['admin'], section: 'admin-personal', route: '/(admin)/my-passes' },
     { id: 'admin-mydues',     icon: 'receipt-text-outline',     label: 'My Dues',         bg: SgateColors.greenBg,   color: SgateColors.green,    roles: ['admin'], section: 'admin-personal', route: '/(admin)/my-dues' },
-    { id: 'admin-delivery',   icon: 'package-variant',          label: 'Expect Delivery', bg: SgateColors.surface,   color: SgateColors.t2,       roles: ['admin'], section: 'admin-personal', route: '/expect-delivery' },
-    { id: 'admin-myvehicles', icon: 'car-outline',              label: 'My Vehicles',     bg: SgateColors.blueBg,    color: SgateColors.blue,     roles: ['admin'], section: 'admin-personal', route: '/(admin)/my-home/vehicles' },
-    { id: 'admin-myamenities',icon: 'coffee-outline',           label: 'My Amenities',    bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['admin'], section: 'admin-personal', route: '/(admin)/my-home/amenities' },
+    { id: 'admin-delivery',   icon: 'package-variant',          label: 'Expect Delivery', bg: SgateColors.surface,   color: SgateColors.t2,       roles: ['admin'], section: 'admin-personal', route: 'MODAL:preapprove_delivery' },
+    { id: 'admin-myvehicles', icon: 'car-outline',              label: 'My Vehicles',     bg: SgateColors.blueBg,    color: SgateColors.blue,     roles: ['admin'], section: 'admin-personal', route: '/(resident)/vehicles' },
+    { id: 'admin-myamenities',icon: 'coffee-outline',           label: 'My Amenities',    bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['admin'], section: 'admin-personal', route: '/(resident)/amenities' },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

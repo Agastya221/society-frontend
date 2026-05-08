@@ -118,6 +118,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
 
     // ── Local state ──────────────────────────────────────────────────────────
     const [showPreApprove, setShowPreApprove] = useState(false);
+    const [preApproveType, setPreApproveType] = useState<any>(undefined);
     const [refreshing, setRefreshing]         = useState(false);
     const [actioningId, setActioningId]       = useState<string | null>(null);
     const [exitDir, setExitDir]               = useState<Record<string, 'left' | 'right'>>({});
@@ -226,7 +227,12 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     const quickActions = getQuickActionsForRole(role);
 
     const handleQuickAction = useCallback((route: string) => {
-        if (route === 'MODAL:preapprove') {
+        if (route.startsWith('MODAL:preapprove')) {
+            if (route === 'MODAL:preapprove_delivery') {
+                setPreApproveType('DELIVERY');
+            } else {
+                setPreApproveType(undefined);
+            }
             setShowPreApprove(true);
             return;
         }
@@ -417,6 +423,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
 
             <PreApproveSheet
                 visible={showPreApprove}
+                initialType={preApproveType}
                 onClose={() => setShowPreApprove(false)}
             />
         </View>
