@@ -214,8 +214,8 @@ export default function AdminMyPassesScreen() {
                     <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>My Passes</Text>
-                <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
-                    <MaterialCommunityIcons name="plus" size={18} color="#fff" />
+                <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)} activeOpacity={0.8}>
+                    <MaterialCommunityIcons name="plus" size={20} color={SgateColors.t1} />
                 </TouchableOpacity>
             </View>
 

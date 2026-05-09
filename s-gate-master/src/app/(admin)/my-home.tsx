@@ -43,7 +43,7 @@ export default function MyHomeScreen() {
         if (id === 'pre-approve') { setShowPreApprove(true); return; }
         if (id === 'my-passes')  { router.push('/(admin)/my-passes'); return; }
         if (id === 'dues')       { router.push('/(admin)/my-dues'); return; }
-        if (id === 'sos')        { /* future */ return; }
+        if (id === 'sos')        { router.push('/(admin)/sos-create'); return; }
     };
 
     return (

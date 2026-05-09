@@ -73,6 +73,7 @@ export default function AdminLayout() {
                 <Tabs.Screen name="my-dues" options={{ href: null }} />
                 <Tabs.Screen name="my-passes" options={{ href: null }} />
                 <Tabs.Screen name="vehicles" options={{ href: null }} />
+                <Tabs.Screen name="sos-create" options={{ href: null }} />
             </Tabs>
         </View>
     );

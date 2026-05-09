@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -23,6 +23,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { ApprovalCard } from '@/components/visitors/ApprovalCard';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 import { AppAlert } from '@/components/ui/AppAlert';
+import { FloatingSOSButton } from '@/components/ui/FloatingSOSButton';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
 import api from '@/services/api';
@@ -420,6 +421,9 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                     )}
                 </Animated.View>
             </ScrollView>
+
+            {/* ── Floating SOS FAB (Shared for both roles) ──────────────── */}
+            <FloatingSOSButton role={role} bottomOffset={70} />
 
             <PreApproveSheet
                 visible={showPreApprove}

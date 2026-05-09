@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -17,6 +17,8 @@ import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { AppAlert } from '@/components/ui/AppAlert';
+import { FloatingSOSButton } from '@/components/ui/FloatingSOSButton';
 import api from '@/services/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -37,20 +39,24 @@ interface Emergency {
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const TYPE_META: Record<string, { icon: React.ComponentProps<typeof MaterialCommunityIcons>['name']; bg: string; color: string; label: string }> = {
-    MEDICAL:       { icon: 'heart',        bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Medical' },
-    FIRE:          { icon: 'alert-octagon',bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Fire' },
-    SECURITY:      { icon: 'shield-off',   bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Security' },
-    LIFT_STUCK:    { icon: 'layers',       bg: SgateColors.blueBg,   color: SgateColors.blue,     label: 'Lift Stuck' },
-    ANIMAL_THREAT: { icon: 'alert-circle', bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Animal Threat' },
-    OTHER:         { icon: 'alert-triangle',bg: SgateColors.surface, color: SgateColors.t2,       label: 'Other' },
+const TYPE_META: Record<string, { icon: React.ComponentProps<typeof MaterialIcons>['name']; bg: string; color: string; label: string }> = {
+    MEDICAL:       { icon: 'medical-services',      bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Medical' },
+    FIRE:          { icon: 'local-fire-department', bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Fire' },
+    SECURITY:      { icon: 'security',              bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Security' },
+    LIFT_STUCK:    { icon: 'elevator',              bg: SgateColors.blueBg,   color: SgateColors.blue,     label: 'Lift Stuck' },
+    ANIMAL_THREAT: { icon: 'pets',                  bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Animal Threat' },
+    THEFT:         { icon: 'lock-open',             bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Theft' },
+    VIOLENCE:      { icon: 'report-problem',        bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Violence' },
+    ACCIDENT:      { icon: 'car-crash',             bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Accident' },
+    OTHER:         { icon: 'more-horiz',            bg: SgateColors.surface,  color: SgateColors.t2,       label: 'Other' },
 };
+
 
 const STATUS_CONFIG: Record<EmergencyStatus, { bg: string; color: string; label: string }> = {
     TRIGGERED:    { bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Active' },
     ACTIVE:       { bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Active' },
     ACKNOWLEDGED: { bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Acknowledged' },
-    RESOLVED:     { bg: SgateColors.greenBg,  color: SgateColors.green,    label: 'Resolved' },
+    RESOLVED:     { bg: SgateColors.greenBg,  color: '#065f46',    label: 'Resolved' },
     FALSE_ALARM:  { bg: SgateColors.surface,  color: SgateColors.t3,       label: 'False Alarm' },
 };
 
@@ -80,11 +86,19 @@ export default function AdminEmergenciesScreen() {
     const [resolveNote, setResolveNote] = useState('');
     const [resolving, setResolving]     = useState(false);
 
+
     const fetchEmergencies = async (silent = false) => {
         try {
             const res = await api.get('/community/emergencies');
-            const data = res.data?.data ?? res.data?.emergencies ?? [];
-            setEmergencies(Array.isArray(data) ? data : []);
+            let emergenciesArray: Emergency[] = [];
+            if (Array.isArray(res.data?.data?.emergencies)) {
+                emergenciesArray = res.data.data.emergencies;
+            } else if (Array.isArray(res.data?.data)) {
+                emergenciesArray = res.data.data;
+            } else if (Array.isArray(res.data?.emergencies)) {
+                emergenciesArray = res.data.emergencies;
+            }
+            setEmergencies(emergenciesArray);
         } catch (err) {
             if (!silent) console.error('Failed to fetch emergencies:', err);
         } finally {
@@ -95,6 +109,7 @@ export default function AdminEmergenciesScreen() {
 
     useFocusEffect(useCallback(() => { fetchEmergencies(); }, []));
     const onRefresh = () => { setRefreshing(true); fetchEmergencies(); };
+
 
     const filtered = emergencies.filter((e) => {
         if (filter === 'ALL') return true;
@@ -153,7 +168,7 @@ export default function AdminEmergenciesScreen() {
                     {/* Top row */}
                     <View style={styles.cardTop}>
                         <View style={[styles.iconWrap, { backgroundColor: meta.bg }]}>
-                            <MaterialCommunityIcons name={meta.icon} size={20} color={meta.color} />
+                            <MaterialIcons name={meta.icon} size={20} color={meta.color} />
                         </View>
                         <View style={styles.cardInfo}>
                             <View style={styles.cardTitleRow}>
@@ -178,7 +193,7 @@ export default function AdminEmergenciesScreen() {
                     {/* Location */}
                     {!!item.location && (
                         <View style={styles.locationRow}>
-                            <MaterialCommunityIcons name="map-marker-outline" size={12} color={SgateColors.t3} />
+                            <MaterialIcons name="location-on" size={12} color={SgateColors.t3} />
                             <Text style={styles.locationText}>{item.location}</Text>
                         </View>
                     )}
@@ -200,7 +215,7 @@ export default function AdminEmergenciesScreen() {
                                     onPress={() => handleAcknowledge(item.id)}
                                     activeOpacity={0.75}
                                 >
-                                    <MaterialCommunityIcons name="eye-outline" size={14} color={SgateColors.goldDeep} />
+                                    <MaterialIcons name="visibility" size={14} color={SgateColors.goldDeep} />
                                     <Text style={styles.ackBtnText}>Acknowledge</Text>
                                 </TouchableOpacity>
                             )}
@@ -209,7 +224,7 @@ export default function AdminEmergenciesScreen() {
                                 onPress={() => { setResolveTarget(item); setResolveNote(''); }}
                                 activeOpacity={0.75}
                             >
-                                <MaterialCommunityIcons name="check" size={14} color={SgateColors.green} />
+                                <MaterialIcons name="check" size={14} color="#065f46" />
                                 <Text style={styles.resolveBtnText}>Mark Resolved</Text>
                             </TouchableOpacity>
                         </View>
@@ -225,11 +240,11 @@ export default function AdminEmergenciesScreen() {
             <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
                 <View style={styles.headerTop}>
                     <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                        <MaterialIcons name="arrow-back" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle} numberOfLines={1}>Emergencies</Text>
-                        <Text style={styles.headerSub} numberOfLines={1}>Active SOS & resolved alerts</Text>
+                        <Text style={styles.headerTitle} numberOfLines={1}>Emergency Alerts</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>SOS alerts & incident management</Text>
                     </View>
                     {activeCount > 0 && (
                         <View style={styles.liveBadge}>
@@ -271,7 +286,7 @@ export default function AdminEmergenciesScreen() {
                     onRefresh={onRefresh}
                     ListEmptyComponent={
                         <View style={styles.emptyWrap}>
-                            <MaterialCommunityIcons name="shield-outline" size={56} color={SgateColors.t4} />
+                            <MaterialIcons name="shield" size={56} color={SgateColors.t4} />
                             <Text style={styles.emptyTitle}>No emergencies</Text>
                             <Text style={styles.emptySub}>Society is safe.</Text>
                         </View>
@@ -323,6 +338,9 @@ export default function AdminEmergenciesScreen() {
                     </View>
                 </View>
             </Modal>
+
+            {/* ── Floating SOS FAB ─────────────────────────────────────────── */}
+            <FloatingSOSButton role="admin" bottomOffset={20} />
         </View>
     );
 }
@@ -407,7 +425,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10, paddingVertical: 6,
         marginBottom: 8,
     },
-    resolveNoteLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.green, marginBottom: 2 },
+    resolveNoteLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: '#065f46', marginBottom: 2 },
     resolveNoteText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t2 },
 
     actionRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
@@ -422,7 +440,7 @@ const styles = StyleSheet.create({
         gap: 5, paddingVertical: 11,
         backgroundColor: SgateColors.greenBg, borderRadius: 12,
     },
-    resolveBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.green },
+    resolveBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: '#065f46' },
 
     emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.7 },
     emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 12, marginBottom: 4 },
@@ -451,7 +469,7 @@ const styles = StyleSheet.create({
     modalCancelText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
     modalConfirmBtn: {
         flex: 1.2, paddingVertical: 14, borderRadius: 14,
-        backgroundColor: SgateColors.green, alignItems: 'center',
+        backgroundColor: '#065f46', alignItems: 'center',
     },
     modalConfirmText: { fontSize: 14, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
 });
