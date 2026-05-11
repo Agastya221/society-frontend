@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -15,30 +15,66 @@ import {
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
-import { SourceBadge } from '../../components/SourceBadge';
-import { StatusBadge } from '../../components/ui/StatusBadge';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { approveGatePass, GatePass, getAllGatePasses, rejectGatePass } from '../../services/gatePass';
 
-const TYPE_META: Record<string, { bg: string; color: string; label: string }> = {
-    guest:        { bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'GUEST' },
-    worker:       { bg: SgateColors.blueBg,   color: SgateColors.blue,    label: 'WORKER' },
-    material:     { bg: '#F3ECFF',            color: '#7C3AED',           label: 'MATERIAL' },
-    material_in:  { bg: '#F3ECFF',            color: '#7C3AED',           label: 'MATERIAL IN' },
-    material_out: { bg: '#FFF4E6',            color: '#D97706',           label: 'MATERIAL OUT' },
+// ─── Config ───────────────────────────────────────────────────────────────────
+type MIcon = React.ComponentProps<typeof MaterialIcons>['name'];
+
+const TYPE_META: Record<string, { icon: MIcon; bg: string; color: string; label: string }> = {
+    guest:        { icon: 'person-outline',       bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Guest' },
+    worker:       { icon: 'engineering',          bg: SgateColors.blueBg,   color: SgateColors.blue,     label: 'Worker' },
+    material:     { icon: 'inventory-2',          bg: '#F3ECFF',            color: '#7C3AED',            label: 'Material' },
+    material_in:  { icon: 'move-to-inbox',        bg: SgateColors.greenBg,  color: SgateColors.green,    label: 'Material In' },
+    material_out: { icon: 'outbox',               bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Material Out' },
+    move_in:      { icon: 'login',                bg: SgateColors.greenBg,  color: SgateColors.green,    label: 'Move In' },
+    move_out:     { icon: 'logout',               bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Move Out' },
+    maintenance:  { icon: 'build',                bg: SgateColors.blueBg,   color: SgateColors.blue,     label: 'Maintenance' },
+    vehicle:      { icon: 'directions-car',       bg: SgateColors.blueBg,   color: SgateColors.blue,     label: 'Vehicle' },
 };
 
 function getTypeMeta(type: string) {
-    return TYPE_META[type.toLowerCase()] ?? { bg: SgateColors.blueBg, color: SgateColors.blue, label: type.replace('_', ' ').toUpperCase() };
+    return TYPE_META[type.toLowerCase()] ?? { icon: 'badge' as MIcon, bg: SgateColors.surface, color: SgateColors.t2, label: type.replace(/_/g, ' ') };
 }
 
+const STATUS_CONFIG: Record<string, { bg: string; color: string; label: string }> = {
+    PENDING:  { bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Pending' },
+    APPROVED: { bg: SgateColors.greenBg,  color: '#065f46',            label: 'Approved' },
+    REJECTED: { bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Rejected' },
+    ACTIVE:   { bg: SgateColors.blueBg,   color: SgateColors.blue,     label: 'Active' },
+    USED:     { bg: SgateColors.surface,  color: SgateColors.t3,       label: 'Used' },
+    EXPIRED:  { bg: SgateColors.surface,  color: SgateColors.t4,       label: 'Expired' },
+};
+
+function getStatusConfig(status: string) {
+    return STATUS_CONFIG[status] ?? { bg: SgateColors.surface, color: SgateColors.t3, label: status };
+}
+
+const FILTERS = [
+    { key: 'ALL',      label: 'All' },
+    { key: 'PENDING',  label: 'Pending' },
+    { key: 'APPROVED', label: 'Approved' },
+    { key: 'EXPIRED',  label: 'Expired' },
+];
+
+function timeAgo(iso: string): string {
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (diff < 0) return 'Upcoming';
+    if (diff < 60) return `${diff}s ago`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+}
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 export default function GatePassesScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const [passes, setPasses] = useState<GatePass[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [passes, setPasses]         = useState<GatePass[]>([]);
+    const [isLoading, setIsLoading]   = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [rejectId, setRejectId] = useState<string | null>(null);
+    const [filter, setFilter]         = useState('ALL');
+    const [rejectId, setRejectId]     = useState<string | null>(null);
     const [rejectReason, setRejectReason] = useState('');
 
     const loadPasses = useCallback(async () => {
@@ -47,181 +83,217 @@ export default function GatePassesScreen() {
             setPasses(data);
         } catch (error) {
             console.error('Failed to load gate passes:', error);
-            Alert.alert('Error', 'Failed to load gate passes');
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);
         }
     }, []);
 
-    useFocusEffect(
-        useCallback(() => {
-            loadPasses();
-        }, [loadPasses])
-    );
+    useFocusEffect(useCallback(() => { loadPasses(); }, [loadPasses]));
 
-    const onRefresh = () => {
-        setIsRefreshing(true);
-        loadPasses();
-    };
+    const onRefresh = () => { setIsRefreshing(true); loadPasses(); };
 
-    const handleStatusUpdate = async (id: string, status: 'Approved' | 'Rejected') => {
+    const filtered = passes.filter((p) => {
+        if (filter === 'ALL') return true;
+        return p.status === filter;
+    });
+
+    const pendingCount = passes.filter((p) => p.status === 'PENDING').length;
+
+    const handleApprove = async (id: string) => {
         try {
-            if (status === 'Approved') {
-                await approveGatePass(id);
-                Alert.alert('Success', 'Gate pass approved successfully');
-            } else {
-                if (!rejectReason.trim()) {
-                    Alert.alert('Error', 'Please provide a reason for rejection');
-                    return;
-                }
-                await rejectGatePass(id, rejectReason);
-                Alert.alert('Success', 'Gate pass rejected');
-            }
-            
-            // Refresh list
+            await approveGatePass(id);
+            Alert.alert('Success', 'Gate pass approved');
             loadPasses();
-
-            if (status === 'Rejected') {
-                setRejectId(null);
-                setRejectReason('');
-            }
         } catch (error: any) {
-            Alert.alert('Error', error.message || `Failed to ${status.toLowerCase()} gate pass`);
+            Alert.alert('Error', error.message || 'Failed to approve');
         }
     };
 
-    if (isLoading && !isRefreshing) {
+    const handleRejectConfirm = async () => {
+        if (!rejectId || !rejectReason.trim()) return;
+        try {
+            await rejectGatePass(rejectId, rejectReason);
+            Alert.alert('Success', 'Gate pass rejected');
+            setRejectId(null);
+            setRejectReason('');
+            loadPasses();
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to reject');
+        }
+    };
+
+    const renderItem = ({ item, index }: { item: GatePass; index: number }) => {
+        const meta   = getTypeMeta(item.type);
+        const status = getStatusConfig(item.status);
+        const isPending = item.status === 'PENDING';
+
         return (
-            <View style={[styles.centerSafe, { paddingTop: insets.top }]}>
-                <AppLoader />
-            </View>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 12) * 50).springify()}>
+                <View style={[styles.card, isPending && styles.cardPending]}>
+                    {/* Top row */}
+                    <View style={styles.cardTop}>
+                        <View style={[styles.iconWrap, { backgroundColor: meta.bg }]}>
+                            <MaterialIcons name={meta.icon} size={20} color={meta.color} />
+                        </View>
+                        <View style={styles.cardInfo}>
+                            <View style={styles.cardTitleRow}>
+                                <Text style={styles.typeLabel}>{meta.label}</Text>
+                                <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                                    <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+                                </View>
+                            </View>
+                            {/* Title */}
+                            {!!item.title && (
+                                <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+                            )}
+                            {/* Requester */}
+                            <Text style={styles.senderText} numberOfLines={1}>
+                                {item.requestedBy?.name ?? 'Unknown'}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Meta row */}
+                    <View style={styles.metaRow}>
+                        {item.flat && (
+                            <>
+                                <View style={styles.metaChip}>
+                                    <MaterialIcons name="home" size={12} color={SgateColors.t3} />
+                                    <Text style={styles.metaChipText}>
+                                        {item.flat.block?.name ? `${item.flat.block.name} ` : ''}{item.flat.flatNumber}
+                                    </Text>
+                                </View>
+                            </>
+                        )}
+                        <View style={styles.metaChip}>
+                            <MaterialIcons name="schedule" size={12} color={SgateColors.t3} />
+                            <Text style={styles.metaChipText}>
+                                {new Date(item.validFrom).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </Text>
+                        </View>
+                        <View style={styles.metaChip}>
+                            <MaterialIcons name="access-time" size={12} color={SgateColors.t4} />
+                            <Text style={[styles.metaChipText, { color: SgateColors.t4 }]}>{timeAgo(item.createdAt)}</Text>
+                        </View>
+                    </View>
+
+                    {/* Description */}
+                    {!!item.description && (
+                        <View style={styles.descBox}>
+                            <Text style={styles.descText} numberOfLines={2}>{item.description}</Text>
+                        </View>
+                    )}
+
+                    {/* Rejection note */}
+                    {item.status === 'REJECTED' && (
+                        <View style={styles.rejectedBox}>
+                            <Text style={styles.rejectedLabel}>Rejected</Text>
+                            <Text style={styles.rejectedText}>This pass has been rejected.</Text>
+                        </View>
+                    )}
+
+                    {/* Action buttons (admin only, pending) */}
+                    {isPending && (
+                        <View style={styles.actionRow}>
+                            <TouchableOpacity
+                                style={styles.rejectBtn}
+                                onPress={() => setRejectId(item.id)}
+                                activeOpacity={0.75}
+                            >
+                                <MaterialIcons name="close" size={14} color={SgateColors.red} />
+                                <Text style={styles.rejectBtnText}>Reject</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.approveBtn}
+                                onPress={() => handleApprove(item.id)}
+                                activeOpacity={0.75}
+                            >
+                                <MaterialIcons name="check" size={14} color={SgateColors.t1} />
+                                <Text style={styles.approveBtnText}>Approve</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </View>
+            </Animated.View>
         );
-    }
+    };
 
     return (
         <View style={styles.root}>
             {/* ── Header ─────────────────────────────────────────────────── */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Gate Passes</Text>
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
+                        <MaterialIcons name="arrow-back" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle} numberOfLines={1}>Gate Passes</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>Pass requests & approvals</Text>
+                    </View>
+                    {pendingCount > 0 && (
+                        <View style={styles.liveBadge}>
+                            <View style={styles.liveDot} />
+                            <Text style={styles.liveText}>{pendingCount} PENDING</Text>
+                        </View>
+                    )}
+                </View>
+
+                {/* Filter tabs */}
+                <View style={styles.filterRow}>
+                    {FILTERS.map((f) => (
+                        <TouchableOpacity
+                            key={f.key}
+                            style={[styles.filterTab, filter === f.key && styles.filterTabActive]}
+                            onPress={() => setFilter(f.key)}
+                            activeOpacity={0.75}
+                        >
+                            <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>
+                                {f.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
 
-            {/* ── Spacer ─────────────────────────────────────────────────── */}
-            <View style={styles.spacer} />
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
-            <FlatList
-                data={passes}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isRefreshing}
-                        onRefresh={onRefresh}
-                        tintColor={SgateColors.gold}
-                        colors={[SgateColors.gold]}
-                    />
-                }
-                ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <MaterialCommunityIcons name="inbox-outline" size={48} color={SgateColors.t4} />
-                        <Text style={styles.emptyTitle}>No gate passes found</Text>
-                        <Text style={styles.emptySub}>Gate pass requests will appear here.</Text>
-                    </View>
-                }
-                renderItem={({ item, index }) => {
-                    const meta = getTypeMeta(item.type);
-                    return (
-                        <Animated.View entering={FadeInDown.delay(Math.min(index, 12) * 50).springify()}>
-                            <View style={styles.card}>
-                                {/* Top row: badges */}
-                                <View style={styles.cardBadgeRow}>
-                                    <View style={styles.badgeGroup}>
-                                        <View style={[styles.typeBadge, { backgroundColor: meta.bg }]}>
-                                            <Text style={[styles.typeBadgeText, { color: meta.color }]}>{meta.label}</Text>
-                                        </View>
-                                        <SourceBadge source={item.societyId ? "RESIDENT" : "ADMIN"} />
-                                    </View>
-                                    <StatusBadge status={item.status} />
-                                </View>
-
-                                {/* Content */}
-                                <View style={styles.cardContent}>
-                                    {item.title ? (
-                                        <Text style={styles.cardTitle}>{item.title}</Text>
-                                    ) : null}
-
-                                    {item.requestedBy && (
-                                        <Text style={[styles.cardName, !item.title && styles.cardNameLarge]}>
-                                            {item.requestedBy.name}
-                                        </Text>
-                                    )}
-
-                                    <View style={styles.cardMetaRow}>
-                                        {item.flat ? (
-                                            <>
-                                                <MaterialCommunityIcons name="home-outline" size={14} color={SgateColors.t3} />
-                                                <Text style={styles.cardMetaText}>
-                                                    {item.flat.block?.name || ''} {item.flat.flatNumber}
-                                                </Text>
-                                                <Text style={styles.cardMetaDot}>•</Text>
-                                            </>
-                                        ) : null}
-                                        <MaterialCommunityIcons name="clock-outline" size={14} color={SgateColors.t3} />
-                                        <Text style={styles.cardMetaText}>
-                                            {new Date(item.validFrom).toLocaleDateString()}
-                                        </Text>
-                                    </View>
-
-                                    {item.description ? (
-                                        <View style={styles.descBox}>
-                                            <Text style={styles.descText}>{item.description}</Text>
-                                        </View>
-                                    ) : null}
-                                </View>
-
-                                {/* Rejection Reason Display */}
-                                {item.status === 'REJECTED' && (
-                                    <View style={styles.rejectedBox}>
-                                        <Text style={styles.rejectedLabel}>STATUS</Text>
-                                        <Text style={styles.rejectedText}>Pass has been rejected.</Text>
-                                    </View>
-                                )}
-
-                                {/* Action buttons */}
-                                {item.status === 'PENDING' && (
-                                    <View style={styles.actionRow}>
-                                        <TouchableOpacity
-                                            style={styles.rejectBtn}
-                                            onPress={() => setRejectId(item.id)}
-                                            activeOpacity={0.75}
-                                        >
-                                            <Text style={styles.rejectBtnText}>Reject</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={styles.approveBtn}
-                                            onPress={() => handleStatusUpdate(item.id, 'Approved')}
-                                            activeOpacity={0.75}
-                                        >
-                                            <Text style={styles.approveBtnText}>Approve</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                            </View>
-                        </Animated.View>
-                    );
-                }}
-            />
+            {isLoading && !isRefreshing ? (
+                <AppLoader />
+            ) : (
+                <FlatList
+                    data={filtered}
+                    keyExtractor={item => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isRefreshing}
+                            onRefresh={onRefresh}
+                            tintColor={SgateColors.gold}
+                            colors={[SgateColors.gold]}
+                        />
+                    }
+                    ListEmptyComponent={
+                        <View style={styles.emptyWrap}>
+                            <MaterialIcons name="badge" size={56} color={SgateColors.t4} />
+                            <Text style={styles.emptyTitle}>No gate passes</Text>
+                            <Text style={styles.emptySub}>Gate pass requests will appear here.</Text>
+                        </View>
+                    }
+                />
+            )}
 
             {/* ── Rejection Modal ─────────────────────────────────────────── */}
             <Modal visible={!!rejectId} transparent animationType="fade" onRequestClose={() => setRejectId(null)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>Reject Request</Text>
-                        <Text style={styles.modalSub}>Please provide a reason for this rejection.</Text>
+                        <View style={styles.modalIconWrap}>
+                            <MaterialIcons name="block" size={28} color={SgateColors.red} />
+                        </View>
+                        <Text style={styles.modalTitle}>Reject Pass</Text>
+                        <Text style={styles.modalSub}>Provide a reason for rejecting this gate pass request.</Text>
 
                         <TextInput
                             style={styles.noteInput}
@@ -237,17 +309,19 @@ export default function GatePassesScreen() {
                             <TouchableOpacity
                                 onPress={() => { setRejectId(null); setRejectReason(''); }}
                                 style={styles.modalCancelBtn}
+                                activeOpacity={0.75}
                             >
                                 <Text style={styles.modalCancelText}>Cancel</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                onPress={() => rejectId && handleStatusUpdate(rejectId, 'Rejected')}
+                                onPress={handleRejectConfirm}
                                 disabled={!rejectReason.trim()}
                                 style={[
                                     styles.modalConfirmBtn,
                                     !rejectReason.trim() && styles.modalConfirmBtnDisabled,
                                 ]}
+                                activeOpacity={0.75}
                             >
                                 <Text style={[
                                     styles.modalConfirmText,
@@ -265,69 +339,84 @@ export default function GatePassesScreen() {
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: SgateColors.bg },
-    centerSafe: { flex: 1, backgroundColor: SgateColors.bg, alignItems: 'center', justifyContent: 'center' },
 
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
+    // Header (matches emergencies screen)
+    headerWrapper: {
         backgroundColor: SgateColors.card,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 4,
-        zIndex: 1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
     },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-    spacer: { height: 6 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    backButton: { marginRight: 12 },
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+    liveBadge: {
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        backgroundColor: SgateColors.goldPale,
+        paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20,
+    },
+    liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: SgateColors.goldDeep },
+    liveText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep, letterSpacing: 0.5 },
+
+    filterRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 8 },
+    filterTab: {
+        paddingHorizontal: 16, paddingVertical: 8,
+        borderRadius: 20, backgroundColor: SgateColors.surface,
+    },
+    filterTabActive: { backgroundColor: SgateColors.gold },
+    filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    filterTextActive: { color: SgateColors.t1 },
 
     listContent: { padding: 20, paddingBottom: 100, flexGrow: 1 },
 
-    // Card
+    // Cards
     card: {
         backgroundColor: SgateColors.card,
         borderRadius: 20,
         borderWidth: 1,
         borderColor: SgateColors.borderSoft,
         padding: 16,
-        marginBottom: 12,
+        marginBottom: 10,
     },
+    cardPending: { borderColor: SgateColors.goldDeep + '50', borderWidth: 1.5 },
 
-    cardBadgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
-    badgeGroup: { flexDirection: 'row', gap: 6 },
-    typeBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-    typeBadgeText: { fontSize: 10, fontFamily: SgateFonts.bold, letterSpacing: 0.5 },
+    cardTop: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+    iconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    cardInfo: { flex: 1 },
+    cardTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+    typeLabel: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+    statusText: { fontSize: 11, fontFamily: SgateFonts.bold },
+    cardTitle: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 2 },
+    senderText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
 
-    cardContent: { marginBottom: 12 },
-    cardTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
-    cardName: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    cardNameLarge: { fontSize: 18, marginBottom: 4 },
-
-    cardMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6, flexWrap: 'wrap' },
-    cardMetaText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-    cardMetaDot: { fontSize: 12, color: SgateColors.t4 },
+    metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+    metaChip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    metaChipText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 
     descBox: {
         backgroundColor: SgateColors.surface,
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: SgateColors.borderSoft,
+        borderRadius: 12,
         padding: 12,
-        marginTop: 10,
+        marginBottom: 10,
     },
-    descText: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t2, lineHeight: 20 },
+    descText: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t2, lineHeight: 19 },
 
-    // Rejected
     rejectedBox: {
         backgroundColor: SgateColors.redBg,
-        borderRadius: 14,
-        padding: 12,
-        marginBottom: 4,
+        borderRadius: 10,
+        paddingHorizontal: 10, paddingVertical: 6,
+        marginBottom: 10,
     },
-    rejectedLabel: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.red, letterSpacing: 0.5, marginBottom: 2 },
-    rejectedText: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.red },
+    rejectedLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.red, marginBottom: 2 },
+    rejectedText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t2 },
 
     // Action row
     actionRow: {
@@ -339,27 +428,31 @@ const styles = StyleSheet.create({
     },
     rejectBtn: {
         flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
         paddingVertical: 12,
         borderRadius: 14,
         backgroundColor: SgateColors.redBg,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     rejectBtnText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.red },
     approveBtn: {
         flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
         paddingVertical: 12,
         borderRadius: 14,
         backgroundColor: SgateColors.gold,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     approveBtnText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Empty
-    emptyWrap: { alignItems: 'center', paddingVertical: 60 },
-    emptyTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginTop: 10 },
-    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 2 },
+    emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.7 },
+    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 12, marginBottom: 4 },
+    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 
     // Modal
     modalOverlay: {
@@ -375,9 +468,16 @@ const styles = StyleSheet.create({
         maxWidth: 360,
         borderRadius: 24,
         padding: 24,
+        alignItems: 'center',
+    },
+    modalIconWrap: {
+        width: 56, height: 56, borderRadius: 28,
+        backgroundColor: SgateColors.redBg,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 16,
     },
     modalTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
-    modalSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 16 },
+    modalSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 16, textAlign: 'center' },
     noteInput: {
         backgroundColor: SgateColors.surface,
         borderWidth: 1.5,
@@ -389,8 +489,9 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
         height: 100,
         marginBottom: 16,
+        width: '100%',
     },
-    modalBtnRow: { flexDirection: 'row', gap: 10 },
+    modalBtnRow: { flexDirection: 'row', gap: 10, width: '100%' },
     modalCancelBtn: {
         flex: 1,
         paddingVertical: 14,

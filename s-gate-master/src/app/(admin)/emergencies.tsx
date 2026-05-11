@@ -33,7 +33,9 @@ interface Emergency {
     location?: string;
     createdAt: string;
     resolvedAt?: string;
-    sender: { name: string; flat?: string; phone?: string };
+    sender?: { name: string; flat?: string; phone?: string };
+    reportedBy?: { name?: string; firstName?: string; lastName?: string; phone?: string };
+    flat?: { flatNumber?: string; number?: string };
     respondedBy?: { name: string; role: string };
     resolutionNote?: string;
 }
@@ -162,6 +164,9 @@ export default function AdminEmergenciesScreen() {
         const isActive = item.status === 'TRIGGERED' || item.status === 'ACTIVE';
         const isAcknowledged = item.status === 'ACKNOWLEDGED';
 
+        const senderName = item.sender?.name || item.reportedBy?.name || item.reportedBy?.firstName || 'Unknown';
+        const flatName = item.sender?.flat || item.flat?.flatNumber || item.flat?.number;
+
         return (
             <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
                 <View style={[styles.card, isActive && styles.cardActive]}>
@@ -178,8 +183,8 @@ export default function AdminEmergenciesScreen() {
                                 </View>
                             </View>
                             <Text style={styles.senderText} numberOfLines={1}>
-                                {item.sender?.name ?? 'Unknown'}
-                                {item.sender?.flat ? ` · Flat ${item.sender.flat}` : ''}
+                                {senderName}
+                                {flatName ? ` · Flat ${flatName}` : ''}
                             </Text>
                             <Text style={styles.timeText}>{timeAgo(item.createdAt)}</Text>
                         </View>

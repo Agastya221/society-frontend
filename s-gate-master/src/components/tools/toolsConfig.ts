@@ -66,7 +66,7 @@ export const allTools: ToolItem[] = [
     { id: 'pre-approve',     icon: 'account-check-outline',    label: 'Pre-Approve',     bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['resident'], section: 'essentials', route: 'MODAL:preapprove' },
     { id: 'my-passes',       icon: 'smart-card-outline',       label: 'My Passes',       bg: SgateColors.blueBg,    color: SgateColors.blue,     roles: ['resident'], section: 'essentials', route: '/(resident)/my-passes' },
     { id: 'expect-delivery', icon: 'package-variant',          label: 'Expect Delivery', bg: SgateColors.surface,   color: SgateColors.t2,       roles: ['resident'], section: 'essentials', route: 'MODAL:preapprove_delivery' },
-    { id: 'sos-alert',       icon: 'alert-outline',            label: 'SOS Alert',       bg: SgateColors.redBg,     color: SgateColors.red,      roles: ['resident'], section: 'essentials', route: '/(resident)/emergency/create' },
+    { id: 'sos-alert',       icon: 'alert-outline',            label: 'SOS Alerts',      bg: SgateColors.redBg,     color: SgateColors.red,      roles: ['resident'], section: 'essentials', route: '/(resident)/emergency' },
 
     // ═══════════════════════════════════════════════════════════════════════
     //  SOCIETY & COMMUNITY (resident only)

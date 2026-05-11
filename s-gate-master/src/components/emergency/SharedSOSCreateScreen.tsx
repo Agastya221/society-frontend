@@ -226,6 +226,24 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
                     </Animated.View>
                 )}
 
+                {/* Show Alerts Button */}
+                <TouchableOpacity
+                    onPress={() => {
+                        if (role === 'admin') {
+                            router.push('/(admin)/emergencies' as any);
+                        } else {
+                            router.push('/(resident)/emergency' as any);
+                        }
+                    }}
+                    disabled={state === 'triggered'}
+                    className="absolute left-6 top-6 h-10 px-4 rounded-full bg-white/80 items-center justify-center border border-gray-100 shadow-sm z-[55] flex-row gap-2"
+                    accessibilityLabel="View emergency alerts"
+                    style={{ marginTop: insets.top }}
+                >
+                    <MaterialIcons name="format-list-bulleted" size={18} color="#374151" />
+                    <Text className="text-[13px] font-bold text-gray-700" style={{ fontFamily: SgateFonts.bold }}>Show Alerts</Text>
+                </TouchableOpacity>
+
                 {/* Close Button */}
                 <TouchableOpacity
                     onPress={() => router.back()}
@@ -245,7 +263,7 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
                     bounces={false}
                 >
                     {/* Header Section */}
-                    <View className="items-center mt-8 mb-4">
+                    <View className="items-center mt-20 mb-2">
                         <Animated.View style={sirenStyle} className="mb-3">
                             <View className="w-12 h-12 rounded-full bg-red-50 items-center justify-center shadow-md shadow-red-100">
                                 <MaterialCommunityIcons name="alarm-light" size={28} color="#ef4444" />
@@ -258,7 +276,7 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
                     </View>
 
                     {/* Main SOS Button Hub */}
-                    <View className="items-center justify-center py-6">
+                    <View className="items-center justify-center py-2">
                         <SOSButton 
                             onTrigger={() => handleSOS('OTHER', true)} 
                             disabled={state === 'triggered' || isOffline} 
