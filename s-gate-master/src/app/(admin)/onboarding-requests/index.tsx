@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
@@ -54,6 +54,7 @@ const STATUS_PILL: Record<string, { bg: string; text: string }> = {
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function OnboardingRequestsScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [activeTab, setActiveTab]   = useState<StatusTab>('PENDING_APPROVAL');
     const [requests, setRequests]     = useState<OnboardingRequest[]>([]);
     const [loading, setLoading]       = useState(true);
@@ -167,28 +168,41 @@ export default function OnboardingRequestsScreen() {
     };
     const formatDocType = (type: string) => type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
+    const pendingCount = requests.length;
+
     return (
-        <SafeAreaView edges={['top']} style={styles.safe}>
+        <View style={styles.safe}>
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
                 <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
+                        <MaterialIcons name="arrow-back" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Onboarding Requests</Text>
-                    <View style={{ width: 40 }} />
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle} numberOfLines={1}>Onboarding Requests</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>Resident verification & approvals</Text>
+                    </View>
+                    {activeTab === 'PENDING_APPROVAL' && pendingCount > 0 && (
+                        <View style={styles.liveBadge}>
+                            <View style={styles.liveDot} />
+                            <Text style={styles.liveText}>{pendingCount} PENDING</Text>
+                        </View>
+                    )}
                 </View>
 
-                {/* Tabs */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabRow}>
+                {/* Filter tabs */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                     {TABS.map(tab => (
                         <TouchableOpacity key={tab.key} onPress={() => handleTabChange(tab.key)}
-                            style={[styles.tab, activeTab === tab.key && styles.tabActive]}>
-                            <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>{tab.label}</Text>
+                            style={[styles.filterTab, activeTab === tab.key && styles.filterTabActive]}
+                            activeOpacity={0.75}>
+                            <Text style={[styles.filterText, activeTab === tab.key && styles.filterTextActive]}>{tab.label}</Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
             </View>
+
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
             {/* List */}
             {loading ? (
@@ -198,13 +212,15 @@ export default function OnboardingRequestsScreen() {
                     data={requests}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.listContent}
+                    showsVerticalScrollIndicator={false}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh}
                         tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
                     ListEmptyComponent={
                         <View style={styles.emptyWrap}>
-                            <MaterialCommunityIcons name="inbox-outline" size={48} color={SgateColors.t4} />
-                            <Text style={styles.emptyTitle}>
-                                No {activeTab === 'PENDING_APPROVAL' ? 'pending' : activeTab.toLowerCase().replace('_', ' ')} requests
+                            <MaterialIcons name="person-search" size={56} color={SgateColors.t4} />
+                            <Text style={styles.emptyTitle}>No requests</Text>
+                            <Text style={styles.emptySub}>
+                                {activeTab === 'PENDING_APPROVAL' ? 'No pending requests right now.' : `No ${activeTab.toLowerCase().replace(/_/g, ' ')} requests found.`}
                             </Text>
                         </View>
                     }
@@ -232,15 +248,15 @@ export default function OnboardingRequestsScreen() {
 
                                         <View style={styles.metaRow}>
                                             <View style={styles.metaItem}>
-                                                <MaterialCommunityIcons name="home-outline" size={12} color={SgateColors.t4} />
+                                                <MaterialIcons name="home" size={12} color={SgateColors.t4} />
                                                 <Text style={styles.metaText}>{item.flat.block.name} - {item.flat.number}</Text>
                                             </View>
                                             <View style={styles.metaItem}>
-                                                <MaterialCommunityIcons name="calendar-outline" size={12} color={SgateColors.t4} />
+                                                <MaterialIcons name="event" size={12} color={SgateColors.t4} />
                                                 <Text style={styles.metaText}>{formatDate(item.createdAt)}</Text>
                                             </View>
                                             <View style={styles.metaItem}>
-                                                <MaterialCommunityIcons name="file-outline" size={12} color={SgateColors.t4} />
+                                                <MaterialIcons name="description" size={12} color={SgateColors.t4} />
                                                 <Text style={styles.metaText}>{item.documents.length} docs</Text>
                                             </View>
                                         </View>
@@ -258,7 +274,7 @@ export default function OnboardingRequestsScreen() {
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>Request Details</Text>
                         <TouchableOpacity onPress={() => { setDetailVisible(false); setActionType(null); }}>
-                            <MaterialCommunityIcons name="close" size={22} color={SgateColors.t3} />
+                            <MaterialIcons name="close" size={22} color={SgateColors.t3} />
                         </TouchableOpacity>
                     </View>
 
@@ -285,7 +301,7 @@ export default function OnboardingRequestsScreen() {
                                                 style={styles.docIcon} 
                                                 onPress={() => openDocument(doc.s3Key)}
                                             >
-                                                <MaterialCommunityIcons name="image-outline" size={15} color={SgateColors.gold} />
+                                                <MaterialIcons name="image" size={15} color={SgateColors.gold} />
                                             </TouchableOpacity>
                                             
                                             <TouchableOpacity 
@@ -300,7 +316,7 @@ export default function OnboardingRequestsScreen() {
                                                     style={[styles.checkbox, isSelected && styles.checkboxActive]}
                                                     onPress={() => toggleDocSelection(doc.type)}
                                                 >
-                                                    {isSelected && <MaterialCommunityIcons name="check" size={14} color="#FFF" />}
+                                                    {isSelected && <MaterialIcons name="check" size={14} color="#FFF" />}
                                                 </TouchableOpacity>
                                             ) : (
                                                 <View style={styles.docBadge}>
@@ -366,7 +382,7 @@ export default function OnboardingRequestsScreen() {
             <Modal visible={viewerVisible} transparent animationType="fade" onRequestClose={() => setViewerVisible(false)}>
                 <View style={styles.viewerWrapper}>
                     <TouchableOpacity style={styles.viewerClose} onPress={() => setViewerVisible(false)}>
-                        <MaterialCommunityIcons name="close" size={28} color="#FFF" />
+                        <MaterialIcons name="close" size={28} color="#FFF" />
                     </TouchableOpacity>
                     {viewerUrl ? (
                         <Image source={{ uri: viewerUrl }} style={styles.viewerImage} resizeMode="contain" />
@@ -375,7 +391,7 @@ export default function OnboardingRequestsScreen() {
                     )}
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }
 
@@ -400,41 +416,64 @@ const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
     centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-    // Header
-    header: { backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft, paddingBottom: 12 },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14 },
-    headerBackBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    // Header (matches emergencies / gate-passes)
+    headerWrapper: {
+        backgroundColor: SgateColors.card,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
+    },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    backButton: { marginRight: 12 },
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+    liveBadge: {
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        backgroundColor: SgateColors.goldPale,
+        paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20,
+    },
+    liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: SgateColors.goldDeep },
+    liveText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep, letterSpacing: 0.5 },
 
-    // Tabs
-    tabRow: { paddingHorizontal: 20, gap: 8 },
-    tab: { paddingHorizontal: 18, paddingVertical: 9, borderRadius: 20, backgroundColor: SgateColors.surface },
-    tabActive: { backgroundColor: SgateColors.gold },
-    tabText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-    tabTextActive: { color: '#FFFFFF' },
+    // Filter tabs
+    filterRow: { paddingHorizontal: 20, gap: 8 },
+    filterTab: {
+        paddingHorizontal: 16, paddingVertical: 8,
+        borderRadius: 20, backgroundColor: SgateColors.surface,
+    },
+    filterTabActive: { backgroundColor: SgateColors.gold },
+    filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    filterTextActive: { color: SgateColors.t1 },
 
     // List
-    listContent: { padding: 20, paddingBottom: 40, flexGrow: 1 },
+    listContent: { padding: 20, paddingBottom: 100, flexGrow: 1 },
 
     // Card
     card: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 16, marginBottom: 10 },
     cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
     cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-    avatar: { width: 44, height: 44, borderRadius: 15, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+    avatar: { width: 44, height: 44, borderRadius: 14, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
     avatarText: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
     cardInfo: { flex: 1 },
     cardName: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     cardPhone: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 1 },
-    residentTypePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+    residentTypePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
     residentTypeText: { fontSize: 10, fontFamily: SgateFonts.bold },
 
-    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 14, flexWrap: 'wrap' },
     metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    metaText: { fontSize: 11, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
+    metaText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 
     // Empty
-    emptyWrap: { alignItems: 'center', paddingVertical: 48 },
-    emptyTitle: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3, marginTop: 10 },
+    emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.7 },
+    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 12, marginBottom: 4 },
+    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 
     // Modal
     modalSafe: { flex: 1, backgroundColor: SgateColors.bg, padding: 24 },
