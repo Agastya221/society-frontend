@@ -153,28 +153,30 @@ export default function StaffManagementScreen() {
                     <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
                         <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Staff & Payroll</Text>
+                    <Text style={styles.headerTitle}>Staff</Text>
                     <TouchableOpacity style={styles.addBtn} onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
                         <MaterialCommunityIcons name="plus" size={18} color="#fff" />
                     </TouchableOpacity>
                 </View>
 
-                {/* Premium underline tabs */}
-                <View style={styles.tabsWrap}>
-                    <TouchableOpacity
-                        style={[styles.tab, activeTab === 'DIRECTORY' && styles.tabActive]}
-                        onPress={() => { Haptics.selectionAsync(); setActiveTab('DIRECTORY'); }}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={[styles.tabText, activeTab === 'DIRECTORY' && styles.tabTextActive]}>Directory</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.tab, activeTab === 'ATTENDANCE' && styles.tabActive]}
-                        onPress={() => { Haptics.selectionAsync(); setActiveTab('ATTENDANCE'); }}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={[styles.tabText, activeTab === 'ATTENDANCE' && styles.tabTextActive]}>Today's Logs</Text>
-                    </TouchableOpacity>
+                {/* Segmented Control */}
+                <View style={styles.tabWrapper}>
+                    <View style={styles.segmentedContainer}>
+                        <TouchableOpacity
+                            style={[styles.segment, activeTab === 'DIRECTORY' && styles.segmentActive]}
+                            onPress={() => { Haptics.selectionAsync(); setActiveTab('DIRECTORY'); }}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.segmentText, activeTab === 'DIRECTORY' && styles.segmentTextActive]}>Directory</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.segment, activeTab === 'ATTENDANCE' && styles.segmentActive]}
+                            onPress={() => { Haptics.selectionAsync(); setActiveTab('ATTENDANCE'); }}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.segmentText, activeTab === 'ATTENDANCE' && styles.segmentTextActive]}>Today's Logs</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
 
@@ -246,21 +248,36 @@ const styles = StyleSheet.create({
     addBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: SgateColors.gold, alignItems: 'center', justifyContent: 'center' },
     spacer: { height: 6, backgroundColor: SgateColors.bg },
 
-    // Premium underline tabs
-    tabsWrap: {
-        flexDirection: 'row',
+    // ── Tabs ─────────────────────────────────────────────────────
+    tabWrapper: {
+        backgroundColor: '#FFF',
         paddingHorizontal: 20,
+        paddingBottom: 12,
     },
-    tab: {
+    segmentedContainer: {
+        flexDirection: 'row',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+        padding: 4,
+    },
+    segment: {
         flex: 1,
-        paddingVertical: 12,
+        paddingVertical: 10,
         alignItems: 'center',
-        borderBottomWidth: 3,
-        borderBottomColor: 'transparent',
+        borderRadius: 10,
     },
-    tabActive: { borderBottomColor: SgateColors.gold },
-    tabText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-    tabTextActive: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    segmentActive: {
+        backgroundColor: SgateColors.gold,
+    },
+    segmentText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t2,
+    },
+    segmentTextActive: {
+        color: SgateColors.t1,
+        fontFamily: SgateFonts.bold,
+    },
 
     list: { padding: 20, paddingBottom: 100 },
     
