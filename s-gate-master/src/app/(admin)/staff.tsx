@@ -180,8 +180,25 @@ export default function StaffManagementScreen() {
                 </View>
             </View>
 
-            {/* Spacer — breathing room below fixed header+tabs */}
-            <View style={styles.spacer} />
+            {/* Fixed Search Filter with soft cushion */}
+            <View style={styles.fixedSearchWrap}>
+                <View style={styles.searchWrap}>
+                    <MaterialCommunityIcons name="magnify" size={18} color={SgateColors.t3} />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search by name, role, or phone..."
+                        placeholderTextColor={SgateColors.t4}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        autoCorrect={false}
+                    />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchQuery('')}>
+                            <MaterialCommunityIcons name="close-circle" size={16} color={SgateColors.t4} />
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
 
             {/* Content */}
             {loading ? (
@@ -193,24 +210,6 @@ export default function StaffManagementScreen() {
                     contentContainerStyle={styles.list}
                     showsVerticalScrollIndicator={false}
                     renderItem={activeTab === 'DIRECTORY' ? renderStaffCard : renderAttendanceCard}
-                    ListHeaderComponent={
-                        <View style={styles.searchWrap}>
-                            <MaterialCommunityIcons name="magnify" size={18} color={SgateColors.t3} />
-                            <TextInput
-                                style={styles.searchInput}
-                                placeholder="Search by name, role, or phone..."
-                                placeholderTextColor={SgateColors.t4}
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
-                                autoCorrect={false}
-                            />
-                            {searchQuery.length > 0 && (
-                                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                                    <MaterialCommunityIcons name="close-circle" size={16} color={SgateColors.t4} />
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    }
                     ListEmptyComponent={
                         <View style={styles.empty}>
                             <MaterialCommunityIcons name="account-group-outline" size={40} color={SgateColors.t4} />
@@ -246,7 +245,6 @@ const styles = StyleSheet.create({
     },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
     addBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: SgateColors.gold, alignItems: 'center', justifyContent: 'center' },
-    spacer: { height: 6, backgroundColor: SgateColors.bg },
 
     // ── Tabs ─────────────────────────────────────────────────────
     tabWrapper: {
@@ -279,7 +277,15 @@ const styles = StyleSheet.create({
         fontFamily: SgateFonts.bold,
     },
 
-    list: { padding: 20, paddingBottom: 100 },
+    fixedSearchWrap: {
+        paddingHorizontal: 20,
+        paddingTop: 12,
+        paddingBottom: 6,
+        backgroundColor: SgateColors.bg,
+        zIndex: 5,
+    },
+
+    list: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 },
     
     // Search Box
     searchWrap: {
@@ -289,7 +295,6 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         paddingHorizontal: 16,
         height: 48,
-        marginBottom: 16,
         borderWidth: 1,
         borderColor: SgateColors.borderSoft,
     },
