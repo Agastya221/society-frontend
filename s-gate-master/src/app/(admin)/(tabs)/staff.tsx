@@ -1,6 +1,6 @@
 import React from 'react';
 import SharedStaffScreen from '@/components/staff/SharedStaffScreen';
 
-export default function AdminStaffStackScreen() {
-    return <SharedStaffScreen isTab={false} />;
+export default function AdminStaffTab() {
+    return <SharedStaffScreen isTab={true} />;
 }

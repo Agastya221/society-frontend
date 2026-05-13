@@ -16,7 +16,7 @@ import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
-import { approveGatePass, GatePass, getAllGatePasses, rejectGatePass } from '../../services/gatePass';
+import { approveGatePass, GatePass, getAllGatePasses, rejectGatePass } from '@/services/gatePass';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 type MIcon = React.ComponentProps<typeof MaterialIcons>['name'];
