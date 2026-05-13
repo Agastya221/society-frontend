@@ -223,11 +223,9 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
             {/* Header */}
             <View style={[styles.headerWrapper, { paddingTop: insets.top + (Platform.OS === 'ios' ? 4 : 10) }]}>
                 <View style={styles.headerTop}>
-                    {!isTab && (
-                        <TouchableOpacity onPress={() => router.back()} style={styles.headerIconBtn} accessibilityLabel="Go back">
-                            <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                        </TouchableOpacity>
-                    )}
+                    <TouchableOpacity onPress={() => router.back()} style={styles.headerIconBtn} accessibilityLabel="Go back">
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
                     <Text style={[styles.headerTitleMain, isTab && { marginLeft: 0 }]}>Alerts</Text>
                 </View>
 

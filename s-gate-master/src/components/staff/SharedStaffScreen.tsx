@@ -150,11 +150,9 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
             {/* Header + Tabs (single block, no gap) */}
             <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
                 <View style={styles.headerTop}>
-                    {!isTab && (
-                        <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                            <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                        </TouchableOpacity>
-                    )}
+                    <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
                     <Text style={[styles.headerTitle, isTab && { marginLeft: 0 }]}>Staff</Text>
                     <TouchableOpacity style={styles.addBtn} onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
                         <MaterialCommunityIcons name="plus" size={18} color="#fff" />

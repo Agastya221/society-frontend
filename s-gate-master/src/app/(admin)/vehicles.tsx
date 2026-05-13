@@ -190,8 +190,9 @@ export default function AdminVehiclesScreen() {
         return (
             <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                    <View style={styles.plateWrap}>
-                        <Text style={styles.plateText}>{item.plateNumber}</Text>
+                    <View style={styles.platePill}>
+                        <MaterialCommunityIcons name={item.type === 'BIKE' ? 'motorbike' : 'car-outline'} size={18} color={SgateColors.t1} />
+                        <Text style={styles.violationPlate}>{item.plateNumber}</Text>
                     </View>
                     <View style={styles.statusBadge}>
                         <Text style={styles.statusText}>{item.status}</Text>
@@ -199,14 +200,12 @@ export default function AdminVehiclesScreen() {
                 </View>
 
                 <View style={styles.detailsRow}>
-                    <MaterialCommunityIcons name={item.type === 'BIKE' ? 'car-outline' : 'truck-outline'} size={14} color={SgateColors.t3} />
                     <Text style={styles.detailsText}>
                         {item.makeModel ?? item.type} {item.color ? `· ${item.color}` : ''}
                     </Text>
                     {!!item.parkingSlot && (
                         <>
                             <Text style={styles.detailsText}>·</Text>
-                            <MaterialCommunityIcons name="map-marker-outline" size={13} color={SgateColors.t3} />
                             <Text style={styles.detailsText}>Slot {item.parkingSlot}</Text>
                         </>
                     )}
@@ -234,7 +233,7 @@ export default function AdminVehiclesScreen() {
                         style={styles.callBtn} 
                         onPress={() => Alert.alert('Call', `Calling ${item.resident?.phone}...`)}
                     >
-                        <MaterialCommunityIcons name="phone-outline" size={14} color={SgateColors.blue} />
+                        <MaterialCommunityIcons name="phone" size={16} color="#FFF" />
                         <Text style={styles.callText}>Call</Text>
                     </TouchableOpacity>
 
@@ -242,7 +241,7 @@ export default function AdminVehiclesScreen() {
                         style={styles.violationBtn}
                         onPress={() => setIssueTarget(item)}
                     >
-                        <MaterialCommunityIcons name="alert-outline" size={14} color={SgateColors.red} />
+                        <MaterialCommunityIcons name="alert-octagon" size={16} color="#FFF" />
                         <Text style={styles.violationText}>Issue Ticket</Text>
                     </TouchableOpacity>
                 </View>
@@ -255,25 +254,33 @@ export default function AdminVehiclesScreen() {
         return (
             <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
                 <View style={styles.card}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                        <Text style={styles.violationPlate}>{item.vehicleNumber}</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <View style={styles.platePill}>
+                            <MaterialCommunityIcons name="car-outline" size={18} color={SgateColors.t1} />
+                            <Text style={styles.violationPlate}>{item.vehicleNumber}</Text>
+                        </View>
                         <View style={[styles.statusBadge, !isOpen && { backgroundColor: SgateColors.surface }]}>
                             <Text style={[styles.statusText, !isOpen && { color: SgateColors.t3 }]}>{item.status}</Text>
                         </View>
                     </View>
                     
-                    <Text style={styles.vioTypeLabel}>{item.type.replace('_', ' ')}</Text>
+                    <View style={styles.vioTypeRow}>
+                        <MaterialCommunityIcons name="alert-circle-outline" size={16} color={SgateColors.red} />
+                        <Text style={styles.vioTypeLabel}>{item.type.replace('_', ' ')}</Text>
+                    </View>
+                    
                     {!!item.description && <Text style={styles.vioDesc}>{item.description}</Text>}
 
                     <View style={styles.vioMetaRow}>
-                        <Text style={styles.vioMetaText}>By: {item.reportedBy?.name || item.source}</Text>
+                        <MaterialCommunityIcons name="account-outline" size={14} color={SgateColors.t3} />
+                        <Text style={styles.vioMetaText}>{item.reportedBy?.name || item.source}</Text>
                         <Text style={styles.vioMetaText}>•</Text>
                         <Text style={styles.vioMetaText}>{new Date(item.createdAt).toLocaleDateString()}</Text>
                     </View>
                     
                     {!!item.penaltyAmount && isOpen && (
                         <View style={styles.penaltyRow}>
-                            <MaterialCommunityIcons name="alert-octagon-outline" size={13} color={SgateColors.red} />
+                            <MaterialCommunityIcons name="cash" size={18} color="#0E3F2D" />
                             <Text style={styles.penaltyText}>Penalty: {item.penaltyAmount} INR {item.addedToInvoice ? '(Invoiced)' : ''}</Text>
                         </View>
                     )}
@@ -283,8 +290,9 @@ export default function AdminVehiclesScreen() {
                             <TouchableOpacity style={styles.dismissBtn} onPress={() => setResolveTarget({ id: item.id, type: 'DISMISSED' })}>
                                 <Text style={styles.dismissText}>Dismiss</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.resolveBtn} onPress={() => setResolveTarget({ id: item.id, type: 'RESOLVED' })}>
-                                <Text style={styles.resolveText}>Mark Resolved</Text>
+                            <TouchableOpacity style={styles.resolveBtnDark} onPress={() => setResolveTarget({ id: item.id, type: 'RESOLVED' })}>
+                                <MaterialCommunityIcons name="check-circle-outline" size={16} color="#FFF" />
+                                <Text style={styles.resolveTextDark}>Mark Resolved</Text>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -296,25 +304,37 @@ export default function AdminVehiclesScreen() {
     return (
         <View style={styles.safe}>
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Parking Enforcement</Text>
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + (Platform.OS === 'ios' ? 4 : 10) }]}>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.headerIconBtn} accessibilityLabel="Go back">
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitleMain}>Parking Enforcement</Text>
+                </View>
+
+                {/* Segmented Control */}
+                <View style={styles.tabWrapper}>
+                    <View style={styles.segmentedContainer}>
+                        <TouchableOpacity
+                            style={[styles.segment, tab === 'LOOKUP' && styles.segmentActive]}
+                            onPress={() => { Haptics.selectionAsync(); setTab('LOOKUP'); }}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.segmentText, tab === 'LOOKUP' && styles.segmentTextActive]}>Lookup</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.segment, tab === 'VIOLATIONS' && styles.segmentActive]}
+                            onPress={() => { Haptics.selectionAsync(); setTab('VIOLATIONS'); }}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={[styles.segmentText, tab === 'VIOLATIONS' && styles.segmentTextActive]}>Violations</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             </View>
 
-            {/* Spacer */}
-            <View style={styles.spacer} />
-
-            {/* Tabs */}
-            <View style={styles.tabRow}>
-                <TouchableOpacity style={[styles.tab, tab === 'LOOKUP' && styles.tabActive]} onPress={() => setTab('LOOKUP')}>
-                    <Text style={[styles.tabText, tab === 'LOOKUP' && styles.tabTextActive]}>Lookup</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.tab, tab === 'VIOLATIONS' && styles.tabActive]} onPress={() => setTab('VIOLATIONS')}>
-                    <Text style={[styles.tabText, tab === 'VIOLATIONS' && styles.tabTextActive]}>Violations</Text>
-                </TouchableOpacity>
-            </View>
+            {/* Persistent spacer */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
             {/* Lookup Tab */}
             {tab === 'LOOKUP' && (
@@ -467,27 +487,60 @@ export default function AdminVehiclesScreen() {
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
-    header: {
+    // ── Header + Tabs (unified block) ────────────────────────────
+    headerWrapper: {
+        backgroundColor: '#FFF',
+    },
+    headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 20,
-        paddingVertical: 16,
-        backgroundColor: SgateColors.card,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 4,
-        zIndex: 1,
+        paddingBottom: 16,
     },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-    spacer: { height: 6 },
-    
-    tabRow: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10, backgroundColor: SgateColors.card },
-    tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-    tabActive: { borderBottomColor: SgateColors.gold },
-    tabText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-    tabTextActive: { color: SgateColors.t1 },
+    headerIconBtn: {
+        width: 32,
+        height: 32,
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+    },
+    headerTitleMain: {
+        flex: 1,
+        fontSize: 20,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        marginLeft: 12,
+    },
+
+    // ── Tabs ─────────────────────────────────────────────────────
+    tabWrapper: {
+        backgroundColor: '#FFF',
+        paddingHorizontal: 20,
+        paddingBottom: 12,
+    },
+    segmentedContainer: {
+        flexDirection: 'row',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+        padding: 4,
+    },
+    segment: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: 'center',
+        borderRadius: 10,
+    },
+    segmentActive: {
+        backgroundColor: SgateColors.gold,
+    },
+    segmentText: {
+        fontSize: 14,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t2,
+    },
+    segmentTextActive: {
+        color: SgateColors.t1,
+        fontFamily: SgateFonts.bold,
+    },
 
     searchSection: { padding: 20 },
     searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderRadius: 12, paddingHorizontal: 14, height: 50, borderWidth: 1, borderColor: SgateColors.border, marginBottom: 12 },
@@ -497,28 +550,42 @@ const styles = StyleSheet.create({
 
     listContent: { padding: 20, paddingBottom: 60, flexGrow: 1 },
 
-    card: { backgroundColor: SgateColors.card, borderRadius: 16, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 16, marginBottom: 16 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-    plateWrap: { backgroundColor: SgateColors.surface, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: SgateColors.border },
-    plateText: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, letterSpacing: 1 },
-    statusBadge: { backgroundColor: SgateColors.redBg, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+    card: { 
+        backgroundColor: '#FFFFFF', 
+        borderRadius: 20, 
+        padding: 20, 
+        marginBottom: 16, 
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.04,
+        shadowRadius: 16,
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.02)',
+    },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    platePill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        backgroundColor: SgateColors.surface,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 10,
+    },
+    violationPlate: { fontSize: 16, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, letterSpacing: 0.5 },
+    statusBadge: { backgroundColor: SgateColors.redBg, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
     statusText: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.red },
 
-    detailsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
+    detailsRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
     detailsText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-    divider: { height: 1, backgroundColor: SgateColors.borderSoft, marginBottom: 14 },
+    divider: { height: 1, backgroundColor: SgateColors.borderSoft, marginBottom: 16 },
 
     infoGrid: { flexDirection: 'row', marginBottom: 16 },
     infoCol: { flex: 1 },
     infoLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t4, marginBottom: 4, textTransform: 'uppercase' },
     infoValue: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 2 },
-    infoSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
-
-    actionRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
-    callBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.blueBg, borderRadius: 10, paddingVertical: 12, gap: 6 },
-    callText: { color: SgateColors.blue, fontSize: 13, fontFamily: SgateFonts.semibold },
-    violationBtn: { flex: 1.2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.redBg, borderRadius: 10, paddingVertical: 12, gap: 6 },
-    violationText: { color: SgateColors.red, fontSize: 13, fontFamily: SgateFonts.semibold },
+    infoSub: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
 
     emptyWrap: { alignItems: 'center', marginTop: 40 },
     emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 16, marginBottom: 8 },
@@ -526,39 +593,47 @@ const styles = StyleSheet.create({
     issueUnknownBtn: { backgroundColor: SgateColors.gold, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
     issueUnknownText: { color: '#fff', fontSize: 14, fontFamily: SgateFonts.bold },
 
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalContent: { backgroundColor: SgateColors.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
-    smallModal: { backgroundColor: SgateColors.card, margin: 24, padding: 24, borderRadius: 24, marginBottom: 'auto', marginTop: 'auto' },
-    modalTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
-    modalSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 20 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+    modalContent: { backgroundColor: SgateColors.card, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 28, maxHeight: '80%', shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 10 },
+    smallModal: { backgroundColor: SgateColors.card, margin: 24, padding: 28, borderRadius: 32, marginBottom: 'auto', marginTop: 'auto', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 30, elevation: 20 },
+    modalTitle: { fontSize: 22, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, marginBottom: 8 },
+    modalSub: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3, marginBottom: 24 },
     
-    fieldLabel: { fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginBottom: 8, marginTop: 16, textTransform: 'uppercase' },
-    input: { backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border, borderRadius: 12, padding: 14, fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
-    inputArea: { backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border, borderRadius: 12, padding: 14, fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1, height: 80, textAlignVertical: 'top' },
+    fieldLabel: { fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginBottom: 8, marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.5 },
+    input: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: SgateColors.border, borderRadius: 16, padding: 16, fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    inputArea: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: SgateColors.border, borderRadius: 16, padding: 16, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1, height: 100, textAlignVertical: 'top' },
     tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    tag: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border },
+    tag: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: SgateColors.border },
     tagActive: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
-    tagText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
-    tagTextActive: { color: '#fff' },
+    tagText: { fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.t2 },
+    tagTextActive: { color: SgateColors.t1 },
     rowFields: { flexDirection: 'row', gap: 16, alignItems: 'center' },
 
-    modalBtnRow: { flexDirection: 'row', gap: 12, marginTop: 24 },
-    modalCancel: { flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: SgateColors.surface, alignItems: 'center' },
-    modalCancelTxt: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
-    modalSubmit: { flex: 1.2, paddingVertical: 14, borderRadius: 14, backgroundColor: SgateColors.red, alignItems: 'center' },
-    modalSubmitTxt: { fontSize: 14, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    modalBtnRow: { flexDirection: 'row', gap: 12, marginTop: 32 },
+    modalCancel: { flex: 1, paddingVertical: 16, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center' },
+    modalCancelTxt: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t2 },
+    modalSubmit: { flex: 1.2, paddingVertical: 16, borderRadius: 16, backgroundColor: '#ef4444', alignItems: 'center', shadowColor: '#ef4444', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+    modalSubmitTxt: { fontSize: 15, fontFamily: SgateFonts.extrabold, color: '#FFFFFF' },
 
     // Violations ListItem Styles
-    violationPlate: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    vioTypeLabel: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.red, marginBottom: 6 },
-    vioDesc: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t2, marginBottom: 10, lineHeight: 18 },
-    vioMetaRow: { flexDirection: 'row', gap: 6 },
-    vioMetaText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
-    penaltyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: SgateColors.redBg, padding: 10, borderRadius: 8, marginTop: 12 },
-    penaltyText: { color: SgateColors.red, fontSize: 13, fontFamily: SgateFonts.bold },
+    vioTypeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+    vioTypeLabel: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.red },
+    vioDesc: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t2, marginBottom: 14, lineHeight: 22 },
+    vioMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    vioMetaText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
     
-    dismissBtn: { flex: 1, alignItems: 'center', backgroundColor: SgateColors.surface, paddingVertical: 12, borderRadius: 10 },
-    dismissText: { color: SgateColors.t2, fontSize: 13, fontFamily: SgateFonts.semibold },
-    resolveBtn: { flex: 1.5, alignItems: 'center', backgroundColor: SgateColors.greenBg, paddingVertical: 12, borderRadius: 10 },
-    resolveText: { color: SgateColors.green, fontSize: 13, fontFamily: SgateFonts.semibold },
+    penaltyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#EFFFF6', padding: 12, borderRadius: 12, marginTop: 16, borderWidth: 1, borderColor: '#A7F3D0' },
+    penaltyText: { color: '#0E3F2D', fontSize: 14, fontFamily: SgateFonts.bold },
+    
+    actionRow: { flexDirection: 'row', gap: 12, marginTop: 16 },
+    dismissBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.surface, paddingVertical: 14, borderRadius: 12 },
+    dismissText: { color: SgateColors.t2, fontSize: 14, fontFamily: SgateFonts.bold },
+    resolveBtnDark: { flex: 1.5, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E3F2D', paddingVertical: 14, borderRadius: 12 },
+    resolveTextDark: { color: '#FFF', fontSize: 14, fontFamily: SgateFonts.bold },
+
+    // Lookup action buttons
+    callBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E3F2D', borderRadius: 12, paddingVertical: 14, gap: 6 },
+    callText: { color: '#FFF', fontSize: 14, fontFamily: SgateFonts.bold },
+    violationBtn: { flex: 1.2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.red, borderRadius: 12, paddingVertical: 14, gap: 6 },
+    violationText: { color: '#FFF', fontSize: 14, fontFamily: SgateFonts.bold },
 });
