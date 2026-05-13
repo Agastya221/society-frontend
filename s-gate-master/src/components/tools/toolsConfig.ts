@@ -45,19 +45,19 @@ export const allTools: ToolItem[] = [
     // ═══════════════════════════════════════════════════════════════════════
     //  ADMINISTRATION (admin only)
     // ═══════════════════════════════════════════════════════════════════════
-    { id: 'admin-staff',        icon: 'briefcase-outline',        label: 'Staff',           bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['admin'], section: 'administration', route: '/(admin)/staff' },
+    { id: 'admin-staff',        icon: 'account-wrench-outline',   label: 'Staff',           bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['admin'], section: 'administration', route: '/(admin)/staff' },
     { id: 'admin-broadcast',    icon: 'bullhorn-outline',         label: 'Broadcast',       bg: SgateColors.redBg,     color: SgateColors.red,      roles: ['admin'], section: 'administration', route: '/(admin)/broadcast' },
-    { id: 'admin-gatepasses',   icon: 'clipboard-check-outline',  label: 'Gate Passes',     bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['admin'], section: 'administration', route: '/(admin)/gate-passes' },
-    { id: 'admin-complaints',   icon: 'alert-circle-outline',     label: 'Complaints',      bg: SgateColors.redBg,     color: SgateColors.red,      roles: ['admin'], section: 'administration', route: '/(admin)/complaints' },
-    { id: 'admin-guards',       icon: 'shield-outline',           label: 'Guards',          bg: SgateColors.greenBg,   color: SgateColors.green,    roles: ['admin'], section: 'administration', route: '/(admin)/guards' },
+    { id: 'admin-gatepasses',   icon: 'smart-card-outline',       label: 'Gate Passes',     bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['admin'], section: 'administration', route: '/(admin)/gate-passes' },
+    { id: 'admin-complaints',   icon: 'headset',                  label: 'Complaints',      bg: SgateColors.redBg,     color: SgateColors.red,      roles: ['admin'], section: 'administration', route: '/(admin)/complaints' },
+    { id: 'admin-guards',       icon: 'shield-check-outline',     label: 'Guards',          bg: SgateColors.greenBg,   color: SgateColors.green,    roles: ['admin'], section: 'administration', route: '/(admin)/guards' },
     { id: 'admin-residents',    icon: 'account-group-outline',    label: 'Residents',       bg: SgateColors.blueBg,    color: SgateColors.blue,     roles: ['admin'], section: 'administration', route: '/(admin)/onboarding-requests' },
-    { id: 'admin-emergencies',  icon: 'flash-outline',            label: 'Emergencies',     bg: SgateColors.redBg,     color: SgateColors.red,      roles: ['admin'], section: 'administration', route: '/(admin)/emergencies' },
+    { id: 'admin-emergencies',  icon: 'alert-outline',            label: 'Emergencies',     bg: SgateColors.redBg,     color: SgateColors.red,      roles: ['admin'], section: 'administration', route: '/(admin)/emergencies' },
     { id: 'admin-community',    icon: 'message-outline',          label: 'Community',       bg: SgateColors.blueBg,    color: SgateColors.blue,     roles: ['admin'], section: 'administration', route: '/(admin)/community' },
     { id: 'admin-polls',        icon: 'poll',                     label: 'Polls',           bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['admin'], section: 'administration', route: '/(admin)/elections' },
     { id: 'admin-notices',      icon: 'bell-outline',             label: 'Notices',         bg: SgateColors.surface,   color: SgateColors.t2,       roles: ['admin'], section: 'administration', route: '/(admin)/notices' },
-    { id: 'admin-payments',     icon: 'credit-card-outline',      label: 'Payments',        bg: SgateColors.greenBg,   color: SgateColors.green,    roles: ['admin'], section: 'administration', route: '/(admin)/payments' },
+    { id: 'admin-payments',     icon: 'receipt-text-outline',     label: 'Payments',        bg: SgateColors.greenBg,   color: SgateColors.green,    roles: ['admin'], section: 'administration', route: '/(admin)/payments' },
     { id: 'admin-flats',        icon: 'home-city-outline',        label: 'Flats',           bg: SgateColors.blueBg,    color: SgateColors.blue,     roles: ['admin'], section: 'administration', route: '/(admin)/flats' },
-    { id: 'admin-vehicles',     icon: 'car-outline',              label: 'Vehicles',        bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['admin'], section: 'administration', route: '/(admin)/vehicles' },
+    { id: 'admin-vehicles',     icon: 'car-search-outline',       label: 'Vehicles',        bg: SgateColors.goldPale,  color: SgateColors.goldDeep, roles: ['admin'], section: 'administration', route: '/(admin)/vehicles' },
     { id: 'admin-settings',     icon: 'cog-outline',              label: 'Settings',        bg: SgateColors.surface,   color: SgateColors.t2,       roles: ['admin'], section: 'administration', route: '/(admin)/settings' },
 
     // ═══════════════════════════════════════════════════════════════════════

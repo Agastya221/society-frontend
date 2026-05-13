@@ -121,7 +121,7 @@ export const homeQuickActions: HomeQuickAction[] = [
     },
     {
         id: 'adminGatePasses',
-        icon: 'clipboard-check-outline',
+        icon: 'smart-card-outline',
         label: 'Gate Passes',
         color: SgateColors.goldDeep,
         bg: SgateColors.goldPale,
@@ -139,7 +139,7 @@ export const homeQuickActions: HomeQuickAction[] = [
     },
     {
         id: 'adminGuards',
-        icon: 'shield-outline',
+        icon: 'shield-check-outline',
         label: 'Guards',
         color: SgateColors.green,
         bg: SgateColors.greenBg,
