@@ -16,7 +16,7 @@ import {
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import * as billingService from '@/services/billingService';
 import { TextInput } from 'react-native';
@@ -38,8 +38,11 @@ interface FlatDue {
     paymentRef?: string;
 }
 
+const DARK_GREEN = '#1A8D5F';
+const DARK_GREEN_BG = '#E8F5EF';
+
 const STATUS_CONFIG: Record<DueStatus, { label: string; color: string; bg: string }> = {
-    PAID:    { label: 'Paid',    color: SgateColors.green,    bg: SgateColors.greenBg  },
+    PAID:    { label: 'Paid',    color: DARK_GREEN,         bg: DARK_GREEN_BG        },
     PENDING: { label: 'Pending', color: SgateColors.goldDeep, bg: SgateColors.goldPale },
     OVERDUE: { label: 'Overdue', color: SgateColors.red,      bg: SgateColors.redBg    },
 };
@@ -161,45 +164,54 @@ export default function PaymentsScreen() {
         );
     };
 
-    const renderDue = ({ item }: { item: FlatDue }) => {
+    const renderDue = ({ item, index }: { item: FlatDue; index: number }) => {
         const conf = STATUS_CONFIG[item.status];
         return (
-            <TouchableOpacity style={styles.card} onPress={() => setSelectedDue(item)} activeOpacity={0.8}>
-                <View style={styles.cardLeft}>
-                    <View style={[styles.flatBubble, { backgroundColor: conf.bg }]}>
-                        <Text style={[styles.flatBubbleText, { color: conf.color }]}>{item.block}</Text>
-                        <Text style={[styles.flatBubbleNumber, { color: conf.color }]}>{item.flatNumber}</Text>
+            <Animated.View entering={FadeInDown.delay(index * 40).springify()}>
+                <TouchableOpacity style={styles.card} onPress={() => setSelectedDue(item)} activeOpacity={0.7}>
+                    {/* Accent bar */}
+                    <View style={[styles.cardAccent, { backgroundColor: conf.color }]} />
+                    {/* Left: avatar + info */}
+                    <View style={styles.cardBody}>
+                        <View style={styles.cardLeft}>
+                            <View style={[styles.avatarWrap, { backgroundColor: conf.bg }]}>
+                                <Text style={[styles.avatarBlock, { color: conf.color }]}>{item.block}</Text>
+                                <Text style={[styles.avatarFlat, { color: conf.color }]}>{item.flatNumber}</Text>
+                            </View>
+                            <View style={styles.cardInfo}>
+                                <Text style={styles.residentName} numberOfLines={1}>{item.residentName}</Text>
+                                <Text style={styles.cardMeta}>
+                                    {item.month}{item.status === 'PAID' && item.paidAt ? ` · Paid ${new Date(item.paidAt).toLocaleDateString()}` : ` · Due ${item.dueDate}`}
+                                </Text>
+                            </View>
+                        </View>
+                        {/* Right: amount + badge */}
+                        <View style={styles.cardRight}>
+                            <Text style={styles.cardAmount}>₹{item.amount.toLocaleString()}</Text>
+                            <View style={[styles.statusBadge, { backgroundColor: conf.bg }]}>
+                                <View style={[styles.statusDot, { backgroundColor: conf.color }]} />
+                                <Text style={[styles.statusLabel, { color: conf.color }]}>{conf.label}</Text>
+                            </View>
+                        </View>
                     </View>
-                    <View style={styles.cardInfo}>
-                        <Text style={styles.residentName} numberOfLines={1}>{item.residentName}</Text>
-                        <Text style={styles.cardMonth}>{item.month}</Text>
-                        {item.status === 'PAID' && item.paidAt ? (
-                            <Text style={styles.cardDate}>Paid on {item.paidAt}</Text>
-                        ) : (
-                            <Text style={[styles.cardDate, item.status === 'OVERDUE' && styles.overdueDate]}>
-                                Due {item.dueDate}
-                            </Text>
-                        )}
-                    </View>
-                </View>
-                <View style={styles.cardRight}>
-                    <Text style={styles.cardAmount}>₹{item.amount.toLocaleString()}</Text>
-                    <View style={[styles.badge, { backgroundColor: conf.bg }]}>
-                        <Text style={[styles.badgeText, { color: conf.color }]}>{conf.label}</Text>
-                    </View>
-                </View>
-            </TouchableOpacity>
+                </TouchableOpacity>
+            </Animated.View>
         );
     };
 
     if (loading) {
         return (
             <View style={styles.safe}>
-                <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                    <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Finance & Billing</Text>
+                <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                    <View style={styles.headerTop}>
+                        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
+                            <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                        </TouchableOpacity>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.headerTitle} numberOfLines={1}>Finance & Billing</Text>
+                            <Text style={styles.headerSub} numberOfLines={1}>Dues, payments & invoices</Text>
+                        </View>
+                    </View>
                 </View>
                 <AppLoader />
             </View>
@@ -208,22 +220,45 @@ export default function PaymentsScreen() {
 
     return (
         <View style={styles.safe}>
-            {/* ── Header ──────────────────────────────────────────────────── */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Finance & Billing</Text>
-                <TouchableOpacity style={styles.navActionBtn} onPress={() => setShowGenerateModal(true)}>
-                    <MaterialCommunityIcons name="file-plus-outline" size={20} color={SgateColors.goldDeep} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.navActionBtn} onPress={() => setShowPenaltyModal(true)}>
-                    <MaterialCommunityIcons name="alert-outline" size={20} color={SgateColors.red} />
-                </TouchableOpacity>
+            {/* ── Header (matches Emergency Alerts) ─────────────────────── */}
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle} numberOfLines={1}>Finance & Billing</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>Dues, payments & invoices</Text>
+                    </View>
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity style={styles.navActionBtn} onPress={() => setShowGenerateModal(true)}>
+                            <MaterialCommunityIcons name="file-plus-outline" size={18} color={SgateColors.goldDeep} />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.navActionBtn} onPress={() => setShowPenaltyModal(true)}>
+                            <MaterialCommunityIcons name="alert-outline" size={18} color={SgateColors.red} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                {/* Filter chips */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+                    {FILTER_TABS.map(tab => (
+                        <TouchableOpacity
+                            key={tab}
+                            style={[styles.filterTab, activeFilter === tab && styles.filterTabActive]}
+                            onPress={() => setActiveFilter(tab)}
+                            activeOpacity={0.75}
+                        >
+                            <Text style={[styles.filterText, activeFilter === tab && styles.filterTextActive]}>
+                                {tab === 'ALL' ? 'All' : STATUS_CONFIG[tab as DueStatus].label}
+                                {tab !== 'ALL' && ` (${dues.filter(d => d.status === tab).length})`}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </View>
 
-            {/* ── Spacer ──────────────────────────────────────────────────── */}
-            <View style={styles.spacer} />
+            {/* Persistent spacer */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
             <FlatList
                 data={filtered}
@@ -237,28 +272,14 @@ export default function PaymentsScreen() {
                 contentContainerStyle={styles.listContent}
                 ListHeaderComponent={
                     <Animated.View entering={FadeInDown.delay(0).springify()}>
-                        {/* Summary */}
-                        <View style={styles.summaryRow}>
-                            <SummaryCard label="Collected" amount={totalCollected} color={SgateColors.green}    bg={SgateColors.greenBg}  icon="trending-up" />
-                            <SummaryCard label="Pending"   amount={totalPending}   color={SgateColors.goldDeep} bg={SgateColors.goldPale} icon="clock" />
-                            <SummaryCard label="Overdue"   amount={totalOverdue}   color={SgateColors.red}      bg={SgateColors.redBg}    icon="alert-circle" />
+                        {/* Summary strip */}
+                        <View style={styles.summaryStrip}>
+                            <SummaryCard label="Collected" amount={totalCollected} color={DARK_GREEN}          bg={DARK_GREEN_BG}        icon="trending-up" />
+                            <View style={styles.summaryDivider} />
+                            <SummaryCard label="Pending"   amount={totalPending}   color={SgateColors.goldDeep} bg={SgateColors.goldPale} icon="clock-outline" />
+                            <View style={styles.summaryDivider} />
+                            <SummaryCard label="Overdue"   amount={totalOverdue}   color={SgateColors.red}      bg={SgateColors.redBg}    icon="alert-circle-outline" />
                         </View>
-
-                        {/* Filter chips */}
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-                            {FILTER_TABS.map(tab => (
-                                <TouchableOpacity
-                                    key={tab}
-                                    style={[styles.filterChip, activeFilter === tab && styles.filterChipActive]}
-                                    onPress={() => setActiveFilter(tab)}
-                                >
-                                    <Text style={[styles.filterChipText, activeFilter === tab && styles.filterChipTextActive]}>
-                                        {tab === 'ALL' ? 'All' : STATUS_CONFIG[tab as DueStatus].label}
-                                        {tab !== 'ALL' && ` (${dues.filter(d => d.status === tab).length})`}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
 
                         <Text style={styles.sectionLabel}>
                             {filtered.length} {activeFilter === 'ALL' ? 'TOTAL' : activeFilter} RECORDS
@@ -402,9 +423,11 @@ function SummaryCard({ label, amount, color, bg, icon }: {
     label: string; amount: number; color: string; bg: string; icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 }) {
     return (
-        <View style={[styles.summaryCard, { backgroundColor: bg }]}>
-            <MaterialCommunityIcons name={icon} size={16} color={color} style={{ marginBottom: 6 }} />
-            <Text style={[styles.summaryAmount, { color }]}>
+        <View style={styles.summaryCard}>
+            <View style={[styles.summaryIconWrap, { backgroundColor: bg }]}>
+                <MaterialCommunityIcons name={icon} size={16} color={color} />
+            </View>
+            <Text style={styles.summaryAmount}>
                 ₹{amount >= 1000 ? `${(amount / 1000).toFixed(1)}k` : String(amount)}
             </Text>
             <Text style={[styles.summaryLabel, { color }]}>{label}</Text>
@@ -425,68 +448,91 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
 
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
+    // Header (matches Emergency Alerts)
+    headerWrapper: {
         backgroundColor: SgateColors.card,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 4,
-        zIndex: 1,
-        gap: 10,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
     },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-    spacer: { height: 6 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    backButton: { marginRight: 12 },
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+    headerActions: { flexDirection: 'row', gap: 8 },
 
-    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    listContent: { padding: 16, flexGrow: 1 },
+    listContent: { padding: 20, flexGrow: 1 },
 
-    summaryRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-    summaryCard: { flex: 1, borderRadius: 16, padding: 12, alignItems: 'center' },
-    summaryAmount: { fontSize: 15, fontFamily: SgateFonts.extrabold, letterSpacing: -0.5 },
-    summaryLabel: { fontSize: 10, fontFamily: SgateFonts.semibold, marginTop: 2 },
-
-    filterRow: { paddingBottom: 16, gap: 8 },
-    filterChip: {
-        paddingHorizontal: 14, paddingVertical: 7,
-        borderRadius: 20,
+    // Summary
+    summaryStrip: {
+        flexDirection: 'row', alignItems: 'center',
         backgroundColor: SgateColors.card,
+        borderRadius: 18,
         borderWidth: 1, borderColor: SgateColors.borderSoft,
+        paddingVertical: 16, paddingHorizontal: 8,
+        marginBottom: 20,
     },
-    filterChipActive: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
-    filterChipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
-    filterChipTextActive: { color: SgateColors.t1 },
+    summaryCard: {
+        flex: 1, alignItems: 'center', gap: 4,
+    },
+    summaryIconWrap: {
+        width: 32, height: 32, borderRadius: 10,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 4,
+    },
+    summaryAmount: { fontSize: 16, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, letterSpacing: -0.5 },
+    summaryLabel: { fontSize: 10, fontFamily: SgateFonts.bold, marginTop: 1, letterSpacing: 0.3 },
+    summaryDivider: { width: 1, height: 40, backgroundColor: SgateColors.borderSoft },
 
-    sectionLabel: { ...SgateTypography.microLabel, color: SgateColors.t3, marginBottom: 10 },
+    // Filter
+    filterRow: { paddingHorizontal: 20, gap: 8 },
+    filterTab: {
+        paddingHorizontal: 16, paddingVertical: 8,
+        borderRadius: 20, backgroundColor: SgateColors.surface,
+    },
+    filterTabActive: { backgroundColor: SgateColors.gold },
+    filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    filterTextActive: { color: SgateColors.t1 },
 
+    sectionLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t4, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 12 },
+
+    // Card
     card: {
         backgroundColor: SgateColors.card,
         borderRadius: 16,
         borderWidth: 1,
         borderColor: SgateColors.borderSoft,
-        padding: 14,
         flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 8,
+        overflow: 'hidden',
+        marginBottom: 10,
     },
-    cardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },
-    flatBubble: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-    flatBubbleText: { fontSize: 12, fontFamily: SgateFonts.bold },
-    flatBubbleNumber: { fontSize: 14, fontFamily: SgateFonts.extrabold },
+    cardAccent: { width: 4, borderTopLeftRadius: 16, borderBottomLeftRadius: 16 },
+    cardBody: {
+        flex: 1, flexDirection: 'row',
+        alignItems: 'center', justifyContent: 'space-between',
+        padding: 16,
+    },
+    cardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 14 },
+    avatarWrap: { width: 46, height: 46, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+    avatarBlock: { fontSize: 10, fontFamily: SgateFonts.bold, letterSpacing: 0.3 },
+    avatarFlat: { fontSize: 14, fontFamily: SgateFonts.extrabold },
     cardInfo: { flex: 1 },
-    residentName: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 2 },
-    cardMonth: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
-    cardDate: { fontSize: 11, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
-    overdueDate: { color: SgateColors.red },
-    cardRight: { alignItems: 'flex-end', gap: 6 },
-    cardAmount: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    badge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-    badgeText: { fontSize: 10, fontFamily: SgateFonts.bold, letterSpacing: 0.4 },
+    residentName: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 3 },
+    cardMeta: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    cardRight: { alignItems: 'flex-end', gap: 8 },
+    cardAmount: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    statusBadge: {
+        flexDirection: 'row', alignItems: 'center', gap: 5,
+        borderRadius: 10, paddingHorizontal: 9, paddingVertical: 4,
+    },
+    statusDot: { width: 6, height: 6, borderRadius: 3 },
+    statusLabel: { fontSize: 11, fontFamily: SgateFonts.bold },
 
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 10 },
     emptyTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 8 },
@@ -543,7 +589,7 @@ const styles = StyleSheet.create({
     dialogSub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center', marginBottom: 24, paddingHorizontal: 10 },
     
     inputWrap: { width: '100%', marginBottom: 24 },
-    inputLabel: { ...SgateTypography.microLabel, color: SgateColors.t3, marginBottom: 8 },
+    inputLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 },
     input: {
         backgroundColor: SgateColors.surface,
         borderWidth: 1.5, borderColor: SgateColors.border,
