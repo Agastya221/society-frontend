@@ -7,6 +7,7 @@ import { FlatList,
     TouchableOpacity,
     View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SgateBrandMark, SgateHeader } from '../../components/Sgate';
 import { SgateColors, SgateFonts, SgateTypography } from '../../constants/Sgate-theme';
@@ -52,6 +53,7 @@ type ListRow = SectionHeader | SectionItem;
 
 export default function NotificationsScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const {
         notifications,
         unreadCount,
@@ -85,7 +87,7 @@ export default function NotificationsScreen() {
             unread.forEach((n) => result.push({ kind: 'item', notification: n }));
         }
         if (read.length > 0) {
-            result.push({ kind: 'header', title: 'EARLIER' });
+            result.push({ kind: 'header', title: 'LATEST' });
             read.forEach((n) => result.push({ kind: 'item', notification: n }));
         }
         return result;
@@ -198,9 +200,10 @@ export default function NotificationsScreen() {
                 keyExtractor={keyExtractor}
                 renderItem={renderItem}
                 ListEmptyComponent={ListEmpty}
-                contentContainerStyle={
-                    rows.length === 0 ? styles.emptyContainer : styles.listContent
-                }
+                contentContainerStyle={[
+                    rows.length === 0 ? styles.emptyContainer : styles.listContent,
+                    { paddingBottom: insets.bottom + 40 }
+                ]}
                 refreshing={refreshing}
                 onRefresh={onRefresh}
                 showsVerticalScrollIndicator={false}
@@ -231,7 +234,7 @@ const styles = StyleSheet.create({
         ...SgateTypography.microLabel,
         color: SgateColors.t3,
         paddingHorizontal: 20,
-        paddingTop: 20,
+        paddingTop: 16,
         paddingBottom: 8,
     },
 
