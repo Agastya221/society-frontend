@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '../../../services/api';
 import { useAuthStore } from '../../../store/useAuthStore';
 
@@ -45,15 +45,20 @@ export default function FlatsScreen() {
     // Fetch flats from API using society blocks
     useEffect(() => {
         const societyId = user?.societyId;
-        if (!societyId) return;
+        if (!societyId) {
+            console.log('[Flats] No societyId found, skipping fetch');
+            return;
+        }
 
         const loadFlats = async () => {
             try {
+                console.log('[Flats] Fetching blocks for society:', societyId);
                 const blocksRes = await api.get(
                     `/resident/onboarding/societies/${societyId}/blocks`
                 );
                 const blocks: { id: string; name: string }[] =
                     blocksRes.data?.data ?? [];
+                console.log('[Flats] Blocks received:', blocks.length, JSON.stringify(blocks.slice(0, 3)));
 
                 const allFlats: Flat[] = [];
                 await Promise.all(
@@ -62,26 +67,29 @@ export default function FlatsScreen() {
                             const flatsRes = await api.get(
                                 `/resident/onboarding/societies/${societyId}/blocks/${block.id}/flats`
                             );
-                            const blockFlats = (flatsRes.data?.data ?? []).map(
-                                (f: { id: string; number: string; floor?: number }) => ({
+                            const rawFlats = flatsRes.data?.data ?? [];
+                            console.log(`[Flats] Block "${block.name}" (${block.id}) raw flats:`, rawFlats.length, JSON.stringify(rawFlats.slice(0, 3)));
+                            const blockFlats = rawFlats.map(
+                                (f: any) => ({
                                     id: f.id,
-                                    number: f.number,
+                                    number: f.number || f.flat_number || f.flatNumber || f.name || '',
                                     block: block.name,
                                     floor: String(f.floor ?? ''),
-                                    ownerName: '',
-                                    residentsCount: 0,
-                                    vehiclesCount: 0,
+                                    ownerName: f.ownerName || f.owner_name || '',
+                                    residentsCount: f.residentsCount || 0,
+                                    vehiclesCount: f.vehiclesCount || 0,
                                 })
                             );
                             allFlats.push(...blockFlats);
-                        } catch {
-                            // skip failed block
+                        } catch (err) {
+                            console.error(`[Flats] Failed to fetch flats for block ${block.name}:`, err);
                         }
                     })
                 );
+                console.log('[Flats] Total flats loaded:', allFlats.length, 'Sample:', JSON.stringify(allFlats.slice(0, 2)));
                 setFlats(allFlats);
             } catch (err) {
-                console.error('Failed to fetch flats:', err);
+                console.error('[Flats] Failed to fetch blocks:', err);
             }
         };
 
@@ -101,14 +109,14 @@ export default function FlatsScreen() {
     const sections = useMemo(() => {
         const groups: Record<string, Flat[]> = {};
         filteredFlats.forEach(f => {
-            const b = f.block.toUpperCase();
+            const b = (f.block || '').toUpperCase();
             if (!groups[b]) groups[b] = [];
             groups[b].push(f);
         });
 
         return Object.keys(groups).sort().map(blockKey => ({
             title: `${blockKey}-Block`,
-            data: groups[blockKey].sort((a, b) => a.number.localeCompare(b.number))
+            data: groups[blockKey].sort((a, b) => (a.number || '').localeCompare(b.number || ''))
         }));
     }, [filteredFlats]);
 
@@ -166,16 +174,25 @@ export default function FlatsScreen() {
 
     return (
         <View style={styles.root}>
-            {/* ── Header ─────────────────────────────────────────────────── */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Flats</Text>
-            </View>
-
-            {/* ── Search + Add ────────────────────────────────────────────── */}
-            <View style={styles.searchSection}>
+            {/* ── Header (matches Emergency Alerts) ─────────────────────── */}
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle} numberOfLines={1}>Flats</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>{flats.length} units across {Object.keys(sections.reduce((a: any, s: any) => ({ ...a, [s.title]: 1 }), {})).length} blocks</Text>
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => { resetForm(); setModalVisible(true); }}
+                        style={styles.addBtn}
+                        activeOpacity={0.8}
+                    >
+                        <MaterialCommunityIcons name="plus" size={18} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                </View>
+                {/* Search */}
                 <View style={styles.searchBar}>
                     <MaterialCommunityIcons name="magnify" size={18} color={SgateColors.t3} />
                     <TextInput
@@ -187,68 +204,68 @@ export default function FlatsScreen() {
                     />
                     {search.length > 0 && (
                         <TouchableOpacity onPress={() => setSearch('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                            <MaterialCommunityIcons name="close" size={16} color={SgateColors.t3} />
+                            <MaterialCommunityIcons name="close-circle" size={16} color={SgateColors.t4} />
                         </TouchableOpacity>
                     )}
                 </View>
-                <TouchableOpacity
-                    style={styles.addBtn}
-                    onPress={() => { resetForm(); setModalVisible(true); }}
-                    activeOpacity={0.8}
-                >
-                    <MaterialCommunityIcons name="plus" size={18} color="#FFFFFF" />
-                    <Text style={styles.addBtnText}>Add Flat</Text>
-                </TouchableOpacity>
             </View>
+
+            {/* Persistent spacer */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
             <SectionList
                 sections={sections}
                 keyExtractor={item => item.id}
-                contentContainerStyle={{ paddingBottom: 100 + insets.bottom, flexGrow: 1 }}
-                renderSectionHeader={({ section: { title } }) => (
+                contentContainerStyle={styles.listContent}
+                stickySectionHeadersEnabled={false}
+                renderSectionHeader={({ section }) => (
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionHeaderText}>{title}</Text>
+                        <Text style={styles.sectionHeaderText}>{section.title}</Text>
+                        <View style={styles.sectionBadge}>
+                            <Text style={styles.sectionBadgeText}>{section.data.length}</Text>
+                        </View>
                     </View>
                 )}
                 ListEmptyComponent={
                     <View style={styles.emptyWrap}>
-                        <MaterialCommunityIcons name="home-group" size={48} color={SgateColors.t4} />
+                        <View style={styles.emptyIcon}>
+                            <MaterialCommunityIcons name="home-group" size={36} color={SgateColors.t4} />
+                        </View>
                         <Text style={styles.emptyTitle}>No flats found</Text>
                         <Text style={styles.emptySub}>Add flats to manage your society.</Text>
                     </View>
                 }
-                renderItem={({ item, index }) => (
+                renderItem={({ item, index }) => {
+                    // Show max 3 chars in the avatar to prevent overflow
+                    const avatarLabel = (item.number || '—').length > 3
+                        ? (item.number || '—').slice(0, 3)
+                        : (item.number || '—');
+                    return (
                     <Animated.View entering={FadeInDown.delay(Math.min(index, 15) * 40).springify()}>
                         <TouchableOpacity
                             style={styles.card}
                             onPress={() => router.push(`/(admin)/flats/${item.id}` as any)}
-                            activeOpacity={0.75}
+                            activeOpacity={0.7}
                         >
-                            <View style={styles.cardLeft}>
-                                <View style={styles.flatBubble}>
-                                    <Text style={styles.flatBubbleBlock}>{item.block}</Text>
-                                    <Text style={styles.flatBubbleNum}>{item.number}</Text>
-                                </View>
-                                <View style={styles.cardInfo}>
-                                    <Text style={styles.cardTitle}>Flat {item.number}</Text>
-                                    {item.ownerName ? (
-                                        <Text style={styles.cardSub}>{item.ownerName}</Text>
-                                    ) : (
-                                        <Text style={[styles.cardSub, { color: SgateColors.t4 }]}>Unassigned</Text>
-                                    )}
-                                </View>
+                            <View style={styles.avatarCircle}>
+                                <Text style={styles.avatarText}>{avatarLabel}</Text>
                             </View>
-                            <View style={styles.cardActions}>
-                                <TouchableOpacity onPress={() => handleEdit(item)} hitSlop={8}>
-                                    <MaterialCommunityIcons name="pencil-outline" size={18} color={SgateColors.t3} />
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={8}>
-                                    <MaterialCommunityIcons name="trash-can-outline" size={18} color={SgateColors.red} />
-                                </TouchableOpacity>
+                            <View style={styles.cardInfo}>
+                                <Text style={styles.cardTitle} numberOfLines={1}>Flat {item.number || '—'}</Text>
+                                <Text style={[styles.cardSub, !item.ownerName && { color: SgateColors.t4 }]} numberOfLines={1}>
+                                    {item.ownerName || 'Unassigned'}
+                                </Text>
                             </View>
+                            {item.block ? (
+                                <View style={styles.blockTag}>
+                                    <Text style={styles.blockTagText}>{item.block}</Text>
+                                </View>
+                            ) : null}
+                            <MaterialCommunityIcons name="chevron-right" size={20} color={SgateColors.t4} />
                         </TouchableOpacity>
                     </Animated.View>
-                )}
+                    );
+                }}
             />
 
             {/* ── Modal ──────────────────────────────────────────────────── */}
@@ -313,31 +330,38 @@ export default function FlatsScreen() {
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: SgateColors.bg },
 
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
+    // Header (matches Emergency Alerts)
+    headerWrapper: {
         backgroundColor: SgateColors.card,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 4,
-        zIndex: 1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
     },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 14 },
+    backButton: { marginRight: 12 },
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+    addBtn: {
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: SgateColors.gold,
+        alignItems: 'center', justifyContent: 'center',
+    },
 
-    // Search section
-    searchSection: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 8 },
+    // Search
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: SgateColors.surface,
         borderRadius: 14,
         paddingHorizontal: 14,
-        height: 46,
-        marginBottom: 10,
+        height: 44,
+        marginHorizontal: 20,
     },
     searchInput: {
         flex: 1,
@@ -347,56 +371,65 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
     },
 
-    // Add button
-    addBtn: {
-        backgroundColor: SgateColors.gold,
-        borderRadius: 14,
-        paddingVertical: 14,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-    },
-    addBtnText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100, flexGrow: 1 },
 
     // Section header
     sectionHeader: {
-        backgroundColor: SgateColors.surface,
-        paddingHorizontal: 20,
-        paddingVertical: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingTop: 16,
+        paddingBottom: 10,
     },
-    sectionHeaderText: { ...SgateTypography.microLabel, color: SgateColors.t3 },
+    sectionHeaderText: {
+        fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t3,
+        letterSpacing: 0.5, textTransform: 'uppercase',
+    },
+    sectionBadge: {
+        backgroundColor: SgateColors.surface,
+        borderRadius: 8,
+        paddingHorizontal: 8, paddingVertical: 2,
+    },
+    sectionBadgeText: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t4 },
 
     // Card
     card: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: SgateColors.card,
-        paddingHorizontal: 20,
-        paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+        padding: 14,
+        gap: 12,
+        marginBottom: 8,
     },
-    cardLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },
-    flatBubble: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
-        backgroundColor: SgateColors.goldPale,
-        alignItems: 'center',
-        justifyContent: 'center',
+    avatarCircle: {
+        width: 46, height: 46, borderRadius: 23,
+        backgroundColor: SgateColors.gold,
+        alignItems: 'center', justifyContent: 'center',
     },
-    flatBubbleBlock: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
-    flatBubbleNum: { fontSize: 14, fontFamily: SgateFonts.extrabold, color: SgateColors.goldDeep },
+    avatarText: { fontSize: 13, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 },
     cardInfo: { flex: 1 },
-    cardTitle: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
-    cardSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
-    cardActions: { flexDirection: 'row', gap: 16 },
+    cardTitle: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 2 },
+    cardSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    blockTag: {
+        backgroundColor: SgateColors.surface,
+        borderRadius: 8,
+        paddingHorizontal: 8, paddingVertical: 4,
+    },
+    blockTagText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.t3 },
 
     // Empty
     emptyWrap: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40 },
-    emptyTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginTop: 10 },
-    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 2 },
+    emptyIcon: {
+        width: 72, height: 72, borderRadius: 24,
+        backgroundColor: SgateColors.surface,
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 16,
+    },
+    emptyTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
+    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
 
     // Modal
     modalOverlay: {
@@ -417,7 +450,7 @@ const styles = StyleSheet.create({
     modalTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
     modalSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 20 },
 
-    formLabel: { ...SgateTypography.microLabel, color: SgateColors.t3, marginBottom: 8 },
+    formLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 },
     formInput: {
         backgroundColor: SgateColors.surface,
         borderWidth: 1.5,
