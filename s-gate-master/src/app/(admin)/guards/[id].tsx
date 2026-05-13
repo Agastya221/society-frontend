@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import {
     Alert,
     Linking,
-    Platform,
     ScrollView,
     StyleSheet,
     Text,
@@ -161,45 +160,50 @@ export default function GuardDetailScreen() {
                 contentContainerStyle={[styles.scrollContent, { paddingBottom: 40 + insets.bottom }]}
                 showsVerticalScrollIndicator={false}
             >
-                {/* ── Profile Hero ────────────────────────────────────── */}
-                <View style={styles.heroCard}>
-                    <View style={[styles.heroAvatar, !guard.isActive && styles.heroAvatarInactive]}>
-                        <Text style={[styles.heroAvatarText, !guard.isActive && styles.heroAvatarTextInactive]}>{initial}</Text>
+                {/* ── Profile Header (matches Resident Profile) ─────── */}
+                <View style={styles.profileHeader}>
+                    <View style={[styles.avatarCircle, !guard.isActive && styles.avatarCircleInactive]}>
+                        <Text style={[styles.avatarLetter, !guard.isActive && styles.avatarLetterInactive]}>{initial}</Text>
                     </View>
-
-                    <Text style={styles.heroName}>{guard.name}</Text>
-                    <Text style={styles.heroRole}>{guard.role || 'Security Guard'}</Text>
-
-                    <View style={[styles.heroPill, guard.isActive ? styles.heroPillActive : styles.heroPillInactive]}>
-                        <View style={[styles.heroPillDot, { backgroundColor: guard.isActive ? SgateColors.green : SgateColors.red }]} />
-                        <Text style={[styles.heroPillText, { color: guard.isActive ? SgateColors.green : SgateColors.red }]}>
-                            {guard.isActive ? 'Currently Active' : 'Inactive'}
-                        </Text>
+                    <View style={styles.profileInfo}>
+                        <Text style={styles.profileName} numberOfLines={1}>{guard.name}</Text>
+                        <View style={styles.roleRow}>
+                            <View style={styles.roleBadge}>
+                                <MaterialCommunityIcons name="shield-check" size={14} color={SgateColors.goldDeep} style={{ marginRight: 4 }} />
+                                <Text style={styles.roleBadgeText}>{guard.role || 'Security Guard'}</Text>
+                            </View>
+                        </View>
+                        <View style={[styles.statusPill, guard.isActive ? styles.statusPillActive : styles.statusPillInactive]}>
+                            <View style={[styles.statusDot, { backgroundColor: guard.isActive ? SgateColors.green : SgateColors.red }]} />
+                            <Text style={[styles.statusPillText, { color: guard.isActive ? SgateColors.green : SgateColors.red }]}>
+                                {guard.isActive ? 'Currently Active' : 'Inactive'}
+                            </Text>
+                        </View>
                     </View>
+                </View>
 
-                    {/* Quick Actions */}
-                    <View style={styles.quickActions}>
-                        <TouchableOpacity style={styles.quickAction} onPress={handleCall} activeOpacity={0.75}>
-                            <View style={styles.quickActionIcon}>
-                                <MaterialCommunityIcons name="phone-outline" size={20} color={SgateColors.green} />
-                            </View>
-                            <Text style={styles.quickActionLabel}>Call</Text>
-                        </TouchableOpacity>
+                {/* ── Quick Actions ────────────────────────────────────── */}
+                <View style={styles.quickActionsCard}>
+                    <TouchableOpacity style={styles.quickAction} onPress={handleCall} activeOpacity={0.75}>
+                        <View style={[styles.quickActionIcon, { backgroundColor: SgateColors.greenBg }]}>
+                            <MaterialCommunityIcons name="phone-outline" size={20} color={SgateColors.green} />
+                        </View>
+                        <Text style={styles.quickActionLabel}>Call</Text>
+                    </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.quickAction} activeOpacity={0.75}>
-                            <View style={styles.quickActionIcon}>
-                                <MaterialCommunityIcons name="message-text-outline" size={20} color={SgateColors.blue} />
-                            </View>
-                            <Text style={styles.quickActionLabel}>Message</Text>
-                        </TouchableOpacity>
+                    <TouchableOpacity style={styles.quickAction} activeOpacity={0.75}>
+                        <View style={[styles.quickActionIcon, { backgroundColor: SgateColors.blueBg }]}>
+                            <MaterialCommunityIcons name="message-text-outline" size={20} color={SgateColors.blue} />
+                        </View>
+                        <Text style={styles.quickActionLabel}>Message</Text>
+                    </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.quickAction} activeOpacity={0.75}>
-                            <View style={styles.quickActionIcon}>
-                                <MaterialCommunityIcons name="history" size={20} color={SgateColors.violet} />
-                            </View>
-                            <Text style={styles.quickActionLabel}>Logs</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity style={styles.quickAction} activeOpacity={0.75}>
+                        <View style={[styles.quickActionIcon, { backgroundColor: '#F3EEFF' }]}>
+                            <MaterialCommunityIcons name="history" size={20} color={SgateColors.violet} />
+                        </View>
+                        <Text style={styles.quickActionLabel}>Logs</Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* ── Contact Information ─────────────────────────────── */}
@@ -297,54 +301,97 @@ const styles = StyleSheet.create({
     scroll: { flex: 1 },
     scrollContent: { padding: 20 },
 
-    // ── Hero Card ────────────────────────────────────────────────────
-    heroCard: {
-        backgroundColor: SgateColors.card,
-        borderRadius: 24,
-        padding: 28,
+    // ── Profile Header (horizontal row, matching Resident Profile) ─────
+    profileHeader: {
+        flexDirection: 'row',
         alignItems: 'center',
+        backgroundColor: SgateColors.card,
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+        borderRadius: 20,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+    },
+    avatarCircle: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: SgateColors.gold,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    avatarCircleInactive: {
+        backgroundColor: '#6B7FAD',
+    },
+    avatarLetter: {
+        fontSize: 24,
+        fontFamily: SgateFonts.bold,
+        color: '#FFFFFF',
+    },
+    avatarLetterInactive: {
+        color: '#FFFFFF',
+    },
+    profileInfo: {
+        flex: 1,
+    },
+    profileName: {
+        fontSize: 20,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        marginBottom: 6,
+    },
+    roleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    roleBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: SgateColors.goldPale,
+        borderRadius: 16,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+    },
+    roleBadgeText: {
+        fontSize: 12,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.goldDeep,
+        textTransform: 'uppercase',
+    },
+    statusPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        gap: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    statusPillActive: { backgroundColor: SgateColors.greenBg },
+    statusPillInactive: { backgroundColor: SgateColors.redBg },
+    statusDot: { width: 7, height: 7, borderRadius: 4 },
+    statusPillText: { fontSize: 12, fontFamily: SgateFonts.semibold },
+
+    // Quick Actions (separate card below header)
+    quickActionsCard: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 32,
+        backgroundColor: SgateColors.card,
+        borderRadius: 20,
+        paddingVertical: 20,
         marginBottom: 24,
         borderWidth: 1,
         borderColor: SgateColors.borderSoft,
-        ...Platform.select({
-            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.06, shadowRadius: 16 },
-            android: { elevation: 3 },
-        }),
     },
-    heroAvatar: {
-        width: 80,
-        height: 80,
-        borderRadius: 28,
-        backgroundColor: SgateColors.goldPale,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 3,
-        borderColor: SgateColors.gold,
-        marginBottom: 16,
-    },
-    heroAvatarInactive: {
-        backgroundColor: SgateColors.surface,
-        borderColor: SgateColors.border,
-    },
-    heroAvatarText: { fontSize: 32, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
-    heroAvatarTextInactive: { color: SgateColors.t3 },
-    heroName: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
-    heroRole: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3, marginBottom: 14 },
-
-    heroPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, marginBottom: 24 },
-    heroPillActive: { backgroundColor: SgateColors.greenBg },
-    heroPillInactive: { backgroundColor: SgateColors.redBg },
-    heroPillDot: { width: 8, height: 8, borderRadius: 4 },
-    heroPillText: { fontSize: 13, fontFamily: SgateFonts.semibold },
-
-    // Quick Actions
-    quickActions: { flexDirection: 'row', justifyContent: 'center', gap: 32 },
     quickAction: { alignItems: 'center', gap: 6 },
     quickActionIcon: {
         width: 52,
         height: 52,
         borderRadius: 18,
-        backgroundColor: SgateColors.bg,
         alignItems: 'center',
         justifyContent: 'center',
     },

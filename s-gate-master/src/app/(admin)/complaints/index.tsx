@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
 import { Complaint, ComplaintStatus, deleteComplaint, fetchComplaints } from '../../../services/complaints';
 
@@ -133,13 +133,44 @@ export default function AdminComplaintsScreen() {
 
     return (
         <View style={styles.root}>
-            {/* ── Header ─────────────────────────────────────────────────── */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>All Complaints</Text>
+            {/* ── Header (matches Emergency Alerts) ─────────────────────── */}
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle} numberOfLines={1}>All Complaints</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>Resident complaints & issue tracking</Text>
+                    </View>
+                    {complaints.filter(c => c.status === 'OPEN').length > 0 && (
+                        <View style={styles.openBadge}>
+                            <View style={styles.openDot} />
+                            <Text style={styles.openText}>{complaints.filter(c => c.status === 'OPEN').length} OPEN</Text>
+                        </View>
+                    )}
+                </View>
+                {/* Filter tabs */}
+                <View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+                        {FILTER_TABS.map(tab => (
+                            <TouchableOpacity
+                                key={tab.key}
+                                onPress={() => setFilterStatus(tab.key)}
+                                style={[styles.filterTab, filterStatus === tab.key && styles.filterTabActive]}
+                                activeOpacity={0.75}
+                            >
+                                <Text style={[styles.filterText, filterStatus === tab.key && styles.filterTextActive]}>
+                                    {tab.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
             </View>
+
+            {/* Persistent spacer */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
             {/* ── Error ──────────────────────────────────────────────────── */}
             {error ? (
@@ -147,24 +178,6 @@ export default function AdminComplaintsScreen() {
                     <Text style={styles.errorText}>{error}</Text>
                 </View>
             ) : null}
-
-            {/* ── Filter Tabs ────────────────────────────────────────────── */}
-            <View style={styles.filterWrapper}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-                    {FILTER_TABS.map(tab => (
-                        <TouchableOpacity
-                            key={tab.key}
-                            onPress={() => setFilterStatus(tab.key)}
-                            style={[styles.filterChip, filterStatus === tab.key && styles.filterChipActive]}
-                            activeOpacity={0.75}
-                        >
-                            <Text style={[styles.filterChipText, filterStatus === tab.key && styles.filterChipTextActive]}>
-                                {tab.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
 
             {/* ── Content ────────────────────────────────────────────────── */}
             {isLoading ? (
@@ -218,20 +231,30 @@ const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: SgateColors.bg },
     centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
+    // Header (matches Emergency Alerts)
+    headerWrapper: {
         backgroundColor: SgateColors.card,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 4,
-        zIndex: 1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
     },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    backButton: { marginRight: 12 },
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+    openBadge: {
+        flexDirection: 'row', alignItems: 'center', gap: 4,
+        backgroundColor: SgateColors.goldPale,
+        paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20,
+    },
+    openDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: SgateColors.goldDeep },
+    openText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep, letterSpacing: 0.5 },
 
     // Error
     errorBar: {
@@ -243,22 +266,20 @@ const styles = StyleSheet.create({
     errorText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.red, textAlign: 'center' },
 
     // Filter
-    filterWrapper: {
-        backgroundColor: SgateColors.card,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+    filterRow: {
+        flexDirection: 'row',
+        paddingHorizontal: 20,
+        gap: 8,
     },
-    filterRow: { paddingHorizontal: 20, gap: 8 },
-    filterChip: {
+    filterTab: {
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
         backgroundColor: SgateColors.surface,
     },
-    filterChipActive: { backgroundColor: SgateColors.gold },
-    filterChipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-    filterChipTextActive: { color: '#FFFFFF' },
+    filterTabActive: { backgroundColor: SgateColors.gold },
+    filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    filterTextActive: { color: SgateColors.t1 },
 
     // List
     listContent: { padding: 20, flexGrow: 1 },
