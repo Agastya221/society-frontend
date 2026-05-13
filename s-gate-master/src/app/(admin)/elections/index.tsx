@@ -212,10 +212,11 @@ export default function AdminElectionsScreen() {
         const topOption = [...item.options].sort((a, b) => b.voteCount - a.voteCount)[0];
         return (
             <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
-                <View style={[styles.card, item.isActive && styles.cardActive]}>
-                    {/* Header */}
+                <View style={styles.card}>
+                    {/* Header row: status + time */}
                     <View style={styles.cardHeader}>
                         <View style={[styles.statusPill, { backgroundColor: item.isActive ? SgateColors.greenBg : SgateColors.surface }]}>
+                            <View style={[styles.statusDot, { backgroundColor: item.isActive ? SgateColors.green : SgateColors.t4 }]} />
                             <Text style={[styles.statusText, { color: item.isActive ? SgateColors.green : SgateColors.t3 }]}>
                                 {item.isActive ? 'Active' : 'Closed'}
                             </Text>
@@ -223,6 +224,7 @@ export default function AdminElectionsScreen() {
                         <Text style={styles.cardTime}>{timeAgo(item.createdAt)}</Text>
                     </View>
 
+                    {/* Question + description */}
                     <Text style={styles.question}>{item.question}</Text>
                     {!!item.description && (
                         <Text style={styles.descriptionText} numberOfLines={2}>{item.description}</Text>
@@ -239,33 +241,35 @@ export default function AdminElectionsScreen() {
                                         <Text style={[styles.optionText, isLeading && styles.optionTextLeading]} numberOfLines={1}>
                                             {opt.text}
                                         </Text>
-                                        <Text style={styles.optionPct}>{p}%</Text>
+                                        <Text style={[styles.optionPct, isLeading && styles.optionPctLeading]}>{p}%</Text>
                                     </View>
                                     <View style={styles.barBg}>
                                         <View
                                             style={[
                                                 styles.barFill,
-                                                { width: `${p}%` as any },
+                                                { width: `${Math.max(p, 2)}%` as any },
                                                 isLeading && styles.barFillLeading,
                                             ]}
                                         />
                                     </View>
-                                    <Text style={styles.voteCount}>{opt.voteCount} vote{opt.voteCount !== 1 ? 's' : ''}</Text>
                                 </View>
                             );
                         })}
                     </View>
 
-                    {/* Footer */}
+                    {/* Footer metadata */}
                     <View style={styles.cardFooter}>
-                        <View style={styles.footerLeft}>
-                            <MaterialCommunityIcons name="account-group-outline" size={13} color={SgateColors.t4} />
-                            <Text style={styles.totalVotes}>{item.totalVotes} total votes</Text>
+                        <View style={styles.footerMeta}>
+                            <MaterialCommunityIcons name="account-group-outline" size={14} color={SgateColors.t4} />
+                            <Text style={styles.metaText}>{item.totalVotes} votes</Text>
                         </View>
                         {!!item.endDate && (
-                            <Text style={styles.endDateText}>
-                                Ends {new Date(item.endDate).toLocaleDateString()}
-                            </Text>
+                            <View style={styles.footerMeta}>
+                                <MaterialCommunityIcons name="calendar-clock-outline" size={14} color={SgateColors.t4} />
+                                <Text style={styles.metaText}>
+                                    Ends {new Date(item.endDate).toLocaleDateString()}
+                                </Text>
+                            </View>
                         )}
                     </View>
 
@@ -277,7 +281,7 @@ export default function AdminElectionsScreen() {
                                 onPress={() => handleClosePoll(item)}
                                 activeOpacity={0.75}
                             >
-                                <MaterialCommunityIcons name="close-circle-outline" size={14} color={SgateColors.t2} />
+                                <MaterialCommunityIcons name="lock-outline" size={15} color={SgateColors.t2} />
                                 <Text style={styles.closeBtnText}>Close Poll</Text>
                             </TouchableOpacity>
                         )}
@@ -286,7 +290,7 @@ export default function AdminElectionsScreen() {
                             onPress={() => handleDeletePoll(item)}
                             activeOpacity={0.75}
                         >
-                            <MaterialCommunityIcons name="trash-can-outline" size={14} color={SgateColors.red} />
+                            <MaterialCommunityIcons name="trash-can-outline" size={15} color={SgateColors.red} />
                             <Text style={styles.deleteBtnText}>Delete</Text>
                         </TouchableOpacity>
                     </View>
@@ -297,36 +301,43 @@ export default function AdminElectionsScreen() {
 
     return (
         <View style={styles.root}>
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Polls & Elections</Text>
-                <TouchableOpacity
-                    onPress={() => { resetForm(); setCreateVisible(true); }}
-                    style={styles.addBtn}
-                    activeOpacity={0.8}
-                >
-                    <MaterialCommunityIcons name="plus" size={18} color="#fff" />
-                </TouchableOpacity>
+            {/* ── Header (matches Emergency Alerts) ─────────────────────── */}
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle} numberOfLines={1}>Polls & Elections</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>Community voting & decision making</Text>
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => { resetForm(); setCreateVisible(true); }}
+                        style={styles.addBtn}
+                        activeOpacity={0.8}
+                    >
+                        <MaterialCommunityIcons name="plus" size={18} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                </View>
+                {/* Filter tabs */}
+                <View style={styles.filterRow}>
+                    {(['ALL', 'ACTIVE', 'CLOSED'] as const).map((f) => (
+                        <TouchableOpacity
+                            key={f}
+                            style={[styles.filterTab, filter === f && styles.filterTabActive]}
+                            onPress={() => setFilter(f)}
+                            activeOpacity={0.75}
+                        >
+                            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
+                                {f === 'ALL' ? 'All' : f === 'ACTIVE' ? 'Active' : 'Closed'}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
             </View>
 
-            {/* Filter */}
-            <View style={styles.filterRow}>
-                {(['ALL', 'ACTIVE', 'CLOSED'] as const).map((f) => (
-                    <TouchableOpacity
-                        key={f}
-                        style={[styles.filterTab, filter === f && styles.filterTabActive]}
-                        onPress={() => setFilter(f)}
-                        activeOpacity={0.75}
-                    >
-                        <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
-                            {f === 'ALL' ? 'All' : f === 'ACTIVE' ? 'Active' : 'Closed'}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
+            {/* Persistent spacer */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
             {loading ? (
                 <AppLoader />
@@ -452,19 +463,28 @@ export default function AdminElectionsScreen() {
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: SgateColors.bg },
 
-    header: {
+    // Header (matches Emergency Alerts)
+    headerWrapper: {
         backgroundColor: SgateColors.card,
-        flexDirection: 'row', alignItems: 'center',
-        paddingHorizontal: 20,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 4, zIndex: 1,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
     },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, flex: 1, marginLeft: 12 },
-    addBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: SgateColors.gold, alignItems: 'center', justifyContent: 'center' },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    backButton: { marginRight: 12 },
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+    addBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
 
     filterRow: {
         flexDirection: 'row',
-        backgroundColor: SgateColors.card,
-        paddingHorizontal: 20, paddingBottom: 12,
+        paddingHorizontal: 20,
         gap: 8,
     },
     filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface },
@@ -476,50 +496,93 @@ const styles = StyleSheet.create({
 
     card: {
         backgroundColor: SgateColors.card,
-        borderRadius: 20, borderWidth: 1,
+        borderRadius: 20,
+        borderWidth: 1,
         borderColor: SgateColors.borderSoft,
-        padding: 16, marginBottom: 12,
+        padding: 20,
+        marginBottom: 14,
     },
-    cardActive: { borderColor: SgateColors.green + '50' },
-    cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-    statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 14,
+    },
+    statusPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 12,
+    },
+    statusDot: { width: 7, height: 7, borderRadius: 4 },
     statusText: { fontSize: 12, fontFamily: SgateFonts.bold },
     cardTime: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
 
-    question: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4, lineHeight: 22 },
-    descriptionText: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, lineHeight: 18, marginBottom: 12 },
+    question: {
+        fontSize: 16,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        marginBottom: 4,
+        lineHeight: 23,
+    },
+    descriptionText: {
+        fontSize: 13,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+        lineHeight: 19,
+        marginBottom: 6,
+    },
 
-    optionsWrap: { gap: 10, marginTop: 6, marginBottom: 14 },
-    optionRow: { gap: 4 },
+    optionsWrap: { gap: 14, marginTop: 8, marginBottom: 16 },
+    optionRow: { gap: 6 },
     optionLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    optionText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2, flex: 1 },
+    optionText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t2, flex: 1 },
     optionTextLeading: { color: SgateColors.t1, fontFamily: SgateFonts.bold },
-    optionPct: { fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginLeft: 8 },
-    barBg: { height: 6, borderRadius: 3, backgroundColor: SgateColors.surface, overflow: 'hidden' },
-    barFill: { height: 6, borderRadius: 3, backgroundColor: SgateColors.blue + '80' },
-    barFillLeading: { backgroundColor: SgateColors.blue },
-    voteCount: { fontSize: 11, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
+    optionPct: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t3, marginLeft: 8 },
+    optionPctLeading: { color: SgateColors.t1, fontFamily: SgateFonts.bold },
+    barBg: { height: 8, borderRadius: 4, backgroundColor: SgateColors.surface, overflow: 'hidden' },
+    barFill: { height: 8, borderRadius: 4, backgroundColor: SgateColors.t4 + '40' },
+    barFillLeading: { backgroundColor: SgateColors.gold },
 
     cardFooter: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        borderTopWidth: 1, borderTopColor: SgateColors.borderSoft,
-        paddingTop: 10, marginBottom: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderTopWidth: 1,
+        borderTopColor: SgateColors.borderSoft,
+        paddingTop: 14,
+        marginBottom: 14,
     },
-    footerLeft: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-    totalVotes: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
-    endDateText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
+    footerMeta: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    metaText: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.t4 },
 
-    actionRow: { flexDirection: 'row', gap: 8 },
+    actionRow: { flexDirection: 'row', gap: 10 },
     closeBtn: {
-        flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: 5, paddingVertical: 10,
-        backgroundColor: SgateColors.surface, borderRadius: 12,
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 11,
+        backgroundColor: SgateColors.surface,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
     },
     closeBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
     deleteBtn: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: 5, paddingVertical: 10, paddingHorizontal: 16,
-        backgroundColor: SgateColors.redBg, borderRadius: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 11,
+        paddingHorizontal: 20,
+        backgroundColor: SgateColors.redBg,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: SgateColors.red + '15',
     },
     deleteBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.red },
 

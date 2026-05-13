@@ -6,11 +6,9 @@ import {
     Alert,
     FlatList,
     Modal,
-    Platform,
     RefreshControl,
     ScrollView,
     StyleSheet,
-    Switch,
     Text,
     TextInput,
     TouchableOpacity,
@@ -19,7 +17,7 @@ import {
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -218,58 +216,105 @@ export default function NoticesScreen() {
             )}
 
             {/* ── Create Modal ────────────────────────────────────────────── */}
-            <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet">
+            <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet"
+                onRequestClose={() => setModalVisible(false)}>
                 <View style={[styles.modalWrap, { paddingBottom: insets.bottom }]}>
+                    {/* Drag handle */}
+                    <View style={styles.dragHandle} />
+
+                    {/* Modal header */}
                     <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>New Notice</Text>
-                        <TouchableOpacity onPress={() => setModalVisible(false)}>
-                            <MaterialCommunityIcons name="close" size={22} color={SgateColors.t3} />
+                        <View>
+                            <Text style={styles.modalTitle}>New Notice</Text>
+                            <Text style={styles.modalSub}>Publish an update for residents</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeCircle}>
+                            <MaterialCommunityIcons name="close" size={18} color={SgateColors.t2} />
                         </TouchableOpacity>
                     </View>
 
                     <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                        <Text style={styles.formLabel}>TITLE *</Text>
-                        <TextInput style={styles.formInput} placeholder="Notice Title" value={title}
-                            onChangeText={setTitle} placeholderTextColor={SgateColors.t4} />
-
-                        <Text style={styles.formLabel}>CONTENT *</Text>
-                        <TextInput style={[styles.formInput, { height: 120, textAlignVertical: 'top' }]}
-                            multiline placeholder="Notice details..." value={content}
-                            onChangeText={setContent} placeholderTextColor={SgateColors.t4} />
-
-                        <Text style={styles.formLabel}>TYPE</Text>
-                        <View style={styles.chipRow}>
-                            {TYPES.map(t => (
-                                <TouchableOpacity key={t} onPress={() => setType(t)}
-                                    style={[styles.chip, type === t && styles.chipSelected]}>
-                                    <Text style={[styles.chipText, type === t && styles.chipTextSelected]}>{t}</Text>
-                                </TouchableOpacity>
-                            ))}
+                        {/* ── Content Section ──────────────────────────── */}
+                        <View style={styles.formSection}>
+                            <Text style={styles.formSectionTitle}>Content</Text>
+                            <View style={styles.formCard}>
+                                <Text style={styles.formFieldLabel}>Title</Text>
+                                <TextInput style={styles.formInput} placeholder="What's the notice about?"
+                                    value={title} onChangeText={setTitle} placeholderTextColor={SgateColors.t4} />
+                                <View style={styles.formDivider} />
+                                <Text style={styles.formFieldLabel}>Details</Text>
+                                <TextInput style={[styles.formInput, { height: 100, textAlignVertical: 'top' }]}
+                                    multiline placeholder="Provide full details for residents..."
+                                    value={content} onChangeText={setContent} placeholderTextColor={SgateColors.t4} />
+                            </View>
                         </View>
 
-                        <Text style={styles.formLabel}>PRIORITY</Text>
-                        <View style={styles.chipRow}>
-                            {PRIORITIES.map(p => (
-                                <TouchableOpacity key={p} onPress={() => setPriority(p)}
-                                    style={[styles.chip, priority === p && styles.chipSelected]}>
-                                    <Text style={[styles.chipText, priority === p && styles.chipTextSelected]}>{p}</Text>
-                                </TouchableOpacity>
-                            ))}
+                        {/* ── Type Section ──────────────────────────────── */}
+                        <View style={styles.formSection}>
+                            <Text style={styles.formSectionTitle}>Category</Text>
+                            <View style={styles.chipRow}>
+                                {TYPES.map(t => {
+                                    const tc = TYPE_COLORS[t] ?? TYPE_COLORS.GENERAL;
+                                    const isActive = type === t;
+                                    return (
+                                        <TouchableOpacity key={t} onPress={() => setType(t)}
+                                            style={[styles.chip, isActive && { backgroundColor: tc.bg, borderColor: tc.text + '30' }]}
+                                            activeOpacity={0.75}>
+                                            <Text style={[styles.chipText, isActive && { color: tc.text }]}>
+                                                {t.charAt(0) + t.slice(1).toLowerCase()}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
                         </View>
 
-                        <View style={styles.switchRow}>
-                            <Text style={styles.switchLabel}>Pin this notice</Text>
-                            <Switch value={isPinned} onValueChange={setIsPinned}
-                                trackColor={{ false: SgateColors.border, true: SgateColors.gold + '60' }}
-                                thumbColor={isPinned ? SgateColors.gold : SgateColors.surface} />
+                        {/* ── Priority Section ─────────────────────────── */}
+                        <View style={styles.formSection}>
+                            <Text style={styles.formSectionTitle}>Priority</Text>
+                            <View style={styles.priorityGrid}>
+                                {PRIORITIES.map(p => {
+                                    const isActive = priority === p;
+                                    const color = getPriorityColor(p);
+                                    return (
+                                        <TouchableOpacity key={p} onPress={() => setPriority(p)}
+                                            style={[styles.priorityChip, isActive && { backgroundColor: color + '15', borderColor: color + '40' }]}
+                                            activeOpacity={0.75}>
+                                            <View style={[styles.priorityChipDot, { backgroundColor: isActive ? color : SgateColors.t4 }]} />
+                                            <Text style={[styles.priorityChipText, isActive && { color, fontFamily: SgateFonts.bold }]}>
+                                                {p.charAt(0) + p.slice(1).toLowerCase()}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
                         </View>
 
+                        {/* ── Pin Toggle ────────────────────────────────── */}
+                        <TouchableOpacity style={styles.pinToggle} onPress={() => setIsPinned(!isPinned)} activeOpacity={0.8}>
+                            <View style={[styles.pinToggleIcon, isPinned && styles.pinToggleIconActive]}>
+                                <MaterialCommunityIcons name={isPinned ? 'bookmark' : 'bookmark-outline'} size={18}
+                                    color={isPinned ? SgateColors.goldDeep : SgateColors.t3} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.pinToggleTitle}>Pin this notice</Text>
+                                <Text style={styles.pinToggleSub}>Pinned notices appear at the top</Text>
+                            </View>
+                            <View style={[styles.toggleTrack, isPinned && styles.toggleTrackActive]}>
+                                <View style={[styles.toggleThumb, isPinned && styles.toggleThumbActive]} />
+                            </View>
+                        </TouchableOpacity>
+
+                        {/* ── Submit ────────────────────────────────────── */}
                         <TouchableOpacity style={[styles.submitBtn, submitting && { opacity: 0.5 }]}
                             onPress={handleCreate} disabled={submitting} activeOpacity={0.8}>
-                            {submitting ? <ActivityIndicator size="small" color="#FFFFFF" /> :
-                                <Text style={styles.submitBtnText}>Publish Notice</Text>}
+                            {submitting ? <ActivityIndicator size="small" color={SgateColors.t1} /> :
+                                <>
+                                    <MaterialCommunityIcons name="send" size={16} color={SgateColors.t1} />
+                                    <Text style={styles.submitBtnText}>Publish Notice</Text>
+                                </>}
                         </TouchableOpacity>
-                        <View style={{ height: 20 }} />
+                        <View style={{ height: 24 }} />
                     </ScrollView>
                 </View>
             </Modal>
@@ -328,22 +373,105 @@ const styles = StyleSheet.create({
     emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 2 },
 
     // Modal
-    modalWrap: { flex: 1, backgroundColor: SgateColors.bg, padding: 24 },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-    modalTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    modalWrap: { flex: 1, backgroundColor: SgateColors.card, paddingHorizontal: 20 },
+    dragHandle: {
+        width: 36, height: 4, borderRadius: 2,
+        backgroundColor: SgateColors.border,
+        alignSelf: 'center',
+        marginTop: 10, marginBottom: 16,
+    },
+    modalHeader: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+        marginBottom: 28,
+    },
+    modalTitle: { fontSize: 24, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    modalSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 3 },
+    closeCircle: {
+        width: 36, height: 36, borderRadius: 18,
+        backgroundColor: SgateColors.surface,
+        alignItems: 'center', justifyContent: 'center',
+        marginTop: 2,
+    },
 
-    formLabel: { ...SgateTypography.microLabel, color: SgateColors.t3, marginBottom: 8, marginTop: 4 },
-    formInput: { backgroundColor: SgateColors.surface, borderWidth: 1.5, borderColor: SgateColors.border, borderRadius: 16, padding: 15, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1, marginBottom: 14 },
+    // Form sections
+    formSection: { marginBottom: 24 },
+    formSectionTitle: {
+        fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.t3,
+        letterSpacing: 0.5, textTransform: 'uppercase',
+        marginBottom: 10,
+    },
+    formCard: {
+        backgroundColor: SgateColors.surface,
+        borderRadius: 16, borderWidth: 1, borderColor: SgateColors.borderSoft,
+        padding: 16,
+    },
+    formFieldLabel: {
+        fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t3,
+        marginBottom: 6,
+    },
+    formInput: {
+        fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1,
+        padding: 0, marginBottom: 0,
+    },
+    formDivider: {
+        height: 1, backgroundColor: SgateColors.borderSoft,
+        marginVertical: 14,
+    },
 
-    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 },
-    chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12, borderWidth: 1.5, borderColor: SgateColors.border },
-    chipSelected: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
-    chipText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
-    chipTextSelected: { color: SgateColors.t1 },
+    // Chips
+    chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    chip: {
+        paddingHorizontal: 14, paddingVertical: 9,
+        borderRadius: 12, borderWidth: 1.5, borderColor: SgateColors.borderSoft,
+        backgroundColor: SgateColors.surface,
+    },
+    chipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
 
-    switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: SgateColors.surface, borderWidth: 1.5, borderColor: SgateColors.border, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 24 },
-    switchLabel: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
+    // Priority
+    priorityGrid: { flexDirection: 'row', gap: 8 },
+    priorityChip: {
+        flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: 6, paddingVertical: 11,
+        borderRadius: 12, borderWidth: 1.5, borderColor: SgateColors.borderSoft,
+        backgroundColor: SgateColors.surface,
+    },
+    priorityChipDot: { width: 7, height: 7, borderRadius: 4 },
+    priorityChipText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
 
-    submitBtn: { backgroundColor: SgateColors.gold, borderRadius: 16, paddingVertical: 17, alignItems: 'center', justifyContent: 'center' },
+    // Pin toggle
+    pinToggle: {
+        flexDirection: 'row', alignItems: 'center', gap: 14,
+        backgroundColor: SgateColors.surface,
+        borderRadius: 16, borderWidth: 1, borderColor: SgateColors.borderSoft,
+        padding: 16, marginBottom: 28,
+    },
+    pinToggleIcon: {
+        width: 40, height: 40, borderRadius: 12,
+        backgroundColor: SgateColors.bg,
+        alignItems: 'center', justifyContent: 'center',
+    },
+    pinToggleIconActive: { backgroundColor: SgateColors.goldPale },
+    pinToggleTitle: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    pinToggleSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 1 },
+    toggleTrack: {
+        width: 44, height: 26, borderRadius: 13,
+        backgroundColor: SgateColors.border,
+        justifyContent: 'center', paddingHorizontal: 3,
+    },
+    toggleTrackActive: { backgroundColor: SgateColors.gold },
+    toggleThumb: {
+        width: 20, height: 20, borderRadius: 10,
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 2,
+        elevation: 2,
+    },
+    toggleThumbActive: { alignSelf: 'flex-end' },
+
+    // Submit
+    submitBtn: {
+        backgroundColor: SgateColors.gold, borderRadius: 16,
+        paddingVertical: 17, flexDirection: 'row',
+        alignItems: 'center', justifyContent: 'center', gap: 8,
+    },
     submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 });

@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
@@ -90,6 +90,7 @@ function normalisePost(raw: any): CommunityPost {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function AdminCommunityScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [posts, setPosts]               = useState<CommunityPost[]>([]);
     const [activeCategory, setActiveCategory] = useState<string>('ALL');
     const [loading, setLoading]           = useState(true);
@@ -241,36 +242,38 @@ export default function AdminCommunityScreen() {
     };
 
     return (
-        <SafeAreaView edges={['top']} style={styles.root}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Community</Text>
-                <TouchableOpacity
-                    onPress={() => setCreateVisible(true)}
-                    style={styles.createBtn}
-                    activeOpacity={0.8}
-                >
-                    <MaterialCommunityIcons name="pencil-outline" size={16} color={SgateColors.t1} />
-                </TouchableOpacity>
-            </View>
-
-            {/* Category filter */}
-            <View style={styles.filterContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContent}>
+        <View style={styles.root}>
+            {/* ── Header (matches Emergency Alerts) ─────────────────────── */}
+            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
+                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.headerTitle} numberOfLines={1}>Community</Text>
+                        <Text style={styles.headerSub} numberOfLines={1}>Posts, discussions & announcements</Text>
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => setCreateVisible(true)}
+                        style={styles.createBtn}
+                        activeOpacity={0.8}
+                    >
+                        <MaterialCommunityIcons name="pencil-outline" size={16} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                </View>
+                {/* Category filter */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                     {ALL_CATEGORIES.map((cat) => {
                         const isActive = activeCategory === cat;
                         const label = cat === 'ALL' ? 'All' : (CATEGORY_CFG[cat]?.label ?? cat);
                         return (
                             <TouchableOpacity
                                 key={cat}
-                                style={[styles.chip, isActive ? styles.chipActive : styles.chipInactive]}
+                                style={[styles.filterTab, isActive && styles.filterTabActive]}
                                 onPress={() => setActiveCategory(cat)}
                                 activeOpacity={0.75}
                             >
-                                <Text style={[styles.chipText, isActive ? styles.chipTextActive : styles.chipTextInactive]}>
+                                <Text style={[styles.filterText, isActive && styles.filterTextActive]}>
                                     {label}
                                 </Text>
                             </TouchableOpacity>
@@ -278,6 +281,9 @@ export default function AdminCommunityScreen() {
                     })}
                 </ScrollView>
             </View>
+
+            {/* Persistent spacer */}
+            <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
             {loading ? (
                 <AppLoader />
@@ -407,34 +413,44 @@ export default function AdminCommunityScreen() {
                     </ScrollView>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-    root: { flex: 1, backgroundColor: SgateColors.card },
+    root: { flex: 1, backgroundColor: SgateColors.bg },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-    header: {
-        flexDirection: 'row', alignItems: 'center',
+    // Header (matches Emergency Alerts)
+    headerWrapper: {
         backgroundColor: SgateColors.card,
-        paddingHorizontal: 20, paddingVertical: 12,
-        borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft,
+        paddingBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.02,
+        shadowRadius: 3,
+        elevation: 2,
+        zIndex: 10,
     },
-    backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { fontFamily: SgateFonts.bold, fontSize: 18, color: SgateColors.t1, flex: 1, marginLeft: 4 },
-    createBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    backButton: { marginRight: 12 },
+    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+    createBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
 
-    filterContainer: { backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-    filterContent: { paddingHorizontal: 20, paddingVertical: 8 },
-
-    chip: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, marginRight: 8 },
-    chipActive: { backgroundColor: SgateColors.gold },
-    chipInactive: { backgroundColor: SgateColors.surface },
-    chipText: { fontSize: 13, fontFamily: SgateFonts.semibold },
-    chipTextActive: { color: SgateColors.t1 },
-    chipTextInactive: { color: SgateColors.t2 },
+    filterRow: { paddingHorizontal: 20, gap: 8 },
+    filterTab: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: SgateColors.surface,
+    },
+    filterTabActive: { backgroundColor: SgateColors.gold },
+    filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    filterTextActive: { color: SgateColors.t1 },
 
     listContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 32, backgroundColor: SgateColors.bg },
 
