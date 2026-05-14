@@ -479,6 +479,7 @@ const S = StyleSheet.create({
         backgroundColor: SgateColors.surface,
         alignItems: 'center',
         justifyContent: 'center',
+        marginTop: -18,
     },
 
     // ── Card ─────────────────────────────────────────────────────────
