@@ -313,9 +313,16 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                     />
                     <SettingRow
                         icon="clipboard-text-clock-outline"
-                        title="Visitor List"
-                        onPress={() => safePush(router, isAdmin ? '/(admin)/vehicles' : '/(resident)/visitors')}
+                        title={isAdmin ? 'Visitor Log' : 'Visitor List'}
+                        onPress={() => safePush(router, isAdmin ? '/(admin)/approval-requests' : '/(resident)/visitors')}
                     />
+                    {isAdmin && (
+                        <SettingRow
+                            icon="car-outline"
+                            title="Parking & Vehicles"
+                            onPress={() => safePush(router, '/(admin)/vehicles')}
+                        />
+                    )}
                     <SettingRow
                         icon="shield-alert-outline"
                         title="Security Alert List"
