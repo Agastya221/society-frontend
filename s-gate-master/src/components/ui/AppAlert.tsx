@@ -13,25 +13,26 @@ interface AlertState {
     title: string;
     message: string;
     buttons: AlertButton[];
+    options?: { cancelable?: boolean };
 }
 
 interface AppAlertContextType {
-    show: (title: string, message: string, buttons?: AlertButton[]) => void;
+    show: (title: string, message: string, buttons?: AlertButton[], options?: { cancelable?: boolean }) => void;
 }
 
 const AppAlertContext = createContext<AppAlertContextType | undefined>(undefined);
 
 export const AppAlert = {
-    show: (title: string, message: string, buttons?: AlertButton[]) => {
+    show: (title: string, message: string, buttons?: AlertButton[], options?: { cancelable?: boolean }) => {
         if (alertInstance) {
-            alertInstance(title, message, buttons);
+            alertInstance(title, message, buttons, options);
         } else {
             console.warn('AppAlertProvider not found. Call AppAlert.show after mounting the provider.');
         }
     }
 };
 
-let alertInstance: (title: string, message: string, buttons?: AlertButton[]) => void;
+let alertInstance: (title: string, message: string, buttons?: AlertButton[], options?: { cancelable?: boolean }) => void;
 
 export function AppAlertProvider({ children }: { children: React.ReactNode }) {
     const [state, setState] = useState<AlertState>({
@@ -41,12 +42,13 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
         buttons: [],
     });
 
-    const show = useCallback((title: string, message: string, buttons: AlertButton[] = [{ text: 'OK' }]) => {
+    const show = useCallback((title: string, message: string, buttons: AlertButton[] = [{ text: 'OK' }], options?: { cancelable?: boolean }) => {
         setState({
             visible: true,
             title,
             message,
             buttons,
+            options,
         });
     }, []);
 
@@ -63,6 +65,8 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const isCancelable = state.options?.cancelable !== false;
+
     return (
         <AppAlertContext.Provider value={{ show }}>
             {children}
@@ -70,7 +74,9 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
                 transparent
                 visible={state.visible}
                 animationType="fade"
-                onRequestClose={hide}
+                onRequestClose={() => {
+                    if (isCancelable) hide();
+                }}
             >
                 <View style={styles.overlay}>
                     <View style={styles.container}>

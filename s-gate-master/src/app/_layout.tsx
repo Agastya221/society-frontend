@@ -4,15 +4,16 @@ import * as SecureStore from "expo-secure-store";
 import * as SplashScreen from "expo-splash-screen";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import { Platform } from "react-native";
+import { useEffect, useState, useRef } from "react";
+import { Platform, Linking, AppState } from "react-native";
+import * as Location from "expo-location";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 import { useSoraFonts } from "../hooks/useFonts";
 import { useAuthStore } from "../store/useAuthStore";
 import api from "../services/api";
-import { AppAlertProvider } from "../components/ui/AppAlert";
+import { AppAlertProvider, AppAlert } from "../components/ui/AppAlert";
 import { AppLoader } from "../components/ui/AppLoader";
 
 // Show notifications while app is in foreground
@@ -43,15 +44,44 @@ export default function RootLayout() {
     loadToken();
   }, []);
 
-  // Register native FCM token right after authentication
+  // Register FCM token & Enforce Compulsory Permissions
   useEffect(() => {
     if (!isAuthenticated || !role) return;
-    if (role !== 'RESIDENT' && role !== 'ADMIN' && role !== 'SUPER_ADMIN') return;
-    (async () => {
+    if (role !== 'RESIDENT' && role !== 'ADMIN') return;
+    
+    const enforcePermissions = async () => {
       try {
-        const { status } = await Notifications.requestPermissionsAsync();
-        if (status !== 'granted') return;
-        // Use native device token so the backend can send directly via FCM
+        // 1. Mandatory Notification Permission
+        let notifStatus = await Notifications.getPermissionsAsync();
+        if (notifStatus.status !== 'granted') {
+          notifStatus = await Notifications.requestPermissionsAsync();
+        }
+        if (notifStatus.status !== 'granted') {
+          AppAlert.show(
+            'Permissions Required',
+            'S-Gate requires Notification access to instantly alert you about visitors and gate activity. Please enable it in Settings.',
+            [{ text: 'OPEN SETTINGS', style: 'default', onPress: () => Linking.openSettings() }],
+            { cancelable: false }
+          );
+          return; // Stop here if denied
+        }
+
+        // 2. Mandatory Location Permission
+        let locStatus = await Location.getForegroundPermissionsAsync();
+        if (locStatus.status !== 'granted') {
+          locStatus = await Location.requestForegroundPermissionsAsync();
+        }
+        if (locStatus.status !== 'granted') {
+          AppAlert.show(
+            'Permissions Required',
+            'S-Gate requires Location access to verify you are within the society premises. Please enable it in Settings.',
+            [{ text: 'OPEN SETTINGS', style: 'default', onPress: () => Linking.openSettings() }],
+            { cancelable: false }
+          );
+          return; // Stop here if denied
+        }
+
+        // 3. Register native FCM token since notifications are granted
         const tokenData = await Notifications.getDevicePushTokenAsync();
         const fcmToken = tokenData.data as string;
         await api.patch('/users/resident-app/fcm-token', {
@@ -60,10 +90,20 @@ export default function RootLayout() {
         });
         console.log('📲 FCM token registered');
       } catch (err) {
-        // Silent — never block the user for push token issues
         console.log('FCM token registration skipped:', err);
       }
-    })();
+    };
+
+    enforcePermissions();
+
+    // Re-check permissions when returning from settings
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        enforcePermissions();
+      }
+    });
+
+    return () => sub.remove();
   }, [isAuthenticated, role]);
 
   // Navigate to approvals when a GATE_REQUEST notification is tapped

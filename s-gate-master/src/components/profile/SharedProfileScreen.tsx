@@ -293,18 +293,6 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 {/* ── Security & Notifications ────────────────────────── */}
                 <Text style={styles.sectionTitle}>Security & Notifications</Text>
 
-                <View style={styles.notifBanner}>
-                    <Text style={styles.notifBannerText}>Not Getting Notifications ?</Text>
-                    <TouchableOpacity
-                        style={styles.notifBannerBtn}
-                        activeOpacity={0.7}
-                        onPress={() => safePush(router, `${routePrefix}/notifications`)}
-                    >
-                        <Text style={styles.notifBannerBtnText}>Test Now</Text>
-                        <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                </View>
-
                 <View style={styles.card}>
                     <SettingRow
                         icon="bell-outline"
