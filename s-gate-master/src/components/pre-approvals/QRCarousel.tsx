@@ -75,13 +75,7 @@ function PassContent({
     const addrSub: string[] = [];
     if (societyInfo?.address) addrSub.push(societyInfo.address);
     if (societyInfo?.city) addrSub.push(societyInfo.city);
-    // Add default pin/state to match MyGate visual density if missing
-    const addrSubLineRaw = addrSub.join(', ');
-    if (societyInfo?.city && !addrSubLineRaw.includes('-')) {
-        addrSub.push('Telangana 500030'); // Hardcoded visual match
-        addrSub.push('Hyderabad - 500052');
-    }
-    const addrSubLine = addrSub.join(',\n');
+    const addrSubLine = addrSub.join(', ');
     
     const isPrivate = pass.type === 'PRIVATE';
 

@@ -53,40 +53,6 @@ function pct(votes: number, total: number): number {
     return Math.round((votes / total) * 100);
 }
 
-// ─── Mock data (backend polls endpoint may vary) ──────────────────────────────
-const MOCK_POLLS: Poll[] = [
-    {
-        id: 'mock-1',
-        question: 'Should we install CCTV in the parking area?',
-        description: 'To improve security, a vote is being held on installing surveillance cameras.',
-        options: [
-            { id: 'o1', text: 'Yes, install immediately', voteCount: 42 },
-            { id: 'o2', text: 'Yes, but phased approach', voteCount: 18 },
-            { id: 'o3', text: 'No, not needed', voteCount: 7 },
-        ],
-        totalVotes: 67,
-        isActive: true,
-        allowMultiple: false,
-        createdAt: new Date(Date.now() - 2 * 86400 * 1000).toISOString(),
-        endDate: new Date(Date.now() + 5 * 86400 * 1000).toISOString(),
-        createdBy: { name: 'Admin' },
-    },
-    {
-        id: 'mock-2',
-        question: 'Preferred time for monthly society meeting?',
-        options: [
-            { id: 'o4', text: 'Saturday 10am', voteCount: 31 },
-            { id: 'o5', text: 'Saturday 4pm', voteCount: 25 },
-            { id: 'o6', text: 'Sunday 11am', voteCount: 19 },
-        ],
-        totalVotes: 75,
-        isActive: false,
-        allowMultiple: false,
-        createdAt: new Date(Date.now() - 14 * 86400 * 1000).toISOString(),
-        createdBy: { name: 'Admin' },
-    },
-];
-
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function AdminElectionsScreen() {
     const router = useRouter();
@@ -111,8 +77,8 @@ export default function AdminElectionsScreen() {
             const data = res.data?.data ?? res.data?.polls ?? [];
             setPolls(Array.isArray(data) ? data : []);
         } catch {
-            // Use mock data if endpoint not available
-            setPolls(MOCK_POLLS);
+            // Show empty state on error — no mock data
+            setPolls([]);
         } finally {
             if (!silent) setLoading(false);
             setRefreshing(false);
