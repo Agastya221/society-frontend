@@ -1,6 +1,10 @@
 // @ts-ignore — package ships without types
-import { OTPWidget } from '@msg91comm/sendotp-react-native';
+import { MSG91_TOKEN_AUTH, MSG91_WIDGET_ID } from '@/constants/msg91';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import api from '@/services/api';
+import { useAuthStore } from '@/store/useAuthStore';
 import { Feather } from '@expo/vector-icons';
+import { OTPWidget } from '@msg91comm/sendotp-react-native';
 import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
@@ -25,10 +29,6 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MSG91_TOKEN_AUTH, MSG91_WIDGET_ID } from '@/constants/msg91';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
-import api from '@/services/api';
-import { useAuthStore } from '@/store/useAuthStore';
 
 const SGATE_LOGO = require('../../assets/images/icons/s-gate-logo-without-bg.png');
 
@@ -39,15 +39,15 @@ export default function Login() {
     const login = useAuthStore((s) => s.login);
     const insets = useSafeAreaInsets();
 
-    const [screen, setScreen]       = useState<Screen>('phone');
-    const [phone, setPhone]         = useState('');
-    const [otp, setOtp]             = useState('');
-    const [reqId, setReqId]         = useState('');
+    const [screen, setScreen] = useState<Screen>('phone');
+    const [phone, setPhone] = useState('');
+    const [otp, setOtp] = useState('');
+    const [reqId, setReqId] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError]         = useState('');
+    const [error, setError] = useState('');
     const [countdown, setCountdown] = useState(0);
 
-    const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const otpInputRef = useRef<TextInput>(null);
 
     // ── MSG91 init ────────────────────────────────────────────────────────────
@@ -190,7 +190,7 @@ export default function Login() {
                             phone={phone} setPhone={setPhone}
                             error={error} setError={setError}
                             isLoading={isLoading} onSend={handleSendOtp}
-                          />
+                        />
                         : <OtpScreen
                             phone={phone} otp={otp} setOtp={setOtp}
                             error={error} setError={setError}
@@ -198,7 +198,7 @@ export default function Login() {
                             inputRef={otpInputRef}
                             onVerify={handleVerifyOtp} onResend={handleResendOtp}
                             onBack={() => { setScreen('phone'); setOtp(''); setError(''); }}
-                          />
+                        />
                     }
 
                     {/* Footer */}
@@ -208,7 +208,7 @@ export default function Login() {
                             <FeaturePill icon="user" label="RESIDENT" />
                             <FeaturePill icon="headphones" label="ASSIST" />
                         </View>
-                        <Text style={S.footerText}>POWERED BY S-GATE TECHNOLOGY © 2025</Text>
+                        <Text style={S.footerText}>POWERED BY S-GATE TECHNOLOGY © 2026</Text>
                     </View>
                 </View>
             </KeyboardAvoidingView>
@@ -324,15 +324,16 @@ function OtpScreen({
         <View style={S.screenWrap}>
             {/* Hero */}
             <Animated.View entering={FadeInDown.delay(50).springify()} style={S.hero}>
-                {/* Back button */}
-                <TouchableOpacity onPress={onBack} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                </TouchableOpacity>
-
-                <View style={S.logoBg}>
-                    <Image source={SGATE_LOGO} style={S.logo} resizeMode="contain" />
+                {/* Top row: back left, logo right */}
+                <View style={S.heroTopRow}>
+                    <TouchableOpacity onPress={onBack} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                    </TouchableOpacity>
+                    <View style={S.logoBg}>
+                        <Image source={SGATE_LOGO} style={S.logo} resizeMode="contain" />
+                    </View>
                 </View>
-                <Text style={S.heroTitle}>Verify{'\n'}OTP</Text>
+                <Text style={S.heroTitle}>Verify OTP</Text>
                 <Text style={S.heroSub}>Sent to +91 {phone}</Text>
             </Animated.View>
 
@@ -437,7 +438,7 @@ const S = StyleSheet.create({
     // ── Hero ─────────────────────────────────────────────────────────
     hero: {
         paddingHorizontal: 28,
-        paddingTop: 12,
+        paddingTop: 0,
         paddingBottom: 32,
         backgroundColor: '#FFFFFF',
     },
@@ -465,14 +466,16 @@ const S = StyleSheet.create({
         color: SgateColors.t3,
         lineHeight: 21,
     },
+    heroTopRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 24,
+    },
     backBtn: {
-        position: 'absolute',
-        top: 12,
-        right: 24,
-        zIndex: 10,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 46,
+        height: 46,
+        borderRadius: 23,
         backgroundColor: SgateColors.surface,
         alignItems: 'center',
         justifyContent: 'center',
