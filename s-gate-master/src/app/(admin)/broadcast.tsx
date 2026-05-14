@@ -1,6 +1,6 @@
 import React from 'react';
 import SharedBroadcastScreen from '@/components/broadcast/SharedBroadcastScreen';
 
-export default function AdminBroadcastStackScreen() {
-    return <SharedBroadcastScreen isTab={false} />;
+export default function AdminBroadcastTab() {
+    return <SharedBroadcastScreen isTab={true} />;
 }

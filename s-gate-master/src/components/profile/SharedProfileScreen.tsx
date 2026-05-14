@@ -332,10 +332,25 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 <View style={styles.card}>
                     <SettingRow
                         icon="home-city-outline"
-                        title={flatInfo ?? 'No flat assigned'}
+                        title={flatInfo ?? (isAdmin ? 'Manage Society Flats' : 'No flat assigned')}
                         subtitle={displayUser.society?.name}
                         badge={flatInfo ? { label: isAdmin ? 'Admin' : 'Active', color: isAdmin ? SgateColors.goldDeep : SgateColors.green, bg: isAdmin ? SgateColors.goldPale : SgateColors.greenBg } : undefined}
-                        showChevron={false}
+                        showChevron={true}
+                        onPress={() => {
+                            console.log('🏠 [Profile] Flat row pressed');
+                            console.log('🏠 [Profile] flatInfo:', flatInfo);
+                            console.log('🏠 [Profile] role:', role, '| isAdmin:', isAdmin);
+                            if (flatInfo) {
+                                console.log('🏠 [Profile] Navigating to flat details →', `${routePrefix}/my-home`);
+                                safePush(router, `${routePrefix}/my-home`);
+                            } else if (isAdmin) {
+                                console.log('🏠 [Profile] Admin with no flat → navigating to flats management');
+                                safePush(router, '/(admin)/flats');
+                            } else {
+                                console.log('🏠 [Profile] Resident with no flat → showing alert');
+                                AppAlert.show('No Flat Assigned', 'You do not have a flat assigned yet. Please contact your society admin.');
+                            }
+                        }}
                     />
                     <SettingRow
                         icon="plus-circle-outline"
