@@ -49,11 +49,11 @@ export default function RootLayout() {
     if (!isAuthenticated || !role) return;
     if (role !== 'RESIDENT' && role !== 'ADMIN') return;
     
-    const enforcePermissions = async () => {
+    const enforcePermissions = async (fromAppState = false) => {
       try {
         // 1. Mandatory Notification Permission
         let notifStatus = await Notifications.getPermissionsAsync();
-        if (notifStatus.status !== 'granted') {
+        if (notifStatus.status !== 'granted' && !fromAppState && notifStatus.canAskAgain) {
           notifStatus = await Notifications.requestPermissionsAsync();
         }
         if (notifStatus.status !== 'granted') {
@@ -68,7 +68,7 @@ export default function RootLayout() {
 
         // 2. Mandatory Location Permission
         let locStatus = await Location.getForegroundPermissionsAsync();
-        if (locStatus.status !== 'granted') {
+        if (locStatus.status !== 'granted' && !fromAppState && locStatus.canAskAgain) {
           locStatus = await Location.requestForegroundPermissionsAsync();
         }
         if (locStatus.status !== 'granted') {
@@ -99,7 +99,7 @@ export default function RootLayout() {
     // Re-check permissions when returning from settings
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
-        enforcePermissions();
+        enforcePermissions(true);
       }
     });
 
