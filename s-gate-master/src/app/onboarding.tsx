@@ -51,14 +51,14 @@ const SLIDES: Slide[] = [
         title: 'One-Tap\nApprovals',
         subtitle: 'Pre-approve visitors, generate QR passes, and manage deliveries right from your phone.',
         icon: 'check-circle',
-        accent: '#059669',
+        accent: SgateColors.gold,
         accentBg: SgateColors.greenBg,
     },
     {
         title: 'Your Society,\nSmarter',
         subtitle: 'Connect with residents, track activity, and keep your community safe — together.',
         icon: 'users',
-        accent: '#1D6FE8',
+        accent: SgateColors.gold,
         accentBg: SgateColors.blueBg,
     },
 ];

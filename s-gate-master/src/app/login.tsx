@@ -289,7 +289,7 @@ function PhoneScreen({ phone, setPhone, error, setError, isLoading, onSend }: Ph
                             ) : (
                                 <View style={S.btnRow}>
                                     <Text style={S.primaryBtnText}>Send OTP</Text>
-                                    <Feather name="arrow-right" size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
+                                    <Feather name="arrow-right" size={18} color={SgateColors.t1} style={{ marginLeft: 8 }} />
                                 </View>
                             )}
                         </View>
