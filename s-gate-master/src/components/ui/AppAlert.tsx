@@ -29,10 +29,16 @@ export const AppAlert = {
         } else {
             console.warn('AppAlertProvider not found. Call AppAlert.show after mounting the provider.');
         }
+    },
+    hide: () => {
+        if (hideInstance) {
+            hideInstance();
+        }
     }
 };
 
 let alertInstance: (title: string, message: string, buttons?: AlertButton[], options?: { cancelable?: boolean }) => void;
+let hideInstance: () => void;
 
 export function AppAlertProvider({ children }: { children: React.ReactNode }) {
     const [state, setState] = useState<AlertState>({
@@ -57,6 +63,8 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
     const hide = () => {
         setState(prev => ({ ...prev, visible: false }));
     };
+
+    hideInstance = hide;
 
     const handleButtonPress = (onPress?: () => void) => {
         hide();

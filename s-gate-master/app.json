@@ -52,6 +52,12 @@
           "color": "#FFB800",
           "defaultChannel": "default"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow S-Gate to use your location to provide local society services."
+        }
       ]
     ],
     "experiments": {
