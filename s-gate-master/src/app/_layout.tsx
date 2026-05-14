@@ -70,9 +70,13 @@ export default function RootLayout() {
         }
 
         if (notifStatus.status !== 'granted') {
+          const notifMsg = role === 'ADMIN'
+            ? 'S-Gate requires Notification access to instantly alert you about security events and approval requests. Please enable it in Settings.'
+            : 'S-Gate requires Notification access to instantly alert you about visitors and gate activity. Please enable it in Settings.';
+            
           AppAlert.show(
             'Permissions Required',
-            'S-Gate requires Notification access to instantly alert you about visitors and gate activity. Please enable it in Settings.',
+            notifMsg,
             [{ text: 'OPEN SETTINGS', style: 'default', onPress: () => Linking.openSettings() }],
             { cancelable: false }
           );
@@ -89,9 +93,13 @@ export default function RootLayout() {
         }
 
         if (locStatus.status !== 'granted') {
+          const locMsg = role === 'ADMIN'
+            ? 'S-Gate requires Location access to verify you are within the society premises for security operations. Please enable it in Settings.'
+            : 'S-Gate requires Location access to provide emergency SOS features and local community services. Please enable it in Settings.';
+            
           AppAlert.show(
             'Permissions Required',
-            'S-Gate requires Location access to verify you are within the society premises. Please enable it in Settings.',
+            locMsg,
             [{ text: 'OPEN SETTINGS', style: 'default', onPress: () => Linking.openSettings() }],
             { cancelable: false }
           );
@@ -134,22 +142,30 @@ export default function RootLayout() {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data as Record<string, any>;
       if (data?.type === 'GATE_REQUEST') {
-        router.push('/(resident)/approvals' as any);
+        if (role === 'ADMIN') {
+          router.push('/(admin)/approval-requests' as any);
+        } else {
+          router.push('/(resident)/approvals' as any);
+        }
       }
     });
     return () => sub.remove();
-  }, [router]);
+  }, [router, role]);
 
   // Auto-navigate to approvals when a GATE_REQUEST arrives in foreground
   useEffect(() => {
     const sub = Notifications.addNotificationReceivedListener((notification) => {
       const data = notification.request.content.data as Record<string, any>;
       if (data?.type === 'GATE_REQUEST' && isAuthenticated) {
-        router.push('/(resident)/approvals' as any);
+        if (role === 'ADMIN') {
+          router.push('/(admin)/approval-requests' as any);
+        } else {
+          router.push('/(resident)/approvals' as any);
+        }
       }
     });
     return () => sub.remove();
-  }, [router, isAuthenticated]);
+  }, [router, isAuthenticated, role]);
 
   // Check if user has seen the onboarding splash
   useEffect(() => {
