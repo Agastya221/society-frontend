@@ -44,18 +44,31 @@ export default function RootLayout() {
     loadToken();
   }, []);
 
+  const checkInProgress = useRef(false);
+
   // Register FCM token & Enforce Compulsory Permissions
   useEffect(() => {
     if (!isAuthenticated || !role) return;
     if (role !== 'RESIDENT' && role !== 'ADMIN') return;
     
     const enforcePermissions = async (fromAppState = false) => {
+      if (checkInProgress.current) return;
+      checkInProgress.current = true;
+
       try {
+        if (fromAppState) {
+          // Android sometimes needs a few ms to sync native permission state after returning from Settings
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
         // 1. Mandatory Notification Permission
         let notifStatus = await Notifications.getPermissionsAsync();
-        if (notifStatus.status !== 'granted' && !fromAppState && notifStatus.canAskAgain) {
+        
+        // Force refresh from OS if not granted
+        if (notifStatus.status !== 'granted') {
           notifStatus = await Notifications.requestPermissionsAsync();
         }
+
         if (notifStatus.status !== 'granted') {
           AppAlert.show(
             'Permissions Required',
@@ -63,14 +76,18 @@ export default function RootLayout() {
             [{ text: 'OPEN SETTINGS', style: 'default', onPress: () => Linking.openSettings() }],
             { cancelable: false }
           );
+          checkInProgress.current = false;
           return; // Stop here if denied
         }
 
         // 2. Mandatory Location Permission
         let locStatus = await Location.getForegroundPermissionsAsync();
-        if (locStatus.status !== 'granted' && !fromAppState && locStatus.canAskAgain) {
-          locStatus = await Location.requestForegroundPermissionsAsync();
+        
+        // Force refresh from OS if not granted
+        if (locStatus.status !== 'granted') {
+           locStatus = await Location.requestForegroundPermissionsAsync();
         }
+
         if (locStatus.status !== 'granted') {
           AppAlert.show(
             'Permissions Required',
@@ -78,9 +95,13 @@ export default function RootLayout() {
             [{ text: 'OPEN SETTINGS', style: 'default', onPress: () => Linking.openSettings() }],
             { cancelable: false }
           );
+          checkInProgress.current = false;
           return; // Stop here if denied
         }
 
+        // Both permissions granted! Hide any lingering blocking alerts
+        AppAlert.hide();
+        
         // 3. Register native FCM token since notifications are granted
         const tokenData = await Notifications.getDevicePushTokenAsync();
         const fcmToken = tokenData.data as string;
@@ -91,6 +112,8 @@ export default function RootLayout() {
         console.log('📲 FCM token registered');
       } catch (err) {
         console.log('FCM token registration skipped:', err);
+      } finally {
+        checkInProgress.current = false;
       }
     };
 
@@ -146,12 +169,12 @@ export default function RootLayout() {
   useEffect(() => {
     if (isLoading || !onboardingChecked) return;
 
-    const inAuthGroup     = segments[0] === undefined || segments[0] === 'login';
+    const inAuthGroup = segments[0] === undefined || segments[0] === 'login';
     const inOnboardingSplash = segments[0] === 'onboarding';
-    const inAdminGroup    = segments[0] === '(admin)';
+    const inAdminGroup = segments[0] === '(admin)';
     const inResidentGroup = segments[0] === '(resident)';
-    const inOnboarding    = segments[0] === '(onboarding)';
-    const inSuperAdmin    = segments[0] === '(superadmin)';
+    const inOnboarding = segments[0] === '(onboarding)';
+    const inSuperAdmin = segments[0] === '(superadmin)';
 
     // First-time user landing on root → show onboarding splash
     // Only redirect from the root (segments[0] === undefined), NOT from /login.

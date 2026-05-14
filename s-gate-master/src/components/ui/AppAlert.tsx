@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Modal, Text, View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import React, { createContext, useCallback, useState } from 'react';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
 
 interface AlertButton {
@@ -84,12 +84,12 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
                             <Text style={styles.title}>{state.title}</Text>
                             <Text style={styles.message}>{state.message}</Text>
                         </View>
-                        
+
                         <View style={styles.buttonContainer}>
                             {state.buttons.map((btn, index) => {
                                 const isDestructive = btn.style === 'destructive';
                                 const isCancel = btn.style === 'cancel';
-                                
+
                                 return (
                                     <TouchableOpacity
                                         key={index}
