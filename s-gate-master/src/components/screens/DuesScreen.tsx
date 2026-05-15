@@ -2,10 +2,9 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, StatusBar } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useFocusEffect } from 'expo-router';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import { AppAlert } from '@/components/ui/AppAlert';
@@ -156,7 +155,13 @@ export default function DuesScreen({ role }: DuesScreenProps) {
   }, []));
 
   function handlePayOutstanding() {
-    AppAlert.show('Payment Gateway', 'Redirecting to payment gateway...', [{ text: 'OK' }]);
+    const nextDue = dues.find(d => d.status !== 'PAID');
+    if (!nextDue) {
+      AppAlert.show('No Outstanding Dues', 'All your society dues are already paid.', [{ text: 'OK' }]);
+      return;
+    }
+
+    router.push(`${DETAIL_ROUTE}${nextDue.id}` as any);
   }
 
   const filteredDues = filter === 'ALL' ? dues : dues.filter(d => d.status === filter);

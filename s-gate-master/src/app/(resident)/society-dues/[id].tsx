@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -20,6 +20,12 @@ import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import { useAuthStore } from '../../../store/useAuthStore';
 import { buildReceiptHTML, buildReceiptNumber } from '../../../utils/receiptTemplate';
+import {
+  createInvoiceCashfreeOrder,
+  getInvoiceCashfreeStatus,
+  removeCashfreeCallback,
+  startCashfreeWebCheckout,
+} from '../../../services/cashfreePaymentService';
 
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -58,6 +64,21 @@ function formatDate(iso: string): string {
 
 function formatAmount(amount: number): string {
   return '₹' + amount.toLocaleString('en-IN');
+}
+
+function getErrorMessage(error: any): string {
+  const message = error?.response?.data?.message || error?.message;
+  if (typeof message === 'string' && (message.includes('rebuilt the app') || message.includes('Expo managed workflow'))) {
+    return 'Cashfree SDK is installed, but the app must be rebuilt as an Expo development build or production build before checkout can open.';
+  }
+
+  return message || 'Something went wrong. Please try again.';
+}
+
+function getCashfreeErrorMessage(error: any): string {
+  if (typeof error?.getMessage === 'function') return error.getMessage();
+  if (typeof error?.getCode === 'function') return error.getCode();
+  return 'Payment was not completed.';
 }
 
 function normaliseDetailedDue(raw: any, userProfile: any): DueItem {
@@ -127,32 +148,109 @@ export default function SocietyDueDetailScreen() {
   const [due, setDue] = useState<DueItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [paying, setPaying] = useState(false);
 
+
+  const fetchDueDetail = useCallback(async (showLoader = false) => {
+    if (!id) {
+      setLoading(false);
+      return null;
+    }
+
+    try {
+      if (showLoader) setLoading(true);
+      let rawData = null;
+      try {
+        const res = await api.get(`/resident/dues/${id}`);
+        rawData = res.data?.data ?? res.data;
+      } catch {
+        const listRes = await api.get('/resident/dues');
+        const listRaw = listRes.data?.data ?? listRes.data;
+        const list: any[] = Array.isArray(listRaw) ? listRaw : listRaw?.dues ?? listRaw?.items ?? [];
+        rawData = list.find(it => it.id === id);
+      }
+
+      if (rawData) {
+        const normalisedDue = normaliseDetailedDue(rawData, user);
+        setDue(normalisedDue);
+        return normalisedDue;
+      }
+
+      setDue(null);
+      return null;
+    } catch (err) {
+      console.error('Failed to fetch due detail:', err);
+      return null;
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  }, [id, user]);
 
   useFocusEffect(useCallback(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        let rawData = null;
-        try {
-          const res = await api.get(`/resident/dues/${id}`);
-          rawData = res.data?.data ?? res.data;
-        } catch (e) {
-          const listRes = await api.get('/resident/dues');
-          const listRaw = listRes.data?.data ?? listRes.data;
-          const list: any[] = Array.isArray(listRaw) ? listRaw : listRaw?.dues ?? listRaw?.items ?? [];
-          rawData = list.find(it => it.id === id);
-        }
-        if (rawData) {
-          setDue(normaliseDetailedDue(rawData, user));
-        }
-      } catch (err) {
-        console.error('Failed to fetch due detail:', err);
-      } finally {
-        setLoading(false);
+    void fetchDueDetail(true);
+  }, [fetchDueDetail]));
+
+  useEffect(() => {
+    return () => {
+      void removeCashfreeCallback();
+    };
+  }, []);
+
+  const syncDueAfterPayment = useCallback(async (fromError = false, sdkError?: unknown) => {
+    if (!id) return;
+
+    try {
+      setPaying(true);
+      const status = await getInvoiceCashfreeStatus(id, true);
+      await fetchDueDetail(false);
+
+      if (status.invoiceStatus === 'PAID') {
+        AppAlert.show('Payment Successful', 'Your invoice has been marked as paid.', [{ text: 'OK' }]);
+        return;
       }
-    })();
-  }, [id, user]));
+
+      const transactionStatus = status.transaction?.status || 'PENDING';
+      AppAlert.show(
+        fromError ? 'Payment Not Completed' : 'Payment Pending',
+        fromError
+          ? `${getCashfreeErrorMessage(sdkError)} Current status: ${transactionStatus}.`
+          : `Cashfree returned status: ${transactionStatus}. Please refresh after a minute if you completed the payment.`,
+        [{ text: 'OK' }]
+      );
+    } catch (err) {
+      AppAlert.show('Payment Check Failed', getErrorMessage(err), [{ text: 'OK' }]);
+    } finally {
+      setPaying(false);
+    }
+  }, [fetchDueDetail, id]);
+
+  const startPayment = useCallback(async () => {
+    if (!due || !id) return;
+
+    try {
+      setPaying(true);
+      const order = await createInvoiceCashfreeOrder(id);
+
+      if (order.alreadyPaid) {
+        await fetchDueDetail(false);
+        AppAlert.show('Already Paid', 'This invoice is already marked as paid.', [{ text: 'OK' }]);
+        setPaying(false);
+        return;
+      }
+
+      await startCashfreeWebCheckout(order, {
+        onVerify: () => {
+          void syncDueAfterPayment(false);
+        },
+        onError: (error) => {
+          void syncDueAfterPayment(true, error);
+        },
+      });
+    } catch (err) {
+      setPaying(false);
+      AppAlert.show('Payment Error', getErrorMessage(err), [{ text: 'OK' }]);
+    }
+  }, [due, fetchDueDetail, id, syncDueAfterPayment]);
 
   const generateAndShareReceipt = async () => {
     if (!due) return;
@@ -277,17 +375,24 @@ export default function SocietyDueDetailScreen() {
       {isActionable && (
         <View style={styles.bottomActions}>
           <TouchableOpacity 
-            style={styles.payMainBtn} 
+            style={[styles.payMainBtn, paying && styles.payMainBtnDisabled]} 
             activeOpacity={0.8} 
+            disabled={paying}
             onPress={() => {
-              AppAlert.show('Confirm Payment', `Pay ${formatAmount(due.totalAmount)} for ${due.month}?`, [
+              AppAlert.show('Confirm Payment', `Pay ${formatAmount(due.totalAmount)} for ${due.month} through Cashfree?`, [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'Pay Now', onPress: () => router.push('/(resident)/society-dues/payment' as any) }
+                { text: 'Pay Now', onPress: startPayment }
               ]);
             }}
           >
-            <Text style={styles.payMainBtnText}>Pay {formatAmount(due.totalAmount)}</Text>
-            <Feather name="arrow-right" size={20} color={SgateColors.black} />
+            {paying ? (
+              <ActivityIndicator size="small" color={SgateColors.black} />
+            ) : (
+              <>
+                <Text style={styles.payMainBtnText}>Pay {formatAmount(due.totalAmount)}</Text>
+                <Feather name="arrow-right" size={20} color={SgateColors.black} />
+              </>
+            )}
           </TouchableOpacity>
         </View>
       )}
@@ -462,6 +567,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+  },
+  payMainBtnDisabled: {
+    opacity: 0.7,
   },
   payMainBtnText: {
     fontSize: 16,
