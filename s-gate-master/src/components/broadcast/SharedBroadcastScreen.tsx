@@ -11,15 +11,14 @@ import { Avatar } from '@/components/ui/Avatar';
 import api from '@/services/api';
 import { AppAlert } from '@/components/ui/AppAlert';
 
-// Mock data for intercom directory
-const MOCK_INTERCOM = [
-    { id: '1', flat: 'A-101', name: 'Alok Pandey', phone: '+91 9876543210' },
-    { id: '2', flat: 'A-102', name: 'Ravi Verma', phone: '+91 9876543211' },
-    { id: '3', flat: 'B-201', name: 'Geeta Sharma', phone: '+91 9876543212' },
-    { id: '4', flat: 'B-205', name: 'Vivek Singh', phone: '+91 9876543213' },
-    { id: '5', flat: 'C-301', name: 'Raj Patel', phone: '+91 9876543214' },
-    { id: '6', flat: 'Main Gate', name: 'Gate Security', phone: '+91 9000000001', isGuard: true },
-];
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface IntercomContact {
+    id: string;
+    flat: string;
+    name: string;
+    phone: string;
+    isGuard?: boolean;
+}
 
 export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boolean }) {
     const router = useRouter();
@@ -35,6 +34,41 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
 
     // Intercom State
     const [searchQuery, setSearchQuery] = useState('');
+    const [intercomContacts, setIntercomContacts] = useState<IntercomContact[]>([]);
+    const [intercomLoading, setIntercomLoading] = useState(false);
+    const searchTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Fetch intercom contacts from API
+    const fetchIntercom = React.useCallback(async (search = '') => {
+        setIntercomLoading(true);
+        try {
+            const res = await api.get('/admin/intercom/contacts', {
+                params: { search: search || undefined, page: 1, limit: 100, includeGuards: true },
+            });
+            const data = res.data?.data ?? res.data?.contacts ?? res.data ?? [];
+            setIntercomContacts(Array.isArray(data) ? data : []);
+        } catch {
+            setIntercomContacts([]);
+        } finally {
+            setIntercomLoading(false);
+        }
+    }, []);
+
+    // Load contacts when Intercom tab is selected
+    React.useEffect(() => {
+        if (activeTab === 'INTERCOM') {
+            fetchIntercom();
+        }
+    }, [activeTab]);
+
+    // Debounced search
+    const handleSearchChange = (text: string) => {
+        setSearchQuery(text);
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = setTimeout(() => {
+            fetchIntercom(text);
+        }, 400);
+    };
 
     const handleBroadcast = async () => {
         if (!title.trim() || !message.trim()) {
@@ -58,11 +92,6 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
     const handleCall = (phone: string) => {
         Linking.openURL(`tel:${phone}`);
     };
-
-    const filteredIntercom = MOCK_INTERCOM.filter(i => 
-        i.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        i.flat.toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
     const renderBroadcastTab = () => (
         <ScrollView
@@ -166,19 +195,23 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
                     placeholder="Search by name or flat"
                     placeholderTextColor={SgateColors.t4}
                     value={searchQuery}
-                    onChangeText={setSearchQuery}
+                    onChangeText={handleSearchChange}
                     autoCorrect={false}
                 />
                 {searchQuery.length > 0 && (
-                    <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <TouchableOpacity onPress={() => { setSearchQuery(''); fetchIntercom(''); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                         <MaterialCommunityIcons name="close" size={16} color={SgateColors.t3} />
                     </TouchableOpacity>
                 )}
             </View>
 
-            {/* List */}
+            {intercomLoading ? (
+                <View style={styles.emptyWrap}>
+                    <ActivityIndicator size="large" color={SgateColors.gold} />
+                </View>
+            ) : (
             <FlatList
-                data={filteredIntercom}
+                data={intercomContacts}
                 keyExtractor={item => item.id}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.listContent}
@@ -215,6 +248,7 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
                     </View>
                 }
             />
+            )}
         </View>
     );
 
