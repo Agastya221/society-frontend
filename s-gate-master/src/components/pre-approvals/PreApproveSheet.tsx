@@ -295,7 +295,7 @@ function PrivateInviteInfoModal({ visible, onClose, onCreatePrivate }: {
                     {/* Illustration */}
                     <View style={PKM.imageCard}>
                         <Image
-                            source={require('../../../assets/images/private_invite_party.png')}
+                            source={require('../../../assets/images/private_invite_party.jpg')}
                             style={PKM.image}
                             resizeMode="cover"
                         />
@@ -958,7 +958,7 @@ const INVITE_THEMES: { icon: React.ComponentProps<typeof Feather>['name']; color
 const PARTY_THEMES = [
     {
         emoji: '🏠', label: 'Home',
-        bgImage: require('../../../assets/images/party_room_bg.png'),
+        bgImage: require('../../../assets/images/party_room_bg.jpg'),
         headerBg: '#F5EFE8', headlineColor: '#8B6300', dark: false,
         chipBorder: '#E8564A', chipBg: '#FFE8E2',
         ctaBg: '#F5C800', ctaText: '#1A1A1A',
@@ -966,7 +966,7 @@ const PARTY_THEMES = [
     },
     {
         emoji: '🍽️', label: 'Dinner',
-        bgImage: require('../../../assets/images/theme_dinner_bg.png'),
+        bgImage: require('../../../assets/images/theme_dinner_bg.jpg'),
         headerBg: '#FDF4E7', headlineColor: '#7A4210', dark: false,
         chipBorder: '#D97706', chipBg: '#FEF3C7',
         ctaBg: '#D97706', ctaText: '#FFFFFF',
@@ -974,7 +974,7 @@ const PARTY_THEMES = [
     },
     {
         emoji: '🎈', label: 'Celebration',
-        bgImage: require('../../../assets/images/theme_celebration_bg.png'),
+        bgImage: require('../../../assets/images/theme_celebration_bg.jpg'),
         headerBg: '#FFF0F5', headlineColor: '#9D174D', dark: false,
         chipBorder: '#EC4899', chipBg: '#FCE7F3',
         ctaBg: '#EC4899', ctaText: '#FFFFFF',
@@ -982,7 +982,7 @@ const PARTY_THEMES = [
     },
     {
         emoji: '📽️', label: 'Movie',
-        bgImage: require('../../../assets/images/theme_movie_bg.png'),
+        bgImage: require('../../../assets/images/theme_movie_bg.jpg'),
         headerBg: '#1E2A4A', headlineColor: '#E0EAFF', dark: true,
         chipBorder: '#93C5FD', chipBg: '#1E3A8A',
         ctaBg: '#3B82F6', ctaText: '#FFFFFF',
@@ -990,7 +990,7 @@ const PARTY_THEMES = [
     },
     {
         emoji: '🃏', label: 'Cards',
-        bgImage: require('../../../assets/images/theme_cards_bg.png'),
+        bgImage: require('../../../assets/images/theme_cards_bg.jpg'),
         headerBg: '#064E3B', headlineColor: '#ECFDF5', dark: true,
         chipBorder: '#34D399', chipBg: '#065F46',
         ctaBg: '#10B981', ctaText: '#FFFFFF',
@@ -998,7 +998,7 @@ const PARTY_THEMES = [
     },
     {
         emoji: '🎂', label: 'Birthday',
-        bgImage: require('../../../assets/images/theme_birthday_bg.png'),
+        bgImage: require('../../../assets/images/theme_birthday_bg.jpg'),
         headerBg: '#FFFBEB', headlineColor: '#92400E', dark: false,
         chipBorder: '#F59E0B', chipBg: '#FEF3C7',
         ctaBg: '#F59E0B', ctaText: '#1A1A1A',

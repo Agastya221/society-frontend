@@ -40,7 +40,11 @@
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -84,7 +88,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "7286df46-4770-4071-acef-57a0666f0482"
+        "projectId": "63def6ca-70fb-490e-8ccc-89f5f7d9460f"
       }
     }
   }
