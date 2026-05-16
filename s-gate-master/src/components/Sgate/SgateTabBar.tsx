@@ -41,10 +41,20 @@ function getBaseName(routeName: string): string {
 export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
-  // Filter: only render routes whose base name is in VISIBLE_TABS
-  const visibleRoutes = state.routes.filter(r => VISIBLE_TABS.has(getBaseName(r.name)));
+  // Filter: only render exactly one route per VISIBLE_TAB to prevent duplicates
+  // (Expo Router auto-generates profile/index alongside explicit profile route)
+  const visibleRoutes = [];
+  const seenBaseNames = new Set();
+  
+  for (const route of state.routes) {
+    const baseName = getBaseName(route.name);
+    if (VISIBLE_TABS.has(baseName) && !seenBaseNames.has(baseName)) {
+      visibleRoutes.push(route);
+      seenBaseNames.add(baseName);
+    }
+  }
 
-  // Map the focused index
+  // Map the focused index based on our deduplicated visibleRoutes
   const focusedRouteName = state.routes[state.index]?.name;
   const focusedBaseName = getBaseName(focusedRouteName ?? '');
   const focusedVisibleIndex = visibleRoutes.findIndex(

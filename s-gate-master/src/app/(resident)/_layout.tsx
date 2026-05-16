@@ -117,7 +117,7 @@ function ResidentLayoutInner() {
           }}
         />
         <Tabs.Screen
-          name="notices"
+          name="notices/index"
           options={{
             title: 'Notice',
             tabBarLabel: 'Notice',
@@ -141,7 +141,7 @@ function ResidentLayoutInner() {
           }}
         />
         <Tabs.Screen
-          name="profile"
+          name="profile/index"
           options={{
             title: 'Profile',
             tabBarLabel: 'Profile',
@@ -150,26 +150,26 @@ function ResidentLayoutInner() {
         />
 
         {/* ── Hidden from tab bar — still navigable ─────────────────────── */}
-        <Tabs.Screen name="local-directory"  options={{ href: null }} />
-        <Tabs.Screen name="daily-help"       options={{ href: null }} />
-        <Tabs.Screen name="elections"        options={{ href: null }} />
-        <Tabs.Screen name="society-dues"     options={{ href: null }} />
-        <Tabs.Screen name="communication"    options={{ href: null }} />
-        <Tabs.Screen name="amenities"        options={{ href: null }} />
-        <Tabs.Screen name="vehicles"         options={{ href: null }} />
-        <Tabs.Screen name="documents"        options={{ href: null }} />
-        <Tabs.Screen name="search-vehicle"   options={{ href: null }} />
+        <Tabs.Screen name="local-directory/index"  options={{ href: null }} />
+        <Tabs.Screen name="daily-help/index"       options={{ href: null }} />
+        <Tabs.Screen name="elections/index"        options={{ href: null }} />
+        <Tabs.Screen name="society-dues/index"     options={{ href: null }} />
+        <Tabs.Screen name="communication/index"    options={{ href: null }} />
+        <Tabs.Screen name="amenities/index"        options={{ href: null }} />
+        <Tabs.Screen name="vehicles/index"         options={{ href: null }} />
+        <Tabs.Screen name="documents/index"        options={{ href: null }} />
+        <Tabs.Screen name="search-vehicle/index"   options={{ href: null }} />
         <Tabs.Screen name="visitors"    options={{ href: null }} />
-        <Tabs.Screen name="approvals"   options={{ href: null }} />
+        <Tabs.Screen name="approvals/index"   options={{ href: null }} />
         <Tabs.Screen name="complaints"  options={{ href: null }} />
-        <Tabs.Screen name="emergency"   options={{ href: null }} />
-        <Tabs.Screen name="family"      options={{ href: null }} />
-        <Tabs.Screen name="pre-approvals" options={{ href: null }} />
-        <Tabs.Screen name="staff"       options={{ href: null }} />
+        <Tabs.Screen name="emergency/index"   options={{ href: null }} />
+        <Tabs.Screen name="family/index"      options={{ href: null }} />
+        <Tabs.Screen name="pre-approvals/index" options={{ href: null }} />
+        <Tabs.Screen name="staff/index"       options={{ href: null }} />
         <Tabs.Screen name="pre-approve" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
         <Tabs.Screen name="expect-delivery" options={{ href: null }} />
-        <Tabs.Screen name="my-passes"       options={{ href: null }} />
+        <Tabs.Screen name="my-passes/index"       options={{ href: null }} />
         <Tabs.Screen name="household"     options={{ href: null }} />
       </Tabs>
     </View>
