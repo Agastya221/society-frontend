@@ -4,7 +4,7 @@
     "slug": "s-gate",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icons/s-gate-logo-with-bg.png",
+    "icon": "./assets/images/icons/icon.png",
     "scheme": "sgate",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -32,7 +32,7 @@
       "package": "com.sgate.app",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/images/icons/s-gate-logo-with-bg.png"
+        "foregroundImage": "./assets/images/icons/adaptive-icon.png"
       },
       "navigationBar": {
         "visible": true,
@@ -55,7 +55,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icons/s-gate-logo-with-bg.png",
+          "image": "./assets/images/icons/s-gate-logo-without-bg.png",
           "imageWidth": 120,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
