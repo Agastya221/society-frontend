@@ -89,12 +89,15 @@ function normaliseDetailedDue(raw: any, userProfile: any): DueItem {
   else if (new Date(raw.dueDate) < new Date()) status = 'OVERDUE';
 
   const defaultLineItems: DueLineItem[] = [
-    { label: 'Society Maintenance', amount: raw.amount ?? raw.totalAmount ?? 0 }
+    { label: raw.description || 'Society Maintenance', amount: raw.totalAmount ?? raw.amount ?? 0 }
   ];
 
-  const flatNumber = userProfile?.flat?.number 
+  const flatNumber = raw.flatNumber
+    ? `${raw.blockName ? raw.blockName + '-' : ''}${raw.flatNumber}`
+    : userProfile?.flat?.number
     ? `${userProfile.flat.block?.name ? userProfile.flat.block.name + '-' : ''}${userProfile.flat.number}`
     : raw.flatNo || raw.unit || '---';
+  const rawLineItems: any[] = raw.lineItems || raw.items || defaultLineItems;
 
   return {
     id: raw.id,
@@ -104,8 +107,12 @@ function normaliseDetailedDue(raw: any, userProfile: any): DueItem {
     flat: flatNumber,
     society: userProfile?.society?.name || raw.societyName || 'Your Society',
     status: status,
-    totalAmount: raw.amount ?? raw.totalAmount ?? 0,
-    lineItems: raw.lineItems || raw.items || defaultLineItems,
+    totalAmount: raw.totalAmount ?? raw.amount ?? 0,
+    lineItems: rawLineItems.map((item) => ({
+      label: item.label || item.description || 'Charge',
+      amount: item.amount ?? 0,
+      isRed: item.isRed,
+    })),
     paidOn: raw.paidAt ?? raw.paidOn ?? undefined,
     paidVia: raw.paidVia || raw.paymentMethod || undefined,
     paymentHistory: raw.paymentHistory || raw.history || [],
