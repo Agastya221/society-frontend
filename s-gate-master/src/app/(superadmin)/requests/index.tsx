@@ -71,8 +71,8 @@ export default function RequestsListScreen() {
             const params: Record<string, any> = { page: 1, limit: 20 };
             if (tab !== 'ALL') params.status = tab;
             const res = await api.get('/society-registration/requests', { params });
-            const data = res.data?.data ?? [];
-            const pagination = res.data?.pagination;
+            const data = res.data?.data?.requests ?? res.data?.data ?? [];
+            const pagination = res.data?.data?.pagination ?? res.data?.pagination;
             setRequests(data);
             setHasMore(pagination ? pagination.page < pagination.pages : false);
         } catch (err) {
@@ -92,8 +92,8 @@ export default function RequestsListScreen() {
             const params: Record<string, any> = { page: nextPage, limit: 20 };
             if (activeTab !== 'ALL') params.status = activeTab;
             const res = await api.get('/society-registration/requests', { params });
-            const data = res.data?.data ?? [];
-            const pagination = res.data?.pagination;
+            const data = res.data?.data?.requests ?? res.data?.data ?? [];
+            const pagination = res.data?.data?.pagination ?? res.data?.pagination;
             setRequests((prev) => [...prev, ...data]);
             setPage(nextPage);
             setHasMore(pagination ? pagination.page < pagination.pages : false);

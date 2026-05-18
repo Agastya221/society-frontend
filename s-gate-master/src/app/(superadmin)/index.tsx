@@ -65,10 +65,10 @@ export default function SuperAdminDashboard() {
                 api.get('/society-registration/requests', { params: { status: 'APPROVED', page: 1, limit: 1 } }),
                 api.get('/society-registration/requests', { params: { status: 'REJECTED', page: 1, limit: 1 } }),
             ]);
-            setPendingRequests(pendingRes.data?.data ?? []);
-            setPendingCount(pendingRes.data?.pagination?.total ?? 0);
-            setApprovedCount(approvedRes.data?.pagination?.total ?? 0);
-            setRejectedCount(rejectedRes.data?.pagination?.total ?? 0);
+            setPendingRequests(pendingRes.data?.data?.requests ?? pendingRes.data?.data ?? []);
+            setPendingCount(pendingRes.data?.data?.pagination?.total ?? pendingRes.data?.pagination?.total ?? 0);
+            setApprovedCount(approvedRes.data?.data?.pagination?.total ?? approvedRes.data?.pagination?.total ?? 0);
+            setRejectedCount(rejectedRes.data?.data?.pagination?.total ?? rejectedRes.data?.pagination?.total ?? 0);
         } catch (err) {
             console.error('Dashboard fetch error:', err);
         } finally {

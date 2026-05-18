@@ -53,7 +53,7 @@ export default function RequestDetailScreen() {
     const fetchDetail = async () => {
         try {
             const res = await api.get(`/society-registration/requests/${id}`);
-            setRequest(res.data?.data ?? null);
+            setRequest(res.data?.data?.request ?? res.data?.data ?? null);
         } catch (err: any) {
             Alert.alert('Error', err?.response?.data?.message || 'Failed to load request');
         } finally {
