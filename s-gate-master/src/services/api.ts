@@ -53,7 +53,8 @@ api.interceptors.response.use(
         const requestUrl: string = originalRequest?.url ?? '';
         const shouldSkip =
             requestUrl.includes('/resident/onboarding') ||
-            requestUrl.includes('/society-registration');
+            requestUrl.includes('/society-registration') ||
+            requestUrl.includes('/upload');
 
         if (error.response?.status === 401 && !originalRequest._retry && !shouldSkip) {
             const { isAuthenticated, refreshToken, refreshAccessToken, logout } = useAuthStore.getState();

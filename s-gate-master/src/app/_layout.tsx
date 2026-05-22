@@ -9,12 +9,24 @@ import { Platform, Linking, AppState } from "react-native";
 import * as Location from "expo-location";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "../global.css";
 import { useSoraFonts } from "../hooks/useFonts";
 import { useAuthStore } from "../store/useAuthStore";
 import api from "../services/api";
 import { AppAlertProvider, AppAlert } from "../components/ui/AppAlert";
 import { AppLoader } from "../components/ui/AppLoader";
+
+// ─── React Query Client ──────────────────────────────────────────────────────
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 30_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Show notifications while app is in foreground
 Notifications.setNotificationHandler({
@@ -78,7 +90,7 @@ export default function RootLayout() {
             'Permissions Required',
             notifMsg,
             [{ text: 'OPEN SETTINGS', style: 'default', onPress: () => Linking.openSettings() }],
-            { cancelable: false }
+            { cancelable: false, tag: 'permissions' }
           );
           checkInProgress.current = false;
           return; // Stop here if denied
@@ -101,14 +113,14 @@ export default function RootLayout() {
             'Permissions Required',
             locMsg,
             [{ text: 'OPEN SETTINGS', style: 'default', onPress: () => Linking.openSettings() }],
-            { cancelable: false }
+            { cancelable: false, tag: 'permissions' }
           );
           checkInProgress.current = false;
           return; // Stop here if denied
         }
 
         // Both permissions granted! Hide any lingering blocking alerts
-        AppAlert.hide();
+        AppAlert.hide('permissions');
         
         // 3. Register native FCM token since notifications are granted
         const tokenData = await Notifications.getDevicePushTokenAsync();
@@ -271,13 +283,15 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <AppAlertProvider>
-          <Slot />
-        </AppAlertProvider>
-        <StatusBar style="dark" />
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <QueryClientProvider client={queryClient}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <AppAlertProvider>
+            <Slot />
+          </AppAlertProvider>
+          <StatusBar style="dark" />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 }

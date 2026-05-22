@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
 
 interface AlertButton {
@@ -14,31 +15,37 @@ interface AlertState {
     message: string;
     buttons: AlertButton[];
     options?: { cancelable?: boolean };
+    tag?: string;
 }
 
 interface AppAlertContextType {
-    show: (title: string, message: string, buttons?: AlertButton[], options?: { cancelable?: boolean }) => void;
+    show: (title: string, message: string, buttons?: AlertButton[], options?: { cancelable?: boolean; tag?: string }) => void;
 }
 
 const AppAlertContext = createContext<AppAlertContextType | undefined>(undefined);
 
 export const AppAlert = {
-    show: (title: string, message: string, buttons?: AlertButton[], options?: { cancelable?: boolean }) => {
+    show: (title: string, message: string, buttons?: AlertButton[], options?: { cancelable?: boolean; tag?: string }) => {
         if (alertInstance) {
             alertInstance(title, message, buttons, options);
         } else {
             console.warn('AppAlertProvider not found. Call AppAlert.show after mounting the provider.');
         }
     },
-    hide: () => {
+    /**
+     * Hide the current alert.
+     * If a tag is provided, only hide the alert if it matches the tag.
+     * This prevents unrelated alerts from being dismissed.
+     */
+    hide: (tag?: string) => {
         if (hideInstance) {
-            hideInstance();
+            hideInstance(tag);
         }
     }
 };
 
-let alertInstance: (title: string, message: string, buttons?: AlertButton[], options?: { cancelable?: boolean }) => void;
-let hideInstance: () => void;
+let alertInstance: (title: string, message: string, buttons?: AlertButton[], options?: { cancelable?: boolean; tag?: string }) => void;
+let hideInstance: (tag?: string) => void;
 
 export function AppAlertProvider({ children }: { children: React.ReactNode }) {
     const [state, setState] = useState<AlertState>({
@@ -48,20 +55,25 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
         buttons: [],
     });
 
-    const show = useCallback((title: string, message: string, buttons: AlertButton[] = [{ text: 'OK' }], options?: { cancelable?: boolean }) => {
+    const show = useCallback((title: string, message: string, buttons: AlertButton[] = [{ text: 'OK' }], options?: { cancelable?: boolean; tag?: string }) => {
         setState({
             visible: true,
             title,
             message,
             buttons,
             options,
+            tag: options?.tag,
         });
     }, []);
 
     alertInstance = show;
 
-    const hide = () => {
-        setState(prev => ({ ...prev, visible: false }));
+    const hide = (tag?: string) => {
+        setState(prev => {
+            // If a tag is specified, only hide if the current alert has that same tag
+            if (tag && prev.tag !== tag) return prev;
+            return { ...prev, visible: false };
+        });
     };
 
     hideInstance = hide;
@@ -74,6 +86,18 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
     };
 
     const isCancelable = state.options?.cancelable !== false;
+
+    // Determine alert icon based on title keywords
+    const getAlertIcon = () => {
+        const t = state.title.toLowerCase();
+        if (t.includes('error') || t.includes('failed')) return { name: 'alert-circle' as const, color: SgateColors.red };
+        if (t.includes('success')) return { name: 'check-circle' as const, color: SgateColors.green };
+        if (t.includes('permission') || t.includes('required')) return { name: 'shield' as const, color: SgateColors.gold };
+        if (t.includes('warning') || t.includes('large')) return { name: 'alert-triangle' as const, color: SgateColors.gold };
+        return { name: 'info' as const, color: SgateColors.gold };
+    };
+
+    const alertIcon = getAlertIcon();
 
     return (
         <AppAlertContext.Provider value={{ show }}>
@@ -88,32 +112,48 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
             >
                 <View style={styles.overlay}>
                     <View style={styles.container}>
+                        {/* Icon Header */}
+                        <View style={styles.iconHeader}>
+                            <View style={[styles.iconCircle, { backgroundColor: `${alertIcon.color}15` }]}>
+                                <Feather name={alertIcon.name} size={28} color={alertIcon.color} />
+                            </View>
+                        </View>
+
+                        {/* Content */}
                         <View style={styles.content}>
                             <Text style={styles.title}>{state.title}</Text>
                             <Text style={styles.message}>{state.message}</Text>
                         </View>
 
-                        <View style={styles.buttonContainer}>
+                        {/* Buttons */}
+                        <View style={[
+                            styles.buttonContainer,
+                            state.buttons.length > 2 && styles.buttonContainerVertical,
+                        ]}>
                             {state.buttons.map((btn, index) => {
                                 const isDestructive = btn.style === 'destructive';
                                 const isCancel = btn.style === 'cancel';
+                                const isPrimary = !isDestructive && !isCancel;
 
                                 return (
                                     <TouchableOpacity
                                         key={index}
                                         style={[
                                             styles.button,
-                                            index > 0 && styles.buttonBorder,
-                                            state.buttons.length > 2 && styles.verticalButton
+                                            isPrimary && styles.primaryButton,
+                                            isDestructive && styles.destructiveButton,
+                                            isCancel && styles.cancelButton,
+                                            state.buttons.length > 2 && styles.verticalButton,
+                                            state.buttons.length <= 2 && index > 0 && { marginLeft: 10 },
                                         ]}
                                         onPress={() => handleButtonPress(btn.onPress)}
-                                        activeOpacity={0.6}
+                                        activeOpacity={0.7}
                                     >
                                         <Text style={[
                                             styles.buttonText,
-                                            isDestructive && styles.destructiveText,
-                                            isCancel && styles.cancelText,
-                                            !isDestructive && !isCancel && styles.primaryText
+                                            isPrimary && styles.primaryButtonText,
+                                            isDestructive && styles.destructiveButtonText,
+                                            isCancel && styles.cancelButtonText,
                                         ]}>
                                             {btn.text}
                                         </Text>
@@ -131,25 +171,38 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(13, 15, 20, 0.55)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 40,
+        padding: 32,
     },
     container: {
         width: '100%',
         maxWidth: 320,
         backgroundColor: '#FFFFFF',
-        borderRadius: 16,
+        borderRadius: 24,
         overflow: 'hidden',
-        elevation: 5,
+        elevation: 8,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
+    },
+    iconHeader: {
+        alignItems: 'center',
+        paddingTop: 28,
+        paddingBottom: 4,
+    },
+    iconCircle: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     content: {
-        padding: 24,
+        paddingHorizontal: 24,
+        paddingBottom: 24,
         alignItems: 'center',
     },
     title: {
@@ -158,47 +211,55 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
         marginBottom: 8,
         textAlign: 'center',
+        letterSpacing: -0.2,
     },
     message: {
         fontSize: 14,
         fontFamily: SgateFonts.regular,
-        color: SgateColors.t2,
+        color: SgateColors.t3,
         textAlign: 'center',
-        lineHeight: 20,
+        lineHeight: 21,
     },
     buttonContainer: {
         flexDirection: 'row',
-        borderTopWidth: 1,
-        borderTopColor: SgateColors.borderSoft,
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+        gap: 10,
+    },
+    buttonContainerVertical: {
+        flexDirection: 'column',
     },
     button: {
         flex: 1,
-        height: 52,
+        height: 48,
+        borderRadius: 14,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    buttonBorder: {
-        borderLeftWidth: 1,
-        borderLeftColor: SgateColors.borderSoft,
+    primaryButton: {
+        backgroundColor: SgateColors.gold,
     },
-    buttonText: {
-        fontSize: 16,
-        fontFamily: SgateFonts.semibold,
+    destructiveButton: {
+        backgroundColor: SgateColors.redBg,
     },
-    primaryText: {
-        color: SgateColors.goldDeep,
-    },
-    destructiveText: {
-        color: '#EF4444',
-    },
-    cancelText: {
-        color: SgateColors.t3,
+    cancelButton: {
+        backgroundColor: SgateColors.surface,
     },
     verticalButton: {
         flex: 0,
         width: '100%',
-        borderLeftWidth: 0,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    }
+    },
+    buttonText: {
+        fontSize: 15,
+        fontFamily: SgateFonts.bold,
+    },
+    primaryButtonText: {
+        color: SgateColors.t1,
+    },
+    destructiveButtonText: {
+        color: SgateColors.red,
+    },
+    cancelButtonText: {
+        color: SgateColors.t3,
+    },
 });

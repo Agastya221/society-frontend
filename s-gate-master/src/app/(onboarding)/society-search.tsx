@@ -1,206 +1,418 @@
-import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
+    View,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    StyleSheet,
+    RefreshControl,
+    Platform,
 } from 'react-native';
-import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import api from '@/services/api';
+import { FlashList } from '@shopify/flash-list';
+import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
+import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useSocieties } from '@/hooks/useOnboardingQueries';
+import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
+import { SkeletonList } from '@/components/lists/AppFlashList';
+import type { Society } from '@/types/onboarding.types';
 
-interface Society {
-    id: string;
-    name: string;
-    address: string;
-    city: string;
-    totalFlats: number;
+// ─── Society Card ─────────────────────────────────────────────────────────────
+
+const SocietyCard = memo(function SocietyCard({
+    society,
+    onPress,
+    index,
+}: {
+    society: Society;
+    onPress: () => void;
+    index: number;
+}) {
+    return (
+        <Animated.View entering={FadeInDown.delay(index * 60).duration(400).springify()}>
+            <TouchableOpacity
+                onPress={onPress}
+                style={styles.card}
+                activeOpacity={0.7}
+            >
+                {/* Gold accent line on the left */}
+                <View style={styles.cardAccent} />
+
+                <View style={styles.cardInner}>
+                    <View style={styles.cardRow}>
+                        <View style={styles.cardIconBox}>
+                            <Feather name="home" size={18} color={SgateColors.gold} />
+                        </View>
+                        <View style={styles.cardContent}>
+                            <Text style={styles.cardTitle} numberOfLines={1}>
+                                {society.name}
+                            </Text>
+                            <View style={styles.cardAddressRow}>
+                                <Feather name="map-pin" size={10} color={SgateColors.t4} />
+                                <Text style={styles.cardAddress} numberOfLines={1}>
+                                    {society.address}
+                                </Text>
+                            </View>
+                        </View>
+                        <View style={styles.chevronBox}>
+                            <Feather name="chevron-right" size={16} color={SgateColors.gold} />
+                        </View>
+                    </View>
+
+                    {/* Meta chips row */}
+                    <View style={styles.cardMetaRow}>
+                        <View style={styles.metaChip}>
+                            <Feather name="map" size={10} color={SgateColors.gold} />
+                            <Text style={styles.metaText}>
+                                {society.city}, {society.state}
+                            </Text>
+                        </View>
+                        <View style={styles.metaDivider} />
+                        <View style={styles.metaChip}>
+                            <Feather name="grid" size={10} color={SgateColors.gold} />
+                            <Text style={styles.metaText}>
+                                {society.totalFlats} flats
+                            </Text>
+                        </View>
+                        {society.totalBlocks > 0 && (
+                            <>
+                                <View style={styles.metaDivider} />
+                                <View style={styles.metaChip}>
+                                    <Feather name="layers" size={10} color={SgateColors.gold} />
+                                    <Text style={styles.metaText}>
+                                        {society.totalBlocks} blocks
+                                    </Text>
+                                </View>
+                            </>
+                        )}
+                    </View>
+                </View>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+});
+
+// ─── Empty State ──────────────────────────────────────────────────────────────
+
+function NoSocietiesFound() {
+    return (
+        <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconBox}>
+                <View style={styles.emptyIconInner}>
+                    <Feather name="search" size={28} color={SgateColors.t4} />
+                </View>
+            </View>
+            <Text style={styles.emptyTitle}>No societies found</Text>
+            <Text style={styles.emptySubtitle}>
+                Society is not active on S-Gate yet.{'\n'}
+                Please contact your society office or S-Gate support.
+            </Text>
+        </View>
+    );
 }
 
-const CITIES = ['All Cities', 'Mumbai', 'Pune', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Other'];
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function SocietySearchScreen() {
     const router = useRouter();
+    const selectedCity = useOnboardingStore((s) => s.selectedCity);
+    const setSociety = useOnboardingStore((s) => s.setSociety);
+
     const [search, setSearch] = useState('');
-    const [city, setCity] = useState('All Cities');
-    const [societies, setSocieties] = useState<Society[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [initialLoad, setInitialLoad] = useState(true);
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [isFocused, setIsFocused] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const fetchSocieties = useCallback(async (searchTerm: string, cityFilter: string) => {
-        setLoading(true);
-        try {
-            const params: Record<string, string> = {};
-            if (searchTerm.trim()) params.search = searchTerm.trim();
-            if (cityFilter && cityFilter !== 'All Cities') params.city = cityFilter;
-
-            const res = await api.get('/resident/onboarding/societies', { params });
-            setSocieties(res.data?.data ?? []);
-        } catch (err) {
-            console.error('Failed to fetch societies:', err);
-            setSocieties([]);
-        } finally {
-            setLoading(false);
-            setInitialLoad(false);
-        }
-    }, []);
-
-    // Initial load
+    // Debounce search input
     useEffect(() => {
-        fetchSocieties('', 'All Cities');
-    }, []);
-
-    // Debounced search
-    useEffect(() => {
-        if (initialLoad) return;
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
-            fetchSocieties(search, city);
-        }, 500);
-        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-    }, [search, city]);
+            setDebouncedSearch(search);
+        }, 400);
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
+    }, [search]);
 
-    const renderSocietyCard = ({ item }: { item: Society }) => (
-        <TouchableOpacity
-            onPress={() => router.push({
-                pathname: '/(onboarding)/select-flat',
-                params: { societyId: item.id, societyName: item.name },
-            })}
-            className="bg-white rounded-2xl p-4 mb-3 border border-gray-100 shadow-sm"
-            activeOpacity={0.7}
-        >
-            <View className="flex-row items-start gap-3">
-                <View className="w-12 h-12 bg-indigo-100 rounded-xl items-center justify-center mt-0.5">
-                    <Feather name="home" size={22} color="#4f46e5" />
-                </View>
-                <View className="flex-1">
-                    <Text className="text-gray-900 font-bold text-base">{item.name}</Text>
-                    <View className="flex-row items-center gap-1 mt-1">
-                        <Feather name="map-pin" size={12} color="#9ca3af" />
-                        <Text className="text-gray-500 text-sm flex-1" numberOfLines={1}>{item.address}</Text>
-                    </View>
-                    <View className="flex-row items-center gap-4 mt-2">
-                        <View className="flex-row items-center gap-1">
-                            <Feather name="map" size={12} color="#6366f1" />
-                            <Text className="text-indigo-600 text-xs font-medium">{item.city}</Text>
-                        </View>
-                        <View className="flex-row items-center gap-1">
-                            <Feather name="grid" size={12} color="#6366f1" />
-                            <Text className="text-indigo-600 text-xs font-medium">{item.totalFlats} flats</Text>
-                        </View>
-                    </View>
-                </View>
-                <Feather name="chevron-right" size={20} color="#d1d5db" />
-            </View>
-        </TouchableOpacity>
+    const {
+        data: societies,
+        isLoading,
+        isError,
+        error,
+        refetch,
+        isRefetching,
+    } = useSocieties({
+        city: selectedCity?.name,
+        search: debouncedSearch || undefined,
+    });
+
+    const handleSelectSociety = useCallback(
+        (society: Society) => {
+            setSociety(society);
+            router.push('/(onboarding)/select-block');
+        },
+        [setSociety, router]
     );
 
-    const renderEmpty = () => {
-        if (loading || initialLoad) return null;
-        return (
-            <View className="items-center justify-center py-16 px-6">
-                <View className="w-20 h-20 bg-gray-100 rounded-full items-center justify-center mb-4">
-                    <Feather name="search" size={36} color="#d1d5db" />
-                </View>
-                <Text className="text-gray-700 font-semibold text-lg mb-2">No societies found</Text>
-                <Text className="text-gray-400 text-center text-sm mb-6">
-                    Try a different search term or city filter.
-                </Text>
-                <TouchableOpacity
-                    onPress={() => router.push('/(onboarding)/register-society')}
-                    className="bg-indigo-600 px-6 py-3 rounded-xl"
-                    activeOpacity={0.8}
-                >
-                    <Text className="text-white font-bold text-sm">Register My Society</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    };
+    const renderItem = useCallback(
+        ({ item, index }: { item: Society; index: number }) => (
+            <SocietyCard society={item} onPress={() => handleSelectSociety(item)} index={index} />
+        ),
+        [handleSelectSociety]
+    );
+
+    const keyExtractor = useCallback((item: Society) => item.id, []);
 
     return (
-        <SafeAreaView edges={['top']} className="flex-1 bg-gray-50">
-            {/* Header */}
-            <View className="bg-white px-5 pt-4 pb-3 border-b border-gray-100">
-                <View className="flex-row items-center gap-3 mb-4">
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        className="w-10 h-10 bg-gray-100 rounded-xl items-center justify-center"
-                    >
-                        <Feather name="arrow-left" size={20} color="#374151" />
-                    </TouchableOpacity>
-                    <View className="flex-1">
-                        <Text className="text-gray-900 font-bold text-xl">Find Your Society</Text>
-                        <Text className="text-gray-400 text-xs mt-0.5">Search by name or city</Text>
-                    </View>
-                </View>
+        <View style={styles.root}>
+            <StatusBar style="dark" />
 
-                {/* Search Bar */}
-                <View className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1 flex-row items-center gap-2 mb-3">
-                    <Feather name="search" size={18} color="#9ca3af" />
+            <OnboardingHeader
+                title="Find Your Society"
+                subtitle={selectedCity ? `in ${selectedCity.name}` : 'Search by name'}
+                step={2}
+                stepLabel="Search Society"
+            />
+
+            {/* Search Bar */}
+            <View style={styles.searchContainer}>
+                <View style={[
+                    styles.searchBar,
+                    isFocused && styles.searchBarFocused,
+                ]}>
+                    <Feather
+                        name="search"
+                        size={18}
+                        color={isFocused ? SgateColors.gold : SgateColors.t4}
+                    />
                     <TextInput
-                        className="flex-1 text-gray-900 text-base"
+                        style={styles.searchInput}
                         placeholder="Search societies..."
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={SgateColors.t4}
                         value={search}
                         onChangeText={setSearch}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
                         autoCorrect={false}
+                        returnKeyType="search"
                     />
                     {search.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearch('')}>
-                            <Feather name="x-circle" size={18} color="#9ca3af" />
+                        <TouchableOpacity
+                            onPress={() => setSearch('')}
+                            style={styles.clearButton}
+                        >
+                            <Feather name="x" size={14} color={SgateColors.t4} />
                         </TouchableOpacity>
                     )}
                 </View>
-
-                {/* City Filter Chips */}
-                <FlatList
-                    data={CITIES}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item}
-                    contentContainerStyle={{ gap: 8 }}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            onPress={() => setCity(item)}
-                            className={`px-4 py-2 rounded-full ${
-                                city === item ? 'bg-indigo-600' : 'bg-gray-100'
-                            }`}
-                        >
-                            <Text className={`text-sm font-medium ${
-                                city === item ? 'text-white' : 'text-gray-600'
-                            }`}>
-                                {item}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                />
             </View>
 
             {/* Results */}
-            {initialLoad ? (
-                <AppLoader />
+            {isLoading ? (
+                <SkeletonList count={4} />
             ) : (
-                <FlatList
-                    data={societies}
-                    keyExtractor={(item) => item.id}
-                    renderItem={renderSocietyCard}
-                    ListEmptyComponent={renderEmpty}
-                    contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+                <FlashList
+                    data={societies ?? []}
+                    keyExtractor={keyExtractor}
+                    renderItem={renderItem}
+                    ListEmptyComponent={<NoSocietiesFound />}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32 }}
                     showsVerticalScrollIndicator={false}
-                    ListHeaderComponent={
-                        loading && !initialLoad ? (
-                            <View className="items-center py-3">
-                                <ActivityIndicator size="small" color="#4f46e5" />
-                            </View>
-                        ) : null
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={isRefetching}
+                            onRefresh={refetch}
+                            tintColor={SgateColors.gold}
+                            colors={[SgateColors.gold]}
+                        />
                     }
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+    root: {
+        flex: 1,
+        backgroundColor: SgateColors.bg,
+    },
+
+    // ── Search ──
+    searchContainer: {
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        ...SgateShadows.minimal,
+    },
+    searchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: SgateColors.bg,
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+        gap: 10,
+        borderWidth: 1.5,
+        borderColor: SgateColors.border,
+    },
+    searchBarFocused: {
+        borderColor: SgateColors.gold,
+        backgroundColor: SgateColors.goldPale,
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 15,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t1,
+        padding: 0,
+    },
+    clearButton: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: SgateColors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // ── Card ──
+    card: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        marginBottom: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+        ...SgateShadows.card,
+    },
+    cardAccent: {
+        position: 'absolute',
+        left: 0,
+        top: 12,
+        bottom: 12,
+        width: 3,
+        borderRadius: 2,
+        backgroundColor: SgateColors.gold,
+    },
+    cardInner: {
+        padding: 16,
+        paddingLeft: 18,
+    },
+    cardRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    cardIconBox: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: SgateColors.goldPale,
+        borderWidth: 1,
+        borderColor: '#FFE8A0',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cardContent: {
+        flex: 1,
+    },
+    cardTitle: {
+        fontSize: 15,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        letterSpacing: -0.2,
+        marginBottom: 4,
+    },
+    cardAddressRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    cardAddress: {
+        fontSize: 12,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+        flex: 1,
+    },
+    chevronBox: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        backgroundColor: SgateColors.goldPale,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // ── Meta ──
+    cardMetaRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: SgateColors.borderSoft,
+        gap: 8,
+    },
+    metaChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+    },
+    metaDivider: {
+        width: 3,
+        height: 3,
+        borderRadius: 1.5,
+        backgroundColor: SgateColors.border,
+    },
+    metaText: {
+        fontSize: 11,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t2,
+    },
+
+    // ── Empty ──
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 72,
+        paddingHorizontal: 32,
+    },
+    emptyIconBox: {
+        width: 88,
+        height: 88,
+        borderRadius: 44,
+        backgroundColor: SgateColors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+    },
+    emptyIconInner: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    emptySubtitle: {
+        fontSize: 13,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+        textAlign: 'center',
+        lineHeight: 20,
+    },
+});
