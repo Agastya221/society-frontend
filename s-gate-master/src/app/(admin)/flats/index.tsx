@@ -34,6 +34,7 @@ export default function FlatsScreen() {
     const user = useAuthStore(s => s.user);
     const [flats, setFlats] = useState<Flat[]>([]);
     const [search, setSearch] = useState('');
+    const [saving, setSaving] = useState(false);
 
     // Modal State
     const [isModalVisible, setModalVisible] = useState(false);
@@ -42,59 +43,59 @@ export default function FlatsScreen() {
     const [block, setBlock] = useState('');
     const [floor, setFloor] = useState('');
 
-    // Fetch flats from API using society blocks
-    useEffect(() => {
+    const loadFlats = useCallback(async () => {
         const societyId = user?.societyId;
         if (!societyId) {
             console.log('[Flats] No societyId found, skipping fetch');
             return;
         }
 
-        const loadFlats = async () => {
-            try {
-                console.log('[Flats] Fetching blocks for society:', societyId);
-                const blocksRes = await api.get(
-                    `/resident/onboarding/societies/${societyId}/blocks`
-                );
-                const blocks: { id: string; name: string }[] =
-                    blocksRes.data?.data ?? [];
-                console.log('[Flats] Blocks received:', blocks.length, JSON.stringify(blocks.slice(0, 3)));
+        try {
+            console.log('[Flats] Fetching blocks for society:', societyId);
+            const blocksRes = await api.get(
+                `/resident/onboarding/societies/${societyId}/blocks`
+            );
+            const blocks: { id: string; name: string }[] =
+                blocksRes.data?.data ?? [];
+            console.log('[Flats] Blocks received:', blocks.length, JSON.stringify(blocks.slice(0, 3)));
 
-                const allFlats: Flat[] = [];
-                await Promise.all(
-                    blocks.map(async block => {
-                        try {
-                            const flatsRes = await api.get(
-                                `/resident/onboarding/societies/${societyId}/blocks/${block.id}/flats`
-                            );
-                            const rawFlats = flatsRes.data?.data ?? [];
-                            console.log(`[Flats] Block "${block.name}" (${block.id}) raw flats:`, rawFlats.length, JSON.stringify(rawFlats.slice(0, 3)));
-                            const blockFlats = rawFlats.map(
-                                (f: any) => ({
-                                    id: f.id,
-                                    number: f.number || f.flat_number || f.flatNumber || f.name || '',
-                                    block: block.name,
-                                    floor: String(f.floor ?? ''),
-                                    ownerName: f.ownerName || f.owner_name || '',
-                                    residentsCount: f.residentsCount || 0,
-                                    vehiclesCount: f.vehiclesCount || 0,
-                                })
-                            );
-                            allFlats.push(...blockFlats);
-                        } catch (err) {
-                            console.error(`[Flats] Failed to fetch flats for block ${block.name}:`, err);
-                        }
-                    })
-                );
-                console.log('[Flats] Total flats loaded:', allFlats.length, 'Sample:', JSON.stringify(allFlats.slice(0, 2)));
-                setFlats(allFlats);
-            } catch (err) {
-                console.error('[Flats] Failed to fetch blocks:', err);
-            }
-        };
-
-        loadFlats();
+            const allFlats: Flat[] = [];
+            await Promise.all(
+                blocks.map(async block => {
+                    try {
+                        const flatsRes = await api.get(
+                            `/resident/onboarding/societies/${societyId}/blocks/${block.id}/flats`
+                        );
+                        const rawFlats = flatsRes.data?.data ?? [];
+                        console.log(`[Flats] Block "${block.name}" (${block.id}) raw flats:`, rawFlats.length, JSON.stringify(rawFlats.slice(0, 3)));
+                        const blockFlats = rawFlats.map(
+                            (f: any) => ({
+                                id: f.id,
+                                number: f.number || f.flat_number || f.flatNumber || f.name || '',
+                                block: block.name,
+                                floor: String(f.floor ?? ''),
+                                ownerName: f.ownerName || f.owner_name || '',
+                                residentsCount: f.residentsCount || 0,
+                                vehiclesCount: f.vehiclesCount || 0,
+                            })
+                        );
+                        allFlats.push(...blockFlats);
+                    } catch (err) {
+                        console.error(`[Flats] Failed to fetch flats for block ${block.name}:`, err);
+                    }
+                })
+            );
+            console.log('[Flats] Total flats loaded:', allFlats.length, 'Sample:', JSON.stringify(allFlats.slice(0, 2)));
+            setFlats(allFlats);
+        } catch (err) {
+            console.error('[Flats] Failed to fetch blocks:', err);
+        }
     }, [user?.societyId]);
+
+    // Fetch flats from API using society blocks
+    useEffect(() => {
+        loadFlats();
+    }, [loadFlats]);
 
     const filteredFlats = useMemo(() => {
         const query = (search || '').toLowerCase();
@@ -141,35 +142,63 @@ export default function FlatsScreen() {
             {
                 text: 'Delete',
                 style: 'destructive',
-                onPress: () => setFlats(prev => prev.filter(f => f.id !== id))
+                onPress: async () => {
+                    const societyId = user?.societyId;
+                    if (!societyId) {
+                        Alert.alert('Error', 'Society not found for your account.');
+                        return;
+                    }
+
+                    try {
+                        await api.delete(`/admin/societies/${societyId}/flats/${id}`);
+                        await loadFlats();
+                    } catch (err: any) {
+                        Alert.alert(
+                            'Delete Failed',
+                            err?.response?.data?.message || 'Could not delete this flat. Please try again.'
+                        );
+                    }
+                }
             }
         ]);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!flatNumber || !block) {
             Alert.alert('Error', 'Flat Number and Block are required');
             return;
         }
 
-        if (editingId) {
-            setFlats(prev => prev.map(f => f.id === editingId ? {
-                ...f, number: flatNumber, block, floor
-            } : f));
-        } else {
-            const newFlat: Flat = {
-                id: Date.now().toString(),
-                number: flatNumber,
-                block,
-                floor,
-                ownerName: 'Unassigned',
-                residentsCount: 0,
-                vehiclesCount: 0
-            };
-            setFlats([...flats, newFlat]);
+        const societyId = user?.societyId;
+        if (!societyId) {
+            Alert.alert('Error', 'Society not found for your account.');
+            return;
         }
-        setModalVisible(false);
-        resetForm();
+
+        const payload = {
+            blockName: block.trim(),
+            flatNumber: flatNumber.trim(),
+            floor: floor.trim() || undefined,
+        };
+
+        try {
+            setSaving(true);
+            if (editingId) {
+                await api.patch(`/admin/societies/${societyId}/flats/${editingId}`, payload);
+            } else {
+                await api.post(`/admin/societies/${societyId}/flats`, payload);
+            }
+            await loadFlats();
+            setModalVisible(false);
+            resetForm();
+        } catch (err: any) {
+            Alert.alert(
+                editingId ? 'Update Failed' : 'Create Failed',
+                err?.response?.data?.message || 'Could not save this flat. Please try again.'
+            );
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -245,6 +274,13 @@ export default function FlatsScreen() {
                         <TouchableOpacity
                             style={styles.card}
                             onPress={() => router.push(`/(admin)/flats/${item.id}` as any)}
+                            onLongPress={() => {
+                                Alert.alert('Flat Actions', `Flat ${item.number || ''}`, [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    { text: 'Edit', onPress: () => handleEdit(item) },
+                                    { text: 'Delete', style: 'destructive', onPress: () => handleDelete(item.id) },
+                                ]);
+                            }}
                             activeOpacity={0.7}
                         >
                             <View style={styles.avatarCircle}>
@@ -312,9 +348,13 @@ export default function FlatsScreen() {
                                 <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setModalVisible(false)}>
                                     <Text style={styles.modalCancelText}>Cancel</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.modalConfirmBtn} onPress={handleSave}>
+                                <TouchableOpacity
+                                    style={[styles.modalConfirmBtn, saving && styles.modalConfirmBtnDisabled]}
+                                    onPress={handleSave}
+                                    disabled={saving}
+                                >
                                     <Text style={styles.modalConfirmText}>
-                                        {editingId ? 'Update' : 'Add Flat'}
+                                        {saving ? 'Saving...' : editingId ? 'Update' : 'Add Flat'}
                                     </Text>
                                 </TouchableOpacity>
                             </View>
@@ -478,5 +518,6 @@ const styles = StyleSheet.create({
         backgroundColor: SgateColors.gold,
         alignItems: 'center',
     },
+    modalConfirmBtnDisabled: { opacity: 0.65 },
     modalConfirmText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 });
