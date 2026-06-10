@@ -1,6 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -22,17 +22,22 @@ import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-them
 import api from '@/services/api';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
+interface RequestDocument {
+    type: string;
+    url: string;
+    fileName?: string;
+}
+
 interface OnboardingRequest {
     id: string;
-    userId: string;
-    societyId: string;
-    flatId: string;
     residentType: string;
     status: string;
-    documents: { type: string; s3Key: string }[];
+    documents: RequestDocument[];
+    documentsCount: number;
     user: { name: string; phone: string };
     flat: { number: string; block: { name: string } };
     createdAt: string;
+    submittedAt?: string;
 }
 
 type StatusTab = 'PENDING_APPROVAL' | 'RESUBMIT_REQUESTED' | 'APPROVED' | 'REJECTED';
@@ -51,14 +56,57 @@ const STATUS_PILL: Record<string, { bg: string; text: string }> = {
     REJECTED:           { bg: SgateColors.redBg,    text: SgateColors.red },
 };
 
+function getParam(value: string | string[] | undefined) {
+    return Array.isArray(value) ? value[0] : value;
+}
+
+function isStatusTab(value: string | undefined): value is StatusTab {
+    return TABS.some((tab) => tab.key === value);
+}
+
+function normalizeDocuments(rawDocs: any[] = []): RequestDocument[] {
+    return rawDocs.map((doc) => ({
+        type: doc.type ?? doc.documentType ?? 'DOCUMENT',
+        url: doc.viewUrl ?? doc.url ?? doc.documentUrl ?? doc.s3Key ?? '',
+        fileName: doc.fileName,
+    }));
+}
+
+function normalizeRequest(raw: any): OnboardingRequest {
+    const resident = raw.resident ?? raw.user ?? {};
+    const documents = normalizeDocuments(raw.documents ?? []);
+    const flatNumber = raw.flat?.number ?? raw.flat?.flatNumber ?? raw.flat ?? raw.flatNumber ?? '-';
+    const blockName = raw.flat?.block?.name ?? raw.flat?.block ?? raw.block?.name ?? raw.block ?? '-';
+
+    return {
+        id: raw.id,
+        residentType: raw.residentType ?? '-',
+        status: raw.status ?? 'PENDING_APPROVAL',
+        documents,
+        documentsCount: raw.documentsCount ?? raw._count?.documents ?? documents.length,
+        user: {
+            name: resident.name ?? 'Resident',
+            phone: resident.phone ?? '',
+        },
+        flat: {
+            number: flatNumber,
+            block: { name: blockName },
+        },
+        createdAt: raw.createdAt ?? raw.submittedAt ?? new Date().toISOString(),
+        submittedAt: raw.submittedAt,
+    };
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function OnboardingRequestsScreen() {
     const router = useRouter();
+    const params = useLocalSearchParams();
     const insets = useSafeAreaInsets();
     const [activeTab, setActiveTab]   = useState<StatusTab>('PENDING_APPROVAL');
     const [requests, setRequests]     = useState<OnboardingRequest[]>([]);
     const [loading, setLoading]       = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const autoOpenedRequestId = useRef<string | null>(null);
 
     // Detail modal
     const [selectedRequest, setSelectedRequest] = useState<OnboardingRequest | null>(null);
@@ -75,15 +123,50 @@ export default function OnboardingRequestsScreen() {
     const [viewerUrl, setViewerUrl]             = useState('');
 
     const IMAGE_BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
+    const routeRequestId = getParam(params.requestId);
+    const routeStatus = getParam(params.status);
 
-    useFocusEffect(useCallback(() => { fetchRequests(activeTab); }, [activeTab]));
+    useEffect(() => {
+        if (isStatusTab(routeStatus) && routeStatus !== activeTab) {
+            setActiveTab(routeStatus);
+            setLoading(true);
+        }
+    }, [activeTab, routeStatus]);
 
-    const fetchRequests = async (status: StatusTab) => {
+    const openDetail = useCallback(async (req: OnboardingRequest) => {
+        setSelectedRequest(req);
+        setDetailVisible(true);
+        setActionType(null);
+        setSelectedDocsForResubmit([]);
+
+        try {
+            const res = await api.get(`/resident/onboarding/admin/${req.id}`);
+            const detail = res.data?.data;
+            if (detail) {
+                setSelectedRequest(normalizeRequest(detail));
+            }
+        } catch (err) {
+            console.error('Failed to fetch onboarding request details:', err);
+        }
+    }, []);
+
+    const fetchRequests = useCallback(async (status: StatusTab) => {
         try {
             const res = await api.get('/resident/onboarding/admin/pending', {
                 params: { status, page: 1, limit: 20 },
             });
-            setRequests(res.data?.data ?? []);
+            const payload = res.data?.data ?? res.data;
+            const list = Array.isArray(payload) ? payload : (payload?.requests ?? []);
+            const normalized = list.map(normalizeRequest);
+            setRequests(normalized);
+
+            if (routeRequestId && autoOpenedRequestId.current !== routeRequestId) {
+                const target = normalized.find((req) => req.id === routeRequestId);
+                if (target) {
+                    autoOpenedRequestId.current = routeRequestId;
+                    void openDetail(target);
+                }
+            }
         } catch (err) {
             console.error('Failed to fetch onboarding requests:', err);
             setRequests([]);
@@ -91,11 +174,12 @@ export default function OnboardingRequestsScreen() {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, [openDetail, routeRequestId]);
+
+    useFocusEffect(useCallback(() => { fetchRequests(activeTab); }, [activeTab, fetchRequests]));
 
     const handleRefresh  = () => { setRefreshing(true); fetchRequests(activeTab); };
     const handleTabChange = (tab: StatusTab) => { setActiveTab(tab); setLoading(true); fetchRequests(tab); };
-    const openDetail     = (req: OnboardingRequest) => { setSelectedRequest(req); setDetailVisible(true); setActionType(null); setSelectedDocsForResubmit([]); };
 
     const handleApprove = (req: OnboardingRequest) => {
         Alert.alert('Approve Request', `Approve ${req.user.name}'s request to join?`, [
@@ -156,8 +240,12 @@ export default function OnboardingRequestsScreen() {
         );
     };
 
-    const openDocument = (s3Key: string) => {
-        const url = s3Key.startsWith('http') ? s3Key : `${IMAGE_BASE_URL}/${s3Key}`;
+    const openDocument = (documentUrl: string) => {
+        if (!documentUrl) {
+            Alert.alert('Document unavailable', 'This document does not have a viewable URL yet.');
+            return;
+        }
+        const url = documentUrl.startsWith('http') ? documentUrl : `${IMAGE_BASE_URL}/${documentUrl}`;
         setViewerUrl(url);
         setViewerVisible(true);
     };
@@ -226,7 +314,7 @@ export default function OnboardingRequestsScreen() {
                     }
                     renderItem={({ item, index }) => {
                         const sp = STATUS_PILL[item.status] ?? STATUS_PILL.PENDING_APPROVAL;
-                        const initial = item.user.name.charAt(0).toUpperCase();
+                        const initial = (item.user.name || 'R').charAt(0).toUpperCase();
                         return (
                             <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
                                 <TouchableOpacity onPress={() => openDetail(item)} activeOpacity={0.75}>
@@ -257,7 +345,7 @@ export default function OnboardingRequestsScreen() {
                                             </View>
                                             <View style={styles.metaItem}>
                                                 <MaterialIcons name="description" size={12} color={SgateColors.t4} />
-                                                <Text style={styles.metaText}>{item.documents.length} docs</Text>
+                                                <Text style={styles.metaText}>{item.documentsCount} docs</Text>
                                             </View>
                                         </View>
                                     </View>
@@ -293,20 +381,24 @@ export default function OnboardingRequestsScreen() {
                             {/* Documents */}
                             <Text style={styles.sectionLabel}>DOCUMENTS</Text>
                             <View style={styles.detailCard}>
-                                {selectedRequest.documents.map((doc, i) => {
+                                {selectedRequest.documents.length === 0 ? (
+                                    <View style={styles.noDocsRow}>
+                                        <Text style={styles.noDocsText}>No documents available yet</Text>
+                                    </View>
+                                ) : selectedRequest.documents.map((doc, i) => {
                                     const isSelected = selectedDocsForResubmit.includes(doc.type);
                                     return (
                                         <View key={i} style={[styles.docRow, i < selectedRequest.documents.length - 1 && styles.docBorder]}>
                                             <TouchableOpacity 
                                                 style={styles.docIcon} 
-                                                onPress={() => openDocument(doc.s3Key)}
+                                                onPress={() => openDocument(doc.url)}
                                             >
                                                 <MaterialIcons name="image" size={15} color={SgateColors.gold} />
                                             </TouchableOpacity>
                                             
                                             <TouchableOpacity 
                                                 style={{ flex: 1 }} 
-                                                onPress={() => openDocument(doc.s3Key)}
+                                                onPress={() => openDocument(doc.url)}
                                             >
                                                 <Text style={styles.docName}>{formatDocType(doc.type)}</Text>
                                             </TouchableOpacity>
@@ -490,6 +582,8 @@ const styles = StyleSheet.create({
     docName: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1, flex: 1 },
     docBadge: { backgroundColor: SgateColors.greenBg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
     docBadgeText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.green },
+    noDocsRow: { paddingVertical: 18, alignItems: 'center' },
+    noDocsText: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 
     // Action buttons
     actionBtns: { gap: 10, marginTop: 20 },

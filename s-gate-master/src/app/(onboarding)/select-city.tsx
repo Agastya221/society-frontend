@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateFonts } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import {
     getFeaturedCities,
@@ -126,6 +126,9 @@ export default function SelectCityScreen() {
     const router  = useRouter();
     const insets  = useSafeAreaInsets();
     const setCity = useOnboardingStore((s) => s.setCity);
+    const flowMode = useOnboardingStore((s) => s.flowMode);
+    const returnTo = useOnboardingStore((s) => s.returnTo);
+    const resetOnboarding = useOnboardingStore((s) => s.resetOnboarding);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearch, setShowSearch]   = useState(false);
@@ -163,6 +166,16 @@ export default function SelectCityScreen() {
     const closeSearch = () => {
         setShowSearch(false);
         setSearchQuery('');
+    };
+
+    const handleBack = () => {
+        if (flowMode === 'addMembership') {
+            const destination = returnTo || '/(resident)/profile';
+            resetOnboarding();
+            router.replace(destination as any);
+            return;
+        }
+        router.back();
     };
 
     const renderItem = useCallback(
@@ -223,7 +236,7 @@ export default function SelectCityScreen() {
                 ) : (
                     <View style={styles.normalRow}>
                         <TouchableOpacity
-                            onPress={() => router.back()}
+                            onPress={handleBack}
                             style={styles.headerIconBtn}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >

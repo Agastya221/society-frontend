@@ -34,11 +34,6 @@
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/images/icons/adaptive-icon.png"
       },
-      "navigationBar": {
-        "visible": true,
-        "barStyle": "dark-content",
-        "backgroundColor": "#000000"
-      },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -79,16 +74,16 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow S-Gate to use your location to provide local society services."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     },
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "63def6ca-70fb-490e-8ccc-89f5f7d9460f"
+        "projectId": "7286df46-4770-4071-acef-57a0666f0482"
       }
     }
   }

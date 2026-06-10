@@ -59,6 +59,28 @@ export const submitOnboardingRequest = async (
     return res.data.data;
 };
 
+export const resubmitOnboardingRequest = async (
+    requestId: string,
+    payload: OnboardingRequestPayload
+): Promise<OnboardingSubmitResponse> => {
+    const res = await api.patch<ApiEnvelope<OnboardingSubmitResponse>>(
+        `/resident/onboarding/requests/${requestId}/resubmit`,
+        payload
+    );
+    return res.data.data;
+};
+
+export const reapplyOnboardingRequest = async (
+    requestId: string,
+    payload: OnboardingRequestPayload
+): Promise<OnboardingSubmitResponse> => {
+    const res = await api.patch<ApiEnvelope<OnboardingSubmitResponse>>(
+        `/resident/onboarding/requests/${requestId}/reapply`,
+        payload
+    );
+    return res.data.data;
+};
+
 // ─── Get Onboarding Status ───────────────────────────────────────────────────
 
 export const getOnboardingStatus = async (): Promise<OnboardingStatusResponse> => {

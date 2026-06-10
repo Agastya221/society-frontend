@@ -4,6 +4,8 @@ import {
     getBlocks,
     getFlats,
     submitOnboardingRequest,
+    resubmitOnboardingRequest,
+    reapplyOnboardingRequest,
     getOnboardingStatus,
 } from '../api/onboarding.api';
 import type {
@@ -87,6 +89,48 @@ export function useSubmitOnboarding() {
             submitOnboardingRequest(payload),
         onSuccess: () => {
             // Invalidate status so it refetches
+            queryClient.invalidateQueries({
+                queryKey: onboardingKeys.status(),
+            });
+        },
+    });
+}
+
+// ─── useResubmitOnboarding ───────────────────────────────────────────────────
+
+export function useResubmitOnboarding() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            requestId,
+            payload,
+        }: {
+            requestId: string;
+            payload: OnboardingRequestPayload;
+        }) => resubmitOnboardingRequest(requestId, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: onboardingKeys.status(),
+            });
+        },
+    });
+}
+
+// ─── useReapplyOnboarding ────────────────────────────────────────────────────
+
+export function useReapplyOnboarding() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            requestId,
+            payload,
+        }: {
+            requestId: string;
+            payload: OnboardingRequestPayload;
+        }) => reapplyOnboardingRequest(requestId, payload),
+        onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: onboardingKeys.status(),
             });

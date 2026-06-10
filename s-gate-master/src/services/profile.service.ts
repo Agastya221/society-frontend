@@ -1,5 +1,136 @@
 import api from './api';
 import type { FamilyMember, FamilyRole, User } from '../types/api';
+import type { User as AuthUser } from '../types/auth';
+
+// ─── Resident Contexts ───────────────────────────────────────────────────────
+
+export interface ResidentContext {
+    membershipId: string;
+    societyId: string;
+    societyName: string;
+    societyCity?: string | null;
+    societyIsActive?: boolean;
+    flatId?: string | null;
+    flatNumber?: string | null;
+    blockId?: string | null;
+    blockName?: string | null;
+    floor?: string | null;
+    label: string;
+    subtitle: string;
+    role: string;
+    residentType?: 'OWNER' | 'TENANT' | string | null;
+    isOwner: boolean;
+    isLivingHere: boolean;
+    canUseDailyGateFeatures: boolean;
+    isPrimary: boolean;
+    isDefault: boolean;
+    isActiveContext: boolean;
+}
+
+export interface ResidentContextGroup {
+    societyId: string;
+    societyName: string;
+    societyCity?: string | null;
+    contexts: ResidentContext[];
+}
+
+export type ResidentContextRequestStatus =
+    | 'DRAFT'
+    | 'PENDING_DOCS'
+    | 'PENDING_APPROVAL'
+    | 'RESUBMIT_REQUESTED'
+    | 'REJECTED'
+    | string;
+
+export interface ResidentContextRequest {
+    requestId: string;
+    societyId: string;
+    societyName: string;
+    societyCity?: string | null;
+    societyIsActive?: boolean;
+    flatId: string;
+    flatNumber: string;
+    blockId: string;
+    blockName: string;
+    floor?: string | null;
+    label: string;
+    subtitle: string;
+    status: ResidentContextRequestStatus;
+    residentType?: 'OWNER' | 'TENANT' | string | null;
+    isLivingHere: boolean;
+    submittedAt?: string | null;
+    reviewedAt?: string | null;
+    rejectedAt?: string | null;
+    rejectionReason?: string | null;
+    resubmitReason?: string | null;
+    canSwitch: false;
+}
+
+export interface ResidentRequestDocument {
+    id: string;
+    type: string;
+    url?: string | null;
+    fileName?: string | null;
+    fileSize?: number | null;
+    mimeType?: string | null;
+    uploadedAt?: string | null;
+    isVerified?: boolean;
+    verifiedAt?: string | null;
+}
+
+export interface ResidentRequestDetails extends ResidentContextRequest {
+    societyAddress?: string | null;
+    ownerOccupancy?: string | null;
+    message?: string;
+    approvedAt?: string | null;
+    resubmissionCount?: number;
+    canDelete: boolean;
+    canReapply: boolean;
+    canResubmit: boolean;
+    documents: ResidentRequestDocument[];
+}
+
+export interface ResidentContextsResponse {
+    activeContext: ResidentContext | null;
+    contexts: ResidentContext[];
+    requests?: ResidentContextRequest[];
+    societies: ResidentContextGroup[];
+}
+
+export interface SwitchResidentContextResponse {
+    accessToken: string;
+    refreshToken: string;
+    user: AuthUser;
+    contexts: ResidentContextsResponse;
+    appType: string;
+    redirectTo: 'ADMIN_PANEL' | 'RESIDENT_PANEL' | string;
+}
+
+export const getResidentContexts = async (): Promise<ResidentContextsResponse> => {
+    const res = await api.get('/users/resident-app/contexts');
+    return res.data.data;
+};
+
+export const switchResidentContext = async (
+    membershipId: string
+): Promise<SwitchResidentContextResponse> => {
+    const res = await api.post('/users/resident-app/switch-context', { membershipId });
+    return res.data.data;
+};
+
+export const getResidentRequestDetails = async (
+    requestId: string
+): Promise<ResidentRequestDetails> => {
+    const res = await api.get(`/resident/onboarding/requests/${requestId}`);
+    return res.data.data;
+};
+
+export const deleteResidentRequest = async (
+    requestId: string
+): Promise<{ requestId: string; status: string; deleted: boolean }> => {
+    const res = await api.delete(`/resident/onboarding/requests/${requestId}`);
+    return res.data.data;
+};
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
 

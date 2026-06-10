@@ -17,6 +17,11 @@ const ONBOARDING_STATE_KEY = 'sgate_onboarding_draft';
 // ─── Store Interface ──────────────────────────────────────────────────────────
 
 export interface OnboardingState {
+    flowMode: 'initial' | 'addMembership';
+    returnTo: string | null;
+    sourceRequestId: string | null;
+    sourceRequestStatus: OnboardingStatusType | null;
+
     // ── Selection State ──
     selectedCity: City | null;
     selectedSociety: Society | null;
@@ -38,6 +43,18 @@ export interface OnboardingState {
     removeDocument: (type: string) => void;
     clearDocuments: () => void;
     setOnboardingStatus: (status: OnboardingStatusType) => void;
+    startAddMembershipFlow: (returnTo: string) => void;
+    startRequestCorrectionFlow: (data: {
+        returnTo: string;
+        sourceRequestId: string | null;
+        sourceRequestStatus: OnboardingStatusType | null;
+        selectedCity: City;
+        selectedSociety: Society;
+        selectedBlock: Block;
+        selectedFlat: Flat;
+        residentType: ResidentType;
+        isLivingHere: boolean;
+    }) => void;
     resetOnboarding: () => void;
     persistDraft: () => Promise<void>;
     loadDraft: () => Promise<void>;
@@ -47,6 +64,10 @@ export interface OnboardingState {
 // ─── Initial State ────────────────────────────────────────────────────────────
 
 const initialState = {
+    flowMode: 'initial' as 'initial' | 'addMembership',
+    returnTo: null as string | null,
+    sourceRequestId: null as string | null,
+    sourceRequestStatus: null as OnboardingStatusType | null,
     selectedCity: null as City | null,
     selectedSociety: null as Society | null,
     selectedBlock: null as Block | null,
@@ -148,6 +169,33 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
     setOnboardingStatus: (status) => set({ onboardingStatus: status }),
 
+    startAddMembershipFlow: (returnTo) => {
+        set({
+            ...initialState,
+            flowMode: 'addMembership',
+            returnTo,
+        });
+        get().persistDraft();
+    },
+
+    startRequestCorrectionFlow: (data) => {
+        set({
+            ...initialState,
+            flowMode: 'addMembership',
+            returnTo: data.returnTo,
+            sourceRequestId: data.sourceRequestId,
+            sourceRequestStatus: data.sourceRequestStatus,
+            selectedCity: data.selectedCity,
+            selectedSociety: data.selectedSociety,
+            selectedBlock: data.selectedBlock,
+            selectedFlat: data.selectedFlat,
+            residentType: data.residentType,
+            isLivingHere: data.residentType === 'TENANT' ? true : data.isLivingHere,
+            uploadedDocuments: [],
+        });
+        get().persistDraft();
+    },
+
     resetOnboarding: () => {
         set(initialState);
         AsyncStorage.removeItem(ONBOARDING_STATE_KEY).catch(() => {});
@@ -157,6 +205,10 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
         try {
             const state = get();
             const draft = {
+                flowMode: state.flowMode,
+                returnTo: state.returnTo,
+                sourceRequestId: state.sourceRequestId,
+                sourceRequestStatus: state.sourceRequestStatus,
                 selectedCity: state.selectedCity,
                 selectedSociety: state.selectedSociety,
                 selectedBlock: state.selectedBlock,
@@ -177,6 +229,10 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
             if (raw) {
                 const draft = JSON.parse(raw);
                 set({
+                    flowMode: draft.flowMode ?? 'initial',
+                    returnTo: draft.returnTo ?? null,
+                    sourceRequestId: draft.sourceRequestId ?? null,
+                    sourceRequestStatus: draft.sourceRequestStatus ?? null,
                     selectedCity: draft.selectedCity ?? null,
                     selectedSociety: draft.selectedSociety ?? null,
                     selectedBlock: draft.selectedBlock ?? null,

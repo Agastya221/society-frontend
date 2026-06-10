@@ -65,10 +65,12 @@ const getPresignedUrl = async (
         payload.documentType = context.documentType;
     }
 
-    const response = await api.post<PresignedUrlResponse>(
-        '/upload/presigned-url',
-        payload
-    );
+    const endpoint =
+        context.context === 'onboarding'
+            ? '/resident/onboarding/upload/presigned-url'
+            : '/upload/presigned-url';
+
+    const response = await api.post<PresignedUrlResponse>(endpoint, payload);
 
     if (!response.data.success) {
         throw new Error(response.data.message || 'Failed to get upload URL');
@@ -177,7 +179,7 @@ export const confirmDocumentUpload = async (
     documentType: string,
     onboardingRequestId: string
 ): Promise<any> => {
-    const response = await api.post('/upload/confirm', {
+    const response = await api.post('/resident/onboarding/upload/confirm', {
         s3Key,
         fileName,
         mimeType,

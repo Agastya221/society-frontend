@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -19,41 +19,56 @@ import { useOnboardingStore } from '@/store/useOnboardingStore';
 export default function OnboardingIndex() {
     const router = useRouter();
     const loadDraft = useOnboardingStore((s) => s.loadDraft);
-    const [checking, setChecking] = useState(true);
 
     useEffect(() => {
-        checkExistingStatus();
-    }, []);
+        let isMounted = true;
 
-    const checkExistingStatus = async () => {
-        try {
-            const res = await api.get('/resident/onboarding/status');
-            const status: string | null = res.data?.data?.status ?? null;
-
-            if (
-                status === 'PENDING_APPROVAL' ||
-                status === 'RESUBMIT_REQUESTED' ||
-                status === 'REJECTED' ||
-                status === 'APPROVED'
-            ) {
-                router.replace('/(onboarding)/approval-status');
-                return;
-            }
-
-            // DRAFT or PENDING_DOCS — try to load saved draft and let user resume
-            if (status === 'DRAFT' || status === 'PENDING_DOCS') {
+        const checkExistingStatus = async () => {
+            try {
                 await loadDraft();
-            }
+                if (!isMounted) return;
 
-            // Start the onboarding flow
-            router.replace('/(onboarding)/select-city');
-        } catch {
-            // No existing request — start fresh
-            router.replace('/(onboarding)/select-city');
-        } finally {
-            setChecking(false);
-        }
-    };
+                if (useOnboardingStore.getState().flowMode === 'addMembership') {
+                    router.replace('/(onboarding)/select-city');
+                    return;
+                }
+
+                const res = await api.get('/resident/onboarding/status');
+                if (!isMounted) return;
+
+                const status: string | null = res.data?.data?.status ?? null;
+
+                if (
+                    status === 'PENDING_APPROVAL' ||
+                    status === 'RESUBMIT_REQUESTED' ||
+                    status === 'REJECTED' ||
+                    status === 'APPROVED'
+                ) {
+                    router.replace('/(onboarding)/approval-status');
+                    return;
+                }
+
+                // DRAFT or PENDING_DOCS — try to load saved draft and let user resume
+                if (status === 'DRAFT' || status === 'PENDING_DOCS') {
+                    await loadDraft();
+                    if (!isMounted) return;
+                }
+
+                // Start the onboarding flow
+                router.replace('/(onboarding)/select-city');
+            } catch {
+                if (!isMounted) return;
+                // No existing request — start fresh
+                router.replace('/(onboarding)/select-city');
+            }
+        };
+
+        checkExistingStatus();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [loadDraft, router]);
 
     return (
         <View style={styles.root}>

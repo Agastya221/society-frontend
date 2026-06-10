@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
-import { useSubmitOnboarding } from '@/hooks/useOnboardingQueries';
+import { useReapplyOnboarding, useSubmitOnboarding } from '@/hooks/useOnboardingQueries';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import type { OnboardingRequestPayload } from '@/types/onboarding.types';
 
@@ -62,9 +62,15 @@ export default function ReviewSubmitScreen() {
     const residentType = useOnboardingStore((s) => s.residentType);
     const isLivingHere = useOnboardingStore((s) => s.isLivingHere);
     const uploadedDocuments = useOnboardingStore((s) => s.uploadedDocuments);
+    const flowMode = useOnboardingStore((s) => s.flowMode);
+    const returnTo = useOnboardingStore((s) => s.returnTo);
+    const sourceRequestId = useOnboardingStore((s) => s.sourceRequestId);
     const resetOnboarding = useOnboardingStore((s) => s.resetOnboarding);
 
     const submitMutation = useSubmitOnboarding();
+    const reapplyMutation = useReapplyOnboarding();
+    const isSubmitting = submitMutation.isPending || reapplyMutation.isPending;
+    const isRequestUpdate = !!sourceRequestId;
 
     const livingStatus = useMemo(() => {
         if (residentType === 'TENANT') return 'Tenant (Living)';
@@ -98,17 +104,48 @@ export default function ReviewSubmitScreen() {
             payload.isLivingHere = isLivingHere ?? undefined;
         }
 
+        const onSuccess = (result: { submittedAt?: string | Date | null }) => {
+            const destination = returnTo || '/(resident)/profile';
+            const summary = {
+                society: selectedSociety.name,
+                block: selectedBlock.name,
+                flat: selectedFlat.flatNumber,
+                residentType,
+                isLivingHere: String(residentType === 'OWNER' ? isLivingHere ?? true : true),
+                submittedAt: result.submittedAt
+                    ? new Date(result.submittedAt).toISOString()
+                    : new Date().toISOString(),
+                returnTo: destination,
+            };
+            resetOnboarding();
+            if (flowMode === 'addMembership') {
+                router.replace({
+                    pathname: '/(onboarding)/add-flat-status',
+                    params: summary,
+                });
+                return;
+            }
+            router.replace('/(onboarding)/approval-status');
+        };
+
+        const onError = (err: any) => {
+            const msg =
+                err?.response?.data?.message ||
+                'Failed to submit your request. Please try again.';
+            Alert.alert('Submission Failed', msg, [{ text: 'OK' }]);
+        };
+
+        if (sourceRequestId) {
+            reapplyMutation.mutate({ requestId: sourceRequestId, payload }, {
+                onSuccess,
+                onError,
+            });
+            return;
+        }
+
         submitMutation.mutate(payload, {
-            onSuccess: () => {
-                resetOnboarding();
-                router.replace('/(onboarding)/approval-status');
-            },
-            onError: (err: any) => {
-                const msg =
-                    err?.response?.data?.message ||
-                    'Failed to submit your request. Please try again.';
-                Alert.alert('Submission Failed', msg, [{ text: 'OK' }]);
-            },
+            onSuccess,
+            onError,
         });
     };
 
@@ -221,22 +258,26 @@ export default function ReviewSubmitScreen() {
             <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
                 <TouchableOpacity
                     onPress={handleSubmit}
-                    disabled={submitMutation.isPending}
+                    disabled={isSubmitting}
                     style={[
                         styles.submitBtn,
-                        submitMutation.isPending && styles.submitBtnDisabled,
+                        isSubmitting && styles.submitBtnDisabled,
                     ]}
                     activeOpacity={0.8}
                 >
-                    {submitMutation.isPending ? (
+                    {isSubmitting ? (
                         <>
                             <ActivityIndicator size="small" color={SgateColors.t1} />
-                            <Text style={styles.submitBtnText}>Submitting...</Text>
+                            <Text style={styles.submitBtnText}>
+                                {isRequestUpdate ? 'Updating...' : 'Submitting...'}
+                            </Text>
                         </>
                     ) : (
                         <>
                             <Feather name="send" size={18} color={SgateColors.t1} />
-                            <Text style={styles.submitBtnText}>Submit Request</Text>
+                            <Text style={styles.submitBtnText}>
+                                {isRequestUpdate ? 'Update Request' : 'Submit Request'}
+                            </Text>
                         </>
                     )}
                 </TouchableOpacity>

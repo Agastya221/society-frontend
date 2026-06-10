@@ -1,7 +1,7 @@
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     RefreshControl,
     ScrollView,
@@ -24,13 +24,25 @@ import { ApprovalCard } from '@/components/visitors/ApprovalCard';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { FloatingSOSButton } from '@/components/ui/FloatingSOSButton';
+import { ResidentContextPicker } from '@/components/context/ResidentContextPicker';
+import { ResidentRequestDetailsSheet } from '@/components/context/ResidentRequestDetailsSheet';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
 import api from '@/services/api';
+import {
+    getResidentContexts,
+    switchResidentContext,
+    type ResidentContext,
+    type ResidentContextRequest,
+    type ResidentContextsResponse,
+    type ResidentRequestDetails,
+} from '@/services/profile.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useGateStore } from '@/store/useGateStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
+import { useOnboardingStore } from '@/store/useOnboardingStore';
 import type { Entry } from '@/types/api';
+import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft';
 
 import { type UserRole, getQuickActionsForRole } from './homeToolsConfig';
 
@@ -76,15 +88,9 @@ function formatType(raw: string): string {
         .join(' ');
 }
 
-// ─── Admin Stats Types ────────────────────────────────────────────────────────
-
-interface DashboardStats {
-    totalFlats: number;
-    occupiedFlats: number;
-    activeResidents: number;
-    todayEntries: number;
-    pendingComplaints: number;
-    pendingGatePasses?: number;
+function shouldOpenAdminArea(redirectTo?: string, nextRole?: string | null): boolean {
+    const normalizedRole = nextRole?.toUpperCase();
+    return redirectTo === 'ADMIN_PANEL' || normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN';
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -100,7 +106,9 @@ interface SharedHomeScreenProps {
 export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { user, role: authRole } = useAuthStore();
+    const { user, role: authRole, login } = useAuthStore();
+    const startAddMembershipFlow = useOnboardingStore((s) => s.startAddMembershipFlow);
+    const startRequestCorrectionFlow = useOnboardingStore((s) => s.startRequestCorrectionFlow);
 
     const isAdmin = role === 'admin';
 
@@ -121,8 +129,13 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     const [showPreApprove, setShowPreApprove] = useState(false);
     const [preApproveType, setPreApproveType] = useState<any>(undefined);
     const [refreshing, setRefreshing]         = useState(false);
-    const [actioningId, setActioningId]       = useState<string | null>(null);
     const [exitDir, setExitDir]               = useState<Record<string, 'left' | 'right'>>({});
+    const [contextsData, setContextsData]     = useState<ResidentContextsResponse | null>(null);
+    const [showContextSheet, setShowContextSheet] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<ResidentContextRequest | null>(null);
+    const [showRequestDetails, setShowRequestDetails] = useState(false);
+    const [contextsLoading, setContextsLoading]   = useState(false);
+    const [switchingContextId, setSwitchingContextId] = useState<string | null>(null);
 
     // ── Admin-specific state ─────────────────────────────────────────────────
     const [pendingSocietyPasses, setPendingSocietyPasses] = useState<any[]>([]);
@@ -152,13 +165,27 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         ]);
     }, [fetchPendingRequests, fetchUnreadCount, fetchEntries]);
 
+    const fetchContexts = useCallback(async () => {
+        if (!user?.id) return;
+        setContextsLoading(true);
+        try {
+            const result = await getResidentContexts();
+            setContextsData(result);
+        } catch (error) {
+            console.error('Context fetch failed:', error);
+        } finally {
+            setContextsLoading(false);
+        }
+    }, [user?.id]);
+
     // ── Initial load (useFocusEffect for admin, useEffect for resident) ──────
 
     useFocusEffect(
         useCallback(() => {
             fetchSharedData();
+            fetchContexts();
             if (isAdmin) fetchAdminData();
-        }, [fetchSharedData, fetchAdminData, isAdmin])
+        }, [fetchSharedData, fetchContexts, fetchAdminData, isAdmin])
     );
 
     // ── Pull-to-refresh ──────────────────────────────────────────────────────
@@ -167,27 +194,24 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         setRefreshing(true);
         await Promise.allSettled([
             fetchSharedData(),
+            fetchContexts(),
             isAdmin ? fetchAdminData() : Promise.resolve(),
         ]);
         setRefreshing(false);
-    }, [fetchSharedData, fetchAdminData, isAdmin]);
+    }, [fetchSharedData, fetchContexts, fetchAdminData, isAdmin]);
 
     // ── Gate actions ─────────────────────────────────────────────────────────
 
     const handleApprove = async (id: string) => {
         setExitDir(prev => ({ ...prev, [id]: 'right' }));
-        setActioningId(id);
         try { await approveRequest(id); }
         catch { AppAlert.show('Error', 'Failed to approve. Please try again.'); }
-        finally { setActioningId(null); }
     };
 
     const handleDeny = async (id: string) => {
         setExitDir(prev => ({ ...prev, [id]: 'left' }));
-        setActioningId(id);
         try { await rejectRequest(id); }
         catch { AppAlert.show('Error', 'Failed to deny. Please try again.'); }
-        finally { setActioningId(null); }
     };
 
     // ── Admin society pass approval ──────────────────────────────────────────
@@ -227,6 +251,12 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
 
     const quickActions = getQuickActionsForRole(role);
 
+    const activeContext = contextsData?.activeContext ?? null;
+    const contextTitle = activeContext?.label
+        ?? formatUserFlatLabel(user)
+        ?? societyName;
+    const canOpenContextSheet = (contextsData?.contexts?.length ?? 0) > 0 || !contextsLoading;
+
     const handleQuickAction = useCallback((route: string) => {
         if (route.startsWith('MODAL:preapprove')) {
             if (route === 'MODAL:preapprove_delivery') {
@@ -239,6 +269,113 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         }
         nav(route);
     }, [nav]);
+
+    const handleSwitchContext = useCallback(async (context: ResidentContext) => {
+        if (context.isActiveContext || switchingContextId) {
+            setShowContextSheet(false);
+            return;
+        }
+
+        setSwitchingContextId(context.membershipId);
+        try {
+            const result = await switchResidentContext(context.membershipId);
+            await login(
+                result.accessToken,
+                result.refreshToken,
+                result.user,
+                result.appType,
+                false,
+                null,
+            );
+            setContextsData(result.contexts);
+            setShowContextSheet(false);
+
+            const nextIsAdmin = shouldOpenAdminArea(result.redirectTo, result.user?.role);
+            const targetRoute = nextIsAdmin ? '/(admin)' : '/(resident)/home';
+
+            if (nextIsAdmin !== isAdmin) {
+                router.replace(targetRoute as any);
+                return;
+            }
+
+            await Promise.allSettled([
+                fetchSharedData(),
+                fetchContexts(),
+                nextIsAdmin ? fetchAdminData() : Promise.resolve(),
+            ]);
+        } catch (error: any) {
+            AppAlert.show(
+                'Could not switch home',
+                error?.response?.data?.message || 'Please try again in a moment.'
+            );
+        } finally {
+            setSwitchingContextId(null);
+        }
+    }, [
+        switchingContextId,
+        login,
+        fetchSharedData,
+        fetchContexts,
+        fetchAdminData,
+        isAdmin,
+        router,
+    ]);
+
+    const handleAddAnotherHome = useCallback(() => {
+        setShowContextSheet(false);
+        startAddMembershipFlow(role === 'admin' ? '/(admin)/profile' : '/(resident)/profile');
+        router.push('/(onboarding)/select-city' as any);
+    }, [role, router, startAddMembershipFlow]);
+
+    const handleRequestPress = useCallback((request: ResidentContextRequest) => {
+        setShowContextSheet(false);
+        setSelectedRequest(request);
+        setShowRequestDetails(true);
+    }, []);
+
+    const handleRequestDeleted = useCallback(() => {
+        setSelectedRequest(null);
+        setShowRequestDetails(false);
+        fetchContexts();
+    }, [fetchContexts]);
+
+    const requestReturnTo = role === 'admin' ? '/(admin)/profile' : '/(resident)/profile';
+
+    const handleRequestApplyAgain = useCallback((request: ResidentContextRequest | ResidentRequestDetails) => {
+        const draft = buildOnboardingDraftFromRequest(request);
+        if (!draft) {
+            AppAlert.show('Could not continue', 'This request is missing flat details. Please apply again.');
+            return;
+        }
+
+        setShowRequestDetails(false);
+        setSelectedRequest(null);
+        startRequestCorrectionFlow({
+            ...draft,
+            returnTo: requestReturnTo,
+            sourceRequestId: request.requestId,
+            sourceRequestStatus: draft.sourceRequestStatus,
+        });
+        router.push('/(onboarding)/document-upload' as any);
+    }, [requestReturnTo, router, startRequestCorrectionFlow]);
+
+    const handleRequestEditSelection = useCallback((request: ResidentContextRequest | ResidentRequestDetails) => {
+        const draft = buildOnboardingDraftFromRequest(request);
+        if (!draft) {
+            AppAlert.show('Could not continue', 'This request is missing flat details. Please apply again.');
+            return;
+        }
+
+        setShowRequestDetails(false);
+        setSelectedRequest(null);
+        startRequestCorrectionFlow({
+            ...draft,
+            returnTo: requestReturnTo,
+            sourceRequestId: request.requestId,
+            sourceRequestStatus: draft.sourceRequestStatus,
+        });
+        router.push('/(onboarding)/select-block' as any);
+    }, [requestReturnTo, router, startRequestCorrectionFlow]);
 
     // ═══════════════════════════════════════════════════════════════════════════
     // RENDER
@@ -257,10 +394,19 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                         <View style={S.logoWrap}>
                             <SgateBrandMark size={48} />
                         </View>
-                        <View>
+                        <TouchableOpacity
+                            style={S.contextTrigger}
+                            activeOpacity={0.7}
+                            disabled={!canOpenContextSheet}
+                            onPress={() => setShowContextSheet(true)}
+                            hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                        >
                             <Text style={S.greetText}>{greeting()}, {firstName} 👋</Text>
-                            <Text style={S.societyText} numberOfLines={1}>{societyName}</Text>
-                        </View>
+                            <View style={S.contextTitleRow}>
+                                <Text style={S.societyText} numberOfLines={1}>{contextTitle}</Text>
+                                <MaterialCommunityIcons name="chevron-down" size={18} color={SgateColors.t1} />
+                            </View>
+                        </TouchableOpacity>
                     </View>
 
                     {/* Bell */}
@@ -430,6 +576,31 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                 initialType={preApproveType}
                 onClose={() => setShowPreApprove(false)}
             />
+
+            <ResidentContextPicker
+                visible={showContextSheet}
+                contexts={contextsData?.contexts ?? []}
+                requests={contextsData?.requests ?? []}
+                activeContext={activeContext}
+                isLoading={contextsLoading}
+                switchingContextId={switchingContextId}
+                onClose={() => setShowContextSheet(false)}
+                onRefresh={fetchContexts}
+                onSwitch={handleSwitchContext}
+                onRequestPress={handleRequestPress}
+                onAddAnother={handleAddAnotherHome}
+                variant="dropdown"
+                topOffset={insets.top + 88}
+            />
+
+            <ResidentRequestDetailsSheet
+                visible={showRequestDetails}
+                request={selectedRequest}
+                onClose={() => setShowRequestDetails(false)}
+                onDeleted={handleRequestDeleted}
+                onApplyAgain={handleRequestApplyAgain}
+                onEditSelection={handleRequestEditSelection}
+            />
         </View>
     );
 }
@@ -502,6 +673,17 @@ function ActivityEmpty() {
     );
 }
 
+function formatUserFlatLabel(user: any): string | null {
+    const flatNumber = user?.flat?.flatNumber ?? user?.flat?.number;
+    const blockName = user?.flat?.block?.name;
+
+    if (flatNumber) {
+        return [blockName, flatNumber].filter(Boolean).join(' - ');
+    }
+
+    return null;
+}
+
 // ─── Styles (IDENTICAL to Resident Home) ──────────────────────────────────────
 
 const S = StyleSheet.create({
@@ -540,7 +722,18 @@ const S = StyleSheet.create({
         color: SgateColors.t3,
         marginBottom: 2,
     },
+    contextTrigger: {
+        flex: 1,
+        minWidth: 0,
+    },
+    contextTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+        minWidth: 0,
+    },
     societyText: {
+        flexShrink: 1,
         fontSize: 17,
         fontFamily: SgateFonts.extrabold,
         color: SgateColors.t1,
@@ -735,4 +928,5 @@ const S = StyleSheet.create({
         borderRadius: 6,
         backgroundColor: '#EBEBEB',
     },
+
 });

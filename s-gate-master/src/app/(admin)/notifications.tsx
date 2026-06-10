@@ -2,9 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-    Alert,
     FlatList,
-    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -25,7 +23,8 @@ interface AdminNotification {
     type: string;
     isRead: boolean;
     createdAt: string;
-    metadata?: Record<string, any>;
+    data?: Record<string, any>;
+    referenceId?: string | null;
 }
 
 // ─── Icon/colour config ───────────────────────────────────────────────────────
@@ -71,12 +70,13 @@ export default function AdminNotificationsScreen() {
             
             const mapped = notificationsArray.map((n: any) => ({
                 id: n.id,
-                type: n.category ?? n.type ?? 'SYSTEM',
+                type: n.type ?? n.category ?? 'SYSTEM',
                 title: n.title,
                 body: n.message ?? n.body ?? '',
                 isRead: n.isRead,
                 createdAt: n.createdAt,
                 data: n.data,
+                referenceId: n.referenceId,
             }));
             
             setNotifications(mapped);
@@ -141,7 +141,13 @@ export default function AdminNotificationsScreen() {
                     router.push('/(admin)/approval-requests' as any);
                     break;
                 case 'ONBOARDING_STATUS':
-                    router.push('/(admin)/onboarding-requests' as any);
+                    router.push({
+                        pathname: '/(admin)/onboarding-requests',
+                        params: {
+                            requestId: n.data?.requestId ?? n.referenceId ?? undefined,
+                            status: n.data?.status ?? 'PENDING_APPROVAL',
+                        },
+                    } as any);
                     break;
                 default:
                     break;

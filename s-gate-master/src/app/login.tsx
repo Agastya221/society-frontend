@@ -106,9 +106,21 @@ export default function Login() {
         setIsLoading(true);
         setError('');
         try {
-            const retryResponse = await OTPWidget.retryOTP({ reqId });
+            const retryResponse = await OTPWidget.retryOTP({ reqId, retryChannel: 11 });
             console.log('🔄 MSG91 retryOTP response:', retryResponse);
-            if (retryResponse?.reqId || retryResponse?.message?.toUpperCase() === 'SUCCESS') {
+            const responseMessage = String(retryResponse?.message ?? '');
+            const isSuccess =
+                retryResponse?.type === 'success' ||
+                retryResponse?.reqId ||
+                responseMessage.toUpperCase() === 'SUCCESS';
+
+            if (isSuccess) {
+                const nextReqId =
+                    retryResponse?.reqId ||
+                    (responseMessage && responseMessage.toUpperCase() !== 'SUCCESS'
+                        ? responseMessage
+                        : reqId);
+                setReqId(nextReqId);
                 setCountdown(30);
             } else {
                 setError('Failed to resend OTP. Please try again.');

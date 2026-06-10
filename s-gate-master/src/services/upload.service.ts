@@ -29,14 +29,18 @@ export interface ConfirmUploadPayload {
 export const getPresignedUrl = async (
     data: GetPresignedUrlPayload
 ): Promise<PresignedUrlResult> => {
-    const res = await api.post('/upload/presigned-url', data);
+    const endpoint =
+        data.context === 'onboarding'
+            ? '/resident/onboarding/upload/presigned-url'
+            : '/upload/presigned-url';
+    const res = await api.post(endpoint, data);
     return res.data.data;
 };
 
 export const confirmUpload = async (
     data: ConfirmUploadPayload
 ): Promise<unknown> => {
-    const res = await api.post('/upload/confirm', data);
+    const res = await api.post('/resident/onboarding/upload/confirm', data);
     return res.data.data;
 };
 

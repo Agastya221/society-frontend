@@ -54,7 +54,7 @@ export default function RootLayout() {
   // Load token on app launch
   useEffect(() => {
     loadToken();
-  }, []);
+  }, [loadToken]);
 
   const checkInProgress = useRef(false);
 
@@ -159,6 +159,14 @@ export default function RootLayout() {
         } else {
           router.push('/(resident)/approvals' as any);
         }
+      } else if (data?.type === 'ONBOARDING_STATUS' && (role === 'ADMIN' || role === 'SUPER_ADMIN')) {
+        router.push({
+          pathname: '/(admin)/onboarding-requests',
+          params: {
+            requestId: data.requestId,
+            status: data.status ?? 'PENDING_APPROVAL',
+          },
+        } as any);
       }
     });
     return () => sub.remove();
@@ -228,7 +236,7 @@ export default function RootLayout() {
       }
 
       if (role === 'ADMIN') {
-        if (!inAdminGroup && !inResidentGroup) router.replace('/(admin)');
+        if (!inAdminGroup && !inResidentGroup && !inOnboarding) router.replace('/(admin)');
         return;
       }
 
@@ -236,7 +244,7 @@ export default function RootLayout() {
         if (requiresOnboarding) {
           if (!inOnboarding) router.replace('/(onboarding)');
         } else {
-          if (!inResidentGroup) router.replace('/(resident)/home');
+          if (!inResidentGroup && !inOnboarding) router.replace('/(resident)/home');
         }
         return;
       }
@@ -244,7 +252,7 @@ export default function RootLayout() {
       // Fallback for any other role
       if (inAuthGroup) router.replace('/(resident)/home');
     }
-  }, [isAuthenticated, isLoading, role, requiresOnboarding, segments, onboardingChecked, hasSeenOnboarding]);
+  }, [isAuthenticated, isLoading, role, requiresOnboarding, segments, onboardingChecked, hasSeenOnboarding, router]);
 
   // Hide splash screen once fonts are loaded and auth is resolved
   useEffect(() => {

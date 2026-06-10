@@ -10,20 +10,30 @@ import {
     ToastAndroid,
     TouchableOpacity,
     View,
+    Share,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialCommunityIcons, Feather, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
-import { Share } from 'react-native';
 
 import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import * as profileService from '@/services/profile.service';
+import type {
+    ResidentContext,
+    ResidentContextRequest,
+    ResidentContextsResponse,
+    ResidentRequestDetails,
+} from '@/services/profile.service';
 import { AppAlert } from '@/components/ui/AppAlert';
+import { ResidentContextPicker } from '@/components/context/ResidentContextPicker';
+import { ResidentRequestDetailsSheet } from '@/components/context/ResidentRequestDetailsSheet';
 import { SettingRow } from '@/components/ui/SettingRow';
+import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft';
 
 // Sub-components (from Resident profile)
 import { ProfileHeader } from '@/app/(resident)/profile/_components/ProfileHeader';
@@ -58,12 +68,19 @@ function safePush(router: any, route: string) {
     }
 }
 
+function shouldOpenAdminArea(redirectTo?: string, nextRole?: string | null): boolean {
+    const normalizedRole = nextRole?.toUpperCase();
+    return redirectTo === 'ADMIN_PANEL' || normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN';
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function SharedProfileScreen({ role }: SharedProfileScreenProps) {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { user, logout } = useAuthStore();
+    const { user, logout, login } = useAuthStore();
+    const startAddMembershipFlow = useOnboardingStore((s) => s.startAddMembershipFlow);
+    const startRequestCorrectionFlow = useOnboardingStore((s) => s.startRequestCorrectionFlow);
     const isAdmin = role === 'admin';
 
     // Route prefix for navigation
@@ -87,19 +104,42 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
     const [isQrModalVisible, setQrModalVisible] = useState(false);
     const [editData, setEditData] = useState({ name: '', email: '' });
     const [saving, setSaving] = useState(false);
+    const [contextsData, setContextsData] = useState<ResidentContextsResponse | null>(null);
+    const [contextsLoading, setContextsLoading] = useState(false);
+    const [showContextSheet, setShowContextSheet] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<ResidentContextRequest | null>(null);
+    const [showRequestDetails, setShowRequestDetails] = useState(false);
+    const [switchingContextId, setSwitchingContextId] = useState<string | null>(null);
+
+    const fetchContexts = useCallback(async () => {
+        if (!user?.id) return;
+        setContextsLoading(true);
+        try {
+            const result = await profileService.getResidentContexts();
+            setContextsData(result);
+        } catch (error) {
+            console.error('Profile contexts fetch failed:', error);
+        } finally {
+            setContextsLoading(false);
+        }
+    }, [user?.id]);
 
     // ── Data loading ──────────────────────────────────────────────────────
     useFocusEffect(
         useCallback(() => {
             fetchAll();
-        }, [fetchAll]),
+            fetchContexts();
+        }, [fetchAll, fetchContexts]),
     );
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
-        await fetchAll(true);
+        await Promise.allSettled([
+            fetchAll(true),
+            fetchContexts(),
+        ]);
         setRefreshing(false);
-    }, [fetchAll]);
+    }, [fetchAll, fetchContexts]);
 
     // ── Derived data ──────────────────────────────────────────────────────
     const displayUser = profile ?? user ?? ({} as any);
@@ -111,6 +151,15 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
     const flatInfo = displayUser.flat?.number
         ? `${displayUser.flat.block?.name ?? ''} ${displayUser.flat.number}`.trim()
         : null;
+
+    const activeContext = contextsData?.activeContext ?? null;
+    const activeHomeLabel = activeContext?.label ?? flatInfo ?? 'No flat assigned';
+    const activeHomeSociety = activeContext?.societyName ?? displayUser.society?.name ?? null;
+    const contextCount = contextsData?.contexts?.length ?? 0;
+    const requestCount = contextsData?.requests?.length ?? 0;
+    const manageHomesSubtitle = activeHomeSociety
+        ? `${activeHomeLabel} - ${activeHomeSociety}`
+        : activeHomeLabel;
 
     // ── Edit profile ──────────────────────────────────────────────────────
     const openEditModal = () => {
@@ -172,6 +221,106 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
             });
         } catch { /* cancelled */ }
     };
+
+    const handleOpenContextSheet = useCallback(() => {
+        setShowContextSheet(true);
+        fetchContexts();
+    }, [fetchContexts]);
+
+    const handleAddFlat = useCallback(() => {
+        setShowContextSheet(false);
+        startAddMembershipFlow(`${routePrefix}/profile`);
+        safePush(router, '/(onboarding)/select-city');
+    }, [routePrefix, router, startAddMembershipFlow]);
+
+    const handleSwitchContext = useCallback(async (context: ResidentContext) => {
+        if (context.isActiveContext || switchingContextId) {
+            setShowContextSheet(false);
+            return;
+        }
+
+        setSwitchingContextId(context.membershipId);
+        try {
+            const result = await profileService.switchResidentContext(context.membershipId);
+            await login(
+                result.accessToken,
+                result.refreshToken,
+                result.user,
+                result.appType,
+                false,
+                null,
+            );
+            setContextsData(result.contexts);
+            useProfileStore.getState().invalidate();
+            setShowContextSheet(false);
+
+            const nextIsAdmin = shouldOpenAdminArea(result.redirectTo, result.user?.role);
+            const targetRoute = nextIsAdmin ? '/(admin)/profile' : '/(resident)/profile';
+
+            if (nextIsAdmin !== isAdmin) {
+                router.replace(targetRoute as any);
+                return;
+            }
+
+            await fetchAll(true);
+            await fetchContexts();
+        } catch (error: any) {
+            AppAlert.show(
+                'Could not switch flat',
+                error?.response?.data?.message || 'Please try again in a moment.'
+            );
+        } finally {
+            setSwitchingContextId(null);
+        }
+    }, [fetchAll, fetchContexts, isAdmin, login, router, switchingContextId]);
+
+    const handleRequestPress = useCallback((request: ResidentContextRequest) => {
+        setShowContextSheet(false);
+        setSelectedRequest(request);
+        setShowRequestDetails(true);
+    }, []);
+
+    const handleRequestDeleted = useCallback(() => {
+        setSelectedRequest(null);
+        setShowRequestDetails(false);
+        fetchContexts();
+    }, [fetchContexts]);
+
+    const handleRequestApplyAgain = useCallback((request: ResidentContextRequest | ResidentRequestDetails) => {
+        const draft = buildOnboardingDraftFromRequest(request);
+        if (!draft) {
+            AppAlert.show('Could not continue', 'This request is missing flat details. Please apply again.');
+            return;
+        }
+
+        setShowRequestDetails(false);
+        setSelectedRequest(null);
+        startRequestCorrectionFlow({
+            ...draft,
+            returnTo: `${routePrefix}/profile`,
+            sourceRequestId: request.requestId,
+            sourceRequestStatus: draft.sourceRequestStatus,
+        });
+        safePush(router, '/(onboarding)/document-upload');
+    }, [routePrefix, router, startRequestCorrectionFlow]);
+
+    const handleRequestEditSelection = useCallback((request: ResidentContextRequest | ResidentRequestDetails) => {
+        const draft = buildOnboardingDraftFromRequest(request);
+        if (!draft) {
+            AppAlert.show('Could not continue', 'This request is missing flat details. Please apply again.');
+            return;
+        }
+
+        setShowRequestDetails(false);
+        setSelectedRequest(null);
+        startRequestCorrectionFlow({
+            ...draft,
+            returnTo: `${routePrefix}/profile`,
+            sourceRequestId: request.requestId,
+            sourceRequestStatus: draft.sourceRequestStatus,
+        });
+        safePush(router, '/(onboarding)/select-block');
+    }, [routePrefix, router, startRequestCorrectionFlow]);
 
     // ── Skeleton while first load ─────────────────────────────────────────
     const isFirstLoad = loading && !profile && !user;
@@ -327,32 +476,26 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 <View style={styles.card}>
                     <SettingRow
                         icon="home-city-outline"
-                        title={flatInfo ?? (isAdmin ? 'Manage Society Flats' : 'No flat assigned')}
-                        subtitle={displayUser.society?.name}
-                        badge={flatInfo ? { label: isAdmin ? 'Admin' : 'Active', color: isAdmin ? SgateColors.goldDeep : SgateColors.green, bg: isAdmin ? SgateColors.goldPale : SgateColors.greenBg } : undefined}
+                        title={isAdmin ? 'Manage Society Flats' : 'Manage My Flats'}
+                        subtitle={manageHomesSubtitle}
+                        badge={
+                            contextCount > 1
+                                ? { label: `${contextCount} Homes`, color: SgateColors.goldDeep, bg: SgateColors.goldPale }
+                                : requestCount > 0
+                                    ? { label: `${requestCount} Pending`, color: '#996300', bg: SgateColors.goldPale }
+                                : activeContext
+                                    ? { label: 'Active', color: SgateColors.green, bg: SgateColors.greenBg }
+                                    : undefined
+                        }
                         showChevron={true}
-                        onPress={() => {
-                            console.log('🏠 [Profile] Flat row pressed');
-                            console.log('🏠 [Profile] flatInfo:', flatInfo);
-                            console.log('🏠 [Profile] role:', role, '| isAdmin:', isAdmin);
-                            if (flatInfo) {
-                                console.log('🏠 [Profile] Navigating to flat details →', `${routePrefix}/my-home`);
-                                safePush(router, `${routePrefix}/my-home`);
-                            } else if (isAdmin) {
-                                console.log('🏠 [Profile] Admin with no flat → navigating to flats management');
-                                safePush(router, '/(admin)/flats');
-                            } else {
-                                console.log('🏠 [Profile] Resident with no flat → showing alert');
-                                AppAlert.show('No Flat Assigned', 'You do not have a flat assigned yet. Please contact your society admin.');
-                            }
-                        }}
+                        onPress={handleOpenContextSheet}
                     />
                     <SettingRow
                         icon="plus-circle-outline"
                         title="Add Flat/Villa/Office"
                         showDivider={false}
-                        showChevron={false}
-                        onPress={() => AppAlert.show('Coming Soon', 'Multi-flat management will be available soon.')}
+                        showChevron
+                        onPress={handleAddFlat}
                     />
                 </View>
 
@@ -419,6 +562,32 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                     <Text style={styles.footerVersion}>Version 1.0.0</Text>
                 </View>
             </ScrollView>
+
+            <ResidentContextPicker
+                visible={showContextSheet}
+                contexts={contextsData?.contexts ?? []}
+                requests={contextsData?.requests ?? []}
+                activeContext={activeContext}
+                isLoading={contextsLoading}
+                switchingContextId={switchingContextId}
+                onClose={() => setShowContextSheet(false)}
+                onRefresh={fetchContexts}
+                onSwitch={handleSwitchContext}
+                onRequestPress={handleRequestPress}
+                onAddAnother={handleAddFlat}
+                variant="sheet"
+                title={isAdmin ? 'Manage Society Flats' : 'Manage My Flats'}
+                subtitle="Switch active flat or add another home"
+            />
+
+            <ResidentRequestDetailsSheet
+                visible={showRequestDetails}
+                request={selectedRequest}
+                onClose={() => setShowRequestDetails(false)}
+                onDeleted={handleRequestDeleted}
+                onApplyAgain={handleRequestApplyAgain}
+                onEditSelection={handleRequestEditSelection}
+            />
 
             {/* ── Edit Profile Modal ──────────────────────────────────── */}
             <Modal
