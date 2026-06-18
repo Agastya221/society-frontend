@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
 
 interface DocumentUploadCardProps {
     label: string;
@@ -36,7 +36,7 @@ export const DocumentUploadCard = memo(function DocumentUploadCard({
                 </View>
                 {isUploaded && (
                     <View style={styles.checkCircle}>
-                        <Feather name="check" size={14} color="#16a34a" />
+                        <Feather name="check" size={14} color="#00A36C" />
                     </View>
                 )}
             </View>
@@ -46,14 +46,14 @@ export const DocumentUploadCard = memo(function DocumentUploadCard({
                 <View style={styles.uploadedRow}>
                     <View style={styles.fileInfo}>
                         <View style={styles.fileIconBox}>
-                            <Feather name="file" size={16} color={SgateColors.green} />
+                            <Feather name="file" size={16} color="#00A36C" />
                         </View>
                         <Text style={styles.fileName} numberOfLines={1}>
                             {fileName}
                         </Text>
                     </View>
                     <View style={styles.uploadedActions}>
-                        <TouchableOpacity onPress={onPick} disabled={isUploading}>
+                        <TouchableOpacity style={styles.replaceBtn} onPress={onPick} disabled={isUploading}>
                             <Text style={styles.replaceText}>Replace</Text>
                         </TouchableOpacity>
                         {onRemove && (
@@ -93,17 +93,18 @@ export const DocumentUploadCard = memo(function DocumentUploadCard({
 const styles = StyleSheet.create({
     card: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 16,
+        borderRadius: 18,
         borderWidth: 1,
         borderColor: SgateColors.borderSoft,
-        padding: 16,
-        marginBottom: 14,
+        padding: 18,
+        marginBottom: 16,
+        ...SgateShadows.minimal,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 12,
+        marginBottom: 14,
     },
     labelRow: {
         flexDirection: 'row',
@@ -117,45 +118,48 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
     },
     requiredBadge: {
-        backgroundColor: '#FEF2F2',
+        backgroundColor: 'rgba(255, 92, 92, 0.08)',
         paddingHorizontal: 8,
-        paddingVertical: 3,
+        paddingVertical: 4,
         borderRadius: 6,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 92, 92, 0.15)',
     },
     requiredText: {
-        fontSize: 9,
+        fontSize: 10,
         fontFamily: SgateFonts.bold,
         color: SgateColors.red,
         letterSpacing: 0.5,
+        textTransform: 'uppercase',
     },
     checkCircle: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: SgateColors.greenBg,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: 'rgba(0, 214, 143, 0.12)',
         alignItems: 'center',
         justifyContent: 'center',
     },
     uploadArea: {
-        borderWidth: 2,
+        borderWidth: 1.5,
         borderStyle: 'dashed',
-        borderColor: SgateColors.border,
+        borderColor: '#C0BEB9',
         borderRadius: 14,
-        paddingVertical: 28,
+        paddingVertical: 32,
         alignItems: 'center',
-        backgroundColor: SgateColors.bg,
+        backgroundColor: '#FCFAF7',
     },
     uploadContent: {
         alignItems: 'center',
     },
     uploadIconBox: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: SgateColors.surface,
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: SgateColors.goldPale,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 10,
+        marginBottom: 12,
     },
     uploadLabel: {
         fontSize: 14,
@@ -178,50 +182,65 @@ const styles = StyleSheet.create({
         color: SgateColors.t3,
     },
     uploadedRow: {
-        backgroundColor: SgateColors.greenBg,
-        borderWidth: 1,
-        borderColor: '#BBF7D0',
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
+        backgroundColor: '#F6FCFA',
+        borderWidth: 1.5,
+        borderColor: 'rgba(0, 214, 143, 0.16)',
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        gap: 12,
     },
     fileInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 10,
         flex: 1,
+        paddingRight: 6,
     },
     fileIconBox: {
-        width: 32,
-        height: 32,
-        borderRadius: 8,
-        backgroundColor: '#DCFCE7',
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        backgroundColor: 'rgba(0, 214, 143, 0.1)',
         alignItems: 'center',
         justifyContent: 'center',
     },
     fileName: {
         fontSize: 13,
-        fontFamily: SgateFonts.medium,
-        color: '#166534',
+        fontFamily: SgateFonts.semibold,
+        color: '#0F2C1F',
         flex: 1,
     },
     uploadedActions: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 10,
+    },
+    replaceBtn: {
+        borderWidth: 1,
+        borderColor: SgateColors.goldDeep,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        shadowColor: '#E5A500',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 1,
+        elevation: 1,
     },
     replaceText: {
-        fontSize: 13,
+        fontSize: 12,
         fontFamily: SgateFonts.bold,
-        color: SgateColors.gold,
+        color: SgateColors.goldDeep,
     },
     removeBtn: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
         backgroundColor: SgateColors.redBg,
         alignItems: 'center',
         justifyContent: 'center',

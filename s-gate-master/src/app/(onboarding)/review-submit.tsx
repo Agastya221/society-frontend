@@ -3,11 +3,11 @@ import {
     View,
     Text,
     TouchableOpacity,
-    Alert,
     ScrollView,
     ActivityIndicator,
     StyleSheet,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -81,7 +81,7 @@ export default function ReviewSubmitScreen() {
 
     const handleSubmit = async () => {
         if (!selectedSociety || !selectedBlock || !selectedFlat || !residentType) {
-            Alert.alert('Missing Information', 'Please complete all steps before submitting.');
+            AppAlert.show('Missing Information', 'Please complete all steps before submitting.');
             return;
         }
 
@@ -132,7 +132,7 @@ export default function ReviewSubmitScreen() {
             const msg =
                 err?.response?.data?.message ||
                 'Failed to submit your request. Please try again.';
-            Alert.alert('Submission Failed', msg, [{ text: 'OK' }]);
+            AppAlert.show('Submission Failed', msg);
         };
 
         if (sourceRequestId) {

@@ -78,7 +78,31 @@ export default function RootLayout() {
         
         // Force refresh from OS if not granted
         if (notifStatus.status !== 'granted') {
-          notifStatus = await Notifications.requestPermissionsAsync();
+          const userAccepted = await new Promise<boolean>((resolve) => {
+            AppAlert.show(
+              'Notification Permission',
+              role === 'ADMIN'
+                ? 'Allow S-Gate to send you notifications so you can receive instant alerts for security events and approval requests.'
+                : 'Allow S-Gate to send you notifications so you can receive instant alerts for visitor arrivals and gate activity.',
+              [
+                {
+                  text: 'NOT NOW',
+                  style: 'cancel',
+                  onPress: () => resolve(false),
+                },
+                {
+                  text: 'ALLOW',
+                  style: 'default',
+                  onPress: () => resolve(true),
+                },
+              ],
+              { cancelable: false, tag: 'permissions' }
+            );
+          });
+
+          if (userAccepted) {
+            notifStatus = await Notifications.requestPermissionsAsync();
+          }
         }
 
         if (notifStatus.status !== 'granted') {
@@ -101,7 +125,31 @@ export default function RootLayout() {
         
         // Force refresh from OS if not granted
         if (locStatus.status !== 'granted') {
-           locStatus = await Location.requestForegroundPermissionsAsync();
+          const userAccepted = await new Promise<boolean>((resolve) => {
+            AppAlert.show(
+              'Location Permission',
+              role === 'ADMIN'
+                ? 'Allow S-Gate to access your location to verify you are within the society premises for security operations.'
+                : 'Allow S-Gate to access your location to provide emergency SOS features and local community services.',
+              [
+                {
+                  text: 'NOT NOW',
+                  style: 'cancel',
+                  onPress: () => resolve(false),
+                },
+                {
+                  text: 'ALLOW',
+                  style: 'default',
+                  onPress: () => resolve(true),
+                },
+              ],
+              { cancelable: false, tag: 'permissions' }
+            );
+          });
+
+          if (userAccepted) {
+            locStatus = await Location.requestForegroundPermissionsAsync();
+          }
         }
 
         if (locStatus.status !== 'granted') {

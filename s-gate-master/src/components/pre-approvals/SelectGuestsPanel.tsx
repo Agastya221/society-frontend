@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Linking } from 'react-native';
 import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { Feather } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { AppAlert } from '@/components/ui/AppAlert';
 
 type Tab = 'contacts' | 'recent' | 'manual';
 
@@ -49,7 +50,14 @@ export function SelectGuestsPanel({
                 setAllContacts(data);
             }
         } else {
-            Alert.alert("Permission", "Allow mygate to access your contacts via device settings?");
+            AppAlert.show(
+                "Permission Required", 
+                "Please allow S-Gate to access your contacts via your device settings to select guests easily.",
+                [
+                    { text: 'CANCEL', style: 'cancel' },
+                    { text: 'OPEN SETTINGS', style: 'default', onPress: () => Linking.openSettings() }
+                ]
+            );
         }
         setLoadingContacts(false);
     };
@@ -78,7 +86,7 @@ export function SelectGuestsPanel({
 
     const handleAddManual = () => {
         if (!guestName || !mobileNumber) {
-            Alert.alert("Required", "Enter name and mobile number.");
+            AppAlert.show("Required", "Enter guest name and mobile number.");
             return;
         }
         toggleSelection(guestName, mobileNumber);
@@ -88,7 +96,7 @@ export function SelectGuestsPanel({
 
     const handleNext = () => {
         if (selectedGuests.length === 0) {
-            Alert.alert("Required", "Select at least one guest.");
+            AppAlert.show("Required", "Select at least one guest.");
             return;
         }
         onNext?.(selectedGuests);

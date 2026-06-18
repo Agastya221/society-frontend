@@ -310,20 +310,20 @@ const styles = StyleSheet.create({
         marginBottom: 14,
     },
     idChip: {
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 10,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
         borderWidth: 1.5,
         borderColor: SgateColors.border,
         backgroundColor: '#FFFFFF',
     },
     idChipActive: {
         borderColor: SgateColors.gold,
-        backgroundColor: SgateColors.goldPale,
+        backgroundColor: '#FFFCF0',
     },
     idChipText: {
         fontSize: 12,
-        fontFamily: SgateFonts.medium,
+        fontFamily: SgateFonts.semibold,
         color: SgateColors.t3,
     },
     idChipTextActive: {

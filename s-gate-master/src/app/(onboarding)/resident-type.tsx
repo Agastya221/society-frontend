@@ -48,44 +48,46 @@ function RoleCard({
     return (
         <Animated.View
             entering={FadeInDown.delay(delay).springify()}
-            style={[animStyle, { flex: 1 }]}
+            style={{ flex: 1 }}
         >
-            <TouchableOpacity
-                onPress={onPress}
-                onPressIn={() => { scale.value = withSpring(0.95, { damping: 15, stiffness: 400 }); }}
-                onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 400 }); }}
-                activeOpacity={0.9}
-                style={[styles.roleCard, isSelected && styles.roleCardActive]}
-            >
-                {/* Selection indicator */}
-                {isSelected && (
-                    <View style={styles.roleCheckBadge}>
-                        <Feather name="check" size={12} color="#FFFFFF" />
+            <Animated.View style={[animStyle, { flex: 1 }]}>
+                <TouchableOpacity
+                    onPress={onPress}
+                    onPressIn={() => { scale.value = withSpring(0.95, { damping: 15, stiffness: 400 }); }}
+                    onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 400 }); }}
+                    activeOpacity={0.9}
+                    style={[styles.roleCard, isSelected && styles.roleCardActive]}
+                >
+                    {/* Selection indicator */}
+                    {isSelected && (
+                        <View style={styles.roleCheckBadge}>
+                            <Feather name="check" size={12} color="#FFFFFF" />
+                        </View>
+                    )}
+
+                    {/* Icon */}
+                    <View style={[styles.roleIconContainer, isSelected && styles.roleIconContainerActive]}>
+                        <View style={[styles.roleIconCircle, isSelected && styles.roleIconCircleActive]}>
+                            {icon}
+                        </View>
                     </View>
-                )}
 
-                {/* Icon */}
-                <View style={[styles.roleIconContainer, isSelected && styles.roleIconContainerActive]}>
-                    <View style={[styles.roleIconCircle, isSelected && styles.roleIconCircleActive]}>
-                        {icon}
-                    </View>
-                </View>
-
-                {/* Title */}
-                <Text style={[styles.roleTitle, isSelected && styles.roleTitleActive]}>
-                    {title}
-                </Text>
-
-                {/* Subtitle */}
-                <Text style={styles.roleSubtitle}>{subtitle}</Text>
-
-                {/* Description tag */}
-                <View style={[styles.roleTag, isSelected && styles.roleTagActive]}>
-                    <Text style={[styles.roleTagText, isSelected && styles.roleTagTextActive]}>
-                        {description}
+                    {/* Title */}
+                    <Text style={[styles.roleTitle, isSelected && styles.roleTitleActive]}>
+                        {title}
                     </Text>
-                </View>
-            </TouchableOpacity>
+
+                    {/* Subtitle */}
+                    <Text style={styles.roleSubtitle}>{subtitle}</Text>
+
+                    {/* Description tag */}
+                    <View style={[styles.roleTag, isSelected && styles.roleTagActive]}>
+                        <Text style={[styles.roleTagText, isSelected && styles.roleTagTextActive]}>
+                            {description}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            </Animated.View>
         </Animated.View>
     );
 }
@@ -115,28 +117,29 @@ function LivingOptionCard({
     return (
         <Animated.View
             entering={FadeInDown.delay(delay).springify()}
-            style={animStyle}
         >
-            <TouchableOpacity
-                onPress={onPress}
-                onPressIn={() => { scale.value = withSpring(0.97, { damping: 15, stiffness: 400 }); }}
-                onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 400 }); }}
-                activeOpacity={0.85}
-                style={[styles.livingCard, isSelected && styles.livingCardActive]}
-            >
-                <View style={[styles.livingIconBox, isSelected && styles.livingIconBoxActive]}>
-                    {icon}
-                </View>
-                <View style={styles.livingContent}>
-                    <Text style={[styles.livingTitle, isSelected && styles.livingTitleActive]}>
-                        {title}
-                    </Text>
-                    <Text style={styles.livingSubtitle}>{subtitle}</Text>
-                </View>
-                <View style={[styles.radioOuter, isSelected && styles.radioOuterActive]}>
-                    {isSelected && <View style={styles.radioInner} />}
-                </View>
-            </TouchableOpacity>
+            <Animated.View style={animStyle}>
+                <TouchableOpacity
+                    onPress={onPress}
+                    onPressIn={() => { scale.value = withSpring(0.97, { damping: 15, stiffness: 400 }); }}
+                    onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 400 }); }}
+                    activeOpacity={0.85}
+                    style={[styles.livingCard, isSelected && styles.livingCardActive]}
+                >
+                    <View style={[styles.livingIconBox, isSelected && styles.livingIconBoxActive]}>
+                        {icon}
+                    </View>
+                    <View style={styles.livingContent}>
+                        <Text style={[styles.livingTitle, isSelected && styles.livingTitleActive]}>
+                            {title}
+                        </Text>
+                        <Text style={styles.livingSubtitle}>{subtitle}</Text>
+                    </View>
+                    <View style={[styles.radioOuter, isSelected && styles.radioOuterActive]}>
+                        {isSelected && <View style={styles.radioInner} />}
+                    </View>
+                </TouchableOpacity>
+            </Animated.View>
         </Animated.View>
     );
 }
