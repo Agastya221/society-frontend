@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Modal, RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
@@ -92,9 +93,9 @@ export default function AdminComplaintDetailScreen() {
            setComplaint(updated);
            setShowStatusModal(false);
            setResolutionNote('');
-           Alert.alert('Success', 'Status updated successfully');
+           AppAlert.show('Success', 'Status updated successfully');
         } catch (err: any) {
-            Alert.alert('Error', err.message);
+            AppAlert.show('Error', err.message);
         } finally {
             setIsUpdating(false);
         }
@@ -107,9 +108,9 @@ export default function AdminComplaintDetailScreen() {
             const updated = await updateComplaint(complaint.id, { assignedToId: staffId });
             setComplaint(updated);
             setShowAssignModal(false);
-            Alert.alert('Success', 'Staff assigned successfully');
+            AppAlert.show('Success', 'Staff assigned successfully');
         } catch (err: any) {
-            Alert.alert('Error', err.message);
+            AppAlert.show('Error', err.message);
         } finally {
             setIsUpdating(false);
         }

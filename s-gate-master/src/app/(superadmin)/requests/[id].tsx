@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     Modal,
     ScrollView,
     Text,
@@ -11,6 +10,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '@/services/api';
@@ -55,7 +55,7 @@ export default function RequestDetailScreen() {
             const res = await api.get(`/society-registration/requests/${id}`);
             setRequest(res.data?.data?.request ?? res.data?.data ?? null);
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to load request');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to load request');
         } finally {
             setLoading(false);
         }
@@ -63,7 +63,7 @@ export default function RequestDetailScreen() {
 
     const handleApprove = () => {
         if (!request) return;
-        Alert.alert(
+        AppAlert.show(
             'Approve Society',
             `Approve "${request.societyName}"? The contact person will become an ADMIN.`,
             [
@@ -74,11 +74,11 @@ export default function RequestDetailScreen() {
                         setActionLoading(true);
                         try {
                             await api.post(`/society-registration/requests/${id}/approve`);
-                            Alert.alert('Success', 'Society approved successfully', [
+                            AppAlert.show('Success', 'Society approved successfully', [
                                 { text: 'OK', onPress: () => router.back() },
                             ]);
                         } catch (err: any) {
-                            Alert.alert('Error', err?.response?.data?.message || 'Failed to approve');
+                            AppAlert.show('Error', err?.response?.data?.message || 'Failed to approve');
                         } finally {
                             setActionLoading(false);
                         }
@@ -96,11 +96,11 @@ export default function RequestDetailScreen() {
                 rejectionReason: rejectReason.trim(),
             });
             setRejectVisible(false);
-            Alert.alert('Done', 'Registration rejected', [
+            AppAlert.show('Done', 'Registration rejected', [
                 { text: 'OK', onPress: () => router.back() },
             ]);
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to reject');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to reject');
         } finally {
             setActionLoading(false);
         }

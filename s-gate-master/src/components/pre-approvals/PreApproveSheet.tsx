@@ -4,7 +4,6 @@ import { Feather } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    Alert,
     Animated as RNAnimated,
     Dimensions,
     Image,
@@ -20,6 +19,7 @@ import {
     Modal,
     KeyboardAvoidingView,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 
 import { Gesture, GestureDetector, NativeViewGestureHandler, GestureHandlerRootView, ScrollView as RNGHScrollView } from 'react-native-gesture-handler';
 import Animated, {
@@ -1526,7 +1526,7 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
 
     const handleAddGuest = async () => {
         if (!addName.trim() || !addPhone.trim()) {
-            Alert.alert('Required', 'Enter both name and phone number.');
+            AppAlert.show('Required', 'Enter both name and phone number.');
             return;
         }
         setAdding(true);
@@ -1535,7 +1535,7 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
             setGuests(g => [...g, slot]);
             setAddName(''); setAddPhone(''); setShowAdd(false);
         } catch (e: any) {
-            Alert.alert('Error', e.message ?? 'Failed to add guest');
+            AppAlert.show('Error', e.message ?? 'Failed to add guest');
         } finally {
             setAdding(false);
         }
@@ -1566,7 +1566,7 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
                 </Text>
                 {invite.venue ? <Text style={S.partyMetaVenue}>{invite.venue}</Text> : null}
 
-                <TouchableOpacity style={S.editInviteRow} onPress={() => Alert.alert('Edit Invite', 'Coming soon!')}>
+                <TouchableOpacity style={S.editInviteRow} onPress={() => AppAlert.show('Edit Invite', 'Coming soon!')}>
                     <Feather name="edit-2" size={14} color={SgateColors.blue} />
                     <Text style={S.editInviteText}>Edit Invite</Text>
                 </TouchableOpacity>
@@ -1667,7 +1667,7 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
                         <View style={S.partyGuestActionDivider} />
                         <TouchableOpacity
                             style={S.partyGuestAction}
-                            onPress={() => Alert.alert('Call', `Calling ${g.phone}…`)}
+                            onPress={() => AppAlert.show('Call', `Calling ${g.phone}…`)}
                         >
                             <Feather name="phone" size={15} color={SgateColors.t2} />
                             <Text style={S.partyGuestActionText}>Call</Text>
@@ -2132,7 +2132,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
 
     // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
-        if (!user?.flatId && role !== 'ADMIN' && role !== 'SUPER_ADMIN') { Alert.alert('Error', 'Your flat is not set up.'); return; }
+        if (!user?.flatId && role !== 'ADMIN' && role !== 'SUPER_ADMIN') { AppAlert.show('Error', 'Your flat is not set up.'); return; }
         setSubmitting(true);
         try {
             const flatId = user?.flatId || user?.societyId || '';
@@ -2194,7 +2194,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
 
             } else if (inviteType === 'CAB') {
                 const digs = digits.join('');
-                if (digs.length < 4) { Alert.alert('Required', 'Enter the last 4 digits of the vehicle number for gate verification.'); setSubmitting(false); return; }
+                if (digs.length < 4) { AppAlert.show('Required', 'Enter the last 4 digits of the vehicle number for gate verification.'); setSubmitting(false); return; }
                 if (tab === 'once') {
                     const w = buildOnceWindow();
                     result = await createPreApproved({
@@ -2236,7 +2236,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         isSurprise: surpriseDelivery,
                     }) as { id: string };
                 } else {
-                    if (!company) { Alert.alert('Required', 'Select a delivery company.'); setSubmitting(false); return; }
+                    if (!company) { AppAlert.show('Required', 'Select a delivery company.'); setSubmitting(false); return; }
                     const w = buildFreqWindow();
                     result = await createPreApproved({
                         type: 'DELIVERY',
@@ -2254,7 +2254,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
 
             } else {
                 // SERVICE → HELP
-                if (!serviceCategory) { Alert.alert('Required', 'Please select a service category.'); setSubmitting(false); return; }
+                if (!serviceCategory) { AppAlert.show('Required', 'Please select a service category.'); setSubmitting(false); return; }
                 if (tab === 'once') {
                     const w = buildOnceWindow();
                     result = await createPreApproved({
@@ -2286,7 +2286,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
             onSuccess?.({ type: inviteType, id: result.id });
             showSuccess();
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message ?? 'Something went wrong.');
+            AppAlert.show('Error', err?.response?.data?.message ?? 'Something went wrong.');
         } finally {
             setSubmitting(false);
         }
@@ -2368,7 +2368,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                                     note={partyThemeData.note}
                                     onBack={goBackFromPartyForm}
                                     onSubmit={async (data) => {
-                                        if (!user?.flatId && role !== 'ADMIN' && role !== 'SUPER_ADMIN') { Alert.alert('Error', 'Your flat is not set up.'); return; }
+                                        if (!user?.flatId && role !== 'ADMIN' && role !== 'SUPER_ADMIN') { AppAlert.show('Error', 'Your flat is not set up.'); return; }
                                         setSubmitting(true);
                                         try {
                                             const result = await createPartyInvite({
@@ -2383,7 +2383,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                                             onSuccess?.({ type: 'GUEST' });
                                             goToPartySuccess(result);
                                         } catch (err: any) {
-                                            Alert.alert('Error', err?.response?.data?.message ?? 'Failed to create invite');
+                                            AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to create invite');
                                         } finally {
                                             setSubmitting(false);
                                         }
@@ -2422,7 +2422,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                                     onBack={goBackFromGuestListToGuests}
                                     onAddMore={goBackToGuestsWithSelections}
                                     onSubmit={async (data) => {
-                                        if (data.guests.length === 0) { Alert.alert('Error', 'Add at least one guest.'); return; }
+                                        if (data.guests.length === 0) { AppAlert.show('Error', 'Add at least one guest.'); return; }
                                         setSubmitting(true);
                                         try {
                                             const newPasses: QRPassData[] = [];
@@ -2457,7 +2457,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                                             onSuccess?.({ type: 'GUEST' });
                                             showSuccess();
                                         } catch (err: any) {
-                                            Alert.alert('Error', err?.response?.data?.message ?? 'Failed to create pass');
+                                            AppAlert.show('Error', err?.response?.data?.message ?? 'Failed to create pass');
                                         } finally {
                                             setSubmitting(false);
                                         }

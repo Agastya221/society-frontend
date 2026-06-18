@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
@@ -88,11 +89,11 @@ export default function FlatDetailsScreen() {
     const ownerName = flat?.ownerName || '';
 
     const handleInvite = () => {
-        Alert.alert('Coming Soon', 'Resident invitation will be available shortly.');
+        AppAlert.show('Coming Soon', 'Resident invitation will be available shortly.');
     };
 
     const handleHistory = () => {
-        Alert.alert('Coming Soon', 'Entry history will be available shortly.');
+        AppAlert.show('Coming Soon', 'Entry history will be available shortly.');
     };
 
     return (

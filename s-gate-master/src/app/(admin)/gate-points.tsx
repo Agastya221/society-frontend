@@ -1,7 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
-    Alert,
     FlatList,
     Modal,
     ScrollView,
@@ -12,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -56,11 +56,11 @@ export default function GatePointsScreen() {
     const handleDelete = (gate: Gate) => {
         const guardCount = getGuardCount(gate.id);
         if (guardCount > 0) {
-            Alert.alert('Cannot Delete', `This gate has ${guardCount} active guard(s). Reassign them first.`);
+            AppAlert.show('Cannot Delete', `This gate has ${guardCount} active guard(s). Reassign them first.`);
             return;
         }
 
-        Alert.alert('Delete Gate', 'Are you sure?', [
+        AppAlert.show('Delete Gate', 'Are you sure?', [
             { text: 'Cancel', style: 'cancel' },
             { 
                 text: 'Delete', 
@@ -72,7 +72,7 @@ export default function GatePointsScreen() {
 
     const handleSave = () => {
         if (!gateName.trim()) {
-            Alert.alert('Error', 'Gate Name is required');
+            AppAlert.show('Error', 'Gate Name is required');
             return;
         }
 

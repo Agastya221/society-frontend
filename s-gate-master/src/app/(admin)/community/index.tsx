@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     ScrollView,
@@ -13,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -138,13 +138,13 @@ export default function AdminCommunityScreen() {
             setPosts((prev) =>
                 prev.map((p) => (p.id === post.id ? { ...p, isPinned: prevPinned } : p))
             );
-            Alert.alert('Error', 'Failed to update pin status');
+            AppAlert.show('Error', 'Failed to update pin status');
         }
     };
 
     const handleDelete = (post: CommunityPost) => {
         setMenuTarget(null);
-        Alert.alert(
+        AppAlert.show(
             'Delete Post',
             `Delete "${post.title}"? This cannot be undone.`,
             [
@@ -157,7 +157,7 @@ export default function AdminCommunityScreen() {
                             await api.delete(`/resident/posts/${post.id}`);
                         } catch {
                             fetchPosts(true);
-                            Alert.alert('Error', 'Failed to delete post');
+                            AppAlert.show('Error', 'Failed to delete post');
                         }
                     },
                 },
@@ -167,7 +167,7 @@ export default function AdminCommunityScreen() {
 
     const handleCreate = async () => {
         if (!createTitle.trim() || !createBody.trim()) {
-            Alert.alert('Error', 'Title and content are required');
+            AppAlert.show('Error', 'Title and content are required');
             return;
         }
         setSubmitting(true);
@@ -184,7 +184,7 @@ export default function AdminCommunityScreen() {
             setCreateCategory('ANNOUNCEMENT');
             fetchPosts(true);
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to post');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to post');
         } finally {
             setSubmitting(false);
         }

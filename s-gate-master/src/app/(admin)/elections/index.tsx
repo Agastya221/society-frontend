@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     ScrollView,
@@ -13,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -95,7 +95,7 @@ export default function AdminElectionsScreen() {
     });
 
     const handleClosePoll = (poll: Poll) => {
-        Alert.alert('Close Poll', 'This will stop accepting votes. Cannot be undone.', [
+        AppAlert.show('Close Poll', 'This will stop accepting votes. Cannot be undone.', [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Close Poll', style: 'destructive',
@@ -112,7 +112,7 @@ export default function AdminElectionsScreen() {
     };
 
     const handleDeletePoll = (poll: Poll) => {
-        Alert.alert('Delete Poll', `Delete "${poll.question}"?`, [
+        AppAlert.show('Delete Poll', `Delete "${poll.question}"?`, [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Delete', style: 'destructive',
@@ -151,9 +151,9 @@ export default function AdminElectionsScreen() {
     };
 
     const handleCreate = async () => {
-        if (!question.trim()) { Alert.alert('Error', 'Question is required'); return; }
+        if (!question.trim()) { AppAlert.show('Error', 'Question is required'); return; }
         const validOptions = options.map((o) => o.trim()).filter(Boolean);
-        if (validOptions.length < 2) { Alert.alert('Error', 'At least 2 options required'); return; }
+        if (validOptions.length < 2) { AppAlert.show('Error', 'At least 2 options required'); return; }
 
         setSubmitting(true);
         try {
@@ -168,7 +168,7 @@ export default function AdminElectionsScreen() {
             resetForm();
             fetchPolls(true);
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to create poll');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to create poll');
         } finally {
             setSubmitting(false);
         }

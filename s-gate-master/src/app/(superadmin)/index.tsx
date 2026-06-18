@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     RefreshControl,
@@ -12,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '@/services/api';
@@ -83,7 +83,7 @@ export default function SuperAdminDashboard() {
     };
 
     const handleApprove = (req: RegistrationRequest) => {
-        Alert.alert(
+        AppAlert.show(
             'Approve Society',
             `Approve "${req.societyName}"? The contact person will become an ADMIN.`,
             [
@@ -98,7 +98,7 @@ export default function SuperAdminDashboard() {
                             setPendingCount((c) => Math.max(0, c - 1));
                             setApprovedCount((c) => c + 1);
                         } catch (err: any) {
-                            Alert.alert('Error', err?.response?.data?.message || 'Failed to approve');
+                            AppAlert.show('Error', err?.response?.data?.message || 'Failed to approve');
                         } finally {
                             setActionLoading(false);
                         }
@@ -121,14 +121,14 @@ export default function SuperAdminDashboard() {
             setRejectTarget(null);
             setRejectReason('');
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to reject');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to reject');
         } finally {
             setActionLoading(false);
         }
     };
 
     const handleLogout = () => {
-        Alert.alert('Logout', 'Are you sure?', [
+        AppAlert.show('Logout', 'Are you sure?', [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Logout', style: 'destructive', onPress: () => logout() },
         ]);

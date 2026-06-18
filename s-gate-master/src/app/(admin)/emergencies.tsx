@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     Platform,
@@ -131,7 +130,7 @@ export default function AdminEmergenciesScreen() {
                 prev.map((e) => (e.id === id ? { ...e, status: 'ACKNOWLEDGED' } : e))
             );
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to acknowledge');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to acknowledge');
         }
     };
 
@@ -152,7 +151,7 @@ export default function AdminEmergenciesScreen() {
             setResolveTarget(null);
             setResolveNote('');
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to resolve');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to resolve');
         } finally {
             setResolving(false);
         }

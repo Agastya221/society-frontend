@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -55,13 +56,13 @@ export function EmergencyOverlay({ emergencyId, onDismiss }: EmergencyOverlayPro
         // Not the reporter — just dismiss the local overlay
         onDismiss?.();
       } else {
-        Alert.alert('Error', 'Could not cancel. Please inform a guard directly.');
+        AppAlert.show('Error', 'Could not cancel. Please inform a guard directly.');
       }
     }
   };
 
   const confirmFalseAlarm = () => {
-    Alert.alert(
+    AppAlert.show(
       'Cancel Emergency?',
       'Only cancel if this was a mistake. Guards will receive an all-clear.',
       [

@@ -3,7 +3,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-    Alert,
     FlatList,
     RefreshControl,
     ScrollView,
@@ -12,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
@@ -91,7 +91,7 @@ export default function AdminComplaintsScreen() {
     // Delete complaint handler
     const handleDeleteComplaint = (complaint: Complaint) => {
         // Show confirmation alert
-        Alert.alert(
+        AppAlert.show(
             'Delete Complaint',
             'Are you sure you want to delete this complaint?',
             [
@@ -113,10 +113,10 @@ export default function AdminComplaintsScreen() {
                             setComplaints(prev => prev.filter(c => c.id !== complaint.id));
                             
                             // Show success alert
-                            Alert.alert('Success', message || 'Complaint deleted successfully');
+                            AppAlert.show('Success', message || 'Complaint deleted successfully');
                         } catch (err: any) {
                             console.error('[ADMIN] Failed to delete complaint:', err);
-                            Alert.alert('Error', err.message || 'Failed to delete complaint');
+                            AppAlert.show('Error', err.message || 'Failed to delete complaint');
                         } finally {
                             setDeletingId(null);
                         }

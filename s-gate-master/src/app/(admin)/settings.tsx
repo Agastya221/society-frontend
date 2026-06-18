@@ -2,7 +2,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
     Platform,
     ScrollView,
     StyleSheet,
@@ -13,6 +12,7 @@ import {
     View,
     ActivityIndicator,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
@@ -42,14 +42,14 @@ export default function SettingsScreen() {
 
     const handleSave = async () => {
         if (!monthlyFee.trim() || isNaN(Number(monthlyFee))) {
-            Alert.alert('Invalid Fee', 'Please enter a valid monthly fee.');
+            AppAlert.show('Invalid Fee', 'Please enter a valid monthly fee.');
             return;
         }
         setSaving(true);
         // TODO: PATCH /admin/society/settings when API is available
         await new Promise(r => setTimeout(r, 800));
         setSaving(false);
-        Alert.alert('Saved', 'Society settings updated successfully.');
+        AppAlert.show('Saved', 'Society settings updated successfully.');
     };
 
     return (
@@ -173,7 +173,7 @@ export default function SettingsScreen() {
                             icon="download-outline"
                             title="Export Society Data"
                             subtitle="Download resident & entry reports"
-                            onPress={() => Alert.alert('Coming Soon', 'Data export feature is coming in the next update.')}
+                            onPress={() => AppAlert.show('Coming Soon', 'Data export feature is coming in the next update.')}
                             showDivider={false}
                         />
                     </View>

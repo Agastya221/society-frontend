@@ -2,7 +2,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     ScrollView,
@@ -12,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -148,7 +148,7 @@ export default function ResidentsScreen() {
     };
 
     const handleMockFilePick = () => {
-        Alert.alert('File Picker', 'Select Tenant Agreement (PDF)', [
+        AppAlert.show('File Picker', 'Select Tenant Agreement (PDF)', [
             { text: 'Cancel', style: 'cancel' },
             { 
                 text: 'Select agreement.pdf', 
@@ -159,13 +159,13 @@ export default function ResidentsScreen() {
 
     const handleSave = () => {
         if (!name || !mobile || !flatId) {
-            Alert.alert('Error', 'Name, Mobile and Flat are required');
+            AppAlert.show('Error', 'Name, Mobile and Flat are required');
             return;
         }
 
         // Compliance: Renter must have agreement
         if (type === 'RENTER' && !agreementUrl) {
-            Alert.alert('Compliance Error', 'Tenant Agreement is MANDATORY for Renters.');
+            AppAlert.show('Compliance Error', 'Tenant Agreement is MANDATORY for Renters.');
             return;
         }
 

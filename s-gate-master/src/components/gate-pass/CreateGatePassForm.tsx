@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
 import { createGatePass, CreateGatePassPayload, GatePassResponse, GatePassType } from '../../services/gatePass';
@@ -45,22 +46,22 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
     const handleSubmit = async () => {
         // Validation
         if (!title.trim() || title.length < 3) {
-            Alert.alert('Error', 'Title is required (min 3 characters)');
+            AppAlert.show('Error', 'Title is required (min 3 characters)');
             return;
         }
 
         if (!description.trim() || description.length < 3) {
-            Alert.alert('Error', 'Description is required (min 3 characters)');
+            AppAlert.show('Error', 'Description is required (min 3 characters)');
             return;
         }
 
         if (validUntil <= validFrom) {
-            Alert.alert('Error', 'Valid Until must be after Valid From');
+            AppAlert.show('Error', 'Valid Until must be after Valid From');
             return;
         }
 
         if (role === 'ADMIN' && !selectedFlatId) {
-            Alert.alert('Error', 'Please select a flat');
+            AppAlert.show('Error', 'Please select a flat');
             return;
         }
 
@@ -83,11 +84,11 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
 
             const result = await createGatePass(payload);
             
-            Alert.alert('Success', 'Gate Pass Created Successfully', [
+            AppAlert.show('Success', 'Gate Pass Created Successfully', [
                 { text: 'OK', onPress: () => onSuccess(result) }
             ]);
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to create gate pass');
+            AppAlert.show('Error', error.message || 'Failed to create gate pass');
         } finally {
             setIsLoading(false);
         }

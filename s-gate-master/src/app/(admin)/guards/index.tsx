@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     Platform,
@@ -15,6 +14,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -75,14 +75,14 @@ export default function GuardsScreen() {
             await api.patch(`/auth/resident-app/users/${guard.id}/status`, { isActive: newActive });
         } catch {
             setGuards(prev => prev.map(g => g.id === guard.id ? { ...g, isActive: !newActive } : g));
-            Alert.alert('Error', 'Failed to update guard status');
+            AppAlert.show('Error', 'Failed to update guard status');
         }
     };
 
     const handleCreate = async () => {
-        if (!name.trim()) { Alert.alert('Error', 'Name is required'); return; }
+        if (!name.trim()) { AppAlert.show('Error', 'Name is required'); return; }
         const cleaned = phone.trim().replace(/\D/g, '');
-        if (cleaned.length !== 10) { Alert.alert('Error', 'Enter a valid 10-digit phone number'); return; }
+        if (cleaned.length !== 10) { AppAlert.show('Error', 'Enter a valid 10-digit phone number'); return; }
         setSubmitting(true);
         try {
             await api.post('/auth/resident-app/create-guard', { name: name.trim(), phone: `+91${cleaned}` });
@@ -90,7 +90,7 @@ export default function GuardsScreen() {
             resetForm();
             fetchGuards();
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to create guard');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to create guard');
         } finally {
             setSubmitting(false);
         }

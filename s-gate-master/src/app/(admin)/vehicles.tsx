@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     Platform,
@@ -15,6 +14,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
@@ -94,7 +94,7 @@ export default function AdminVehiclesScreen() {
     // ─── API: Lookup ──────────────────────────────────────────────────────────
     const handleSearch = async () => {
         if (!query.trim()) {
-            Alert.alert('Empty', 'Please enter a license plate or sticker (min 2 chars).');
+            AppAlert.show('Empty', 'Please enter a license plate or sticker (min 2 chars).');
             return;
         }
         setSearching(true);
@@ -109,7 +109,7 @@ export default function AdminVehiclesScreen() {
             setLookupResults(Array.isArray(data) ? data : []);
         } catch (error: any) {
             console.error('Lookup error:', error);
-            Alert.alert('Error', error?.response?.data?.message || 'Failed to lookup vehicle.');
+            AppAlert.show('Error', error?.response?.data?.message || 'Failed to lookup vehicle.');
             setLookupResults([]);
         } finally {
             setSearching(false);
@@ -155,11 +155,11 @@ export default function AdminVehiclesScreen() {
                 await api.post(`/admin/parking/vehicles/${issueTarget.id}/violations`, payload);
             }
 
-            Alert.alert('Success', 'Parking violation issued and notification sent.');
+            AppAlert.show('Success', 'Parking violation issued and notification sent.');
             setIssueTarget(null); setVDesc(''); setVPenalty('500'); setVInvoice(true);
             if (tab === 'VIOLATIONS') fetchViolations();
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to issue violation.');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to issue violation.');
         } finally {
             setSubmitting(false);
         }
@@ -174,11 +174,11 @@ export default function AdminVehiclesScreen() {
                 status: resolveTarget.type,
                 resolutionNote: resNote.trim() || 'Resolved by admin'
             });
-            Alert.alert('Success', `Violation ${resolveTarget.type.toLowerCase()}`);
+            AppAlert.show('Success', `Violation ${resolveTarget.type.toLowerCase()}`);
             setResolveTarget(null); setResNote('');
             fetchViolations();
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to update violation status.');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to update violation status.');
         } finally {
             setSubmitting(false);
         }
@@ -231,7 +231,7 @@ export default function AdminVehiclesScreen() {
                 <View style={styles.actionRow}>
                     <TouchableOpacity 
                         style={styles.callBtn} 
-                        onPress={() => Alert.alert('Call', `Calling ${item.resident?.phone}...`)}
+                        onPress={() => AppAlert.show('Call', `Calling ${item.resident?.phone}...`)}
                     >
                         <MaterialCommunityIcons name="phone" size={16} color="#FFF" />
                         <Text style={styles.callText}>Call</Text>

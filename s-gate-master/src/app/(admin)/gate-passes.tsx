@@ -2,7 +2,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-    Alert,
     FlatList,
     Modal,
     RefreshControl,
@@ -12,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -103,10 +103,10 @@ export default function GatePassesScreen() {
     const handleApprove = async (id: string) => {
         try {
             await approveGatePass(id);
-            Alert.alert('Success', 'Gate pass approved');
+            AppAlert.show('Success', 'Gate pass approved');
             loadPasses();
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to approve');
+            AppAlert.show('Error', error.message || 'Failed to approve');
         }
     };
 
@@ -114,12 +114,12 @@ export default function GatePassesScreen() {
         if (!rejectId || !rejectReason.trim()) return;
         try {
             await rejectGatePass(rejectId, rejectReason);
-            Alert.alert('Success', 'Gate pass rejected');
+            AppAlert.show('Success', 'Gate pass rejected');
             setRejectId(null);
             setRejectReason('');
             loadPasses();
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to reject');
+            AppAlert.show('Error', error.message || 'Failed to reject');
         }
     };
 

@@ -2,7 +2,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
     Linking,
     ScrollView,
     StyleSheet,
@@ -78,7 +77,7 @@ export default function GuardDetailScreen() {
                             await api.patch(`/auth/resident-app/users/${guard.id}/status`, { isActive: newActive });
                             setGuard(prev => prev ? { ...prev, isActive: newActive } : null);
                         } catch {
-                            Alert.alert('Error', 'Failed to update guard status');
+                            AppAlert.show('Error', 'Failed to update guard status');
                         } finally {
                             setToggling(false);
                         }

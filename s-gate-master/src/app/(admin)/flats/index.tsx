@@ -2,7 +2,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    Alert,
     Modal,
     ScrollView,
     SectionList,
@@ -12,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
@@ -137,7 +137,7 @@ export default function FlatsScreen() {
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('Delete Flat', 'Are you sure?', [
+        AppAlert.show('Delete Flat', 'Are you sure?', [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Delete',
@@ -145,7 +145,7 @@ export default function FlatsScreen() {
                 onPress: async () => {
                     const societyId = user?.societyId;
                     if (!societyId) {
-                        Alert.alert('Error', 'Society not found for your account.');
+                        AppAlert.show('Error', 'Society not found for your account.');
                         return;
                     }
 
@@ -153,7 +153,7 @@ export default function FlatsScreen() {
                         await api.delete(`/admin/societies/${societyId}/flats/${id}`);
                         await loadFlats();
                     } catch (err: any) {
-                        Alert.alert(
+                        AppAlert.show(
                             'Delete Failed',
                             err?.response?.data?.message || 'Could not delete this flat. Please try again.'
                         );
@@ -165,13 +165,13 @@ export default function FlatsScreen() {
 
     const handleSave = async () => {
         if (!flatNumber || !block) {
-            Alert.alert('Error', 'Flat Number and Block are required');
+            AppAlert.show('Error', 'Flat Number and Block are required');
             return;
         }
 
         const societyId = user?.societyId;
         if (!societyId) {
-            Alert.alert('Error', 'Society not found for your account.');
+            AppAlert.show('Error', 'Society not found for your account.');
             return;
         }
 
@@ -192,7 +192,7 @@ export default function FlatsScreen() {
             setModalVisible(false);
             resetForm();
         } catch (err: any) {
-            Alert.alert(
+            AppAlert.show(
                 editingId ? 'Update Failed' : 'Create Failed',
                 err?.response?.data?.message || 'Could not save this flat. Please try again.'
             );
@@ -275,7 +275,7 @@ export default function FlatsScreen() {
                             style={styles.card}
                             onPress={() => router.push(`/(admin)/flats/${item.id}` as any)}
                             onLongPress={() => {
-                                Alert.alert('Flat Actions', `Flat ${item.number || ''}`, [
+                                AppAlert.show('Flat Actions', `Flat ${item.number || ''}`, [
                                     { text: 'Cancel', style: 'cancel' },
                                     { text: 'Edit', onPress: () => handleEdit(item) },
                                     { text: 'Delete', style: 'destructive', onPress: () => handleDelete(item.id) },

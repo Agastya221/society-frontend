@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     RefreshControl,
@@ -14,6 +13,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -98,7 +98,7 @@ export default function NoticesScreen() {
     };
 
     const handleDelete = (id: string) => {
-        Alert.alert('Delete Notice', 'Are you sure you want to delete this notice?', [
+        AppAlert.show('Delete Notice', 'Are you sure you want to delete this notice?', [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Delete', style: 'destructive',
@@ -112,7 +112,7 @@ export default function NoticesScreen() {
     };
 
     const handleCreate = async () => {
-        if (!title.trim() || !content.trim()) { Alert.alert('Error', 'Title and content are required'); return; }
+        if (!title.trim() || !content.trim()) { AppAlert.show('Error', 'Title and content are required'); return; }
         setSubmitting(true);
         try {
             await api.post('/community/notices', { title: title.trim(), content: content.trim(), type, priority, isPinned });
@@ -120,7 +120,7 @@ export default function NoticesScreen() {
             resetForm();
             fetchNotices();
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to create notice');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to create notice');
         } finally { setSubmitting(false); }
     };
 

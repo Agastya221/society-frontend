@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Modal,
     RefreshControl,
@@ -13,6 +12,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -90,7 +90,7 @@ export default function PaymentsScreen() {
         setIsProcessing(false);
         if (success) {
             setShowGenerateModal(false);
-            Alert.alert('Success', `Auto-generated invoices for all flats at ₹${billingAmount} each.`);
+            AppAlert.show('Success', `Auto-generated invoices for all flats at ₹${billingAmount} each.`);
             fetchDues();
         }
     };
@@ -101,7 +101,7 @@ export default function PaymentsScreen() {
         setIsProcessing(false);
         if (success) {
             setShowPenaltyModal(false);
-            Alert.alert('Success', `Late payment penalty of ₹${penaltyAmount} added to overdue accounts.`);
+            AppAlert.show('Success', `Late payment penalty of ₹${penaltyAmount} added to overdue accounts.`);
             fetchDues();
         }
     };
@@ -117,14 +117,14 @@ export default function PaymentsScreen() {
 
     const handleSendReminder = (due: FlatDue) => {
         setSelectedDue(null);
-        Alert.alert(
+        AppAlert.show(
             'Send Reminder',
             `Send a payment reminder to ${due.residentName} (${due.block}-${due.flatNumber})?`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
                     text: 'Send', onPress: () => {
-                        Alert.alert('Reminder Sent', `Notification sent to ${due.residentName}`);
+                        AppAlert.show('Reminder Sent', `Notification sent to ${due.residentName}`);
                     }
                 },
             ]
@@ -134,16 +134,16 @@ export default function PaymentsScreen() {
     const handleMarkPaid = async (due: FlatDue) => {
         try {
             await billingService.markInvoicePaid(due.id);
-            Alert.alert('Success', 'Invoice marked as paid.');
+            AppAlert.show('Success', 'Invoice marked as paid.');
             setSelectedDue(null);
             fetchDues();
         } catch {
-            Alert.alert('Error', 'Failed to mark invoice as paid.');
+            AppAlert.show('Error', 'Failed to mark invoice as paid.');
         }
     };
 
     const handleWaive = async (due: FlatDue) => {
-        Alert.alert(
+        AppAlert.show(
             'Waive Invoice',
             `Are you sure you want to waive this invoice for ${due.residentName}?`,
             [
@@ -152,11 +152,11 @@ export default function PaymentsScreen() {
                     text: 'Waive', onPress: async () => {
                         try {
                             await billingService.waiveInvoice(due.id);
-                            Alert.alert('Success', 'Invoice waived.');
+                            AppAlert.show('Success', 'Invoice waived.');
                             setSelectedDue(null);
                             fetchDues();
                         } catch {
-                            Alert.alert('Error', 'Failed to waive invoice.');
+                            AppAlert.show('Error', 'Failed to waive invoice.');
                         }
                     }
                 },

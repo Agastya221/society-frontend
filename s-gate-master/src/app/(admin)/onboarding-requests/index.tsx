@@ -3,7 +3,6 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     Image,
     Modal,
@@ -15,6 +14,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -182,7 +182,7 @@ export default function OnboardingRequestsScreen() {
     const handleTabChange = (tab: StatusTab) => { setActiveTab(tab); setLoading(true); fetchRequests(tab); };
 
     const handleApprove = (req: OnboardingRequest) => {
-        Alert.alert('Approve Request', `Approve ${req.user.name}'s request to join?`, [
+        AppAlert.show('Approve Request', `Approve ${req.user.name}'s request to join?`, [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Approve',
@@ -191,9 +191,9 @@ export default function OnboardingRequestsScreen() {
                         await api.patch(`/resident/onboarding/admin/${req.id}/approve`, {});
                         setRequests(prev => prev.filter(r => r.id !== req.id));
                         setDetailVisible(false);
-                        Alert.alert('Success', 'Request approved successfully');
+                        AppAlert.show('Success', 'Request approved successfully');
                     } catch (err: any) {
-                        Alert.alert('Error', err?.response?.data?.message || 'Failed to approve request');
+                        AppAlert.show('Error', err?.response?.data?.message || 'Failed to approve request');
                     }
                 },
             },
@@ -207,9 +207,9 @@ export default function OnboardingRequestsScreen() {
     };
 
     const handleActionSubmit = async () => {
-        if (!reason.trim()) { Alert.alert('Error', 'Please provide a reason'); return; }
+        if (!reason.trim()) { AppAlert.show('Error', 'Please provide a reason'); return; }
         if (actionType === 'resubmit' && selectedDocsForResubmit.length === 0) {
-            Alert.alert('Error', 'Please select at least one document to resubmit');
+            AppAlert.show('Error', 'Please select at least one document to resubmit');
             return;
         }
         if (!selectedRequest) return;
@@ -226,9 +226,9 @@ export default function OnboardingRequestsScreen() {
             setRequests(prev => prev.filter(r => r.id !== selectedRequest.id));
             setActionType(null);
             setDetailVisible(false);
-            Alert.alert('Success', actionType === 'reject' ? 'Request rejected' : 'Resubmission requested');
+            AppAlert.show('Success', actionType === 'reject' ? 'Request rejected' : 'Resubmission requested');
         } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Action failed');
+            AppAlert.show('Error', err?.response?.data?.message || 'Action failed');
         } finally {
             setActionSubmitting(false);
         }
@@ -242,7 +242,7 @@ export default function OnboardingRequestsScreen() {
 
     const openDocument = (documentUrl: string) => {
         if (!documentUrl) {
-            Alert.alert('Document unavailable', 'This document does not have a viewable URL yet.');
+            AppAlert.show('Document unavailable', 'This document does not have a viewable URL yet.');
             return;
         }
         const url = documentUrl.startsWith('http') ? documentUrl : `${IMAGE_BASE_URL}/${documentUrl}`;
