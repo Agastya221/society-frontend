@@ -177,10 +177,12 @@ export default function AdminNotificationsScreen() {
                         onPress={() => handlePress(n)}
                     >
                         <View style={[styles.iconBubble, { backgroundColor: meta.bg }]}>
-                            <MaterialCommunityIcons name={meta.icon} size={18} color={meta.fg} />
+                            <MaterialCommunityIcons name={meta.icon} size={20} color={meta.fg} />
                         </View>
                         <View style={styles.rowText}>
-                            <Text style={styles.rowTitle} numberOfLines={1}>{n.title}</Text>
+                            <Text style={styles.rowTitle} numberOfLines={1}>
+                                {n.title.replace(/^[^a-zA-Z0-9]+/, '')}
+                            </Text>
                             <Text style={styles.rowBody} numberOfLines={2}>{n.body}</Text>
                             <Text style={styles.rowTime}>{timeAgo(n.createdAt)}</Text>
                         </View>
@@ -210,8 +212,8 @@ export default function AdminNotificationsScreen() {
                 onBack={() => router.back()}
                 rightAction={
                     unreadCount > 0 ? (
-                        <TouchableOpacity onPress={markAllAsRead} hitSlop={8}>
-                            <Text style={styles.markAll}>Mark all read</Text>
+                        <TouchableOpacity onPress={markAllAsRead} hitSlop={8} style={styles.markAllBtn}>
+                            <MaterialCommunityIcons name="check-all" size={18} color={SgateColors.goldDeep} />
                         </TouchableOpacity>
                     ) : undefined
                 }
@@ -240,40 +242,52 @@ const styles = StyleSheet.create({
     listContent: { paddingBottom: 40 },
     emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
 
-    markAll: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.blue },
+    markAllBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: SgateColors.goldPale,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     spacer: { height: 6 },
 
     sectionTitle: {
         ...SgateTypography.microLabel,
         color: SgateColors.t3,
         paddingHorizontal: 20,
-        paddingTop: 16,
-        paddingBottom: 8,
+        paddingTop: 18,
+        paddingBottom: 10,
     },
     row: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        paddingHorizontal: 20,
-        paddingVertical: 14,
+        marginHorizontal: 16,
+        marginBottom: 12,
+        padding: 16,
         backgroundColor: SgateColors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
     },
-    rowUnread: { backgroundColor: SgateColors.goldPale + '30' },
+    rowUnread: { 
+        backgroundColor: '#FFFCF0',
+        borderColor: '#FBE8B0',
+    },
     iconBubble: {
         width: 44, height: 44, borderRadius: 14,
         alignItems: 'center', justifyContent: 'center',
-        marginRight: 12, marginTop: 2,
+        marginRight: 14,
     },
-    rowText: { flex: 1 },
-    rowTitle: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 2 },
-    rowBody: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, lineHeight: 18 },
-    rowTime: { fontSize: 11, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 4 },
+    rowText: { flex: 1, justifyContent: 'center', marginTop: 2 },
+    rowTitle: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 4 },
+    rowBody: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t2, lineHeight: 18 },
+    rowTime: { fontSize: 11, fontFamily: SgateFonts.medium, color: SgateColors.t4, marginTop: 6 },
     unreadDot: {
-        width: 7, height: 7, borderRadius: 3.5,
-        backgroundColor: SgateColors.gold,
-        marginTop: 6, marginLeft: 8,
+        width: 8, height: 8, borderRadius: 4,
+        backgroundColor: SgateColors.goldDeep,
+        marginTop: 6, marginLeft: 10,
     },
     empty: { alignItems: 'center', gap: 12 },
-    emptyText: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    emptyText: { fontSize: 15, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 });

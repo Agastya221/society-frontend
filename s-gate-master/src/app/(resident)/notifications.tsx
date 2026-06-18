@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { FlatList,
@@ -137,7 +137,7 @@ export default function NotificationsScreen() {
             return (
                 <Animated.View entering={FadeInDown.delay(Math.min(index, 12) * 40).springify()}>
                     <TouchableOpacity
-                        style={styles.row}
+                        style={[styles.row, !n.isRead && styles.rowUnread]}
                         activeOpacity={0.7}
                         onPress={() => handlePress(n)}
                     >
@@ -149,7 +149,7 @@ export default function NotificationsScreen() {
                         {/* Text */}
                         <View style={styles.rowText}>
                             <Text style={styles.rowTitle} numberOfLines={1}>
-                                {n.title}
+                                {n.title.replace(/^[^a-zA-Z0-9]+/, '')}
                             </Text>
                             <Text style={styles.rowBody} numberOfLines={2}>
                                 {n.body}
@@ -180,8 +180,8 @@ export default function NotificationsScreen() {
     // ── Right action ─────────────────────────────────────────────────────
     const markAllBtn =
         unreadCount > 0 ? (
-            <TouchableOpacity onPress={markAllAsRead} hitSlop={8}>
-                <Text style={styles.markAll}>Mark all read</Text>
+            <TouchableOpacity onPress={markAllAsRead} hitSlop={8} style={styles.markAllBtn}>
+                <MaterialCommunityIcons name="check-all" size={18} color={SgateColors.goldDeep} />
             </TouchableOpacity>
         ) : undefined;
 
@@ -234,19 +234,25 @@ const styles = StyleSheet.create({
         ...SgateTypography.microLabel,
         color: SgateColors.t3,
         paddingHorizontal: 20,
-        paddingTop: 16,
-        paddingBottom: 8,
+        paddingTop: 18,
+        paddingBottom: 10,
     },
 
     // ── Row ─────────────────────────────────────────────────────────────
     row: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        paddingHorizontal: 20,
-        paddingVertical: 14,
+        marginHorizontal: 16,
+        marginBottom: 12,
+        padding: 16,
         backgroundColor: SgateColors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
+    },
+    rowUnread: { 
+        backgroundColor: '#FFFCF0',
+        borderColor: '#FBE8B0',
     },
     iconBubble: {
         width: 44,
@@ -254,44 +260,48 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 12,
-        marginTop: 2,
+        marginRight: 14,
     },
     rowText: {
         flex: 1,
+        justifyContent: 'center',
+        marginTop: 2,
     },
     rowTitle: {
-        fontSize: 14,
+        fontSize: 15,
         fontFamily: SgateFonts.semibold,
         color: SgateColors.t1,
-        marginBottom: 2,
+        marginBottom: 4,
     },
     rowBody: {
         fontSize: 13,
         fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
+        color: SgateColors.t2,
         lineHeight: 18,
     },
     rowTime: {
         fontSize: 11,
-        fontFamily: SgateFonts.regular,
+        fontFamily: SgateFonts.medium,
         color: SgateColors.t4,
-        marginTop: 4,
+        marginTop: 6,
     },
     unreadDot: {
-        width: 7,
-        height: 7,
-        borderRadius: 3.5,
-        backgroundColor: SgateColors.gold,
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: SgateColors.goldDeep,
         marginTop: 6,
-        marginLeft: 8,
+        marginLeft: 10,
     },
 
     // ── Mark all ────────────────────────────────────────────────────────
-    markAll: {
-        fontSize: 13,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.blue,
+    markAllBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: SgateColors.goldPale,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     // ── Empty state ─────────────────────────────────────────────────────
@@ -300,7 +310,7 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     emptyText: {
-        fontSize: 14,
+        fontSize: 15,
         fontFamily: SgateFonts.regular,
         color: SgateColors.t3,
     },

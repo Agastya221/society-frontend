@@ -34,7 +34,7 @@ interface OnboardingRequest {
     status: string;
     documents: RequestDocument[];
     documentsCount: number;
-    user: { name: string; phone: string };
+    user: { name: string; phone: string; photoUrl?: string };
     flat: { number: string; block: { name: string } };
     createdAt: string;
     submittedAt?: string;
@@ -85,8 +85,9 @@ function normalizeRequest(raw: any): OnboardingRequest {
         documents,
         documentsCount: raw.documentsCount ?? raw._count?.documents ?? documents.length,
         user: {
-            name: resident.name ?? 'Resident',
-            phone: resident.phone ?? '',
+            name: resident.name?.trim() || 'Unknown Resident',
+            phone: resident.phone || 'No phone provided',
+            photoUrl: resident.photoUrl || resident.profilePic || resident.avatar || undefined,
         },
         flat: {
             number: flatNumber,
@@ -322,29 +323,42 @@ export default function OnboardingRequestsScreen() {
                                         <View style={styles.cardTop}>
                                             <View style={styles.cardLeft}>
                                                 <View style={styles.avatar}>
-                                                    <Text style={styles.avatarText}>{initial}</Text>
+                                                    {item.user.photoUrl ? (
+                                                        <Image
+                                                            source={{ uri: item.user.photoUrl.startsWith('http') ? item.user.photoUrl : `${IMAGE_BASE_URL}/${item.user.photoUrl}` }}
+                                                            style={{ width: '100%', height: '100%', borderRadius: 24 }}
+                                                            resizeMode="cover"
+                                                        />
+                                                    ) : (
+                                                        <Text style={styles.avatarText}>{initial}</Text>
+                                                    )}
                                                 </View>
                                                 <View style={styles.cardInfo}>
                                                     <Text style={styles.cardName}>{item.user.name}</Text>
                                                     <Text style={styles.cardPhone}>{item.user.phone}</Text>
                                                 </View>
                                             </View>
-                                            <View style={[styles.residentTypePill, { backgroundColor: sp.bg }]}>
-                                                <Text style={[styles.residentTypeText, { color: sp.text }]}>{item.residentType}</Text>
+                                            <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                                                <View style={[styles.residentTypePill, { backgroundColor: sp.bg }]}>
+                                                    <Text style={[styles.residentTypeText, { color: sp.text }]}>{item.residentType}</Text>
+                                                </View>
+                                                <MaterialIcons name="chevron-right" size={20} color={SgateColors.t4} style={{ marginRight: 2 }} />
                                             </View>
                                         </View>
 
+                                        <View style={styles.cardDivider} />
+
                                         <View style={styles.metaRow}>
                                             <View style={styles.metaItem}>
-                                                <MaterialIcons name="home" size={12} color={SgateColors.t4} />
+                                                <MaterialIcons name="home" size={14} color={SgateColors.goldDeep} />
                                                 <Text style={styles.metaText}>{item.flat.block.name} - {item.flat.number}</Text>
                                             </View>
                                             <View style={styles.metaItem}>
-                                                <MaterialIcons name="event" size={12} color={SgateColors.t4} />
+                                                <MaterialIcons name="event" size={14} color={SgateColors.blue} />
                                                 <Text style={styles.metaText}>{formatDate(item.createdAt)}</Text>
                                             </View>
                                             <View style={styles.metaItem}>
-                                                <MaterialIcons name="description" size={12} color={SgateColors.t4} />
+                                                <MaterialIcons name="description" size={14} color={SgateColors.violet} />
                                                 <Text style={styles.metaText}>{item.documentsCount} docs</Text>
                                             </View>
                                         </View>
@@ -547,20 +561,37 @@ const styles = StyleSheet.create({
     listContent: { padding: 20, paddingBottom: 100, flexGrow: 1 },
 
     // Card
-    card: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 16, marginBottom: 10 },
-    cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
-    cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-    avatar: { width: 44, height: 44, borderRadius: 14, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
-    avatarText: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
-    cardInfo: { flex: 1 },
-    cardName: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    cardPhone: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 1 },
-    residentTypePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-    residentTypeText: { fontSize: 10, fontFamily: SgateFonts.bold },
+    card: { 
+        backgroundColor: SgateColors.card, 
+        borderRadius: 20, 
+        padding: 16, 
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 12,
+        elevation: 2,
+    },
+    cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    cardLeft: { flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 },
+    avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
+    cardInfo: { flex: 1, justifyContent: 'center' },
+    cardName: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 2 },
+    cardPhone: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+    residentTypePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+    residentTypeText: { fontSize: 10, fontFamily: SgateFonts.extrabold, letterSpacing: 0.5 },
 
-    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 14, flexWrap: 'wrap' },
-    metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    metaText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    cardDivider: {
+        height: 1,
+        backgroundColor: SgateColors.borderSoft,
+        marginTop: 14,
+        marginBottom: 14,
+    },
+
+    metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    metaText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
 
     // Empty
     emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.7 },
