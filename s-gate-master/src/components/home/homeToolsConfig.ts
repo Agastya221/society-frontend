@@ -135,6 +135,15 @@ export const homeQuickActions: HomeQuickAction[] = [
         color: SgateColors.blue,
         bg: SgateColors.blueBg,
         roles: ['admin'],
+        route: '/(admin)/residents',
+    },
+    {
+        id: 'adminApprovals',
+        icon: 'clipboard-account-outline',
+        label: 'Onboarding',
+        color: SgateColors.violet,
+        bg: '#F5F0FF',
+        roles: ['admin'],
         route: '/(admin)/onboarding-requests',
     },
     {

@@ -389,12 +389,46 @@ export default function OnboardingRequestsScreen() {
                         <ScrollView showsVerticalScrollIndicator={false}>
                             {/* Resident info */}
                             <Text style={styles.sectionLabel}>RESIDENT</Text>
-                            <View style={styles.detailCard}>
-                                <DetailRow label="Name" value={selectedRequest.user.name} />
-                                <DetailRow label="Phone" value={selectedRequest.user.phone} />
-                                <DetailRow label="Type" value={selectedRequest.residentType} />
-                                <DetailRow label="Flat" value={`${selectedRequest.flat.block.name} - ${selectedRequest.flat.number}`} />
-                                <DetailRow label="Submitted" value={formatDate(selectedRequest.createdAt)} last />
+                            <View style={styles.detailProfileCard}>
+                                <View style={styles.modalProfileTop}>
+                                    <TouchableOpacity 
+                                        style={styles.modalAvatar}
+                                        activeOpacity={0.8}
+                                        onPress={() => openDocument(selectedRequest.user.photoUrl || '')}
+                                    >
+                                        {selectedRequest.user.photoUrl ? (
+                                            <Image
+                                                source={{ uri: selectedRequest.user.photoUrl.startsWith('http') ? selectedRequest.user.photoUrl : `${IMAGE_BASE_URL}/${selectedRequest.user.photoUrl}` }}
+                                                style={{ width: '100%', height: '100%', borderRadius: 32 }}
+                                                resizeMode="cover"
+                                            />
+                                        ) : (
+                                            <Text style={styles.modalAvatarText}>
+                                                {(selectedRequest.user.name || 'R').charAt(0).toUpperCase()}
+                                            </Text>
+                                        )}
+                                    </TouchableOpacity>
+                                    <View style={styles.modalProfileInfo}>
+                                        <Text style={styles.modalProfileName}>{selectedRequest.user.name}</Text>
+                                        <Text style={styles.modalProfilePhone}>{selectedRequest.user.phone}</Text>
+                                        <View style={[styles.residentTypePill, { backgroundColor: (STATUS_PILL[selectedRequest.status] ?? STATUS_PILL.PENDING_APPROVAL).bg, alignSelf: 'flex-start', marginTop: 8 }]}>
+                                            <Text style={[styles.residentTypeText, { color: (STATUS_PILL[selectedRequest.status] ?? STATUS_PILL.PENDING_APPROVAL).text }]}>{selectedRequest.residentType}</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                <View style={styles.cardDivider} />
+
+                                <View style={styles.metaRow}>
+                                    <View style={styles.metaItem}>
+                                        <MaterialIcons name="home" size={14} color={SgateColors.goldDeep} />
+                                        <Text style={styles.metaText}>{selectedRequest.flat.block.name} - {selectedRequest.flat.number}</Text>
+                                    </View>
+                                    <View style={styles.metaItem}>
+                                        <MaterialIcons name="event" size={14} color={SgateColors.blue} />
+                                        <Text style={styles.metaText}>{formatDate(selectedRequest.createdAt)}</Text>
+                                    </View>
+                                </View>
                             </View>
 
                             {/* Documents */}
@@ -610,6 +644,14 @@ const styles = StyleSheet.create({
     sectionLabel: { ...SgateTypography.microLabel, color: SgateColors.t3, marginBottom: 8, marginTop: 16 },
 
     detailCard: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, paddingHorizontal: 16 },
+    
+    detailProfileCard: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 20 },
+    modalProfileTop: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    modalAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+    modalAvatarText: { fontSize: 24, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
+    modalProfileInfo: { flex: 1, justifyContent: 'center' },
+    modalProfileName: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 2 },
+    modalProfilePhone: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
 
     // Documents
     docRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
@@ -623,12 +665,12 @@ const styles = StyleSheet.create({
 
     // Action buttons
     actionBtns: { gap: 10, marginTop: 20 },
-    approveBtn: { backgroundColor: SgateColors.green, borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
-    approveBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
+    approveBtn: { backgroundColor: SgateColors.gold, borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
+    approveBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.ink },
     rejectBtn: { backgroundColor: SgateColors.red, borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
     rejectBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFFFFF' },
-    resubmitBtn: { backgroundColor: SgateColors.surface, borderRadius: 16, paddingVertical: 16, alignItems: 'center', borderWidth: 1.5, borderColor: SgateColors.border },
-    resubmitBtnText: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    resubmitBtn: { backgroundColor: SgateColors.surface, borderRadius: 16, paddingVertical: 16, alignItems: 'center', borderWidth: 1.5, borderColor: SgateColors.borderSoft },
+    resubmitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Reason card
     reasonCard: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 16, marginTop: 16 },
