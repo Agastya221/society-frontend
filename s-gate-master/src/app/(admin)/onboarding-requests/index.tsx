@@ -180,7 +180,12 @@ export default function OnboardingRequestsScreen() {
     useFocusEffect(useCallback(() => { fetchRequests(activeTab); }, [activeTab, fetchRequests]));
 
     const handleRefresh  = () => { setRefreshing(true); fetchRequests(activeTab); };
-    const handleTabChange = (tab: StatusTab) => { setActiveTab(tab); setLoading(true); fetchRequests(tab); };
+    const handleTabChange = (tab: StatusTab) => { 
+        setActiveTab(tab); 
+        setLoading(true); 
+        router.setParams({ status: tab });
+        fetchRequests(tab); 
+    };
 
     const handleApprove = (req: OnboardingRequest) => {
         AppAlert.show('Approve Request', `Approve ${req.user.name}'s request to join?`, [
