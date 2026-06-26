@@ -1,9 +1,6 @@
 import React from 'react';
-import SharedHomeScreen from '@/components/home/SharedHomeScreen';
+import ResidentHomeScreen from '@/screens/resident/ResidentHomeScreen';
 
-// ─── Resident Home ────────────────────────────────────────────────────────────
-// Thin wrapper — all UI lives in SharedHomeScreen with role-based rendering.
-
-export default function ResidentHomeScreen() {
-    return <SharedHomeScreen role="resident" />;
+export default function ResidentHomeWrapper() {
+    return <ResidentHomeScreen />;
 }

@@ -17,6 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { WorkspaceSwitchButton } from '@/components/ui/WorkspaceSwitchButton';
 import { SgateBrandMark } from '@/components/Sgate';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Avatar } from '@/components/ui/Avatar';
@@ -43,14 +44,10 @@ import { useNotificationStore } from '@/store/useNotificationStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import type { Entry } from '@/types/api';
 import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft';
+import { getQuickActionsForRole } from '@/components/home/homeToolsConfig';
 
-import { type UserRole, getQuickActionsForRole } from './homeToolsConfig';
-
-// ─── Brand yellow ─────────────────────────────────────────────────────────────
 const BRAND_YELLOW    = '#FFD60A';
 const BRAND_YELLOW_BG = '#FFFBE6';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function greeting(): string {
     const h = new Date().getHours();
@@ -93,24 +90,12 @@ function shouldOpenAdminArea(redirectTo?: string, nextRole?: string | null): boo
     return redirectTo === 'ADMIN_PANEL' || normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN';
 }
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
-interface SharedHomeScreenProps {
-    role: UserRole;
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SHARED HOME SCREEN
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
+export default function ResidentHomeScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { user, role: authRole, login } = useAuthStore();
+    const { user, login } = useAuthStore();
     const startAddMembershipFlow = useOnboardingStore((s) => s.startAddMembershipFlow);
     const startRequestCorrectionFlow = useOnboardingStore((s) => s.startRequestCorrectionFlow);
-
-    const isAdmin = role === 'admin';
 
     // ── Gate store ────────────────────────────────────────────────────────────
     const {
@@ -137,25 +122,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     const [contextsLoading, setContextsLoading]   = useState(false);
     const [switchingContextId, setSwitchingContextId] = useState<string | null>(null);
 
-    // ── Admin-specific state ─────────────────────────────────────────────────
-    const [pendingSocietyPasses, setPendingSocietyPasses] = useState<any[]>([]);
-
     // ── Data fetching ────────────────────────────────────────────────────────
-
-    const fetchAdminData = useCallback(async () => {
-        if (!isAdmin) return;
-        if (authRole !== 'ADMIN' && authRole !== 'SUPER_ADMIN') return;
-        try {
-            const passesRes = await api.get('/gate/passes', { params: { status: 'PENDING' } });
-            const rawPasses = passesRes.data?.data || passesRes.data || [];
-            const societyPasses = Array.isArray(rawPasses)
-                ? rawPasses.filter((p: any) => p.type.includes('MATERIAL') || p.type.includes('MOVE'))
-                : [];
-            setPendingSocietyPasses(societyPasses);
-        } catch (error) {
-            console.error('Admin data fetch failed:', error);
-        }
-    }, [isAdmin, authRole]);
 
     const fetchSharedData = useCallback(async () => {
         await Promise.allSettled([
@@ -180,14 +147,13 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         }
     }, [user?.id]);
 
-    // ── Initial load (useFocusEffect for admin, useEffect for resident) ──────
+    // ── Initial load (useFocusEffect) ────────────────────────────────────────
 
     useFocusEffect(
         useCallback(() => {
             fetchSharedData();
             fetchContexts();
-            if (isAdmin) fetchAdminData();
-        }, [fetchSharedData, fetchContexts, fetchAdminData, isAdmin])
+        }, [fetchSharedData, fetchContexts])
     );
 
     // ── Pull-to-refresh ──────────────────────────────────────────────────────
@@ -197,10 +163,9 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         await Promise.allSettled([
             fetchSharedData(),
             fetchContexts(),
-            isAdmin ? fetchAdminData() : Promise.resolve(),
         ]);
         setRefreshing(false);
-    }, [fetchSharedData, fetchContexts, fetchAdminData, isAdmin]);
+    }, [fetchSharedData, fetchContexts]);
 
     // ── Gate actions ─────────────────────────────────────────────────────────
 
@@ -216,19 +181,6 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         catch { AppAlert.show('Error', 'Failed to deny. Please try again.'); }
     };
 
-    // ── Admin society pass approval ──────────────────────────────────────────
-
-    const handleApprovePass = async (id: string) => {
-        setExitDir(prev => ({ ...prev, [id]: 'right' }));
-        try {
-            const { approveGatePass } = await import('@/services/gatePass');
-            await approveGatePass(id);
-            fetchAdminData();
-        } catch {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        }
-    };
-
     // ── Navigation helper ────────────────────────────────────────────────────
 
     const nav = useCallback((route: string) => {
@@ -238,26 +190,23 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
 
     // ── Derived data ─────────────────────────────────────────────────────────
 
-    const firstName   = user?.name?.split(' ')[0] ?? (isAdmin ? 'Admin' : 'Resident');
+    const firstName   = user?.name?.split(' ')[0] ?? 'Resident';
     const societyName = user?.society?.name ?? 'Your Society';
 
-    const notificationsRoute = isAdmin
-        ? '/(admin)/notifications'
-        : '/notifications';
-
-    const activityRoute = isAdmin
-        ? '/(admin)/approval-requests'
-        : '/(resident)/approvals';
+    const notificationsRoute = '/notifications';
+    const activityRoute = '/(resident)/approvals';
 
     // ── Quick actions from config ────────────────────────────────────────────
 
-    const quickActions = getQuickActionsForRole(role);
+    const quickActions = getQuickActionsForRole('resident');
 
-    const activeContext = contextsData?.activeContext ?? null;
+    const residentContexts = contextsData?.contexts?.filter(c => c.role === 'RESIDENT') ?? [];
+    const activeContext = residentContexts.find(c => c.isActiveContext) ?? null;
+
     const contextTitle = activeContext?.label
-        ?? formatUserFlatLabel(user)
+        ?? [user?.flat?.block?.name, user?.flat?.number].filter(Boolean).join(' - ')
         ?? societyName;
-    const canOpenContextSheet = (contextsData?.contexts?.length ?? 0) > 0 || !contextsLoading;
+    const canOpenContextSheet = residentContexts.length > 0 || !contextsLoading;
 
     const handleQuickAction = useCallback((route: string) => {
         if (route.startsWith('MODAL:preapprove')) {
@@ -295,7 +244,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
             const nextIsAdmin = shouldOpenAdminArea(result.redirectTo, result.user?.role);
             const targetRoute = nextIsAdmin ? '/(admin)' : '/(resident)/home';
 
-            if (nextIsAdmin !== isAdmin) {
+            if (nextIsAdmin) {
                 router.replace(targetRoute as any);
                 return;
             }
@@ -303,7 +252,6 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
             await Promise.allSettled([
                 fetchSharedData(),
                 fetchContexts(),
-                nextIsAdmin ? fetchAdminData() : Promise.resolve(),
             ]);
         } catch (error: any) {
             AppAlert.show(
@@ -318,16 +266,14 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         login,
         fetchSharedData,
         fetchContexts,
-        fetchAdminData,
-        isAdmin,
         router,
     ]);
 
     const handleAddAnotherHome = useCallback(() => {
         setShowContextSheet(false);
-        startAddMembershipFlow(role === 'admin' ? '/(admin)/profile' : '/(resident)/profile');
+        startAddMembershipFlow('/(resident)/profile');
         router.push('/(onboarding)/select-city' as any);
-    }, [role, router, startAddMembershipFlow]);
+    }, [router, startAddMembershipFlow]);
 
     const handleRequestPress = useCallback((request: ResidentContextRequest) => {
         setShowContextSheet(false);
@@ -341,7 +287,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         fetchContexts();
     }, [fetchContexts]);
 
-    const requestReturnTo = role === 'admin' ? '/(admin)/profile' : '/(resident)/profile';
+    const requestReturnTo = '/(resident)/profile';
 
     const handleRequestApplyAgain = useCallback((request: ResidentContextRequest | ResidentRequestDetails) => {
         const draft = buildOnboardingDraftFromRequest(request);
@@ -379,10 +325,6 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         router.push('/(onboarding)/select-block' as any);
     }, [requestReturnTo, router, startRequestCorrectionFlow]);
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // RENDER
-    // ═══════════════════════════════════════════════════════════════════════════
-
     return (
         <View style={S.root}>
             {/* ══ HEADER ═══════════════════════════════════════════════════ */}
@@ -411,19 +353,23 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Bell */}
-                    <TouchableOpacity
-                        style={S.bellBtn}
-                        onPress={() => nav(notificationsRoute)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                        <MaterialCommunityIcons name="bell-outline" size={22} color={SgateColors.t1} />
-                        {unreadCount > 0 && (
-                            <View style={S.badge}>
-                                <Text style={S.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        <WorkspaceSwitchButton variant="header" />
+
+                        {/* Bell */}
+                        <TouchableOpacity
+                            style={S.bellBtn}
+                            onPress={() => nav(notificationsRoute)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                            <MaterialCommunityIcons name="bell-outline" size={22} color={SgateColors.t1} />
+                            {unreadCount > 0 && (
+                                <View style={S.badge}>
+                                    <Text style={S.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Pending gate badge — shown only when someone is waiting */}
@@ -470,41 +416,6 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                         ))}
                     </View>
                 </Animated.View>
-
-                {/* ══ ADMIN: ACTION REQUIRED (Society Passes) ═════════════ */}
-                {isAdmin && pendingSocietyPasses.length > 0 && (
-                    <Animated.View entering={FadeInDown.delay(140).springify()} style={S.section}>
-                        <SectionHeader
-                            title="Action Required"
-                            rightPill={{
-                                text: `${pendingSocietyPasses.length} Society`,
-                                color: SgateColors.red,
-                                bg: SgateColors.redBg,
-                            }}
-                        />
-                        {pendingSocietyPasses.map((pass, index) => (
-                            <Animated.View
-                                key={pass.id}
-                                entering={FadeInDown.delay(index * 60).springify()}
-                                exiting={
-                                    exitDir[pass.id] === 'right'
-                                        ? FadeOutRight.duration(260)
-                                        : FadeOutLeft.duration(260)
-                                }
-                                style={S.cardWrap}
-                            >
-                                <ApprovalCard
-                                    name={pass.title || pass.type.replace('_', ' ')}
-                                    type={pass.flat?.flatNumber ? `Flat ${pass.flat.flatNumber}` : 'Society'}
-                                    time={timeAgo(pass.createdAt)}
-                                    gate={pass.requestedBy?.name || 'Admin Request'}
-                                    onApprove={() => handleApprovePass(pass.id)}
-                                    onDeny={() => nav('/(admin)/gate-passes')}
-                                />
-                            </Animated.View>
-                        ))}
-                    </Animated.View>
-                )}
 
                 {/* ══ WAITING AT GATE ══════════════════════════════════════ */}
                 <Animated.View entering={FadeInDown.delay(160).springify()} style={S.section}>
@@ -571,7 +482,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
             </ScrollView>
 
             {/* ── Floating SOS FAB (Shared for both roles) ──────────────── */}
-            <FloatingSOSButton role={role} bottomOffset={70} />
+            <FloatingSOSButton role="resident" bottomOffset={70} />
 
             <PreApproveSheet
                 visible={showPreApprove}
@@ -581,7 +492,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
 
             <ResidentContextPicker
                 visible={showContextSheet}
-                contexts={contextsData?.contexts ?? []}
+                contexts={residentContexts}
                 requests={contextsData?.requests ?? []}
                 activeContext={activeContext}
                 isLoading={contextsLoading}
@@ -675,33 +586,17 @@ function ActivityEmpty() {
     );
 }
 
-function formatUserFlatLabel(user: any): string | null {
-    const flatNumber = user?.flat?.flatNumber ?? user?.flat?.number;
-    const blockName = user?.flat?.block?.name;
-
-    if (flatNumber) {
-        return [blockName, flatNumber].filter(Boolean).join(' - ');
-    }
-
-    return null;
-}
-
-// ─── Styles (IDENTICAL to Resident Home) ──────────────────────────────────────
-
 const S = StyleSheet.create({
     root: {
         flex: 1,
         backgroundColor: '#FFFFFF',
     },
-
-    // ── Header ─────────────────────────────────────────────────────────────
     header: {
         backgroundColor: '#FFFFFF',
         paddingHorizontal: 20,
         paddingBottom: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
-        gap: 12,
+        borderBottomColor: '#F0EEEB',
     },
     headerTop: {
         flexDirection: 'row',
@@ -711,11 +606,14 @@ const S = StyleSheet.create({
     brandRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
         flex: 1,
+        marginRight: 16,
     },
     logoWrap: {
-        alignItems: 'center',
+        marginRight: 12,
+    },
+    contextTrigger: {
+        flex: 1,
         justifyContent: 'center',
     },
     greetText: {
@@ -723,10 +621,6 @@ const S = StyleSheet.create({
         fontFamily: SgateFonts.regular,
         color: SgateColors.t3,
         marginBottom: 2,
-    },
-    contextTrigger: {
-        flex: 1,
-        minWidth: 0,
     },
     contextTitleRow: {
         flexDirection: 'row',
@@ -753,184 +647,175 @@ const S = StyleSheet.create({
     },
     badge: {
         position: 'absolute',
-        top: 8,
-        right: 8,
-        minWidth: 14,
-        height: 14,
-        borderRadius: 7,
-        backgroundColor: BRAND_YELLOW,
+        top: -4,
+        right: -4,
+        backgroundColor: '#DC2626',
+        borderRadius: 9,
+        paddingHorizontal: 5,
+        paddingVertical: 1.5,
+        minWidth: 18,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 2,
-        borderWidth: 1.5,
-        borderColor: '#FFFFFF',
     },
     badgeText: {
-        fontSize: 8,
+        color: '#FFFFFF',
+        fontSize: 9,
         fontFamily: SgateFonts.bold,
-        color: SgateColors.black,
     },
-
-    // Gate alert strip (only shows when someone is at gate)
     gateAlert: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
         backgroundColor: BRAND_YELLOW_BG,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
         borderRadius: 12,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        marginTop: 14,
     },
     gateAlertDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: BRAND_YELLOW,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#DC2626',
+        marginRight: 8,
     },
     gateAlertText: {
         flex: 1,
-        fontSize: 13,
-        fontFamily: SgateFonts.medium,
+        fontSize: 12,
+        fontFamily: SgateFonts.semibold,
         color: '#996300',
     },
-
-    // ── Scroll ─────────────────────────────────────────────────────────────
-    scroll: { flex: 1 },
-    scrollContent: { paddingTop: 24, paddingBottom: 12 },
-
-    // ── Section ────────────────────────────────────────────────────────────
+    scroll: {
+        flex: 1,
+        backgroundColor: '#F5F4F0',
+    },
+    scrollContent: {
+        paddingVertical: 16,
+        paddingBottom: 100,
+    },
     section: {
+        marginBottom: 20,
+        backgroundColor: '#FFFFFF',
+        paddingVertical: 16,
         paddingHorizontal: 20,
-        marginBottom: 32,
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: '#E6E4E0',
     },
     sectionLabel: {
         fontSize: 11,
-        fontFamily: SgateFonts.semibold,
+        fontFamily: SgateFonts.bold,
         color: SgateColors.t3,
-        letterSpacing: 0.8,
+        letterSpacing: 1.2,
         textTransform: 'uppercase',
         marginBottom: 16,
     },
-
-    // ── Quick Actions ───────────────────────────────────────────────────────
     quickGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        rowGap: 20,
-        columnGap: 0,
+        marginHorizontal: -8,
     },
     quickItem: {
         width: '25%',
         alignItems: 'center',
-        gap: 8,
+        marginBottom: 16,
+        paddingHorizontal: 4,
     },
     quickIcon: {
-        width: 56,
-        height: 56,
-        borderRadius: 16,
+        width: 52,
+        height: 52,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
+        marginBottom: 8,
     },
     quickLabel: {
         fontSize: 11,
-        fontFamily: SgateFonts.medium,
+        fontFamily: SgateFonts.semibold,
         color: SgateColors.t2,
         textAlign: 'center',
+        width: '100%',
     },
-
-    // ── Card Wrap ───────────────────────────────────────────────────────────
-    cardWrap: { marginBottom: 10 },
-
-    // ── Activity Card ───────────────────────────────────────────────────────
+    cardWrap: {
+        marginBottom: 12,
+    },
     activityCard: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        paddingHorizontal: 16,
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
     },
     activityRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 14,
-        gap: 12,
+        paddingVertical: 12,
     },
     activityDivider: {
         borderBottomWidth: 1,
-        borderBottomColor: '#F5F5F5',
+        borderBottomColor: '#F0EEEB',
     },
-    activityInfo: { flex: 1 },
+    activityInfo: {
+        flex: 1,
+        marginLeft: 12,
+        marginRight: 8,
+    },
     activityName: {
         fontSize: 14,
-        fontFamily: SgateFonts.semibold,
+        fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
+        marginBottom: 2,
     },
     activityTime: {
-        marginTop: 2,
+        fontSize: 11,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t3,
+    },
+    actPill: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    actPillText: {
+        fontSize: 10,
+        fontFamily: SgateFonts.bold,
+    },
+    emptyWrap: {
+        alignItems: 'center',
+        paddingVertical: 24,
+    },
+    emptyIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: SgateColors.greenBg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+    },
+    emptyTitle: {
+        fontSize: 14,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
+        marginBottom: 2,
+    },
+    emptySub: {
         fontSize: 12,
         fontFamily: SgateFonts.regular,
         color: SgateColors.t3,
     },
-    actPill: {
-        borderRadius: 20,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-    },
-    actPillText: {
-        fontSize: 11,
-        fontFamily: SgateFonts.semibold,
-    },
-
-    // ── Empty & Skeleton ────────────────────────────────────────────────────
-    emptyWrap: {
-        alignItems: 'center',
-        paddingVertical: 28,
-        gap: 8,
-        backgroundColor: '#FAFAFA',
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
-    },
-    emptyIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: SgateColors.greenBg,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    emptyTitle: {
-        fontSize: 15,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-    },
-    emptySub: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-    },
     skeletonCard: {
-        backgroundColor: '#FAFAFA',
-        borderRadius: 16,
-        padding: 16,
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
+        paddingVertical: 8,
     },
     skeletonRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
     },
     skeletonCircle: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-        backgroundColor: '#EBEBEB',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#F0EEEB',
+        marginRight: 12,
     },
     skeletonLine: {
-        height: 11,
-        borderRadius: 6,
-        backgroundColor: '#EBEBEB',
+        height: 10,
+        backgroundColor: '#F0EEEB',
+        borderRadius: 5,
     },
-
 });

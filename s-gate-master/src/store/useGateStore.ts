@@ -15,6 +15,7 @@ interface GateState {
     fetchInvitePasses: () => Promise<void>;
     approveRequest: (id: string) => Promise<void>;
     rejectRequest: (id: string, reason?: string) => Promise<void>;
+    reset: () => void;
 }
 
 export const useGateStore = create<GateState>((set, get) => ({
@@ -22,6 +23,14 @@ export const useGateStore = create<GateState>((set, get) => ({
     entries: [],
     invitePasses: [],
     isLoading: false,
+
+    reset: () =>
+        set({
+            pendingRequests: [],
+            entries: [],
+            invitePasses: [],
+            isLoading: false,
+        }),
 
     fetchPendingRequests: async () => {
         set({ isLoading: true });

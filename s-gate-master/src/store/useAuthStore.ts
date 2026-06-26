@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { User } from '../types/auth';
+import type { ResidentContext } from '../services/profile.service';
 
 const TOKEN_KEY         = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -17,6 +18,10 @@ export interface AuthState {
     requiresOnboarding: boolean;
     onboardingStatus: string | null;
     isLoading: boolean;
+    userContexts: ResidentContext[];
+    switchingWorkspace: boolean;
+    setSwitchingWorkspace: (switching: boolean) => void;
+    setContexts: (contexts: ResidentContext[]) => void;
     login: (
         accessToken: string,
         refreshToken: string,
@@ -24,6 +29,7 @@ export interface AuthState {
         appType?: string,
         requiresOnboarding?: boolean,
         onboardingStatus?: string | null,
+        contexts?: ResidentContext[],
     ) => Promise<void>;
     refreshAccessToken: () => Promise<string>;
     logout: () => Promise<void>;
@@ -41,6 +47,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     requiresOnboarding: false,
     onboardingStatus: null,
     isLoading: true,
+    userContexts: [],
+    switchingWorkspace: false,
+
+    setSwitchingWorkspace: (switching: boolean) => set({ switchingWorkspace: switching }),
+    setContexts: (contexts: ResidentContext[]) => set({ userContexts: contexts }),
 
     login: async (
         accessToken: string,
@@ -49,6 +60,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         appType?: string,
         requiresOnboarding?: boolean,
         onboardingStatus?: string | null,
+        contexts?: ResidentContext[],
     ) => {
         try {
             await SecureStore.setItemAsync(TOKEN_KEY, accessToken);
@@ -57,6 +69,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             if (appType) await SecureStore.setItemAsync(APP_TYPE_KEY, appType);
             await SecureStore.setItemAsync('requiresOnboarding', String(requiresOnboarding ?? false));
             await SecureStore.setItemAsync('onboardingStatus', onboardingStatus ?? '');
+            if (contexts) {
+                await SecureStore.setItemAsync('auth_contexts', JSON.stringify(contexts));
+            } else {
+                try {
+                    await SecureStore.deleteItemAsync('auth_contexts');
+                } catch (e) {}
+            }
 
             set({
                 accessToken,
@@ -66,6 +85,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                 appType: appType ?? null,
                 requiresOnboarding: requiresOnboarding ?? false,
                 onboardingStatus: onboardingStatus ?? null,
+                userContexts: contexts ?? get().userContexts ?? [],
                 isAuthenticated: true,
                 isLoading: false,
             });
@@ -144,6 +164,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             await SecureStore.deleteItemAsync(APP_TYPE_KEY);
             await SecureStore.deleteItemAsync('requiresOnboarding');
             await SecureStore.deleteItemAsync('onboardingStatus');
+            try {
+                await SecureStore.deleteItemAsync('auth_contexts');
+            } catch (e) {}
         } catch {}
 
         set({
@@ -154,6 +177,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             appType: null,
             requiresOnboarding: false,
             onboardingStatus: null,
+            userContexts: [],
+            switchingWorkspace: false,
             isAuthenticated: false,
             isLoading: false,
         });
@@ -162,17 +187,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     loadToken: async () => {
         try {
             set({ isLoading: true });
-            const [accessToken, refreshToken, userJson, appType, requiresOnboarding, onboardingStatus] = await Promise.all([
+            const [accessToken, refreshToken, userJson, appType, requiresOnboarding, onboardingStatus, contextsJson] = await Promise.all([
                 SecureStore.getItemAsync(TOKEN_KEY),
                 SecureStore.getItemAsync(REFRESH_TOKEN_KEY),
                 SecureStore.getItemAsync(USER_KEY),
                 SecureStore.getItemAsync(APP_TYPE_KEY),
                 SecureStore.getItemAsync('requiresOnboarding'),
                 SecureStore.getItemAsync('onboardingStatus'),
+                SecureStore.getItemAsync('auth_contexts'),
             ]);
 
             if (accessToken && userJson) {
                 const user = JSON.parse(userJson) as User;
+                const userContexts = contextsJson ? (JSON.parse(contextsJson) as ResidentContext[]) : [];
                 set({
                     accessToken,
                     refreshToken: refreshToken ?? null,
@@ -181,6 +208,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
                     appType: appType ?? null,
                     requiresOnboarding: requiresOnboarding === 'true',
                     onboardingStatus: onboardingStatus || null,
+                    userContexts,
                     isAuthenticated: true,
                     isLoading: false,
                 });

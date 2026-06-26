@@ -28,13 +28,6 @@ export default function AdminTabsLayout() {
                 }}
             />
             <Tabs.Screen
-                name="staff"
-                options={{
-                    title: 'Staff',
-                    tabBarIcon: ({ color }) => <MaterialCommunityIcons name="briefcase-outline" size={22} color={color} />,
-                }}
-            />
-            <Tabs.Screen
                 name="broadcast"
                 options={{
                     title: 'Alerts',
@@ -62,13 +55,10 @@ export default function AdminTabsLayout() {
             <Tabs.Screen name="residents" options={{ href: null }} />
             <Tabs.Screen name="settings" options={{ href: null }} />
             <Tabs.Screen name="onboarding-requests" options={{ href: null }} />
-            <Tabs.Screen name="my-home" options={{ href: null }} />
             <Tabs.Screen name="emergencies" options={{ href: null }} />
             <Tabs.Screen name="notifications" options={{ href: null }} />
             <Tabs.Screen name="community" options={{ href: null }} />
             <Tabs.Screen name="elections" options={{ href: null }} />
-            <Tabs.Screen name="my-dues" options={{ href: null }} />
-            <Tabs.Screen name="my-passes" options={{ href: null }} />
             <Tabs.Screen name="vehicles" options={{ href: null }} />
             <Tabs.Screen name="sos-create" options={{ href: null }} />
         </Tabs>

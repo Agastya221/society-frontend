@@ -1,6 +1,6 @@
 import React from 'react';
-import DuesScreen from '@/components/screens/DuesScreen';
+import { WorkspaceOverlay } from '@/components/ui/WorkspaceOverlay';
 
 export default function AdminMyDuesScreen() {
-    return <DuesScreen role="admin" />;
+    return <WorkspaceOverlay />;
 }

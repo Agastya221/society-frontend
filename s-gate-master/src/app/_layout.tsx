@@ -284,7 +284,7 @@ export default function RootLayout() {
       }
 
       if (role === 'ADMIN') {
-        if (!inAdminGroup && !inResidentGroup && !inOnboarding) router.replace('/(admin)');
+        if (!inAdminGroup) router.replace('/(admin)');
         return;
       }
 
@@ -292,7 +292,7 @@ export default function RootLayout() {
         if (requiresOnboarding) {
           if (!inOnboarding) router.replace('/(onboarding)');
         } else {
-          if (!inResidentGroup && !inOnboarding) router.replace('/(resident)/home');
+          if (!inResidentGroup) router.replace('/(resident)/home');
         }
         return;
       }

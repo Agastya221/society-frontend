@@ -14,11 +14,18 @@ interface NotificationState {
     fetchUnreadCount: () => Promise<void>;
     markAsRead: (id: string) => Promise<void>;
     markAllAsRead: () => Promise<void>;
+    reset: () => void;
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
     notifications: [],
     unreadCount: 0,
+
+    reset: () =>
+        set({
+            notifications: [],
+            unreadCount: 0,
+        }),
 
     fetchNotifications: async (params?) => {
         try {

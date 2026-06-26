@@ -154,7 +154,8 @@ describe('useAuthStore (s-gate-master)', () => {
         .mockResolvedValueOnce(JSON.stringify(mockUser))
         .mockResolvedValueOnce('RESIDENT')
         .mockResolvedValueOnce('false')
-        .mockResolvedValueOnce('');
+        .mockResolvedValueOnce('')
+        .mockResolvedValueOnce('[]');
 
       await useAuthStore.getState().loadToken();
       const s = useAuthStore.getState();
@@ -180,7 +181,8 @@ describe('useAuthStore (s-gate-master)', () => {
         .mockResolvedValueOnce(JSON.stringify(mockUser))
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce('true')
-        .mockResolvedValueOnce('PENDING');
+        .mockResolvedValueOnce('PENDING')
+        .mockResolvedValueOnce('[]');
 
       await useAuthStore.getState().loadToken();
       expect(useAuthStore.getState().requiresOnboarding).toBe(true);

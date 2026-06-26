@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 
+import { WorkspaceSwitchButton } from '@/components/ui/WorkspaceSwitchButton';
 import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
@@ -35,23 +36,13 @@ import { ResidentRequestDetailsSheet } from '@/components/context/ResidentReques
 import { SettingRow } from '@/components/ui/SettingRow';
 import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft';
 
-// Sub-components (from Resident profile)
+// Sub-components
 import { ProfileHeader } from '@/app/(resident)/profile/_components/ProfileHeader';
 import { ProfileCompletion, calcCompletion } from '@/app/(resident)/profile/_components/ProfileCompletion';
 import { HouseholdGrid } from '@/app/(resident)/profile/_components/HouseholdGrid';
 import { AddressCard } from '@/app/(resident)/profile/_components/AddressCard';
 import { ProfileHeaderSkeleton, SectionSkeleton } from '@/app/(resident)/profile/_components/SectionSkeleton';
 import { ProfileQrModal } from '@/app/(resident)/profile/_components/ProfileQrModal';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export type ProfileRole = 'resident' | 'admin';
-
-interface SharedProfileScreenProps {
-    role: ProfileRole;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function showToast(message: string) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -73,18 +64,15 @@ function shouldOpenAdminArea(redirectTo?: string, nextRole?: string | null): boo
     return redirectTo === 'ADMIN_PANEL' || normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN';
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
-export default function SharedProfileScreen({ role }: SharedProfileScreenProps) {
+export default function ResidentProfileScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { user, logout, login } = useAuthStore();
     const startAddMembershipFlow = useOnboardingStore((s) => s.startAddMembershipFlow);
     const startRequestCorrectionFlow = useOnboardingStore((s) => s.startRequestCorrectionFlow);
-    const isAdmin = role === 'admin';
 
     // Route prefix for navigation
-    const routePrefix = isAdmin ? '/(admin)' : '/(resident)';
+    const routePrefix = '/(resident)';
 
     // Store
     const {
@@ -98,7 +86,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         fetchSection,
     } = useProfileStore();
 
-    // Edit modal
+    // Local state
     const [refreshing, setRefreshing] = useState(false);
     const [isEditModalVisible, setEditModalVisible] = useState(false);
     const [isQrModalVisible, setQrModalVisible] = useState(false);
@@ -126,7 +114,6 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         }
     }, [user?.id]);
 
-    // ── Data loading ──────────────────────────────────────────────────────
     useFocusEffect(
         useCallback(() => {
             fetchAll();
@@ -143,7 +130,6 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         setRefreshing(false);
     }, [fetchAll, fetchContexts]);
 
-    // ── Derived data ──────────────────────────────────────────────────────
     const displayUser = profile ?? user ?? ({} as any);
     const completionPct = calcCompletion(displayUser, {
         familyCount: familyMembers.length,
@@ -154,16 +140,17 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         ? `${displayUser.flat.block?.name ?? ''} ${displayUser.flat.number}`.trim()
         : null;
 
-    const activeContext = contextsData?.activeContext ?? null;
+    const residentContexts = contextsData?.contexts?.filter(c => c.role === 'RESIDENT') ?? [];
+    const activeContext = residentContexts.find(c => c.isActiveContext) ?? null;
+
     const activeHomeLabel = activeContext?.label ?? flatInfo ?? 'No flat assigned';
     const activeHomeSociety = activeContext?.societyName ?? displayUser.society?.name ?? null;
-    const contextCount = contextsData?.contexts?.length ?? 0;
+    const contextCount = residentContexts.length;
     const requestCount = contextsData?.requests?.length ?? 0;
     const manageHomesSubtitle = activeHomeSociety
         ? `${activeHomeLabel} - ${activeHomeSociety}`
         : activeHomeLabel;
 
-    // ── Edit profile ──────────────────────────────────────────────────────
     const openEditModal = () => {
         setEditData({
             name: displayUser.name ?? '',
@@ -190,7 +177,6 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         }
     };
 
-    // ── Logout ────────────────────────────────────────────────────────────
     const handleLogout = () => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         AppAlert.show('Sign Out', 'Are you sure you want to sign out?', [
@@ -199,7 +185,6 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         ]);
     };
 
-    // ── Navigation (role-aware) ───────────────────────────────────────────
     const handleNavigate = (target: 'family' | 'staff' | 'vehicles' | 'pets' | 'household') => {
         switch (target) {
             case 'household': safePush(router, `${routePrefix}/household`); break;
@@ -233,7 +218,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         setShowContextSheet(false);
         startAddMembershipFlow(`${routePrefix}/profile`);
         safePush(router, '/(onboarding)/select-city');
-    }, [routePrefix, router, startAddMembershipFlow]);
+    }, [router, startAddMembershipFlow]);
 
     const handleSwitchContext = useCallback(async (context: ResidentContext) => {
         if (context.isActiveContext || switchingContextId) {
@@ -259,7 +244,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
             const nextIsAdmin = shouldOpenAdminArea(result.redirectTo, result.user?.role);
             const targetRoute = nextIsAdmin ? '/(admin)/profile' : '/(resident)/profile';
 
-            if (nextIsAdmin !== isAdmin) {
+            if (nextIsAdmin) {
                 router.replace(targetRoute as any);
                 return;
             }
@@ -274,7 +259,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         } finally {
             setSwitchingContextId(null);
         }
-    }, [fetchAll, fetchContexts, isAdmin, login, router, switchingContextId]);
+    }, [fetchAll, fetchContexts, login, router, switchingContextId]);
 
     const handleRequestPress = useCallback((request: ResidentContextRequest) => {
         setShowContextSheet(false);
@@ -304,7 +289,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
             sourceRequestStatus: draft.sourceRequestStatus,
         });
         safePush(router, '/(onboarding)/document-upload');
-    }, [routePrefix, router, startRequestCorrectionFlow]);
+    }, [router, startRequestCorrectionFlow]);
 
     const handleRequestEditSelection = useCallback((request: ResidentContextRequest | ResidentRequestDetails) => {
         const draft = buildOnboardingDraftFromRequest(request);
@@ -322,9 +307,8 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
             sourceRequestStatus: draft.sourceRequestStatus,
         });
         safePush(router, '/(onboarding)/select-block');
-    }, [routePrefix, router, startRequestCorrectionFlow]);
+    }, [router, startRequestCorrectionFlow]);
 
-    // ── Skeleton while first load ─────────────────────────────────────────
     const isFirstLoad = loading && !profile && !user;
 
     return (
@@ -365,14 +349,14 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 ) : (
                     <ProfileHeader 
                         user={displayUser}
-                        role={role}
+                        role="resident"
                         onEditPress={openEditModal} 
-                        onQrPress={isAdmin ? undefined : () => setQrModalVisible(true)}
+                        onQrPress={() => setQrModalVisible(true)}
                     />
                 )}
 
                 {/* ── Profile Completion (residents only) ─────────────── */}
-                {!isFirstLoad && !isAdmin && (
+                {!isFirstLoad && (
                     <ProfileCompletion percentage={completionPct} onViewProfile={openEditModal} />
                 )}
 
@@ -380,21 +364,19 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 <View style={styles.divider} />
 
                 {/* ── Household (residents only) ──────────────────────── */}
-                {!isAdmin && (
-                    isFirstLoad ? (
-                        <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
-                            <SectionSkeleton hasGrid />
-                        </View>
-                    ) : (
-                        <HouseholdGrid
-                            familyCount={familyMembers.length}
-                            staffCount={staffList.length}
-                            vehicleCount={vehicles.length}
-                            errors={errors}
-                            onNavigate={handleNavigate}
-                            onRetry={handleRetry}
-                        />
-                    )
+                {isFirstLoad ? (
+                    <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+                        <SectionSkeleton hasGrid />
+                    </View>
+                ) : (
+                    <HouseholdGrid
+                        familyCount={familyMembers.length}
+                        staffCount={staffList.length}
+                        vehicleCount={vehicles.length}
+                        errors={errors}
+                        onNavigate={handleNavigate}
+                        onRetry={handleRetry}
+                    />
                 )}
 
                 {/* ── Address Card ────────────────────────────────────── */}
@@ -408,39 +390,6 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 {/* ── Divider ─────────────────────────────────────────── */}
                 <View style={styles.divider} />
 
-                {/* ── Admin Controls (admin only) ─────────────────────── */}
-                {isAdmin && (
-                    <>
-                        <Text style={styles.sectionTitle}>Admin Controls</Text>
-                        <View style={styles.card}>
-                            <SettingRow
-                                icon="cog-outline"
-                                title="Society Settings"
-                                onPress={() => safePush(router, '/(admin)/settings')}
-                            />
-                            <SettingRow
-                                icon="account-group-outline"
-                                title="Manage Residents"
-                                onPress={() => safePush(router, '/(admin)/onboarding-requests')}
-                            />
-                            <SettingRow
-                                icon="shield-account-outline"
-                                title="Guard Management"
-                                onPress={() => safePush(router, '/(admin)/guards')}
-                            />
-                            <SettingRow
-                                icon="clipboard-text-outline"
-                                title="Gate Passes"
-                                showDivider={false}
-                                onPress={() => safePush(router, '/(admin)/gate-passes')}
-                            />
-                        </View>
-
-                        {/* ── Divider ─────────────────────────────────── */}
-                        <View style={styles.divider} />
-                    </>
-                )}
-
                 {/* ── Security & Notifications ────────────────────────── */}
                 <Text style={styles.sectionTitle}>Security & Notifications</Text>
 
@@ -452,21 +401,14 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                     />
                     <SettingRow
                         icon="clipboard-text-clock-outline"
-                        title={isAdmin ? 'Visitor Log' : 'Visitor List'}
-                        onPress={() => safePush(router, isAdmin ? '/(admin)/approval-requests' : '/(resident)/visitors')}
+                        title="Visitor List"
+                        onPress={() => safePush(router, '/(resident)/visitors')}
                     />
-                    {isAdmin && (
-                        <SettingRow
-                            icon="car-outline"
-                            title="Parking & Vehicles"
-                            onPress={() => safePush(router, '/(admin)/vehicles')}
-                        />
-                    )}
                     <SettingRow
                         icon="shield-alert-outline"
                         title="Security Alert List"
                         showDivider={false}
-                        onPress={() => safePush(router, isAdmin ? '/(admin)/emergencies' : '/(resident)/emergency')}
+                        onPress={() => safePush(router, '/(resident)/emergency')}
                     />
                 </View>
 
@@ -478,7 +420,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 <View style={styles.card}>
                     <SettingRow
                         icon="home-city-outline"
-                        title={isAdmin ? 'Manage Society Flats' : 'Manage My Flats'}
+                        title="Manage My Flats"
                         subtitle={manageHomesSubtitle}
                         badge={
                             contextCount > 1
@@ -499,6 +441,15 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                         showChevron
                         onPress={handleAddFlat}
                     />
+                </View>
+
+                {/* ── Divider ─────────────────────────────────────────── */}
+                <View style={styles.divider} />
+
+                {/* ── Workspace Switcher ──────────────────────────────── */}
+                <Text style={styles.sectionTitle}>Workspace</Text>
+                <View style={styles.card}>
+                    <WorkspaceSwitchButton variant="profile" />
                 </View>
 
                 {/* ── Divider ─────────────────────────────────────────── */}
@@ -567,7 +518,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
 
             <ResidentContextPicker
                 visible={showContextSheet}
-                contexts={contextsData?.contexts ?? []}
+                contexts={residentContexts}
                 requests={contextsData?.requests ?? []}
                 activeContext={activeContext}
                 isLoading={contextsLoading}
@@ -578,7 +529,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 onRequestPress={handleRequestPress}
                 onAddAnother={handleAddFlat}
                 variant="sheet"
-                title={isAdmin ? 'Manage Society Flats' : 'Manage My Flats'}
+                title="Manage My Flats"
                 subtitle="Switch active flat or add another home"
             />
 
@@ -652,30 +603,21 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
     );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
     root: {
         flex: 1,
         backgroundColor: SgateColors.bg,
     },
-
-
-    // Scroll
     scroll: {
         flex: 1,
     },
     scrollContent: {
         paddingBottom: 20,
     },
-
-    // Dividers
     divider: {
         height: 8,
         backgroundColor: SgateColors.bg,
     },
-
-    // Section titles
     sectionTitle: {
         fontSize: 13,
         fontFamily: SgateFonts.medium,
@@ -684,8 +626,6 @@ const styles = StyleSheet.create({
         paddingTop: 16,
         paddingBottom: 8,
     },
-
-    // Card wrapper for grouped rows
     card: {
         backgroundColor: SgateColors.card,
         marginHorizontal: 16,
@@ -694,54 +634,26 @@ const styles = StyleSheet.create({
         borderColor: SgateColors.borderSoft,
         overflow: 'hidden',
     },
-
-    // Notification banner
-    notifBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginHorizontal: 16,
-        marginBottom: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        backgroundColor: '#F0EDE6',
-        borderRadius: SgateRadius.sm,
-    },
-    notifBannerText: {
-        fontSize: 13,
-        fontFamily: SgateFonts.medium,
-        color: SgateColors.t1,
-        flex: 1,
-    },
-    notifBannerBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    notifBannerBtnText: {
-        fontSize: 13,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        marginRight: 2,
-    },
-
-    // Footer
     footerSection: {
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 4,
+        paddingTop: 24,
+        paddingBottom: 32,
+        alignItems: 'center',
     },
     footerCard: {
         backgroundColor: SgateColors.card,
-        borderRadius: 16,
+        marginHorizontal: 16,
+        borderRadius: SgateRadius.sm,
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.04)',
+        borderColor: SgateColors.borderSoft,
+        width: '90%',
         overflow: 'hidden',
+        marginBottom: 16,
     },
     footerRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 15,
+        paddingVertical: 14,
         paddingHorizontal: 16,
     },
     footerRowLeft: {
@@ -750,52 +662,47 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     footerRowText: {
-        fontSize: 15,
+        fontSize: 14,
         fontFamily: SgateFonts.medium,
-        color: SgateColors.t1,
+        color: SgateColors.t2,
     },
     footerDivider: {
         height: 1,
-        backgroundColor: 'rgba(0,0,0,0.04)',
+        backgroundColor: SgateColors.borderSoft,
         marginHorizontal: 16,
     },
     footerVersion: {
-        textAlign: 'center',
-        marginTop: 10,
-        fontSize: 13,
+        fontSize: 12,
         fontFamily: SgateFonts.regular,
         color: SgateColors.t4,
     },
-
-    // Modal
     modalOverlay: {
         flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
         justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalSheet: {
-        backgroundColor: SgateColors.card,
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
-        paddingHorizontal: 24,
-        paddingTop: 24,
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: SgateRadius.md,
+        borderTopRightRadius: SgateRadius.md,
+        padding: 24,
     },
     modalHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 24,
+        marginBottom: 20,
     },
     modalTitle: {
         fontSize: 18,
-        fontFamily: SgateFonts.extrabold,
+        fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
     },
     modalClose: {
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: SgateColors.surface,
+        backgroundColor: SgateColors.bg,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -803,35 +710,35 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontFamily: SgateFonts.bold,
         color: SgateColors.t3,
-        letterSpacing: 0.5,
-        marginBottom: 6,
-        marginLeft: 2,
+        letterSpacing: 1,
+        marginBottom: 8,
+        marginTop: 12,
     },
     input: {
-        backgroundColor: SgateColors.surface,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: SgateColors.borderSoft,
-        paddingHorizontal: 14,
-        paddingVertical: 14,
-        fontSize: 14,
-        fontFamily: SgateFonts.regular,
+        height: 48,
+        borderWidth: 1.5,
+        borderColor: SgateColors.border,
+        borderRadius: SgateRadius.sm,
+        paddingHorizontal: 16,
+        fontSize: 15,
+        fontFamily: SgateFonts.semibold,
         color: SgateColors.t1,
         marginBottom: 16,
     },
     saveBtn: {
         backgroundColor: SgateColors.gold,
-        borderRadius: 14,
-        paddingVertical: 16,
+        height: 48,
+        borderRadius: 24,
         alignItems: 'center',
-        marginTop: 8,
+        justifyContent: 'center',
+        marginTop: 16,
     },
     saveBtnDisabled: {
-        opacity: 0.6,
+        opacity: 0.5,
     },
     saveBtnText: {
-        fontSize: 16,
+        fontSize: 15,
         fontFamily: SgateFonts.bold,
-        color: SgateColors.black,
+        color: SgateColors.t1,
     },
 });

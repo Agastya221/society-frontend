@@ -1,9 +1,6 @@
 import React from 'react';
-import SharedProfileScreen from '@/components/profile/SharedProfileScreen';
+import ResidentProfileScreen from '@/screens/resident/ResidentProfileScreen';
 
-// ─── Resident Profile ─────────────────────────────────────────────────────────
-// Thin wrapper — all UI lives in SharedProfileScreen with role-based rendering.
-
-export default function ResidentProfileScreen() {
-    return <SharedProfileScreen role="resident" />;
+export default function ResidentProfileWrapper() {
+    return <ResidentProfileScreen />;
 }

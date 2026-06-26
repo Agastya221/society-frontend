@@ -11,14 +11,13 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
-// ─── Only show these 5 tabs for Admin ─────────────────────────────────────────
-const VISIBLE_TABS = new Set(['index', 'gate-passes', 'staff', 'broadcast', 'profile']);
+// ─── Only show these 4 tabs for Admin ─────────────────────────────────────────
+const VISIBLE_TABS = new Set(['index', 'gate-passes', 'broadcast', 'profile']);
 
 // ─── Explicit labels for each tab (route base name → display label) ─────────
 const TAB_LABELS: Record<string, string> = {
   index: 'Home',
   'gate-passes': 'Passes',
-  staff: 'Staff',
   broadcast: 'Alerts',
   profile: 'Profile',
 };
@@ -27,7 +26,6 @@ const TAB_LABELS: Record<string, string> = {
 const TAB_ICONS: Record<string, string> = {
   index: 'home-outline',
   'gate-passes': 'clipboard-text-outline',
-  staff: 'briefcase-outline',
   broadcast: 'bullhorn-outline',
   profile: 'account-outline',
 };
