@@ -90,6 +90,15 @@ export const homeQuickActions: HomeQuickAction[] = [
         roles: ['resident'],
         route: '/(resident)/communication',
     },
+    {
+        id: 'notices',
+        icon: 'bell-outline',
+        label: 'Notices',
+        color: SgateColors.t2,
+        bg: SgateColors.surface,
+        roles: ['resident'],
+        route: '/(resident)/notices',
+    },
 
     // ── Admin-only ──
     {

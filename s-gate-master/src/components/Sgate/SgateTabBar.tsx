@@ -187,19 +187,19 @@ function SgateTab({ label, iconName, isFocused, options, onPress, onLongPress }:
 const styles = StyleSheet.create({
   container: {
     backgroundColor: SgateColors.card,
-    borderTopWidth: 1,
-    borderTopColor: SgateColors.borderSoft,
-    paddingTop: 6,
-    // Subtle shadow on iOS, elevation on Android
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingTop: 10,
+    overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.04,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: -8 },
+        shadowOpacity: 0.08,
+        shadowRadius: 24,
       },
       android: {
-        elevation: 8,
+        elevation: 14,
       },
     }),
   },
@@ -211,12 +211,12 @@ const styles = StyleSheet.create({
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: 2,
-    paddingBottom: 2,
+    paddingTop: 0,
+    paddingBottom: 4,
   },
   indicator: {
-    width: 20,
-    height: 3,
+    width: 24,
+    height: 4,
     borderRadius: 2,
     backgroundColor: SgateColors.gold,
     marginBottom: 6,
@@ -228,8 +228,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: 11,
     textAlign: 'center',
-    letterSpacing: 0.1,
+    letterSpacing: 0,
   },
 });
