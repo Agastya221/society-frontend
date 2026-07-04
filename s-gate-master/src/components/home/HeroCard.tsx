@@ -1,123 +1,132 @@
+import React from 'react';
+import { StyleSheet, Text, View, Pressable, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
-
-import type { UserRole } from './homeToolsConfig';
+import Animated, {
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
 
 interface HeroCardProps {
-    role: UserRole;
-    pendingRequestsCount: number;
-    pendingApprovalsCount: number;
-    duesPendingCount?: number;
+    role: 'resident' | 'admin';
+    pendingRequestsCount: number;  // visitors waiting (resident)
+    pendingApprovalsCount: number; // actions pending (admin)
+    duesPendingCount?: number;     // pending dues (resident)
     onAction: (target: string) => void;
 }
 
-interface HeroState {
-    eyebrow: string;
-    title: string;
-    pill: string;
-    target: string | null;
-    icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
-    tone: 'success' | 'attention';
-}
-
-export function HeroCard({
+export default function HeroCard({
     role,
     pendingRequestsCount,
     pendingApprovalsCount,
     duesPendingCount = 0,
     onAction,
 }: HeroCardProps) {
-    const state = getHeroState(role, pendingRequestsCount, pendingApprovalsCount, duesPendingCount);
-    const isActionable = Boolean(state.target);
+    const scale = useSharedValue(1);
 
-    return (
-        <Animated.View entering={FadeInDown.delay(50).duration(420)} style={styles.heroSection}>
-            <Pressable
-                disabled={!isActionable}
-                onPress={() => {
-                    if (state.target) onAction(state.target);
-                }}
-            >
-                <LinearGradient
-                    colors={['#FFF8C9', '#FFE47A', '#FFD01F']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.heroCard}
-                >
-                    <View style={styles.heroCopy}>
-                        <Text style={styles.heroEyebrow}>{state.eyebrow}</Text>
-                        <Text style={styles.heroTitle}>{state.title}</Text>
-                        <View style={styles.heroStatusPill}>
-                            <View style={[styles.heroCheck, state.tone === 'attention' && styles.heroAttention]}>
-                                <MaterialCommunityIcons name={state.icon} size={15} color="#FFFFFF" />
-                            </View>
-                            <Text style={styles.heroStatusText}>{state.pill}</Text>
-                            {isActionable && (
-                                <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t2} />
-                            )}
-                        </View>
-                    </View>
-                    <BuildingIllustration />
-                </LinearGradient>
-            </Pressable>
-        </Animated.View>
-    );
-}
+    // Dynamic states resolving
+    let eyebrow = "You're all set!";
+    let title = "Everything looks\ngood today.";
+    let pillText = "Society is running smoothly";
+    let isActionable = false;
+    let targetRoute = '';
 
-function getHeroState(
-    role: UserRole,
-    pendingRequestsCount: number,
-    pendingApprovalsCount: number,
-    duesPendingCount: number,
-): HeroState {
     if (role === 'resident') {
         if (pendingRequestsCount > 0) {
-            return {
-                eyebrow: 'Action needed',
-                title: `${pendingRequestsCount} visitor${pendingRequestsCount > 1 ? 's' : ''}\nwaiting`,
-                pill: 'Gate action required',
-                target: 'resident-approvals',
-                icon: 'alert',
-                tone: 'attention',
-            };
+            eyebrow = "Action Required";
+            title = `${pendingRequestsCount} visitor${pendingRequestsCount > 1 ? 's are' : ' is'} waiting.`;
+            pillText = "Gate approval required";
+            isActionable = true;
+            targetRoute = 'resident-approvals';
+        } else if (duesPendingCount > 0) {
+            eyebrow = "Payment Pending";
+            title = `${duesPendingCount} bill${duesPendingCount > 1 ? 's are' : ' is'} outstanding.`;
+            pillText = "Tap to view dues";
+            isActionable = true;
+            targetRoute = 'resident-dues';
         }
-
-        if (duesPendingCount > 0) {
-            return {
-                eyebrow: 'Payment pending',
-                title: `${duesPendingCount} due${duesPendingCount > 1 ? 's' : ''}\npending`,
-                pill: 'Tap to view dues',
-                target: 'resident-dues',
-                icon: 'receipt-text-outline',
-                tone: 'attention',
-            };
+    } else {
+        // Admin
+        if (pendingApprovalsCount > 0) {
+            eyebrow = "Action Required";
+            title = `${pendingApprovalsCount} request${pendingApprovalsCount > 1 ? 's are' : ' is'} pending.`;
+            pillText = "Approvals required";
+            isActionable = true;
+            targetRoute = 'admin-approvals';
         }
     }
 
-    if (role === 'admin' && pendingApprovalsCount > 0) {
-        return {
-            eyebrow: 'Action needed',
-            title: `${pendingApprovalsCount} action${pendingApprovalsCount > 1 ? 's' : ''}\npending`,
-            pill: 'Approvals required',
-            target: 'admin-approvals',
-            icon: 'clipboard-alert-outline',
-            tone: 'attention',
-        };
-    }
-
-    return {
-        eyebrow: "You're all set!",
-        title: 'Everything looks\ngood today.',
-        pill: 'Society is running smoothly',
-        target: null,
-        icon: 'check',
-        tone: 'success',
+    const handlePress = () => {
+        if (isActionable) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onAction(targetRoute);
+        }
     };
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: scale.value }],
+    }));
+
+    return (
+        <View style={styles.container}>
+            <Pressable
+                onPress={handlePress}
+                onPressIn={() => {
+                    if (isActionable) {
+                        scale.value = withSpring(0.97, { damping: 18, stiffness: 320 });
+                    }
+                }}
+                onPressOut={() => {
+                    if (isActionable) {
+                        scale.value = withSpring(1, { damping: 18, stiffness: 260 });
+                    }
+                }}
+                disabled={!isActionable}
+                style={({ pressed }) => [
+                    styles.pressable,
+                    !isActionable && styles.disabledPress,
+                ]}
+            >
+                <Animated.View style={[styles.cardWrapper, animatedStyle]}>
+                    <LinearGradient
+                        colors={['#FFF9D8', '#FFE37A', '#FFD24A']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.gradient}
+                    >
+                        <View style={styles.copy}>
+                            <Text style={styles.eyebrow}>{eyebrow}</Text>
+                            <Text style={styles.title} numberOfLines={2}>
+                                {title}
+                            </Text>
+                            <View style={styles.statusPill}>
+                                <View style={[styles.checkCircle, isActionable && styles.actionableCheck]}>
+                                    <MaterialCommunityIcons
+                                        name={isActionable ? 'alert-circle' : 'check'}
+                                        size={14}
+                                        color="#FFFFFF"
+                                    />
+                                </View>
+                                <Text style={styles.statusText}>{pillText}</Text>
+                                {isActionable && (
+                                    <MaterialCommunityIcons
+                                        name="chevron-right"
+                                        size={14}
+                                        color={SgateColors.t2}
+                                        style={styles.chevron}
+                                    />
+                                )}
+                            </View>
+                        </View>
+                        <BuildingIllustration />
+                    </LinearGradient>
+                </Animated.View>
+            </Pressable>
+        </View>
+    );
 }
 
 function BuildingIllustration() {
@@ -127,17 +136,17 @@ function BuildingIllustration() {
             <View style={[styles.cloud, styles.cloudTwo]} />
             <View style={styles.buildingRow}>
                 <View style={[styles.building, styles.buildingSide]}>
-                    {Array.from({ length: 9 }).map((_, index) => (
+                    {Array.from({ length: 6 }).map((_, index) => (
                         <View key={`left-${index}`} style={styles.window} />
                     ))}
                 </View>
                 <View style={[styles.building, styles.buildingMain]}>
-                    {Array.from({ length: 15 }).map((_, index) => (
+                    {Array.from({ length: 12 }).map((_, index) => (
                         <View key={`main-${index}`} style={styles.window} />
                     ))}
                 </View>
                 <View style={[styles.building, styles.buildingSide]}>
-                    {Array.from({ length: 9 }).map((_, index) => (
+                    {Array.from({ length: 6 }).map((_, index) => (
                         <View key={`right-${index}`} style={styles.window} />
                     ))}
                 </View>
@@ -149,20 +158,28 @@ function BuildingIllustration() {
 }
 
 const styles = StyleSheet.create({
-    heroSection: {
+    container: {
         paddingHorizontal: 20,
         marginBottom: 28,
     },
-    heroCard: {
-        minHeight: 180,
-        borderRadius: 28,
-        paddingVertical: 24,
-        paddingLeft: 24,
-        paddingRight: 12,
+    pressable: {
+        borderRadius: SgateRadius['2xl'],
         overflow: 'hidden',
+    },
+    disabledPress: {
+        opacity: 1,
+    },
+    cardWrapper: {
+        borderRadius: SgateRadius['2xl'],
+        overflow: 'hidden',
+    },
+    gradient: {
+        minHeight: 180,
+        padding: 24,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        position: 'relative',
         ...Platform.select({
             ios: {
                 shadowColor: '#DCA400',
@@ -175,124 +192,131 @@ const styles = StyleSheet.create({
             },
         }),
     },
-    heroCopy: {
-        flex: 1,
+    copy: {
+        flex: 1.2,
         zIndex: 2,
         minWidth: 0,
+        justifyContent: 'center',
     },
-    heroEyebrow: {
-        fontSize: 16,
+    eyebrow: {
+        fontSize: 15,
         fontFamily: SgateFonts.medium,
         color: SgateColors.t2,
-        marginBottom: 8,
+        marginBottom: 6,
+        letterSpacing: 0.2,
     },
-    heroTitle: {
-        fontSize: 27,
-        lineHeight: 36,
+    title: {
+        fontSize: 26,
+        lineHeight: 32,
         fontFamily: SgateFonts.extrabold,
         color: SgateColors.t1,
+        letterSpacing: -0.6,
     },
-    heroStatusPill: {
-        marginTop: 22,
+    statusPill: {
+        marginTop: 18,
         alignSelf: 'flex-start',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
-        backgroundColor: 'rgba(255,255,255,0.82)',
-        borderRadius: 999,
-        paddingVertical: 10,
-        paddingLeft: 10,
-        paddingRight: 16,
+        gap: 8,
+        backgroundColor: 'rgba(255, 255, 255, 0.85)',
+        borderRadius: 100,
+        paddingVertical: 6,
+        paddingLeft: 6,
+        paddingRight: 12,
     },
-    heroCheck: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+    checkCircle: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
         backgroundColor: '#18B86B',
         alignItems: 'center',
         justifyContent: 'center',
     },
-    heroAttention: {
-        backgroundColor: '#F43F5E',
+    actionableCheck: {
+        backgroundColor: SgateColors.goldDeep,
     },
-    heroStatusText: {
-        fontSize: 13,
+    statusText: {
+        fontSize: 12,
         fontFamily: SgateFonts.semibold,
         color: SgateColors.t2,
     },
+    chevron: {
+        marginLeft: 2,
+    },
+    // Illustration Styles
     illustrationWrap: {
-        width: 178,
-        height: 150,
+        width: 130,
+        height: 130,
         justifyContent: 'flex-end',
         alignItems: 'center',
-        marginRight: -18,
+        marginRight: -12,
         marginBottom: -16,
     },
     cloud: {
         position: 'absolute',
-        width: 38,
-        height: 15,
-        borderRadius: 12,
-        backgroundColor: 'rgba(255,255,255,0.78)',
+        width: 32,
+        height: 12,
+        borderRadius: 10,
+        backgroundColor: 'rgba(255,255,255,0.75)',
     },
     cloudOne: {
-        top: 14,
-        left: 18,
+        top: 20,
+        left: 0,
     },
     cloudTwo: {
-        top: 0,
-        right: 18,
-        width: 30,
-        height: 12,
+        top: 6,
+        right: 12,
+        width: 26,
+        height: 10,
     },
     buildingRow: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        gap: 5,
+        gap: 4,
         zIndex: 2,
     },
     building: {
         backgroundColor: '#FFE9C4',
         borderColor: '#E7B878',
         borderWidth: 1,
-        borderRadius: 5,
-        padding: 5,
+        borderRadius: 4,
+        padding: 4,
         flexDirection: 'row',
         flexWrap: 'wrap',
         alignContent: 'flex-start',
-        gap: 4,
+        gap: 3,
     },
     buildingMain: {
-        width: 58,
-        height: 118,
+        width: 44,
+        height: 98,
     },
     buildingSide: {
-        width: 44,
-        height: 92,
+        width: 32,
+        height: 74,
     },
     window: {
-        width: 8,
-        height: 11,
-        borderRadius: 2,
+        width: 6,
+        height: 8,
+        borderRadius: 1,
         backgroundColor: '#C9904C',
         opacity: 0.72,
     },
     tree: {
         position: 'absolute',
-        left: 18,
-        bottom: 8,
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        left: 4,
+        bottom: 6,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
         backgroundColor: '#9BC455',
         zIndex: 3,
     },
     heroGround: {
         position: 'absolute',
         bottom: 0,
-        width: 172,
-        height: 14,
+        width: 140,
+        height: 10,
         borderRadius: 999,
-        backgroundColor: 'rgba(122,96,35,0.16)',
+        backgroundColor: 'rgba(122,96,35,0.12)',
     },
 });

@@ -1,57 +1,68 @@
 import React from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Platform } from 'react-native';
 import Animated, { FadeInDown, FadeOutLeft, FadeOutRight } from 'react-native-reanimated';
-
+import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
 import { ApprovalCard } from '@/components/visitors/ApprovalCard';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
-
-import { EmptyState } from './EmptyState';
+import EmptyState from './EmptyState';
 import { GateSkeleton } from './HomeSkeletons';
 
-const BRAND_YELLOW_BG = '#FFFBE6';
-
-export interface PendingGateRequest {
-    id: string;
-    visitorName: string;
-    type: string;
-    createdAt: string;
-    gate?: string | null;
-}
-
 interface WaitingGateCardProps {
-    pendingRequests: PendingGateRequest[];
+    pendingRequests: any[];
     isLoading: boolean;
-    exitDir: Record<string, 'left' | 'right'>;
     onApprove: (id: string) => void;
     onDeny: (id: string) => void;
-    formatType: (raw: string) => string;
-    timeAgo: (iso: string) => string;
+    exitDir: Record<string, 'left' | 'right'>;
 }
 
-export function WaitingGateCard({
+function timeAgo(iso: string): string {
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (diff < 1) return 'just now';
+    if (diff === 1) return '1 min ago';
+    if (diff < 60) return `${diff} min ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+    return `${Math.floor(diff / 1440)}d ago`;
+}
+
+function formatType(raw: string): string {
+    if (!raw) return 'Guest';
+    return raw
+        .split('_')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+}
+
+export default function WaitingGateCard({
     pendingRequests,
     isLoading,
-    exitDir,
     onApprove,
     onDeny,
-    formatType,
-    timeAgo,
+    exitDir,
 }: WaitingGateCardProps) {
+    const hasRequests = pendingRequests.length > 0;
+
     return (
-        <Animated.View entering={FadeInDown.delay(160).springify()} style={styles.section}>
-            <View style={styles.cardHeaderRow}>
-                <Text style={styles.cardHeaderTitle}>Waiting at Gate</Text>
-                {pendingRequests.length > 0 && (
-                    <View style={styles.cardCountPill}>
-                        <Text style={styles.cardCountText}>{pendingRequests.length} new</Text>
+        <View style={styles.container}>
+            <View style={styles.headerRow}>
+                <Text style={styles.title}>WAITING AT GATE</Text>
+                {hasRequests && (
+                    <View style={styles.countPill}>
+                        <Text style={styles.countText}>{pendingRequests.length} new</Text>
                     </View>
                 )}
             </View>
 
-            {isLoading && pendingRequests.length === 0 ? (
+            {isLoading && !hasRequests ? (
                 <GateSkeleton />
-            ) : pendingRequests.length === 0 ? (
-                <GateEmpty />
+            ) : !hasRequests ? (
+                <View style={styles.card}>
+                    <EmptyState
+                        iconName="shield-check-outline"
+                        iconBg={SgateColors.greenBg}
+                        iconColor={SgateColors.green}
+                        title="All clear!"
+                        description="No one is waiting at the gate right now."
+                    />
+                </View>
             ) : (
                 pendingRequests.map((req, index) => (
                     <Animated.View
@@ -75,152 +86,55 @@ export function WaitingGateCard({
                     </Animated.View>
                 ))
             )}
-        </Animated.View>
-    );
-}
-
-function GateEmpty() {
-    return (
-        <View style={styles.gateEmptyCard}>
-            <View style={styles.gateEmptyContent}>
-                <EmptyState
-                    iconName="check"
-                    iconBg="#18B86B"
-                    iconColor="#FFFFFF"
-                    title="All clear!"
-                    description="No one is waiting at the gate"
-                />
-            </View>
-            <GateIllustration />
-        </View>
-    );
-}
-
-function GateIllustration() {
-    return (
-        <View style={styles.gateArt} pointerEvents="none">
-            <View style={styles.gateHouse}>
-                <View style={styles.gateDoor} />
-            </View>
-            <View style={styles.barrierPost} />
-            <View style={styles.barrierArm} />
-            <View style={styles.gatePlant} />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    section: {
+    container: {
         paddingHorizontal: 20,
         marginBottom: 28,
     },
-    cardHeaderRow: {
+    headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: 14,
     },
-    cardHeaderTitle: {
-        fontSize: 13,
+    title: {
+        fontSize: 12,
         fontFamily: SgateFonts.bold,
         color: SgateColors.t3,
-        letterSpacing: 1.2,
-        textTransform: 'uppercase',
+        letterSpacing: 1.5,
     },
-    cardCountPill: {
-        borderRadius: 999,
-        backgroundColor: BRAND_YELLOW_BG,
+    countPill: {
+        borderRadius: 100,
+        backgroundColor: SgateColors.goldPale,
         paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingVertical: 4,
     },
-    cardCountText: {
+    countText: {
         fontSize: 11,
         fontFamily: SgateFonts.bold,
-        color: '#996300',
+        color: SgateColors.goldDeep,
     },
-    cardWrap: {
-        marginBottom: 10,
-    },
-    gateEmptyCard: {
-        minHeight: 164,
-        borderRadius: 24,
+    card: {
         backgroundColor: '#FFFFFF',
-        overflow: 'hidden',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingLeft: 24,
+        borderRadius: SgateRadius['2xl'],
+        paddingVertical: 12,
         ...Platform.select({
             ios: {
                 shadowColor: '#101828',
-                shadowOffset: { width: 0, height: 12 },
-                shadowOpacity: 0.06,
-                shadowRadius: 24,
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.04,
+                shadowRadius: 20,
             },
             android: {
                 elevation: 2,
             },
         }),
     },
-    gateEmptyContent: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 24,
-        zIndex: 2,
-    },
-    gateArt: {
-        width: 156,
-        height: 146,
-        alignSelf: 'flex-end',
-        marginRight: -8,
-    },
-    gateHouse: {
-        position: 'absolute',
-        right: 0,
-        bottom: 0,
-        width: 84,
-        height: 94,
-        backgroundColor: '#F0E8DD',
-        borderTopLeftRadius: 6,
-    },
-    gateDoor: {
-        position: 'absolute',
-        right: 16,
-        bottom: 0,
-        width: 38,
-        height: 58,
-        borderRadius: 4,
-        backgroundColor: '#71B7C4',
-    },
-    barrierPost: {
-        position: 'absolute',
-        left: 36,
-        bottom: 10,
-        width: 24,
-        height: 70,
-        borderRadius: 8,
-        backgroundColor: '#FFB800',
-    },
-    barrierArm: {
-        position: 'absolute',
-        left: 52,
-        bottom: 58,
-        width: 100,
-        height: 10,
-        borderRadius: 999,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 2,
-        borderColor: '#EF4444',
-    },
-    gatePlant: {
-        position: 'absolute',
-        right: 6,
-        bottom: 0,
-        width: 34,
-        height: 34,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        backgroundColor: '#8CC152',
+    cardWrap: {
+        marginBottom: 12,
     },
 });

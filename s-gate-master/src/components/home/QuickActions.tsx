@@ -1,116 +1,93 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import type { DimensionValue } from 'react-native';
+import { StyleSheet, Text, View, Pressable, Platform } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
-    FadeInDown,
     useAnimatedStyle,
     useSharedValue,
     withSpring,
 } from 'react-native-reanimated';
-
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
-
-import type { HomeQuickAction } from './homeToolsConfig';
+import * as Haptics from 'expo-haptics';
+import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
+import { HomeQuickAction } from './homeToolsConfig';
 
 interface QuickActionsProps {
     actions: HomeQuickAction[];
     onActionPress: (route: string) => void;
 }
 
-export function QuickActions({ actions, onActionPress }: QuickActionsProps) {
-    const { width } = useWindowDimensions();
-    const columns = getColumnCount(width);
-    const maxCards = getMaxVisibleCards(columns);
-    const visibleActions = getVisibleActions(actions, maxCards);
-    const cardWidth = `${100 / columns}%` as DimensionValue;
-    const compact = columns >= 4;
+export default function QuickActions({ actions, onActionPress }: QuickActionsProps) {
+    // Scalability rules:
+    // If the list of actions is larger than 8, slice to first 7 and append a synthesized "More Tools" action.
+    let displayedActions = [...actions];
+    if (actions.length > 8) {
+        const allToolsAction = actions.find(a => a.id.startsWith('allTools')) || actions[actions.length - 1];
+        const moreToolsItem: HomeQuickAction = {
+            id: 'moreTools',
+            icon: 'view-grid-outline',
+            label: 'More Tools',
+            color: SgateColors.t1,
+            bg: SgateColors.gold,
+            roles: [],
+            route: allToolsAction.route,
+        };
+        displayedActions = [...actions.slice(0, 7), moreToolsItem];
+    }
 
     return (
-        <Animated.View entering={FadeInDown.delay(90).springify()} style={styles.section}>
+        <View style={styles.container}>
             <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
-            <View style={styles.quickGrid}>
-                {visibleActions.map((item, index) => (
+            <View style={styles.grid}>
+                {displayedActions.map((item) => (
                     <QuickActionCard
                         key={item.id}
-                        index={index}
-                        icon={item.icon as React.ComponentProps<typeof MaterialCommunityIcons>['name']}
+                        icon={item.icon}
                         label={item.label}
                         color={item.color}
                         bg={item.bg}
                         onPress={() => onActionPress(item.route)}
-                        itemWidth={cardWidth}
-                        compact={compact}
                     />
                 ))}
             </View>
-        </Animated.View>
+        </View>
     );
 }
 
-function getColumnCount(width: number): number {
-    if (width < 430) return 3;
-    if (width < 760) return 4;
-    return 5;
-}
-
-function getMaxVisibleCards(columns: number): number {
-    if (columns === 3) return 9;
-    if (columns === 4) return 8;
-    return 10;
-}
-
-function isAllToolsAction(action: HomeQuickAction): boolean {
-    return action.id.toLowerCase().includes('alltools');
-}
-
-function getVisibleActions(actions: HomeQuickAction[], maxCards: number): HomeQuickAction[] {
-    const allToolsAction = actions.find(isAllToolsAction);
-    if (!allToolsAction || actions.length <= maxCards) return actions;
-
-    const primaryActions = actions.filter((action) => !isAllToolsAction(action));
-    return [...primaryActions.slice(0, maxCards - 1), allToolsAction];
-}
-
-function QuickActionCard({
-    index,
-    icon,
-    label,
-    color,
-    bg,
-    onPress,
-    itemWidth,
-    compact,
-}: {
-    index: number;
-    icon: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+interface QuickActionCardProps {
+    icon: keyof typeof MaterialCommunityIcons.glyphMap;
     label: string;
     color: string;
     bg: string;
     onPress: () => void;
-    itemWidth: DimensionValue;
-    compact: boolean;
-}) {
+}
+
+function QuickActionCard({ icon, label, color, bg, onPress }: QuickActionCardProps) {
     const scale = useSharedValue(1);
+
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [{ scale: scale.value }],
     }));
 
+    const handlePress = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+    };
+
     return (
         <Pressable
-            style={[styles.quickItem, { width: itemWidth }]}
-            onPress={onPress}
-            onPressIn={() => { scale.value = withSpring(0.97, { damping: 18, stiffness: 320 }); }}
-            onPressOut={() => { scale.value = withSpring(1, { damping: 18, stiffness: 260 }); }}
+            style={styles.item}
+            onPress={handlePress}
+            onPressIn={() => {
+                scale.value = withSpring(0.95, { damping: 18, stiffness: 320 });
+            }}
+            onPressOut={() => {
+                scale.value = withSpring(1, { damping: 18, stiffness: 260 });
+            }}
         >
-            <Animated.View
-                entering={FadeInDown.delay(130 + index * 32).springify().damping(18)}
-                style={[styles.quickCard, compact && styles.quickCardCompact, animatedStyle]}
-            >
-                <View style={[styles.quickIcon, compact && styles.quickIconCompact, { backgroundColor: bg }]}>
-                    <MaterialCommunityIcons name={icon} size={compact ? 31 : 35} color={color} />
+            <Animated.View style={[styles.card, animatedStyle]}>
+                <View style={[styles.iconWrapper, { backgroundColor: bg }]}>
+                    <MaterialCommunityIcons name={icon} size={28} color={color} />
                 </View>
-                <Text style={[styles.quickLabel, compact && styles.quickLabelCompact]} numberOfLines={2}>
+                <Text style={styles.label} numberOfLines={1}>
                     {label}
                 </Text>
             </Animated.View>
@@ -119,77 +96,60 @@ function QuickActionCard({
 }
 
 const styles = StyleSheet.create({
-    section: {
-        paddingHorizontal: 24,
-        marginBottom: 32,
+    container: {
+        paddingHorizontal: 20,
+        marginBottom: 28,
     },
     sectionLabel: {
-        fontSize: 14,
+        fontSize: 12,
         fontFamily: SgateFonts.bold,
         color: SgateColors.t3,
-        letterSpacing: 1.4,
-        textTransform: 'uppercase',
-        marginBottom: 20,
+        letterSpacing: 1.5,
+        marginBottom: 16,
     },
-    quickGrid: {
+    grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        rowGap: 18,
-        marginHorizontal: -7,
+        marginHorizontal: -6,
+        rowGap: 12,
     },
-    quickItem: {
-        paddingHorizontal: 7,
+    item: {
+        width: '25%',
+        paddingHorizontal: 6,
     },
-    quickCard: {
-        minHeight: 126,
-        borderRadius: 26,
+    card: {
+        minHeight: 110,
+        borderRadius: 24,
         backgroundColor: '#FFFFFF',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 7,
-        paddingVertical: 16,
-        gap: 13,
-        borderWidth: 1,
-        borderColor: '#F1F1F1',
+        paddingHorizontal: 8,
+        paddingVertical: 12,
+        gap: 10,
         ...Platform.select({
             ios: {
-                shadowColor: '#111827',
-                shadowOffset: { width: 0, height: 12 },
-                shadowOpacity: 0.11,
-                shadowRadius: 18,
+                shadowColor: '#101828',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.04,
+                shadowRadius: 20,
             },
             android: {
-                elevation: 5,
+                elevation: 2,
             },
         }),
     },
-    quickCardCompact: {
-        minHeight: 132,
-        borderRadius: 24,
-        paddingHorizontal: 6,
-        gap: 12,
-    },
-    quickIcon: {
-        width: 62,
-        height: 62,
-        borderRadius: 20,
+    iconWrapper: {
+        width: 52,
+        height: 52,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    quickIconCompact: {
-        width: 58,
-        height: 58,
-        borderRadius: 19,
-    },
-    quickLabel: {
-        fontSize: 14,
-        lineHeight: 19,
+    label: {
+        fontSize: 12,
         fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
         textAlign: 'center',
-    },
-    quickLabelCompact: {
-        fontSize: 12,
-        lineHeight: 16,
+        width: '100%',
     },
 });

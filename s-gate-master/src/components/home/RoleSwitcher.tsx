@@ -1,47 +1,79 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
-import type { UserRole } from './homeToolsConfig';
-
 interface RoleSwitcherProps {
-    visible: boolean;
-    currentRole: UserRole;
-    onPress: () => void;
+    currentRole: 'resident' | 'admin';
+    onSwitch: () => void;
+    disabled?: boolean;
 }
 
-export function RoleSwitcher({ visible, currentRole, onPress }: RoleSwitcherProps) {
-    if (!visible) return null;
+export default function RoleSwitcher({
+    currentRole,
+    onSwitch,
+    disabled = false,
+}: RoleSwitcherProps) {
+    const isAdminMode = currentRole === 'admin';
 
-    const label = currentRole === 'admin' ? 'Resident View' : 'Admin View';
+    const handlePress = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        onSwitch();
+    };
 
     return (
-        <TouchableOpacity style={styles.adminPill} onPress={onPress} activeOpacity={0.82}>
-            <MaterialCommunityIcons name="shield-account-outline" size={21} color={SgateColors.t1} />
-            <Text style={styles.adminPillText}>{label}</Text>
+        <TouchableOpacity
+            style={[
+                styles.pill,
+                isAdminMode ? styles.adminPill : styles.residentPill,
+            ]}
+            onPress={handlePress}
+            disabled={disabled}
+            activeOpacity={0.8}
+        >
+            <MaterialCommunityIcons
+                name={isAdminMode ? 'shield-account-outline' : 'home-outline'}
+                size={16}
+                color={isAdminMode ? SgateColors.goldDeep : SgateColors.t2}
+                style={styles.icon}
+            />
+            <Text style={[styles.text, isAdminMode ? styles.adminText : styles.residentText]}>
+                {isAdminMode ? 'Admin View' : 'Resident View'}
+            </Text>
         </TouchableOpacity>
     );
 }
 
 const styles = StyleSheet.create({
-    adminPill: {
-        height: 58,
-        minWidth: 154,
-        paddingHorizontal: 20,
-        borderRadius: 29,
-        backgroundColor: '#FFF7DF',
-        borderWidth: 1,
-        borderColor: '#F4E4B7',
+    pill: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 100,
+        borderWidth: 1,
     },
-    adminPillText: {
-        fontSize: 16,
+    residentPill: {
+        backgroundColor: '#FFF6DD',
+        borderColor: '#FFE8A8',
+    },
+    adminPill: {
+        backgroundColor: '#FFF6DD', // Premium light yellow for S-Gate identity
+        borderColor: '#FFE8A8',
+    },
+    icon: {
+        marginRight: 4,
+    },
+    text: {
+        fontSize: 12,
         fontFamily: SgateFonts.bold,
+        letterSpacing: 0.2,
+    },
+    residentText: {
+        color: SgateColors.t1,
+    },
+    adminText: {
         color: SgateColors.t1,
     },
 });

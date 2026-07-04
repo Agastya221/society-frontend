@@ -37,13 +37,13 @@ import { useNotificationStore } from '@/store/useNotificationStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft';
 
-import { ActivityCard } from './ActivityCard';
+import ActivityCard from './ActivityCard';
 import { AdminActionSummary } from './AdminActionSummary';
 import { FloatingSOSButton } from './FloatingSOSButton';
-import { HeroCard } from './HeroCard';
-import { HomeHeader } from './HomeHeader';
-import { QuickActions } from './QuickActions';
-import { WaitingGateCard } from './WaitingGateCard';
+import HeroCard from './HeroCard';
+import HomeHeader from './HomeHeader';
+import QuickActions from './QuickActions';
+import WaitingGateCard from './WaitingGateCard';
 import { type UserRole, getQuickActionsForRole } from './homeToolsConfig';
 
 const BRAND_YELLOW = '#FFB800';
@@ -405,11 +405,9 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     return (
         <View style={S.root}>
             <HomeHeader
-                topInset={insets.top}
                 towerName={contextTitle}
                 societyName={societyName}
                 notificationCount={unreadCount}
-                gateAlertCount={pendingRequests.length}
                 canOpenContextSheet={canOpenContextSheet}
                 showWorkspaceSwitch={canShowAdminPill}
                 currentRole={role}
@@ -486,14 +484,12 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                     exitDir={exitDir}
                     onApprove={handleApprove}
                     onDeny={handleDeny}
-                    formatType={formatType}
-                    timeAgo={timeAgo}
                 />
 
                 <ActivityCard
                     entries={entries}
+                    isLoading={gateLoading}
                     onSeeAll={() => nav(activityRoute)}
-                    timeAgo={timeAgo}
                 />
             </ScrollView>
 

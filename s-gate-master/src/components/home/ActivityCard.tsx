@@ -1,81 +1,18 @@
 import React from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-
+import { StyleSheet, Text, View, TouchableOpacity, Platform } from 'react-native';
+import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
 import { Avatar } from '@/components/ui/Avatar';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import type { Entry } from '@/types/api';
-
-import { EmptyState } from './EmptyState';
-
-const BRAND_YELLOW_BG = '#FFFBE6';
-
-type PillStatus = 'active' | 'pending' | 'approved' | 'denied' | 'expired';
+import EmptyState from './EmptyState';
+import { ActivitySkeleton } from './HomeSkeletons';
 
 interface ActivityCardProps {
     entries: Entry[];
+    isLoading: boolean;
     onSeeAll: () => void;
-    timeAgo: (iso: string) => string;
 }
 
-export function ActivityCard({ entries, onSeeAll, timeAgo }: ActivityCardProps) {
-    return (
-        <Animated.View entering={FadeInDown.delay(220).springify()} style={styles.section}>
-            <View style={styles.cardHeaderRow}>
-                <Text style={styles.cardHeaderTitle}>{"Today's Activity"}</Text>
-                <TouchableOpacity onPress={onSeeAll} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Text style={styles.seeAllText}>See all</Text>
-                </TouchableOpacity>
-            </View>
-
-            {entries.length === 0 ? (
-                <View style={styles.activityEmptyCard}>
-                    <EmptyState
-                        iconName="clock-outline"
-                        iconBg="#EEF0F4"
-                        iconColor={SgateColors.t2}
-                        title="No activity yet today"
-                        description="You're all caught up!"
-                    />
-                </View>
-            ) : (
-                <View style={styles.activityCard}>
-                    {entries.map((entry, index) => (
-                        <ActivityRow
-                            key={entry.id}
-                            entry={entry}
-                            isLast={index === entries.length - 1}
-                            timeAgo={timeAgo}
-                        />
-                    ))}
-                </View>
-            )}
-        </Animated.View>
-    );
-}
-
-function ActivityRow({ entry, isLast, timeAgo }: { entry: Entry; isLast: boolean; timeAgo: (iso: string) => string }) {
-    const { pill, label } = entryStatusToPill(entry.status);
-    return (
-        <View style={[styles.activityRow, !isLast && styles.activityDivider]}>
-            <Avatar name={entry.visitorName} size={36} />
-            <View style={styles.activityInfo}>
-                <Text style={styles.activityName} numberOfLines={1}>{entry.visitorName}</Text>
-                <Text style={styles.activityTime}>{timeAgo(entry.createdAt)}</Text>
-            </View>
-            <ActivityPill status={pill} label={label} />
-        </View>
-    );
-}
-
-function ActivityPill({ status, label }: { status: PillStatus; label: string }) {
-    const { bg, text } = PILL_COLORS[status];
-    return (
-        <View style={[styles.actPill, { backgroundColor: bg }]}>
-            <Text style={[styles.actPillText, { color: text }]}>{label}</Text>
-        </View>
-    );
-}
+type PillStatus = 'active' | 'pending' | 'approved' | 'denied' | 'expired';
 
 function entryStatusToPill(status: Entry['status']): { pill: PillStatus; label: string } {
     switch (status) {
@@ -90,95 +27,146 @@ function entryStatusToPill(status: Entry['status']): { pill: PillStatus; label: 
 const PILL_COLORS: Record<PillStatus, { bg: string; text: string }> = {
     active:   { bg: SgateColors.greenBg,  text: SgateColors.green },
     approved: { bg: SgateColors.greenBg,  text: SgateColors.green },
-    pending:  { bg: BRAND_YELLOW_BG,      text: '#996300' },
+    pending:  { bg: '#FFFBE6',            text: '#996300' },
     denied:   { bg: SgateColors.redBg,    text: SgateColors.red },
     expired:  { bg: '#F2F2F2',            text: SgateColors.t3 },
 };
 
+function timeAgo(iso: string): string {
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (diff < 1) return 'just now';
+    if (diff === 1) return '1 min ago';
+    if (diff < 60) return `${diff} min ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+    return `${Math.floor(diff / 1440)}d ago`;
+}
+
+export default function ActivityCard({ entries, isLoading, onSeeAll }: ActivityCardProps) {
+    const hasEntries = entries.length > 0;
+
+    return (
+        <View style={styles.container}>
+            <View style={styles.headerRow}>
+                <Text style={styles.title}>TODAY'S ACTIVITY</Text>
+                <TouchableOpacity onPress={onSeeAll} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text style={styles.seeAllText}>See all</Text>
+                </TouchableOpacity>
+            </View>
+
+            {isLoading && !hasEntries ? (
+                <ActivitySkeleton />
+            ) : !hasEntries ? (
+                <View style={styles.card}>
+                    <EmptyState
+                        iconName="clock-outline"
+                        title="No activity yet today"
+                        description="You're all caught up! No recent visitor movements."
+                    />
+                </View>
+            ) : (
+                <View style={styles.card}>
+                    <View style={styles.padding}>
+                        {entries.map((entry, index) => {
+                            const { pill, label } = entryStatusToPill(entry.status);
+                            const colors = PILL_COLORS[pill];
+                            const isLast = index === entries.length - 1;
+
+                            return (
+                                <View key={entry.id} style={[styles.row, !isLast && styles.divider]}>
+                                    <Avatar name={entry.visitorName} size={36} />
+                                    <View style={styles.info}>
+                                        <Text style={styles.name} numberOfLines={1}>
+                                            {entry.visitorName}
+                                        </Text>
+                                        <Text style={styles.time}>{timeAgo(entry.createdAt)}</Text>
+                                    </View>
+                                    <View style={[styles.pill, { backgroundColor: colors.bg }]}>
+                                        <Text style={[styles.pillText, { color: colors.text }]}>
+                                            {label}
+                                        </Text>
+                                    </View>
+                                </View>
+                            );
+                        })}
+                    </View>
+                </View>
+            )}
+        </View>
+    );
+}
+
 const styles = StyleSheet.create({
-    section: {
+    container: {
         paddingHorizontal: 20,
         marginBottom: 28,
     },
-    cardHeaderRow: {
+    headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: 14,
     },
-    cardHeaderTitle: {
-        fontSize: 13,
+    title: {
+        fontSize: 12,
         fontFamily: SgateFonts.bold,
         color: SgateColors.t3,
-        letterSpacing: 1.2,
-        textTransform: 'uppercase',
+        letterSpacing: 1.5,
     },
     seeAllText: {
         fontSize: 12,
         fontFamily: SgateFonts.bold,
         color: SgateColors.goldDeep,
     },
-    activityCard: {
+    card: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 24,
-        paddingHorizontal: 16,
+        borderRadius: SgateRadius['2xl'],
         ...Platform.select({
             ios: {
                 shadowColor: '#101828',
-                shadowOffset: { width: 0, height: 12 },
-                shadowOpacity: 0.06,
-                shadowRadius: 24,
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.04,
+                shadowRadius: 20,
             },
             android: {
                 elevation: 2,
             },
         }),
     },
-    activityRow: {
+    padding: {
+        paddingHorizontal: 16,
+        paddingVertical: 4,
+    },
+    row: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 14,
         gap: 12,
     },
-    activityDivider: {
+    divider: {
         borderBottomWidth: 1,
         borderBottomColor: '#F5F5F5',
     },
-    activityInfo: { flex: 1 },
-    activityName: {
+    info: {
+        flex: 1,
+    },
+    name: {
         fontSize: 14,
         fontFamily: SgateFonts.semibold,
         color: SgateColors.t1,
     },
-    activityTime: {
-        marginTop: 2,
+    time: {
         fontSize: 12,
         fontFamily: SgateFonts.regular,
         color: SgateColors.t3,
+        marginTop: 2,
     },
-    actPill: {
-        borderRadius: 20,
+    pill: {
         paddingHorizontal: 10,
         paddingVertical: 4,
+        borderRadius: 20,
     },
-    actPillText: {
+    pillText: {
         fontSize: 11,
         fontFamily: SgateFonts.semibold,
-    },
-    activityEmptyCard: {
-        borderRadius: 24,
-        backgroundColor: '#FFFFFF',
-        padding: 16,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#101828',
-                shadowOffset: { width: 0, height: 12 },
-                shadowOpacity: 0.06,
-                shadowRadius: 24,
-            },
-            android: {
-                elevation: 2,
-            },
-        }),
     },
 });
