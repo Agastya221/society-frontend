@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
@@ -16,6 +16,7 @@ export default function RoleSwitcher({
     disabled = false,
 }: RoleSwitcherProps) {
     const isAdminMode = currentRole === 'admin';
+    const targetLabel = isAdminMode ? 'Resident View' : 'Admin View';
 
     const handlePress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -33,13 +34,13 @@ export default function RoleSwitcher({
             activeOpacity={0.8}
         >
             <MaterialCommunityIcons
-                name={isAdminMode ? 'shield-account-outline' : 'home-outline'}
+                name={isAdminMode ? 'home-outline' : 'shield-account-outline'}
                 size={16}
-                color={isAdminMode ? SgateColors.goldDeep : SgateColors.t2}
+                color={SgateColors.t1}
                 style={styles.icon}
             />
             <Text style={[styles.text, isAdminMode ? styles.adminText : styles.residentText]}>
-                {isAdminMode ? 'Admin View' : 'Resident View'}
+                {targetLabel}
             </Text>
         </TouchableOpacity>
     );

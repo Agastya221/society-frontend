@@ -17,6 +17,11 @@ import { useNotificationStore } from '@/store/useNotificationStore';
 import { switchResidentContext } from '@/services/profile.service';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
+import {
+  getActiveContextForRole,
+  getAdminContexts,
+  getResidentContexts,
+} from '@/utils/contextGuards';
 
 interface WorkspaceSwitchButtonProps {
   variant?: 'header' | 'profile';
@@ -28,8 +33,11 @@ export function WorkspaceSwitchButton({ variant = 'header' }: WorkspaceSwitchBut
   const {
     role,
     userContexts,
+    selectedResidentContextId,
+    selectedAdminContextId,
     switchingWorkspace,
     setSwitchingWorkspace,
+    setSelectedContextForRole,
     login,
   } = useAuthStore();
 
@@ -37,8 +45,8 @@ export function WorkspaceSwitchButton({ variant = 'header' }: WorkspaceSwitchBut
   const currentIsAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
 
   // Filter contexts to see if we have alternative roles
-  const residentContexts = userContexts.filter(c => c.role === 'RESIDENT');
-  const adminContexts = userContexts.filter(c => c.role === 'ADMIN' || c.role === 'SUPER_ADMIN');
+  const residentContexts = getResidentContexts(userContexts);
+  const adminContexts = getAdminContexts(userContexts);
 
   const hasResident = residentContexts.length > 0;
   const hasAdmin = adminContexts.length > 0;
@@ -50,19 +58,17 @@ export function WorkspaceSwitchButton({ variant = 'header' }: WorkspaceSwitchBut
 
   const handleSwitch = async () => {
     // Find target context based on current role
-    let targetContext = null;
-    if (currentIsAdmin) {
-      // Find first Resident context
-      targetContext = residentContexts[0];
-    } else {
-      // Find first Admin context
-      targetContext = adminContexts[0];
-    }
+    const targetRole = currentIsAdmin ? 'resident' : 'admin';
+    const targetContext = getActiveContextForRole(
+      targetRole,
+      userContexts,
+      targetRole === 'admin' ? selectedAdminContextId : selectedResidentContextId,
+    );
 
     if (!targetContext) {
       AppAlert.show(
         'Switch Error',
-        `No alternate workspace found for the role: ${currentIsAdmin ? 'RESIDENT' : 'ADMIN'}`
+        `No alternate workspace found for ${targetRole === 'admin' ? 'Admin View' : 'Resident View'}.`
       );
       return;
     }
@@ -72,6 +78,7 @@ export function WorkspaceSwitchButton({ variant = 'header' }: WorkspaceSwitchBut
     try {
       // 1. Invoke Switch Context API
       const result = await switchResidentContext(targetContext.membershipId);
+      await setSelectedContextForRole(targetRole, targetContext.membershipId);
 
       // 2. Reset Zustand Stores to clear stale workspace/society/flat data
       useGateStore.getState().reset();
