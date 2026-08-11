@@ -102,11 +102,14 @@ jest.mock('@expo/vector-icons', () => ({
 jest.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 
 // ── expo-av ───────────────────────────────────────────────────────────────────
-jest.mock('expo-av', () => ({
-  Audio: {
-    Sound: { createAsync: jest.fn(() => Promise.resolve({ sound: { playAsync: jest.fn(), unloadAsync: jest.fn() } })) },
-    setAudioModeAsync: jest.fn(),
-  },
+jest.mock('expo-audio', () => ({
+  createAudioPlayer: jest.fn(() => ({
+    play: jest.fn(),
+    pause: jest.fn(),
+    seekTo: jest.fn(() => Promise.resolve()),
+    release: jest.fn(),
+  })),
+  setAudioModeAsync: jest.fn(() => Promise.resolve()),
 }));
 
 // ── expo-image-picker ─────────────────────────────────────────────────────────

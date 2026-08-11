@@ -35,10 +35,6 @@ import { ResidentContextPicker } from '@/components/context/ResidentContextPicke
 import { ResidentRequestDetailsSheet } from '@/components/context/ResidentRequestDetailsSheet';
 import { SettingRow } from '@/components/ui/SettingRow';
 import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft';
-import {
-    getActiveContextForRole,
-    getResidentContexts,
-} from '@/utils/contextGuards';
 
 // Sub-components
 import { ProfileHeader } from '@/app/(resident)/profile/_components/ProfileHeader';
@@ -71,13 +67,7 @@ function shouldOpenAdminArea(redirectTo?: string, nextRole?: string | null): boo
 export default function ResidentProfileScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const {
-        user,
-        logout,
-        login,
-        selectedResidentContextId,
-        setSelectedContextForRole,
-    } = useAuthStore();
+    const { user, logout, login } = useAuthStore();
     const startAddMembershipFlow = useOnboardingStore((s) => s.startAddMembershipFlow);
     const startRequestCorrectionFlow = useOnboardingStore((s) => s.startRequestCorrectionFlow);
 
@@ -150,8 +140,8 @@ export default function ResidentProfileScreen() {
         ? `${displayUser.flat.block?.name ?? ''} ${displayUser.flat.number}`.trim()
         : null;
 
-    const residentContexts = getResidentContexts(contextsData?.contexts ?? []);
-    const activeContext = getActiveContextForRole('resident', residentContexts, selectedResidentContextId);
+    const residentContexts = contextsData?.contexts?.filter(c => c.role === 'RESIDENT') ?? [];
+    const activeContext = residentContexts.find(c => c.isActiveContext) ?? null;
 
     const activeHomeLabel = activeContext?.label ?? flatInfo ?? 'No flat assigned';
     const activeHomeSociety = activeContext?.societyName ?? displayUser.society?.name ?? null;
@@ -239,7 +229,6 @@ export default function ResidentProfileScreen() {
         setSwitchingContextId(context.membershipId);
         try {
             const result = await profileService.switchResidentContext(context.membershipId);
-            await setSelectedContextForRole('resident', context.membershipId);
             await login(
                 result.accessToken,
                 result.refreshToken,
@@ -247,7 +236,6 @@ export default function ResidentProfileScreen() {
                 result.appType,
                 false,
                 null,
-                result.contexts?.contexts ?? contextsData?.contexts ?? [],
             );
             setContextsData(result.contexts);
             useProfileStore.getState().invalidate();
@@ -271,15 +259,7 @@ export default function ResidentProfileScreen() {
         } finally {
             setSwitchingContextId(null);
         }
-    }, [
-        contextsData?.contexts,
-        fetchAll,
-        fetchContexts,
-        login,
-        router,
-        setSelectedContextForRole,
-        switchingContextId,
-    ]);
+    }, [fetchAll, fetchContexts, login, router, switchingContextId]);
 
     const handleRequestPress = useCallback((request: ResidentContextRequest) => {
         setShowContextSheet(false);
@@ -549,7 +529,6 @@ export default function ResidentProfileScreen() {
                 onRequestPress={handleRequestPress}
                 onAddAnother={handleAddFlat}
                 variant="sheet"
-                mode="resident"
                 title="Manage My Flats"
                 subtitle="Switch active flat or add another home"
             />

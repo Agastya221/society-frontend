@@ -35,13 +35,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useGateStore } from '@/store/useGateStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
-import { useProfileStore } from '@/store/useProfileStore';
-import { useQueryClient } from '@tanstack/react-query';
 import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft';
-import {
-    getActiveContextForRole,
-    hasRoleContexts,
-} from '@/utils/contextGuards';
 
 import ActivityCard from './ActivityCard';
 import { AdminActionSummary } from './AdminActionSummary';
@@ -65,6 +59,19 @@ function timeAgo(iso: string): string {
     if (diff < 60) return `${diff} min ago`;
     if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
     return `${Math.floor(diff / 1440)}d ago`;
+}
+
+function formatType(raw: string): string {
+    if (!raw) return 'Guest';
+    return raw
+        .split('_')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+}
+
+function shouldOpenAdminArea(redirectTo?: string, nextRole?: string | null): boolean {
+    const normalizedRole = nextRole?.toUpperCase();
+    return redirectTo === 'ADMIN_PANEL' || normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN';
 }
 
 function formatUserFlatLabel(user: any): string | null {
@@ -99,15 +106,7 @@ function getCountFromPayload(raw: any, fallback: number): number {
 export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const {
-        user,
-        role: authRole,
-        login,
-        userContexts,
-        selectedResidentContextId,
-        selectedAdminContextId,
-        setSelectedContextForRole,
-    } = useAuthStore();
+    const { user, role: authRole, login } = useAuthStore();
     const startAddMembershipFlow = useOnboardingStore((s) => s.startAddMembershipFlow);
     const startRequestCorrectionFlow = useOnboardingStore((s) => s.startRequestCorrectionFlow);
 
@@ -124,12 +123,8 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     } = useGateStore();
 
     const { unreadCount, fetchUnreadCount } = useNotificationStore();
+    const canShowAdminPill = isAdmin || authRole === 'ADMIN' || authRole === 'SUPER_ADMIN';
 
-    const availableRoles = hasRoleContexts(userContexts);
-    const canShowAdminPill = availableRoles.resident && availableRoles.admin;
-
-    const queryClient = useQueryClient();
-    const [switchingWorkspace, setSwitchingWorkspace] = useState(false);
     const [showPreApprove, setShowPreApprove] = useState(false);
     const [preApproveType, setPreApproveType] = useState<any>(undefined);
     const [refreshing, setRefreshing] = useState(false);
@@ -268,11 +263,9 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     const activityRoute = isAdmin ? '/(admin)/approval-requests' : '/(resident)/approvals';
     const sosRoute = isAdmin ? '/(admin)/sos-create' : '/(resident)/emergency/create';
     const quickActions = getQuickActionsForRole(role);
-    const allContexts = contextsData?.contexts ?? userContexts;
-    const selectedContextId = isAdmin ? selectedAdminContextId : selectedResidentContextId;
-    const activeContext = getActiveContextForRole(role, allContexts, selectedContextId);
+    const activeContext = contextsData?.activeContext ?? null;
     const contextTitle = activeContext?.label ?? formatUserFlatLabel(user) ?? societyName;
-    const canOpenContextSheet = allContexts.length > 0 || !contextsLoading;
+    const canOpenContextSheet = (contextsData?.contexts?.length ?? 0) > 0 || !contextsLoading;
     const pendingAdminActionsCount = pendingSocietyPasses.length + pendingOnboardingCount;
 
     const handleQuickAction = useCallback((route: string) => {
@@ -302,78 +295,8 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         }
     }, [nav, pendingSocietyPasses.length]);
 
-    const handleWorkspaceSwitch = useCallback(async () => {
-        const targetRole = isAdmin ? 'resident' : 'admin';
-        const targetContext = getActiveContextForRole(
-            targetRole,
-            allContexts,
-            targetRole === 'admin' ? selectedAdminContextId : selectedResidentContextId,
-        );
-
-        if (!targetContext) {
-            AppAlert.show(
-                'Switch Error',
-                `No alternate workspace found for ${targetRole === 'admin' ? 'Admin View' : 'Resident View'}.`
-            );
-            return;
-        }
-
-        setSwitchingWorkspace(true);
-        try {
-            // 1. Invoke Switch Context API
-            const result = await switchResidentContext(targetContext.membershipId);
-            await setSelectedContextForRole(targetRole, targetContext.membershipId);
-
-            // 2. Reset Zustand Stores to clear stale data
-            useGateStore.getState().reset();
-            useProfileStore.getState().reset();
-            useNotificationStore.getState().reset();
-
-            // 3. Invalidate query cache
-            await queryClient.invalidateQueries({ queryKey: ['onboarding'] });
-
-            // 4. Update Global Auth state with new JWT, User role and Contexts
-            await login(
-                result.accessToken,
-                result.refreshToken,
-                result.user,
-                result.appType,
-                false,
-                null,
-                result.contexts?.contexts ?? userContexts
-            );
-
-            // 5. Navigate to the requested workspace root. The backend user role can remain admin
-            // for dual-role users, so the selected target role is the source of truth here.
-            const targetRoute = targetRole === 'admin' ? '/(admin)' : '/(resident)/home';
-            router.replace(targetRoute as any);
-        } catch (error: any) {
-            console.error('Failed to switch workspace:', error);
-            AppAlert.show(
-                'Workspace Switch Failed',
-                error?.response?.data?.message || 'We could not switch your workspace right now. Please verify your connection.'
-            );
-        } finally {
-            setSwitchingWorkspace(false);
-        }
-    }, [
-        isAdmin,
-        allContexts,
-        selectedAdminContextId,
-        selectedResidentContextId,
-        setSelectedContextForRole,
-        userContexts,
-        login,
-        router,
-        queryClient,
-    ]);
-
     const handleSwitchContext = useCallback(async (context: ResidentContext) => {
-        const targetRole = role;
-        const sameRoleActive =
-            activeContext?.membershipId === context.membershipId || context.isActiveContext;
-
-        if (sameRoleActive || switchingContextId) {
+        if (context.isActiveContext || switchingContextId) {
             setShowContextSheet(false);
             return;
         }
@@ -381,11 +304,6 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         setSwitchingContextId(context.membershipId);
         try {
             const result = await switchResidentContext(context.membershipId);
-            await setSelectedContextForRole(targetRole, context.membershipId);
-            useGateStore.getState().reset();
-            useProfileStore.getState().reset();
-            useNotificationStore.getState().reset();
-            await queryClient.invalidateQueries({ queryKey: ['onboarding'] });
             await login(
                 result.accessToken,
                 result.refreshToken,
@@ -393,14 +311,14 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                 result.appType,
                 false,
                 null,
-                result.contexts?.contexts ?? userContexts,
             );
             setContextsData(result.contexts);
             setShowContextSheet(false);
 
-            const targetRoute = targetRole === 'admin' ? '/(admin)' : '/(resident)/home';
+            const nextIsAdmin = shouldOpenAdminArea(result.redirectTo, result.user?.role);
+            const targetRoute = nextIsAdmin ? '/(admin)' : '/(resident)/home';
 
-            if (targetRole !== role) {
+            if (nextIsAdmin !== isAdmin) {
                 router.replace(targetRoute as any);
                 return;
             }
@@ -408,7 +326,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
             await Promise.allSettled([
                 fetchSharedData(),
                 fetchContexts(),
-                targetRole === 'admin' ? fetchAdminData() : Promise.resolve(),
+                nextIsAdmin ? fetchAdminData() : Promise.resolve(),
             ]);
         } catch (error: any) {
             AppAlert.show(
@@ -420,25 +338,17 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         }
     }, [
         switchingContextId,
-        role,
-        activeContext?.membershipId,
-        setSelectedContextForRole,
         login,
-        userContexts,
         fetchSharedData,
         fetchContexts,
         fetchAdminData,
+        isAdmin,
         router,
-        queryClient,
     ]);
 
     const handleAddAnotherHome = useCallback(() => {
         setShowContextSheet(false);
-        if (role === 'admin') {
-            router.push('/(admin)/settings' as any);
-            return;
-        }
-        startAddMembershipFlow('/(resident)/profile');
+        startAddMembershipFlow(role === 'admin' ? '/(admin)/profile' : '/(resident)/profile');
         router.push('/(onboarding)/select-city' as any);
     }, [role, router, startAddMembershipFlow]);
 
@@ -503,8 +413,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                 currentRole={role}
                 onContextPress={() => setShowContextSheet(true)}
                 onNotificationPress={() => nav(notificationsRoute)}
-                onWorkspaceSwitch={handleWorkspaceSwitch}
-                switchingWorkspace={switchingWorkspace}
+                onWorkspaceSwitch={() => nav(isAdmin ? '/(resident)/home' : '/(admin)')}
             />
 
             <ScrollView
@@ -597,7 +506,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
 
             <ResidentContextPicker
                 visible={showContextSheet}
-                contexts={allContexts}
+                contexts={contextsData?.contexts ?? []}
                 requests={contextsData?.requests ?? []}
                 activeContext={activeContext}
                 isLoading={contextsLoading}
@@ -609,7 +518,6 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                 onAddAnother={handleAddAnotherHome}
                 variant="dropdown"
                 topOffset={insets.top + 88}
-                mode={role}
             />
 
             <ResidentRequestDetailsSheet

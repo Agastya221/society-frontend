@@ -34,11 +34,6 @@ import { ResidentContextPicker } from '@/components/context/ResidentContextPicke
 import { ResidentRequestDetailsSheet } from '@/components/context/ResidentRequestDetailsSheet';
 import { SettingRow } from '@/components/ui/SettingRow';
 import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft';
-import {
-    getActiveContextForRole,
-    getAdminContexts,
-    getResidentContexts,
-} from '@/utils/contextGuards';
 
 // Sub-components (from Resident profile)
 import { ProfileHeader } from '@/app/(resident)/profile/_components/ProfileHeader';
@@ -83,14 +78,7 @@ function shouldOpenAdminArea(redirectTo?: string, nextRole?: string | null): boo
 export default function SharedProfileScreen({ role }: SharedProfileScreenProps) {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const {
-        user,
-        logout,
-        login,
-        selectedResidentContextId,
-        selectedAdminContextId,
-        setSelectedContextForRole,
-    } = useAuthStore();
+    const { user, logout, login } = useAuthStore();
     const startAddMembershipFlow = useOnboardingStore((s) => s.startAddMembershipFlow);
     const startRequestCorrectionFlow = useOnboardingStore((s) => s.startRequestCorrectionFlow);
     const isAdmin = role === 'admin';
@@ -166,18 +154,11 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         ? `${displayUser.flat.block?.name ?? ''} ${displayUser.flat.number}`.trim()
         : null;
 
-    const scopedContexts = isAdmin
-        ? getAdminContexts(contextsData?.contexts ?? [])
-        : getResidentContexts(contextsData?.contexts ?? []);
-    const activeContext = getActiveContextForRole(
-        role,
-        scopedContexts,
-        isAdmin ? selectedAdminContextId : selectedResidentContextId,
-    );
+    const activeContext = contextsData?.activeContext ?? null;
     const activeHomeLabel = activeContext?.label ?? flatInfo ?? 'No flat assigned';
     const activeHomeSociety = activeContext?.societyName ?? displayUser.society?.name ?? null;
-    const contextCount = scopedContexts.length;
-    const requestCount = isAdmin ? 0 : (contextsData?.requests?.length ?? 0);
+    const contextCount = contextsData?.contexts?.length ?? 0;
+    const requestCount = contextsData?.requests?.length ?? 0;
     const manageHomesSubtitle = activeHomeSociety
         ? `${activeHomeLabel} - ${activeHomeSociety}`
         : activeHomeLabel;
@@ -250,13 +231,9 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
 
     const handleAddFlat = useCallback(() => {
         setShowContextSheet(false);
-        if (isAdmin) {
-            safePush(router, '/(admin)/settings');
-            return;
-        }
         startAddMembershipFlow(`${routePrefix}/profile`);
         safePush(router, '/(onboarding)/select-city');
-    }, [isAdmin, routePrefix, router, startAddMembershipFlow]);
+    }, [routePrefix, router, startAddMembershipFlow]);
 
     const handleSwitchContext = useCallback(async (context: ResidentContext) => {
         if (context.isActiveContext || switchingContextId) {
@@ -267,7 +244,6 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         setSwitchingContextId(context.membershipId);
         try {
             const result = await profileService.switchResidentContext(context.membershipId);
-            await setSelectedContextForRole(role, context.membershipId);
             await login(
                 result.accessToken,
                 result.refreshToken,
@@ -275,7 +251,6 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 result.appType,
                 false,
                 null,
-                result.contexts?.contexts ?? contextsData?.contexts ?? [],
             );
             setContextsData(result.contexts);
             useProfileStore.getState().invalidate();
@@ -299,17 +274,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         } finally {
             setSwitchingContextId(null);
         }
-    }, [
-        contextsData?.contexts,
-        fetchAll,
-        fetchContexts,
-        isAdmin,
-        login,
-        role,
-        router,
-        setSelectedContextForRole,
-        switchingContextId,
-    ]);
+    }, [fetchAll, fetchContexts, isAdmin, login, router, switchingContextId]);
 
     const handleRequestPress = useCallback((request: ResidentContextRequest) => {
         setShowContextSheet(false);
@@ -517,11 +482,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                         subtitle={manageHomesSubtitle}
                         badge={
                             contextCount > 1
-                                ? {
-                                    label: `${contextCount} Homes`,
-                                    color: SgateColors.goldDeep,
-                                    bg: SgateColors.goldPale,
-                                }
+                                ? { label: `${contextCount} Homes`, color: SgateColors.goldDeep, bg: SgateColors.goldPale }
                                 : requestCount > 0
                                     ? { label: `${requestCount} Pending`, color: '#996300', bg: SgateColors.goldPale }
                                 : activeContext
@@ -606,8 +567,8 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
 
             <ResidentContextPicker
                 visible={showContextSheet}
-                contexts={scopedContexts}
-                requests={isAdmin ? [] : (contextsData?.requests ?? [])}
+                contexts={contextsData?.contexts ?? []}
+                requests={contextsData?.requests ?? []}
                 activeContext={activeContext}
                 isLoading={contextsLoading}
                 switchingContextId={switchingContextId}
@@ -617,7 +578,6 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 onRequestPress={handleRequestPress}
                 onAddAnother={handleAddFlat}
                 variant="sheet"
-                mode={role}
                 title={isAdmin ? 'Manage Society Flats' : 'Manage My Flats'}
                 subtitle="Switch active flat or add another home"
             />

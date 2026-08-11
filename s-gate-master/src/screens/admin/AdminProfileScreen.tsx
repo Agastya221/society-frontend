@@ -21,6 +21,7 @@ import * as Linking from 'expo-linking';
 import { WorkspaceSwitchButton } from '@/components/ui/WorkspaceSwitchButton';
 import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import * as profileService from '@/services/profile.service';
 import type {
@@ -33,10 +34,6 @@ import { SettingRow } from '@/components/ui/SettingRow';
 import { ProfileHeader } from '@/app/(resident)/profile/_components/ProfileHeader';
 import { ProfileHeaderSkeleton } from '@/app/(resident)/profile/_components/SectionSkeleton';
 import { AddressCard } from '@/app/(resident)/profile/_components/AddressCard';
-import {
-    getActiveContextForRole,
-    getAdminContexts,
-} from '@/utils/contextGuards';
 
 function showToast(message: string) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -61,13 +58,9 @@ function shouldOpenAdminArea(redirectTo?: string, nextRole?: string | null): boo
 export default function AdminProfileScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const {
-        user,
-        logout,
-        login,
-        selectedAdminContextId,
-        setSelectedContextForRole,
-    } = useAuthStore();
+    const { user, logout, login } = useAuthStore();
+    const startAddMembershipFlow = useOnboardingStore((s) => s.startAddMembershipFlow);
+
     // Route prefix for navigation
     const routePrefix = '/(admin)';
 
@@ -125,8 +118,8 @@ export default function AdminProfileScreen() {
         ? `${displayUser.flat.block?.name ?? ''} ${displayUser.flat.number}`.trim()
         : null;
 
-    const adminContexts = getAdminContexts(contextsData?.contexts ?? []);
-    const activeContext = getActiveContextForRole('admin', adminContexts, selectedAdminContextId);
+    const adminContexts = contextsData?.contexts?.filter(c => c.role !== 'RESIDENT') ?? [];
+    const activeContext = adminContexts.find(c => c.isActiveContext) ?? null;
 
     const activeHomeLabel = activeContext?.label ?? flatInfo ?? 'No flat assigned';
     const activeHomeSociety = activeContext?.societyName ?? displayUser.society?.name ?? null;
@@ -184,8 +177,9 @@ export default function AdminProfileScreen() {
 
     const handleAddFlat = useCallback(() => {
         setShowContextSheet(false);
-        safePush(router, '/(admin)/settings');
-    }, [router]);
+        startAddMembershipFlow(`${routePrefix}/profile`);
+        safePush(router, '/(onboarding)/select-city');
+    }, [router, startAddMembershipFlow]);
 
     const handleSwitchContext = useCallback(async (context: ResidentContext) => {
         if (context.isActiveContext || switchingContextId) {
@@ -196,7 +190,6 @@ export default function AdminProfileScreen() {
         setSwitchingContextId(context.membershipId);
         try {
             const result = await profileService.switchResidentContext(context.membershipId);
-            await setSelectedContextForRole('admin', context.membershipId);
             await login(
                 result.accessToken,
                 result.refreshToken,
@@ -204,7 +197,6 @@ export default function AdminProfileScreen() {
                 result.appType,
                 false,
                 null,
-                result.contexts?.contexts ?? contextsData?.contexts ?? [],
             );
             setContextsData(result.contexts);
             useProfileStore.getState().invalidate();
@@ -228,15 +220,7 @@ export default function AdminProfileScreen() {
         } finally {
             setSwitchingContextId(null);
         }
-    }, [
-        contextsData?.contexts,
-        fetchAll,
-        fetchContexts,
-        login,
-        router,
-        setSelectedContextForRole,
-        switchingContextId,
-    ]);
+    }, [fetchAll, fetchContexts, login, router, switchingContextId]);
 
     const isFirstLoad = loading && !profile && !user;
 
@@ -469,7 +453,6 @@ export default function AdminProfileScreen() {
                 onRequestPress={() => {}}
                 onAddAnother={handleAddFlat}
                 variant="sheet"
-                mode="admin"
                 title="Manage Society Flats"
                 subtitle="Switch active flat or add another home"
             />
