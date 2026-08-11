@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { AudioPlayer, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 import { Tabs } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { AppState, Vibration, View } from 'react-native';
@@ -9,7 +9,7 @@ import { EmergencyProvider, useActiveEmergency } from '../../context/EmergencyCo
 
 function ResidentLayoutInner() {
   const { hasActiveEmergency, activeEmergency, dismissAlert } = useActiveEmergency();
-  const soundRef            = useRef<AudioPlayer | null>(null);
+  const soundRef            = useRef<Audio.Sound | null>(null);
   const vibrationInterval   = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── Emergency audio + vibration logic (unchanged) ─────────────────────────
@@ -19,24 +19,25 @@ function ResidentLayoutInner() {
 
     const setupAudio = async () => {
       try {
-        await setAudioModeAsync({
-          allowsRecording: false,
-          shouldPlayInBackground: false,
-          interruptionMode: 'doNotMix',
-          playsInSilentMode: true,
-          shouldRouteThroughEarpiece: false,
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          staysActiveInBackground: false,
+          interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: false,
+          interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+          playThroughEarpieceAndroid: false,
         });
-        const sound = createAudioPlayer(require('../../assets/sounds/emergency.mp3'));
-        sound.loop = true;
-        sound.volume = 1;
+        const { sound } = await Audio.Sound.createAsync(
+          require('../../assets/sounds/emergency.mp3'),
+          { isLooping: true, volume: 1.0 }
+        );
         if (isMounted) {
           soundRef.current = sound;
           if (hasActiveEmergency && AppState.currentState === 'active') {
             console.log('🔊 Playing sound...');
-            sound.play();
+            await sound.playAsync();
           }
-        } else {
-          sound.release();
         }
       } catch (error) {
         console.log('Error loading emergency sound:', error);
@@ -64,7 +65,7 @@ function ResidentLayoutInner() {
     } else {
       stopVibration();
       if (soundRef.current) {
-        soundRef.current.release();
+        soundRef.current.unloadAsync().catch(() => {});
         soundRef.current = null;
       }
     }
@@ -73,10 +74,10 @@ function ResidentLayoutInner() {
       if (hasActiveEmergency) {
         if (nextAppState === 'active') {
           startVibration();
-          soundRef.current?.play();
+          soundRef.current?.playAsync().catch(() => {});
         } else {
           stopVibration();
-          soundRef.current?.pause();
+          soundRef.current?.pauseAsync().catch(() => {});
         }
       }
     });
@@ -84,8 +85,7 @@ function ResidentLayoutInner() {
     return () => {
       isMounted = false;
       stopVibration();
-      soundRef.current?.release();
-      soundRef.current = null;
+      if (soundRef.current) soundRef.current.unloadAsync().catch(() => {});
       subscription.remove();
     };
   }, [hasActiveEmergency]);

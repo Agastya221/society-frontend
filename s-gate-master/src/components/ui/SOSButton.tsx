@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { AudioPlayer, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -46,7 +46,7 @@ export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: 
     const holdTimer = useRef<NodeJS.Timeout | null>(null);
 
     // Audio Refs
-    const sosSoundRef = useRef<AudioPlayer | null>(null);
+    const sosSoundRef = useRef<Audio.Sound | null>(null);
 
     // Init Audio
     useEffect(() => {
@@ -55,23 +55,22 @@ export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: 
         async function setupAudio() {
             try {
                 // Configure audio to duck others and play over silent switch
-                await setAudioModeAsync({
-                    playsInSilentMode: true,
-                    shouldPlayInBackground: false,
-                    interruptionMode: 'duckOthers',
+                await Audio.setAudioModeAsync({
+                    playsInSilentModeIOS: true,
+                    staysActiveInBackground: false,
+                    shouldDuckAndroid: true,
                 });
                 
-                const sos = createAudioPlayer(EMERGENCY_SOUND);
-                sos.volume = 1;
-                sos.loop = true;
+                const { sound: sos } = await Audio.Sound.createAsync(EMERGENCY_SOUND, { volume: 1.0 });
 
                 if (isMounted) {
                     sosSoundRef.current = sos;
+                    sosSoundRef.current.setIsLoopingAsync(true); // Loop it continuously just in case
                 } else {
-                    sos.release();
+                    sos.unloadAsync();
                 }
             } catch (error) {
-                console.warn('Emergency audio failed to load:', error);
+                console.warn('Audio.Sound failed to load:', error);
             }
         }
         
@@ -81,15 +80,14 @@ export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: 
             isMounted = false;
             Vibration.cancel(); // Stop any rogue vibration
             if (holdTimer.current) clearTimeout(holdTimer.current);
-            sosSoundRef.current?.release();
-            sosSoundRef.current = null;
+            sosSoundRef.current?.unloadAsync();
         };
     }, []);
 
     const playSiren = async () => {
         try {
-            await sosSoundRef.current?.seekTo(0);
-            sosSoundRef.current?.play();
+            await sosSoundRef.current?.setPositionAsync(0);
+            await sosSoundRef.current?.playAsync();
         } catch (e) {}
     };
 
@@ -134,7 +132,7 @@ export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: 
         ringOpacity.value = withTiming(0, { duration: 300 });
 
         // Kill audio and continuous vibration immediately
-        sosSoundRef.current?.pause();
+        sosSoundRef.current?.pauseAsync();
         Vibration.cancel();
         
         // Small failure haptic bump
