@@ -37,8 +37,6 @@ import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft'
 import {
     getActiveContextForRole,
     getAdminContexts,
-    getContextSubtitleForRole,
-    getContextTitleForRole,
     getResidentContexts,
 } from '@/utils/contextGuards';
 
@@ -176,12 +174,8 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
         scopedContexts,
         isAdmin ? selectedAdminContextId : selectedResidentContextId,
     );
-    const activeHomeLabel = activeContext
-        ? getContextTitleForRole(role, activeContext)
-        : flatInfo ?? (isAdmin ? 'No society assigned' : 'No flat assigned');
-    const activeHomeSociety = activeContext
-        ? getContextSubtitleForRole(role, activeContext)
-        : displayUser.society?.name ?? null;
+    const activeHomeLabel = activeContext?.label ?? flatInfo ?? 'No flat assigned';
+    const activeHomeSociety = activeContext?.societyName ?? displayUser.society?.name ?? null;
     const contextCount = scopedContexts.length;
     const requestCount = isAdmin ? 0 : (contextsData?.requests?.length ?? 0);
     const manageHomesSubtitle = activeHomeSociety
@@ -515,16 +509,16 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 <View style={styles.divider} />
 
                 {/* ── Manage Flats ────────────────────────────────────── */}
-                <Text style={styles.sectionTitle}>{isAdmin ? 'Society Workspace' : 'Manage Flats'}</Text>
+                <Text style={styles.sectionTitle}>Manage Flats</Text>
                 <View style={styles.card}>
                     <SettingRow
-                        icon={isAdmin ? 'shield-home' : 'home-city-outline'}
-                        title={isAdmin ? 'Manage Admin Societies' : 'Manage My Flats'}
+                        icon="home-city-outline"
+                        title={isAdmin ? 'Manage Society Flats' : 'Manage My Flats'}
                         subtitle={manageHomesSubtitle}
                         badge={
                             contextCount > 1
                                 ? {
-                                    label: `${contextCount} ${isAdmin ? 'Societies' : 'Homes'}`,
+                                    label: `${contextCount} Homes`,
                                     color: SgateColors.goldDeep,
                                     bg: SgateColors.goldPale,
                                 }
@@ -539,7 +533,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                     />
                     <SettingRow
                         icon="plus-circle-outline"
-                        title={isAdmin ? 'Add / Manage Society' : 'Add Flat/Villa/Office'}
+                        title="Add Flat/Villa/Office"
                         showDivider={false}
                         showChevron
                         onPress={handleAddFlat}
@@ -624,10 +618,8 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 onAddAnother={handleAddFlat}
                 variant="sheet"
                 mode={role}
-                title={isAdmin ? 'Your Societies' : 'Your Homes'}
-                subtitle={isAdmin ? 'Switch society/admin workspace' : 'Switch flat or society home'}
-                addTitle={isAdmin ? 'Add / Manage Society' : 'Add Flat/Villa/Office'}
-                addSubtitle={isAdmin ? 'Manage society access or switch admin society' : 'Join another approved society or flat'}
+                title={isAdmin ? 'Manage Society Flats' : 'Manage My Flats'}
+                subtitle="Switch active flat or add another home"
             />
 
             <ResidentRequestDetailsSheet

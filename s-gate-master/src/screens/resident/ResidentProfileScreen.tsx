@@ -37,8 +37,6 @@ import { SettingRow } from '@/components/ui/SettingRow';
 import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft';
 import {
     getActiveContextForRole,
-    getContextSubtitleForRole,
-    getContextTitleForRole,
     getResidentContexts,
 } from '@/utils/contextGuards';
 
@@ -155,8 +153,8 @@ export default function ResidentProfileScreen() {
     const residentContexts = getResidentContexts(contextsData?.contexts ?? []);
     const activeContext = getActiveContextForRole('resident', residentContexts, selectedResidentContextId);
 
-    const activeHomeLabel = activeContext ? getContextTitleForRole('resident', activeContext) : (flatInfo ?? 'No flat assigned');
-    const activeHomeSociety = activeContext ? getContextSubtitleForRole('resident', activeContext) : (displayUser.society?.name ?? null);
+    const activeHomeLabel = activeContext?.label ?? flatInfo ?? 'No flat assigned';
+    const activeHomeSociety = activeContext?.societyName ?? displayUser.society?.name ?? null;
     const contextCount = residentContexts.length;
     const requestCount = contextsData?.requests?.length ?? 0;
     const manageHomesSubtitle = activeHomeSociety
@@ -552,8 +550,8 @@ export default function ResidentProfileScreen() {
                 onAddAnother={handleAddFlat}
                 variant="sheet"
                 mode="resident"
-                title="Your Homes"
-                subtitle="Switch flat or society home"
+                title="Manage My Flats"
+                subtitle="Switch active flat or add another home"
             />
 
             <ResidentRequestDetailsSheet

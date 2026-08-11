@@ -36,8 +36,6 @@ import { AddressCard } from '@/app/(resident)/profile/_components/AddressCard';
 import {
     getActiveContextForRole,
     getAdminContexts,
-    getContextSubtitleForRole,
-    getContextTitleForRole,
 } from '@/utils/contextGuards';
 
 function showToast(message: string) {
@@ -130,8 +128,8 @@ export default function AdminProfileScreen() {
     const adminContexts = getAdminContexts(contextsData?.contexts ?? []);
     const activeContext = getActiveContextForRole('admin', adminContexts, selectedAdminContextId);
 
-    const activeHomeLabel = activeContext ? getContextTitleForRole('admin', activeContext) : (displayUser.society?.name ?? flatInfo ?? 'No society assigned');
-    const activeHomeSociety = activeContext ? getContextSubtitleForRole('admin', activeContext) : null;
+    const activeHomeLabel = activeContext?.label ?? flatInfo ?? 'No flat assigned';
+    const activeHomeSociety = activeContext?.societyName ?? displayUser.society?.name ?? null;
     const contextCount = adminContexts.length;
     const manageHomesSubtitle = activeHomeSociety
         ? `${activeHomeLabel} - ${activeHomeSociety}`
@@ -360,15 +358,15 @@ export default function AdminProfileScreen() {
                 <View style={styles.divider} />
 
                 {/* ── Manage Flats ────────────────────────────────────── */}
-                <Text style={styles.sectionTitle}>Society Workspace</Text>
+                <Text style={styles.sectionTitle}>Manage Flats</Text>
                 <View style={styles.card}>
                     <SettingRow
-                        icon="shield-home"
-                        title="Manage Admin Societies"
+                        icon="home-city-outline"
+                        title="Manage Society Flats"
                         subtitle={manageHomesSubtitle}
                         badge={
                             contextCount > 1
-                                ? { label: `${contextCount} Societies`, color: SgateColors.goldDeep, bg: SgateColors.goldPale }
+                                ? { label: `${contextCount} Homes`, color: SgateColors.goldDeep, bg: SgateColors.goldPale }
                                 : activeContext
                                     ? { label: 'Active', color: SgateColors.green, bg: SgateColors.greenBg }
                                     : undefined
@@ -378,7 +376,7 @@ export default function AdminProfileScreen() {
                     />
                     <SettingRow
                         icon="plus-circle-outline"
-                        title="Add / Manage Society"
+                        title="Add Flat/Villa/Office"
                         showDivider={false}
                         showChevron
                         onPress={handleAddFlat}
@@ -472,10 +470,8 @@ export default function AdminProfileScreen() {
                 onAddAnother={handleAddFlat}
                 variant="sheet"
                 mode="admin"
-                title="Your Societies"
-                subtitle="Switch society/admin workspace"
-                addTitle="Add / Manage Society"
-                addSubtitle="Manage society access or switch admin society"
+                title="Manage Society Flats"
+                subtitle="Switch active flat or add another home"
             />
 
             {/* ── Edit Profile Modal ──────────────────────────────────── */}

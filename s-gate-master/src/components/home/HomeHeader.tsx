@@ -62,11 +62,7 @@ export default function HomeHeader({
                             )}
                         </View>
                         <View style={styles.societyRow}>
-                            <MaterialCommunityIcons
-                                name={currentRole === 'admin' ? 'shield-account-outline' : 'map-marker'}
-                                size={12}
-                                color={currentRole === 'admin' ? SgateColors.goldDeep : '#F43F5E'}
-                            />
+                            <MaterialCommunityIcons name="map-marker" size={12} color="#F43F5E" />
                             <Text style={styles.societyText} numberOfLines={1}>
                                 {societyName}
                             </Text>

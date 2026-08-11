@@ -40,8 +40,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft';
 import {
     getActiveContextForRole,
-    getContextSubtitleForRole,
-    getContextTitleForRole,
     hasRoleContexts,
 } from '@/utils/contextGuards';
 
@@ -273,14 +271,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     const allContexts = contextsData?.contexts ?? userContexts;
     const selectedContextId = isAdmin ? selectedAdminContextId : selectedResidentContextId;
     const activeContext = getActiveContextForRole(role, allContexts, selectedContextId);
-    const contextTitle = activeContext
-        ? getContextTitleForRole(role, activeContext)
-        : isAdmin
-            ? societyName
-            : (formatUserFlatLabel(user) ?? societyName);
-    const contextSubtitle = activeContext
-        ? getContextSubtitleForRole(role, activeContext)
-        : societyName;
+    const contextTitle = activeContext?.label ?? formatUserFlatLabel(user) ?? societyName;
     const canOpenContextSheet = allContexts.length > 0 || !contextsLoading;
     const pendingAdminActionsCount = pendingSocietyPasses.length + pendingOnboardingCount;
 
@@ -505,7 +496,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         <View style={S.root}>
             <HomeHeader
                 towerName={contextTitle}
-                societyName={contextSubtitle}
+                societyName={societyName}
                 notificationCount={unreadCount}
                 canOpenContextSheet={canOpenContextSheet}
                 showWorkspaceSwitch={canShowAdminPill}

@@ -14,11 +14,7 @@ import {
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import type { ResidentContext, ResidentContextRequest } from '@/services/profile.service';
 import {
-    formatAdminRole,
-    formatResidentRelationship,
     getAdminContexts,
-    getContextSubtitleForRole,
-    getContextTitleForRole,
     getResidentContexts,
     isAdminContext,
     isResidentContext,
@@ -50,10 +46,12 @@ interface ResidentContextPickerProps {
     addSubtitle?: string;
 }
 
-function contextMeta(context: ResidentContext, mode: ContextPickerMode): string {
-    return mode === 'admin'
-        ? formatAdminRole(context)
-        : formatResidentRelationship(context);
+function contextMeta(context: ResidentContext): string {
+    if (context.role === 'ADMIN' || context.role === 'SUPER_ADMIN') return 'Society admin';
+    if (context.residentType === 'TENANT') return 'Tenant';
+    if (context.residentType === 'OWNER' && context.isLivingHere === false) return 'Non-residing owner';
+    if (context.residentType === 'OWNER') return 'Owner - Living here';
+    return context.role;
 }
 
 function roleIcon(context: ResidentContext, mode: ContextPickerMode) {
@@ -107,10 +105,10 @@ export function ResidentContextPicker({
     variant = 'sheet',
     topOffset = 96,
     mode = 'resident',
-    title,
-    subtitle,
-    addTitle,
-    addSubtitle,
+    title = 'Your Homes',
+    subtitle = 'Switch society, flat, or role',
+    addTitle = 'Add Flat/Villa/Office',
+    addSubtitle = 'Join another approved society or flat',
 }: ResidentContextPickerProps) {
     const isDropdown = variant === 'dropdown';
     const scopedContexts = mode === 'all'
@@ -119,39 +117,6 @@ export function ResidentContextPicker({
             ? getAdminContexts(contexts)
             : getResidentContexts(contexts);
     const scopedRequests = mode === 'admin' ? [] : requests;
-    const pickerTitle = title ?? (
-        mode === 'all'
-            ? 'Your Homes & Societies'
-            : mode === 'admin'
-                ? 'Your Societies'
-                : 'Your Homes'
-    );
-    const pickerSubtitle = subtitle ?? (
-        mode === 'all'
-            ? 'Switch flat, resident, or admin workspace'
-            : mode === 'admin'
-            ? 'Switch society/admin workspace'
-            : 'Switch flat or society home'
-    );
-    const emptyText = mode === 'all'
-        ? 'No homes or societies found yet'
-        : mode === 'admin'
-            ? 'No admin societies found yet'
-            : 'No approved homes found yet';
-    const ctaTitle = addTitle ?? (
-        mode === 'all'
-            ? 'Add / Manage Access'
-            : mode === 'admin'
-                ? 'Add / Manage Society'
-                : 'Add Flat/Villa/Office'
-    );
-    const ctaSubtitle = addSubtitle ?? (
-        mode === 'all'
-            ? 'Manage flats, societies, or access requests'
-            : mode === 'admin'
-            ? 'Manage society access or switch admin society'
-            : 'Join another approved society or flat'
-    );
 
     return (
         <Modal
@@ -173,8 +138,8 @@ export function ResidentContextPicker({
 
                     <View style={S.header}>
                         <View style={S.headerText}>
-                            <Text style={S.title}>{pickerTitle}</Text>
-                            <Text style={S.subtitle}>{pickerSubtitle}</Text>
+                            <Text style={S.title}>{title}</Text>
+                            <Text style={S.subtitle}>{subtitle}</Text>
                         </View>
                         <TouchableOpacity style={S.iconBtn} onPress={onRefresh} disabled={isLoading}>
                             {isLoading ? (
@@ -192,16 +157,11 @@ export function ResidentContextPicker({
                     >
                         {scopedContexts.length === 0 && scopedRequests.length === 0 && !isLoading ? (
                             <View style={S.empty}>
-                                <MaterialCommunityIcons
-                                    name={mode === 'admin' ? 'shield-search' : 'home-search-outline'}
-                                    size={26}
-                                    color={SgateColors.t4}
-                                />
-                                <Text style={S.emptyText}>{emptyText}</Text>
+                                <MaterialCommunityIcons name="home-search-outline" size={26} color={SgateColors.t4} />
+                                <Text style={S.emptyText}>No approved homes found yet</Text>
                             </View>
                         ) : (
                             scopedContexts.map((context) => {
-                                const displayRole = getDisplayRole(context, mode);
                                 const active =
                                     activeContext?.membershipId === context.membershipId ||
                                     context.isActiveContext;
@@ -224,16 +184,14 @@ export function ResidentContextPicker({
                                         </View>
                                         <View style={S.contextInfo}>
                                             <Text style={S.contextLabel} numberOfLines={1}>
-                                                {getContextTitleForRole(displayRole, context)}
+                                                {context.label}
                                             </Text>
                                             <Text style={S.contextSociety} numberOfLines={1}>
-                                                {getContextSubtitleForRole(displayRole, context)}
+                                                {context.societyName}
                                             </Text>
-                                            {displayRole === 'resident' && (
-                                                <Text style={S.contextMeta} numberOfLines={1}>
-                                                    {contextMeta(context, displayRole)}
-                                                </Text>
-                                            )}
+                                            <Text style={S.contextMeta} numberOfLines={1}>
+                                                {contextMeta(context)}
+                                            </Text>
                                         </View>
                                         {switching ? (
                                             <ActivityIndicator size="small" color={SgateColors.gold} />
@@ -287,8 +245,8 @@ export function ResidentContextPicker({
                                 <MaterialCommunityIcons name="plus" size={20} color={SgateColors.t1} />
                             </View>
                             <View style={S.contextInfo}>
-                                <Text style={S.addTitle}>{ctaTitle}</Text>
-                                <Text style={S.addSubtitle}>{ctaSubtitle}</Text>
+                                <Text style={S.addTitle}>{addTitle}</Text>
+                                <Text style={S.addSubtitle}>{addSubtitle}</Text>
                             </View>
                             <MaterialCommunityIcons name="chevron-right" size={20} color={SgateColors.t4} />
                         </TouchableOpacity>

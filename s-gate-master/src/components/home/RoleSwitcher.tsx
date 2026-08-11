@@ -16,7 +16,6 @@ export default function RoleSwitcher({
     disabled = false,
 }: RoleSwitcherProps) {
     const isAdminMode = currentRole === 'admin';
-    const targetLabel = isAdminMode ? 'Resident View' : 'Admin View';
 
     const handlePress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -34,13 +33,13 @@ export default function RoleSwitcher({
             activeOpacity={0.8}
         >
             <MaterialCommunityIcons
-                name={isAdminMode ? 'home-outline' : 'shield-account-outline'}
+                name={isAdminMode ? 'shield-account-outline' : 'home-outline'}
                 size={16}
-                color={SgateColors.t1}
+                color={isAdminMode ? SgateColors.goldDeep : SgateColors.t2}
                 style={styles.icon}
             />
             <Text style={[styles.text, isAdminMode ? styles.adminText : styles.residentText]}>
-                {targetLabel}
+                {isAdminMode ? 'Admin View' : 'Resident View'}
             </Text>
         </TouchableOpacity>
     );
