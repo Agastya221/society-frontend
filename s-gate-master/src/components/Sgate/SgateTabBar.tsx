@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
-import { Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -57,9 +57,12 @@ export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProp
   // Map the focused index based on our deduplicated visibleRoutes
   const focusedRouteName = state.routes[state.index]?.name;
   const focusedBaseName = getBaseName(focusedRouteName ?? '');
-  const focusedVisibleIndex = visibleRoutes.findIndex(
+  const matchedVisibleIndex = visibleRoutes.findIndex(
     r => getBaseName(r.name) === focusedBaseName
   );
+  const focusedVisibleIndex = matchedVisibleIndex >= 0
+    ? matchedVisibleIndex
+    : visibleRoutes.findIndex(r => getBaseName(r.name) === 'home');
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 10) }]}>
@@ -136,7 +139,7 @@ function SgateTab({ label, iconName, isFocused, options, onPress, onLongPress }:
     } else {
       iconScale.value = withSpring(1, { damping: 18, stiffness: 220 });
     }
-  }, [isFocused]);
+  }, [iconScale, isFocused, pillOpacity, pillScaleX]);
 
   const pillStyle = useAnimatedStyle(() => ({
     opacity: pillOpacity.value,
@@ -187,21 +190,10 @@ function SgateTab({ label, iconName, isFocused, options, onPress, onLongPress }:
 const styles = StyleSheet.create({
   container: {
     backgroundColor: SgateColors.card,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    paddingTop: 10,
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -8 },
-        shadowOpacity: 0.08,
-        shadowRadius: 24,
-      },
-      android: {
-        elevation: 14,
-      },
-    }),
+    borderTopWidth: 1,
+    borderTopColor: SgateColors.borderSoft,
+    paddingTop: 6,
+    elevation: 4,
   },
   tabRow: {
     flexDirection: 'row',
@@ -211,12 +203,12 @@ const styles = StyleSheet.create({
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: 0,
-    paddingBottom: 4,
+    paddingTop: 2,
+    paddingBottom: 2,
   },
   indicator: {
-    width: 24,
-    height: 4,
+    width: 20,
+    height: 3,
     borderRadius: 2,
     backgroundColor: SgateColors.gold,
     marginBottom: 6,
@@ -228,7 +220,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     textAlign: 'center',
     letterSpacing: 0,
   },

@@ -48,7 +48,7 @@ export default function DailyHelpTypeList() {
   const [helpers, setHelpers] = useState<DailyHelper[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchHelpers = async () => {
+  const fetchHelpers = useCallback(async () => {
     try {
       const res = await api.get('/resident/daily-help');
       const apiData = res.data?.data ?? res.data;
@@ -73,9 +73,9 @@ export default function DailyHelpTypeList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [type]);
 
-  useFocusEffect(useCallback(() => { fetchHelpers(); }, [type]));
+  useFocusEffect(useCallback(() => { fetchHelpers(); }, [fetchHelpers]));
 
   let filtered = helpers.filter(h => h.name.toLowerCase().includes(search.toLowerCase()));
   if (activeFilter === 'Inside') filtered = filtered.filter(h => h.isInside);
@@ -152,13 +152,13 @@ const s = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.borderSoft },
   headerTitle: { fontSize: 18, fontFamily: F.semiBold, color: C.t1, marginLeft: 12, flex: 1 },
   listContent: { padding: 16, paddingBottom: 40 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingHorizontal: 12, paddingVertical: 10, gap: 8, marginBottom: 12 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.borderSoft, paddingHorizontal: 14, minHeight: 48, gap: 8, marginBottom: 12 },
   searchInput: { flex: 1, fontFamily: F.regular, fontSize: 14, color: C.t1 },
   filtersRow: { flexDirection: 'row', gap: 8, marginBottom: 16, flexWrap: 'wrap' },
-  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 20, borderWidth: 1, borderColor: C.border, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: C.card },
-  filterChipActive: { backgroundColor: C.goldPale, borderColor: C.gold },
+  filterChip: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 20, borderWidth: 1, borderColor: C.borderSoft, paddingHorizontal: 12, paddingVertical: 7, backgroundColor: C.card },
+  filterChipActive: { backgroundColor: C.gold, borderColor: C.gold },
   filterChipText: { fontSize: 12, fontFamily: F.medium, color: C.t3 },
-  filterChipTextActive: { color: C.goldDeep },
+  filterChipTextActive: { color: C.t1 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.t3 },
   dotActive: { backgroundColor: C.green },
   card: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.borderSoft, padding: 14, marginBottom: 10, gap: 12 },

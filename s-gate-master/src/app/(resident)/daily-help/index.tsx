@@ -1,28 +1,16 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../../services/api';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const GAP = 12;
-const CARD_W = (SCREEN_W - 32 - GAP * 2) / 3;
-const CARD_H = CARD_W * 1.15;
+const CARD_H = 104;
 
-const C = { black: '#0D0F14', gold: '#FFB800', goldDeep: '#E5A500', goldPale: '#FFF8E1', green: '#00D68F', bg: '#F9FAFB', card: '#FFFFFF', surface: '#EEECEA', border: '#E5E3DE', borderSoft: '#F0EEEB', t1: '#0D0F14', t2: '#4A4D57', t3: '#8A8D97', t4: '#B5B8C0' };
-const F = { regular: 'Sora-Regular', medium: 'Sora-Medium', semiBold: 'Sora-SemiBold', bold: 'Sora-Bold' };
-
-interface DailyHelper {
-  id: string;
-  name: string;
-  type: string;
-  housesCount: number;
-  isInside: boolean;
-  isOpenToWork: boolean;
-  rating: number;
-}
+const C = SgateColors;
+const F = SgateFonts;
 
 interface DailyHelpType {
   type: string;
@@ -47,29 +35,6 @@ const TYPE_LABEL_MAP: Record<string, string> = {
   ELDERLY_CARETAKER: 'Caretaker', LAUNDRY: 'Laundry',
   CLEANER: 'Cleaner', GARDENER: 'Gardener'
 };
-
-function normaliseHelper(raw: any): DailyHelper {
-  return {
-    id:          raw.id,
-    name:        raw.name ?? '',
-    type:        raw.type ?? raw.staffType ?? '',
-    housesCount: raw.housesCount ?? 0,
-    isInside:    raw.isInside ?? raw.isCurrentlyWorking ?? false,
-    isOpenToWork: raw.isOpenToWork ?? false,
-    rating:      raw.rating ?? 0,
-  };
-}
-
-function FeaturedCard({ helper, onPress }: { helper: DailyHelper; onPress: () => void }) {
-  return (
-    <TouchableOpacity style={s.featuredCard} activeOpacity={0.75} onPress={onPress}>
-      <View style={s.featuredAvatar}><Text style={s.featuredAvatarText}>{helper.name.charAt(0)}</Text></View>
-      <Text style={s.featuredName} numberOfLines={1}>{helper.name}</Text>
-      <Text style={s.featuredMeta}>{helper.housesCount} Houses</Text>
-      {helper.isOpenToWork && <View style={s.openBadge}><Text style={s.openBadgeText}>Open to work</Text></View>}
-    </TouchableOpacity>
-  );
-}
 
 export default function DailyHelpIndex() {
   const router = useRouter();
@@ -151,26 +116,21 @@ const s = StyleSheet.create({
   headerTitle: { fontSize: 18, fontFamily: F.semiBold, color: C.t1, marginLeft: 12, flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
   
-  sectionTitle: { fontSize: 16, fontFamily: F.bold, color: C.t1, marginBottom: 16 },
+  sectionTitle: { fontSize: 12, fontFamily: F.bold, color: C.t3, letterSpacing: 1, marginBottom: 16, marginTop: 8 },
   
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: GAP },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', columnGap: '2%' as any, rowGap: 12 },
   gridItem: {
-    width: CARD_W,
+    width: '32%' as any,
     height: CARD_H,
     backgroundColor: C.card,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#EBEBEB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    borderColor: C.borderSoft,
   },
-  gridIconCircle: { width: 58, height: 58, borderRadius: 29, backgroundColor: C.goldPale, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  gridLabel: { fontSize: 14, fontFamily: F.semiBold, color: C.t1, textAlign: 'center' },
+  gridIconCircle: { width: 48, height: 48, borderRadius: 14, backgroundColor: C.goldPale, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  gridLabel: { fontSize: 11, lineHeight: 15, fontFamily: F.semibold, color: C.t1, textAlign: 'center' },
 
 
 });

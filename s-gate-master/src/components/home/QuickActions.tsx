@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, Platform } from 'react-native';
+import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
     useAnimatedStyle,
@@ -7,7 +7,7 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { HomeQuickAction } from './homeToolsConfig';
 
 interface QuickActionsProps {
@@ -87,7 +87,7 @@ function QuickActionCard({ icon, label, color, bg, onPress }: QuickActionCardPro
                 <View style={[styles.iconWrapper, { backgroundColor: bg }]}>
                     <MaterialCommunityIcons name={icon} size={28} color={color} />
                 </View>
-                <Text style={styles.label} numberOfLines={1}>
+                <Text style={styles.label} numberOfLines={2}>
                     {label}
                 </Text>
             </Animated.View>
@@ -114,40 +114,32 @@ const styles = StyleSheet.create({
         rowGap: 12,
     },
     item: {
-        width: '25%',
+        width: '33.3333%',
         paddingHorizontal: 6,
     },
     card: {
-        minHeight: 110,
-        borderRadius: 24,
-        backgroundColor: '#FFFFFF',
+        minHeight: 104,
+        borderRadius: 16,
+        backgroundColor: SgateColors.card,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 8,
         paddingVertical: 12,
-        gap: 10,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#101828',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.04,
-                shadowRadius: 20,
-            },
-            android: {
-                elevation: 2,
-            },
-        }),
+        gap: 8,
     },
     iconWrapper: {
-        width: 52,
-        height: 52,
-        borderRadius: 16,
+        width: 48,
+        height: 48,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
     },
     label: {
-        fontSize: 12,
-        fontFamily: SgateFonts.bold,
+        fontSize: 11,
+        lineHeight: 15,
+        fontFamily: SgateFonts.semibold,
         color: SgateColors.t1,
         textAlign: 'center',
         width: '100%',

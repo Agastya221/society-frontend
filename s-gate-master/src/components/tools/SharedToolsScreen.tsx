@@ -5,7 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
-import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 import { getSectionsForRole, getToolsForSection, type ToolRole, type ToolItem } from './toolsConfig';
 
@@ -166,8 +166,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'flex-start',
-        gap: '2%' as any,
-        rowGap: 16,
+        columnGap: '2%' as any,
+        rowGap: 12,
         marginBottom: 20,
     },
 
@@ -178,10 +178,11 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         borderWidth: 1,
         borderColor: SgateColors.borderSoft,
-        padding: 16,
+        paddingHorizontal: 10,
+        paddingVertical: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 100,
+        minHeight: 104,
     },
     iconWrap: {
         width: 48,
@@ -193,6 +194,7 @@ const styles = StyleSheet.create({
     },
     tileTitle: {
         fontSize: 11,
+        lineHeight: 15,
         fontFamily: SgateFonts.semibold,
         color: SgateColors.t1,
         textAlign: 'center',
