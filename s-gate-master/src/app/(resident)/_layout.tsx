@@ -1,14 +1,16 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { AppState, Vibration, View } from 'react-native';
 import { EmergencyOverlay } from '../../components/emergency/EmergencyOverlay';
 import { SgateTabBar } from '../../components/Sgate';
+import { ScreenTransitionMask } from '../../components/Sgate/ScreenTransitionMask';
 import { EmergencyProvider, useActiveEmergency } from '../../context/EmergencyContext';
 import { SgateColors } from '../../constants/Sgate-theme';
 
 function ResidentLayoutInner() {
+  const pathname = usePathname();
   const { hasActiveEmergency, activeEmergency, dismissAlert } = useActiveEmergency();
   const soundRef            = useRef<Audio.Sound | null>(null);
   const vibrationInterval   = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -105,7 +107,7 @@ function ResidentLayoutInner() {
         backBehavior="history"
         screenOptions={{
           headerShown: false,
-          animation: 'shift',
+          animation: 'none',
           sceneStyle: { backgroundColor: SgateColors.bg },
         }}
       >
@@ -174,6 +176,7 @@ function ResidentLayoutInner() {
         <Tabs.Screen name="my-passes/index"       options={{ href: null }} />
         <Tabs.Screen name="household"     options={{ href: null }} />
       </Tabs>
+      <ScreenTransitionMask key={pathname} />
     </View>
   );
 }
