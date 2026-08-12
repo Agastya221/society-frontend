@@ -1,10 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
-import api from '../../services/api';
-import { useAuthStore } from '../../store/useAuthStore';
 import { createGatePass, CreateGatePassPayload, GatePassResponse, GatePassType } from '../../services/gatePass';
 
 type GatePassTypeOption = {
@@ -35,7 +33,6 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
     const [validFrom, setValidFrom] = useState(new Date());
     const [validUntil, setValidUntil] = useState(new Date(new Date().setHours(new Date().getHours() + 4))); // Default +4 hours
     const [companyName, setCompanyName] = useState('');
-    const [selectedFlatId, setSelectedFlatId] = useState('');
 
     // Picker State
     const [showFromPicker, setShowFromPicker] = useState(false);
@@ -58,11 +55,6 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
             return;
         }
 
-        if (role === 'ADMIN' && !selectedFlatId) {
-            AppAlert.show('Error', 'Please select a flat');
-            return;
-        }
-
         setIsLoading(true);
 
         try {
@@ -74,11 +66,6 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
                 validUntil: validUntil.toISOString(),
                 companyName: companyName.trim() || null,
             };
-
-            // Add flatId only if role is ADMIN
-            if (role === 'ADMIN') {
-                payload.flatId = selectedFlatId;
-            }
 
             const result = await createGatePass(payload);
             
@@ -110,104 +97,18 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
         }
     };
 
-    interface FlatOption {
-        id: string;
-        number: string;
-        block: string;
-        ownerName: string;
-    }
-
-    const user = useAuthStore(s => s.user);
-    const [flatOptions, setFlatOptions] = useState<FlatOption[]>([]);
-
-    useEffect(() => {
-        if (role !== 'ADMIN') return;
-        const societyId = user?.societyId;
-        if (!societyId) return;
-
-        const loadFlats = async () => {
-            try {
-                const blocksRes = await api.get(
-                    `/resident/onboarding/societies/${societyId}/blocks`
-                );
-                const blocks: { id: string; name: string }[] =
-                    blocksRes.data?.data ?? [];
-
-                const all: FlatOption[] = [];
-                await Promise.all(
-                    blocks.map(async block => {
-                        try {
-                            const flatsRes = await api.get(
-                                `/resident/onboarding/societies/${societyId}/blocks/${block.id}/flats`
-                            );
-                            const blockFlats = (flatsRes.data?.data ?? [])
-                                .map((f: any) => ({
-                                    id: String(f?.id ?? ''),
-                                    number: String(f?.flatNumber ?? f?.number ?? ''),
-                                    block: String(f?.blockName ?? block?.name ?? ''),
-                                    ownerName: String(f?.ownerName ?? ''),
-                                }))
-                                .filter((flat: FlatOption) => flat.id && flat.number);
-                            all.push(...blockFlats);
-                        } catch {
-                            // skip
-                        }
-                    })
-                );
-
-                all.sort((a, b) =>
-                    a.block.localeCompare(b.block, undefined, { numeric: true }) ||
-                    a.number.localeCompare(b.number, undefined, { numeric: true })
-                );
-                setFlatOptions(all);
-                if (all.length > 0) setSelectedFlatId(all[0].id);
-            } catch (err) {
-                console.error('Failed to load flats:', err);
-            }
-        };
-
-        loadFlats();
-    }, [role, user?.societyId]);
-
-    const selectedFlat = flatOptions.find(f => f.id === selectedFlatId);
-
     return (
         <View className="flex-1 bg-white dark:bg-zinc-900">
             <ScrollView className="flex-1 p-5">
-                {/* Flat Selector - Admin Only */}
+                {/* Admin passes are issued by the society, not a flat. */}
                 {role === 'ADMIN' && (
                     <View className="mb-6">
                         <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
-                            Select Flat <Text className="text-red-500">*</Text>
+                            Issued By
                         </Text>
                         <View className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-4">
-                            <Text className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
-                                {selectedFlat ? `${selectedFlat.block}-${selectedFlat.number}` : 'Select Flat'}
-                            </Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row gap-2">
-                                {flatOptions.map((flat) => (
-                                    <TouchableOpacity
-                                        key={flat.id}
-                                        onPress={() => setSelectedFlatId(flat.id)}
-                                        className={`px-4 py-3 rounded-lg border-2 ${
-                                            selectedFlatId === flat.id
-                                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                                : 'border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800'
-                                        }`}
-                                    >
-                                        <Text className={`font-bold text-sm ${
-                                            selectedFlatId === flat.id ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300'
-                                        }`}>
-                                            {flat.block}-{flat.number}
-                                        </Text>
-                                        <Text className={`text-xs mt-1 ${
-                                            selectedFlatId === flat.id ? 'text-blue-500' : 'text-gray-500'
-                                        }`}>
-                                            {flat.ownerName}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
+                            <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">Society Administration</Text>
+                            <Text className="text-sm text-gray-500 dark:text-gray-400 mt-1">This pass applies to the society and is not linked to a flat.</Text>
                         </View>
                     </View>
                 )}

@@ -23,6 +23,8 @@ interface Resident {
     name: string;
     mobile: string;
     flatId: string;
+    flatNumber?: string;
+    blockName?: string;
     type: 'OWNER' | 'RENTER' | 'FAMILY';
     agreementUrl?: string | null;
 }
@@ -54,15 +56,18 @@ export default function ResidentsScreen() {
             params: { status: 'APPROVED', page: 1, limit: 100 },
         })
             .then(res => {
-                const raw = res.data?.data ?? [];
+                const payload = res.data?.data;
+                const raw = Array.isArray(payload) ? payload : payload?.requests ?? [];
                 const mapped: Resident[] = raw.map((r: any) => ({
-                    id: r.id,
-                    name: r.user?.name ?? '',
-                    mobile: r.user?.phone ?? '',
-                    flatId: r.flatId,
+                    id: String(r?.resident?.id ?? r?.user?.id ?? r?.id ?? ''),
+                    name: String(r?.resident?.name ?? r?.user?.name ?? 'Resident'),
+                    mobile: String(r?.resident?.phone ?? r?.user?.phone ?? ''),
+                    flatId: String(r?.flatId ?? r?.flat?.id ?? ''),
+                    flatNumber: String(r?.flat?.flatNumber ?? ''),
+                    blockName: String(r?.flat?.block ?? r?.block?.name ?? ''),
                     type: r.residentType === 'TENANT' ? 'RENTER' : 'OWNER',
                     agreementUrl: null,
-                }));
+                })).filter((resident: Resident) => resident.id);
                 setResidents(mapped);
             })
             .catch(console.error);
@@ -240,7 +245,9 @@ export default function ResidentsScreen() {
                                 <View style={styles.metaRow}>
                                     <MaterialCommunityIcons name="home-outline" size={14} color={SgateColors.t3} />
                                     <Text style={styles.metaText}>
-                                        Flat {flat ? `${flat.number} (${flat.block})` : 'Unknown'}
+                                        Flat {flat
+                                            ? `${flat.number} (${flat.block})`
+                                            : [item.blockName, item.flatNumber].filter(Boolean).join('-') || 'Unknown'}
                                     </Text>
                                     {item.type === 'RENTER' && (
                                         <View style={styles.agreementBadge}>

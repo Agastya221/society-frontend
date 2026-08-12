@@ -11,7 +11,7 @@ export default function AdminTabsLayout() {
             backBehavior="history"
             screenOptions={{
                 headerShown: false,
-                animation: 'none',
+                animation: 'shift',
                 sceneStyle: { backgroundColor: SgateColors.bg },
             }}
         >

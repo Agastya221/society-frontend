@@ -105,7 +105,7 @@ function ResidentLayoutInner() {
         backBehavior="history"
         screenOptions={{
           headerShown: false,
-          animation: 'none',
+          animation: 'shift',
           sceneStyle: { backgroundColor: SgateColors.bg },
         }}
       >
