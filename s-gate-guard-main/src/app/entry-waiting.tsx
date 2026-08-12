@@ -1,4 +1,5 @@
 import api from '@/services/api';
+import { GuardColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
@@ -18,7 +19,6 @@ import {
 } from 'react-native';
 import Animated, {
     Easing,
-    FadeIn,
     useAnimatedStyle,
     useSharedValue,
     withRepeat,
@@ -54,7 +54,7 @@ function resolvePhase(status: string): Phase | null {
 
 // ─── Pulsing ring ─────────────────────────────────────────────────────────────
 
-function PulseRing({ delay, color }: { delay: number; color: string }) {
+function PulseRing({ color }: { color: string }) {
     const scale   = useSharedValue(1);
     const opacity = useSharedValue(0.5);
 
@@ -64,16 +64,16 @@ function PulseRing({ delay, color }: { delay: number; color: string }) {
                 withTiming(1,    { duration: 0 }),
                 withTiming(1.55, { duration: 1400, easing: Easing.out(Easing.ease) }),
             ),
-            -1, false, undefined, delay,
+            -1, false,
         );
         opacity.value = withRepeat(
             withSequence(
                 withTiming(0.5, { duration: 0 }),
                 withTiming(0,   { duration: 1400, easing: Easing.out(Easing.ease) }),
             ),
-            -1, false, undefined, delay,
+            -1, false,
         );
-    }, []);
+    }, [opacity, scale]);
 
     const style = useAnimatedStyle(() => ({
         position: 'absolute',
@@ -115,7 +115,7 @@ export default function EntryWaitingScreen() {
         id: string; flat: string; name: string; type: string; photo: string;
     }>();
 
-    const { id, flat, name, type, photo } = params;
+    const { id, flat, type, photo } = params;
     const photoUri = photo && photo.length > 0 ? decodeURIComponent(photo) : null;
 
     const [phase,     setPhase]     = useState<Phase>('waiting');
@@ -126,11 +126,6 @@ export default function EntryWaitingScreen() {
     const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
     const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
     const settled   = useRef(false);
-
-    // ── Fix #2: no entry ID ───────────────────────────────────────────────────
-    if (!id) {
-        return <NoIdError onBack={() => router.replace('/approvals' as any)} />;
-    }
 
     const stopAll = useCallback(() => {
         if (pollRef.current)  clearInterval(pollRef.current);
@@ -162,8 +157,9 @@ export default function EntryWaitingScreen() {
             // Fallback: check pending list
             try {
                 const listRes = await api.get('/api/v1/gate/entry-requests?status=PENDING');
+                const payload = listRes.data?.data;
                 const requests: any[] =
-                    listRes.data?.data?.entries ?? listRes.data?.data ?? [];
+                    payload?.entryRequests ?? payload?.entries ?? (Array.isArray(payload) ? payload : []);
                 const match = requests.find((r: any) => r.id === id);
                 if (match) {
                     const resolved = resolvePhase(match.status);
@@ -195,7 +191,7 @@ export default function EntryWaitingScreen() {
             });
         }, 1000);
         return stopAll;
-    }, []);
+    }, [stopAll]);
 
     // ── Polling interval ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -275,9 +271,13 @@ export default function EntryWaitingScreen() {
     const goDashboard = () => router.replace('/');
 
     // ── Result screens ────────────────────────────────────────────────────────
+    if (!id) {
+        return <NoIdError onBack={() => router.replace('/approvals' as any)} />;
+    }
+
     if (phase === 'approved') {
         return (
-            <Animated.View entering={FadeIn.duration(300)} style={[S.resultRoot, { backgroundColor: '#059669' }]}>
+            <View style={[S.resultRoot, { backgroundColor: '#059669' }]}>
                 <View style={[S.resultContent, { paddingTop: insets.top + 24 }]}>
                     <Ionicons name="checkmark-circle" size={96} color="#fff" />
                     <Text style={S.resultTitle}>Entry Approved</Text>
@@ -293,13 +293,13 @@ export default function EntryWaitingScreen() {
                         <Text style={S.resultBtnPrimaryText}>Dashboard</Text>
                     </TouchableOpacity>
                 </View>
-            </Animated.View>
+            </View>
         );
     }
 
     if (phase === 'denied') {
         return (
-            <Animated.View entering={FadeIn.duration(300)} style={[S.resultRoot, { backgroundColor: '#DC2626' }]}>
+            <View style={[S.resultRoot, { backgroundColor: '#DC2626' }]}>
                 <View style={[S.resultContent, { paddingTop: insets.top + 24 }]}>
                     <Ionicons name="close-circle" size={96} color="#fff" />
                     <Text style={S.resultTitle}>Entry Denied</Text>
@@ -315,7 +315,7 @@ export default function EntryWaitingScreen() {
                         <Text style={S.resultBtnPrimaryText}>Dashboard</Text>
                     </TouchableOpacity>
                 </View>
-            </Animated.View>
+            </View>
         );
     }
 
@@ -348,7 +348,7 @@ export default function EntryWaitingScreen() {
                 {/* Fix #1: next visitor shortcut */}
                 <TouchableOpacity style={S.nextBtn} onPress={handleNextVisitor}>
                     <Text style={S.nextBtnText}>Next</Text>
-                    <Ionicons name="chevron-forward" size={14} color="#3B82F6" />
+                    <Ionicons name="chevron-forward" size={14} color={GuardColors.goldDeep} />
                 </TouchableOpacity>
             </View>
 
@@ -366,9 +366,7 @@ export default function EntryWaitingScreen() {
             <View style={S.photoWrap}>
                 {!isTimeout && (
                     <>
-                        <PulseRing delay={0}   color="#3B82F6" />
-                        <PulseRing delay={480} color="#3B82F6" />
-                        <PulseRing delay={960} color="#3B82F6" />
+                        <PulseRing color={GuardColors.goldDeep} />
                     </>
                 )}
                 {photoUri ? (
@@ -382,7 +380,7 @@ export default function EntryWaitingScreen() {
                                 type === 'SERVICE'  ? 'construct' : 'person'
                             }
                             size={52}
-                            color="#3B82F6"
+                            color={GuardColors.goldDeep}
                         />
                     </View>
                 )}
@@ -398,7 +396,7 @@ export default function EntryWaitingScreen() {
                             type === 'SERVICE'  ? 'construct' : 'person'
                         }
                         size={14}
-                        color="#3B82F6"
+                        color={GuardColors.goldDeep}
                     />
                     <Text style={S.typeBadgeText}>{typeDisplayLabel(type)}</Text>
                 </View>
@@ -412,7 +410,7 @@ export default function EntryWaitingScreen() {
             <View style={S.statusSection}>
                 {!isTimeout ? (
                     <>
-                        <ActivityIndicator size="small" color="#3B82F6" style={{ marginBottom: 10 }} />
+                        <ActivityIndicator size="small" color={GuardColors.goldDeep} style={{ marginBottom: 10 }} />
                         <Text style={S.statusText}>Waiting for resident to respond…</Text>
                         <View style={S.timerBadge}>
                             <Text style={S.timerText}>{remaining}s remaining</Text>
@@ -431,12 +429,9 @@ export default function EntryWaitingScreen() {
 
             {/* ── Override buttons — timeout only ───────────────────────── */}
             {isTimeout && (
-                <Animated.View
-                    entering={FadeIn.duration(250)}
-                    style={[S.overrideRow, { paddingBottom: insets.bottom + 16 }]}
-                >
+                <View style={[S.overrideRow, { paddingBottom: insets.bottom + 16 }]}>
                     <Pressable
-                        style={({ pressed }) => [S.denyBtn, pressed && S.btnPressed]}
+                        style={S.denyBtn}
                         onPress={handleDeny}
                         disabled={actioning}
                     >
@@ -449,7 +444,7 @@ export default function EntryWaitingScreen() {
                         }
                     </Pressable>
                     <Pressable
-                        style={({ pressed }) => [S.allowBtn, pressed && S.btnPressed]}
+                        style={S.allowBtn}
                         onPress={handleAllow}
                         disabled={actioning}
                     >
@@ -461,7 +456,7 @@ export default function EntryWaitingScreen() {
                               </>
                         }
                     </Pressable>
-                </Animated.View>
+                </View>
             )}
         </View>
     );
@@ -472,7 +467,7 @@ export default function EntryWaitingScreen() {
 const S = StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: GuardColors.bg,
         alignItems: 'center',
     },
 
@@ -496,7 +491,7 @@ const S = StyleSheet.create({
     // Fix #1 — "Next" button
     nextBtn: {
         flexDirection: 'row', alignItems: 'center', gap: 2,
-        backgroundColor: '#EFF6FF',
+        backgroundColor: GuardColors.goldPale,
         paddingHorizontal: 12, paddingVertical: 8,
         borderRadius: 20, borderWidth: 1, borderColor: '#BFDBFE',
     },
@@ -534,7 +529,7 @@ const S = StyleSheet.create({
     avatarFallback: {
         width: PHOTO_SIZE, height: PHOTO_SIZE,
         borderRadius: PHOTO_SIZE / 2,
-        backgroundColor: '#EFF6FF',
+        backgroundColor: GuardColors.goldPale,
         alignItems: 'center', justifyContent: 'center',
         borderWidth: 4, borderColor: '#fff',
         ...Platform.select({
@@ -549,7 +544,7 @@ const S = StyleSheet.create({
     },
     typeBadge: {
         flexDirection: 'row', alignItems: 'center', gap: 5,
-        backgroundColor: '#EFF6FF', paddingHorizontal: 12, paddingVertical: 6,
+        backgroundColor: GuardColors.goldPale, paddingHorizontal: 12, paddingVertical: 6,
         borderRadius: 20, borderWidth: 1, borderColor: '#BFDBFE',
     },
     typeBadgeText: {
@@ -573,7 +568,7 @@ const S = StyleSheet.create({
         fontSize: 13, fontWeight: '500', color: '#9CA3AF', textAlign: 'center',
     },
     timerBadge: {
-        backgroundColor: '#EFF6FF', paddingHorizontal: 14, paddingVertical: 6,
+        backgroundColor: GuardColors.goldPale, paddingHorizontal: 14, paddingVertical: 6,
         borderRadius: 20, borderWidth: 1, borderColor: '#BFDBFE',
     },
     timerText: {
@@ -648,7 +643,7 @@ const S = StyleSheet.create({
 
     // ── Next visitor button (NoIdError) ────────────────────────────────────────
     nextVisitorBtn: {
-        backgroundColor: '#3B82F6', paddingHorizontal: 32,
+        backgroundColor: GuardColors.gold, paddingHorizontal: 32,
         paddingVertical: 14, borderRadius: 14,
     },
     nextVisitorText: { fontSize: 15, fontWeight: '800', color: '#fff' },

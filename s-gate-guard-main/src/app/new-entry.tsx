@@ -1,4 +1,5 @@
 import api from '@/services/api';
+import { GuardColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
@@ -29,10 +30,10 @@ const { width: SW } = Dimensions.get('window');
 type VType = 'GUEST' | 'DELIVERY' | 'CAB' | 'SERVICE';
 
 const VISITOR_TYPES: { type: VType; label: string; icon: any; color: string; apiValue: string }[] = [
-    { type: 'GUEST',    label: 'Guest',    icon: 'person',    color: '#3B82F6', apiValue: 'GUEST' },
-    { type: 'DELIVERY', label: 'Delivery', icon: 'cube',      color: '#F59E0B', apiValue: 'DELIVERY_PERSON' },
-    { type: 'CAB',      label: 'Cab',      icon: 'car',       color: '#10B981', apiValue: 'CAB_DRIVER' },
-    { type: 'SERVICE',  label: 'Service',  icon: 'construct', color: '#8B5CF6', apiValue: 'SERVICE_PROVIDER' },
+    { type: 'GUEST',    label: 'Guest',    icon: 'person',    color: '#3B82F6', apiValue: 'VISITOR' },
+    { type: 'DELIVERY', label: 'Delivery', icon: 'cube',      color: '#F59E0B', apiValue: 'DELIVERY' },
+    { type: 'CAB',      label: 'Cab',      icon: 'car',       color: '#10B981', apiValue: 'CAB' },
+    { type: 'SERVICE',  label: 'Service',  icon: 'construct', color: '#8B5CF6', apiValue: 'VENDOR' },
 ];
 
 type ProviderTag = 'SWIGGY' | 'ZOMATO' | 'AMAZON' | 'BLINKIT' | 'FLIPKART' | 'BIGBASKET' | 'DUNZO' | 'OTHER';
@@ -55,6 +56,33 @@ interface FlatResult {
     wing?: string;
     floor?: number;
     residents?: { name: string }[];
+}
+
+// Keep the most recently selected units available while the guard app is open.
+// This makes a queue for the same building much faster without another API call.
+let recentFlatsCache: FlatResult[] = [];
+
+async function uploadEntryPhoto(uri: string): Promise<string> {
+    const localResponse = await fetch(uri);
+    const blob = await localResponse.blob();
+    const mimeType = blob.type || 'image/jpeg';
+    const fileName = `visitor-${Date.now()}.jpg`;
+    const presigned = await api.post('/api/v1/upload/presigned-url', {
+        context: 'entry-photo',
+        fileName,
+        mimeType,
+        fileSize: blob.size,
+    });
+    const { uploadUrl, s3Key } = presigned.data?.data ?? {};
+    if (!uploadUrl || !s3Key) throw new Error('Photo upload could not be prepared');
+
+    const uploaded = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': mimeType },
+        body: blob,
+    });
+    if (!uploaded.ok) throw new Error('Photo upload failed');
+    return s3Key;
 }
 
 // ─── Camera Modal ─────────────────────────────────────────────────────────────
@@ -84,7 +112,7 @@ function CameraModal({
         setTaking(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         try {
-            const photo = await cameraRef.current.takePictureAsync({ quality: 0.75, skipProcessing: true });
+            const photo = await cameraRef.current.takePictureAsync({ quality: 0.6, skipProcessing: true });
             if (photo?.uri) setCaptured(photo.uri);
         } finally {
             setTaking(false);
@@ -169,6 +197,7 @@ export default function NewEntryScreen() {
     const [flatResults, setFlatResults] = useState<FlatResult[]>([]);
     const [searchingFlat, setSearchingFlat] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [recentFlats, setRecentFlats] = useState<FlatResult[]>(recentFlatsCache);
 
     // Photo
     const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -204,6 +233,8 @@ export default function NewEntryScreen() {
         setSelectedFlat(flat);
         setFlatSearch(flatLabel(flat));
         setShowDropdown(false);
+        recentFlatsCache = [flat, ...recentFlatsCache.filter((item) => item.id !== flat.id)].slice(0, 4);
+        setRecentFlats(recentFlatsCache);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     };
 
@@ -228,27 +259,11 @@ export default function NewEntryScreen() {
             };
             if (type === 'DELIVERY' && provider) payload.providerTag = provider;
 
-            let entryId: string | null = null;
-
             if (photoUri) {
-                // Multipart upload with photo
-                const form = new FormData();
-                form.append('type', vt.apiValue);
-                form.append('flatId', selectedFlat!.id);
-                if (type === 'DELIVERY' && provider) form.append('providerTag', provider);
-                form.append('photo', {
-                    uri: photoUri,
-                    type: 'image/jpeg',
-                    name: 'visitor.jpg',
-                } as any);
-                const res = await api.post('/api/v1/gate/entry-requests', form, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                });
-                entryId = res.data?.data?.id ?? null;
-            } else {
-                const res = await api.post('/api/v1/gate/entry-requests', payload);
-                entryId = res.data?.data?.id ?? null;
+                payload.photoKey = await uploadEntryPhoto(photoUri);
             }
+            const res = await api.post('/api/v1/gate/entry-requests', payload);
+            const entryId = res.data?.data?.entryRequest?.id ?? res.data?.data?.id ?? null;
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -282,6 +297,14 @@ export default function NewEntryScreen() {
                     keyboardShouldPersistTaps="handled"
                 >
 
+                    <View style={S.fastNote}>
+                        <View style={S.fastNoteIcon}><Ionicons name="flash" size={17} color={GuardColors.black} /></View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={S.fastNoteTitle}>Fast visitor entry</Text>
+                            <Text style={S.fastNoteText}>Choose a type and unit. Photo is optional.</Text>
+                        </View>
+                    </View>
+
                     {/* ── Visitor Type ──────────────────────────────────── */}
                     <Text style={S.sectionLabel}>VISITOR TYPE</Text>
                     <View style={S.typeGrid}>
@@ -290,13 +313,13 @@ export default function NewEntryScreen() {
                             return (
                                 <Pressable
                                     key={v.type}
-                                    style={[S.typeCard, active && { borderColor: v.color, backgroundColor: v.color + '0D' }]}
+                                    style={[S.typeCard, active && S.typeCardActive]}
                                     onPress={() => handleTypeChange(v.type)}
                                 >
-                                    <View style={[S.typeIconWrap, { backgroundColor: active ? v.color + '22' : '#F5F5F4' }]}>
-                                        <Ionicons name={v.icon} size={32} color={active ? v.color : '#9CA3AF'} />
+                                    <View style={[S.typeIconWrap, active && S.typeIconActive]}>
+                                        <Ionicons name={v.icon} size={23} color={active ? GuardColors.black : GuardColors.t3} />
                                     </View>
-                                    <Text style={[S.typeLabel, active && { color: v.color, fontWeight: '800' }]}>
+                                    <Text style={[S.typeLabel, active && S.typeLabelActive]}>
                                         {v.label}
                                     </Text>
                                 </Pressable>
@@ -308,7 +331,7 @@ export default function NewEntryScreen() {
                     {type === 'DELIVERY' && (
                         <>
                             <Text style={S.sectionLabel}>DELIVERY FROM</Text>
-                            <View style={S.providerGrid}>
+                            <ScrollView horizontal contentContainerStyle={S.providerGrid} showsHorizontalScrollIndicator={false}>
                                 {PROVIDERS.map((p) => {
                                     const active = provider === p.tag;
                                     return (
@@ -329,12 +352,25 @@ export default function NewEntryScreen() {
                                         </Pressable>
                                     );
                                 })}
-                            </View>
+                            </ScrollView>
                         </>
                     )}
 
                     {/* ── Flat Search ───────────────────────────────────── */}
                     <Text style={S.sectionLabel}>FLAT / UNIT</Text>
+                    {recentFlats.length > 0 && (
+                        <ScrollView horizontal contentContainerStyle={S.recentRow} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                            <View style={S.recentLabel}>
+                                <Ionicons name="time-outline" size={14} color={GuardColors.t2} />
+                                <Text style={S.recentLabelText}>Recent</Text>
+                            </View>
+                            {recentFlats.map((flat) => (
+                                <Pressable key={flat.id} style={S.recentChip} onPress={() => handleSelectFlat(flat)}>
+                                    <Text style={S.recentChipText}>{flatLabel(flat)}</Text>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
+                    )}
                     <View style={S.flatWrap}>
                         <View style={S.flatInputRow}>
                             <Ionicons name="home-outline" size={18} color="#9CA3AF" style={S.flatIcon} />
@@ -350,7 +386,7 @@ export default function NewEntryScreen() {
                                 autoCapitalize="characters"
                                 autoCorrect={false}
                             />
-                            {searchingFlat && <ActivityIndicator size="small" color="#3B82F6" style={{ marginRight: 12 }} />}
+                            {searchingFlat && <ActivityIndicator size="small" color={GuardColors.goldDeep} style={{ marginRight: 12 }} />}
                             {selectedFlat && (
                                 <View style={S.flatCheckmark}>
                                     <Ionicons name="checkmark-circle" size={20} color="#10B981" />
@@ -409,19 +445,21 @@ export default function NewEntryScreen() {
                     ) : (
                         <TouchableOpacity style={S.photoBtn} onPress={() => setCameraOpen(true)} activeOpacity={0.8}>
                             <View style={S.photoBtnIcon}>
-                                <Ionicons name="camera" size={32} color="#3B82F6" />
+                                <Ionicons name="camera" size={24} color={GuardColors.black} />
                             </View>
-                            <Text style={S.photoBtnTitle}>Take Visitor Photo</Text>
-                            <Text style={S.photoBtnSub}>Recommended — helps resident identify visitor</Text>
+                            <View style={S.photoBtnCopy}>
+                                <Text style={S.photoBtnTitle}>Add visitor photo</Text>
+                                <Text style={S.photoBtnSub}>Optional, but helps the resident identify them</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={19} color={GuardColors.t3} />
                         </TouchableOpacity>
                     )}
 
                     {/* ── Submit ────────────────────────────────────────── */}
                     <Pressable
-                        style={({ pressed }) => [
+                        style={[
                             S.submitBtn,
                             !canSubmit && S.submitBtnDisabled,
-                            pressed && canSubmit && S.submitBtnPressed,
                         ]}
                         onPress={handleSubmit}
                         disabled={!canSubmit || submitting}
@@ -461,112 +499,123 @@ function flatLabel(f: FlatResult): string {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const S = StyleSheet.create({
-    root: { flex: 1, backgroundColor: '#FAFBFC' },
-    scroll: { padding: 20, paddingBottom: 48 },
+    root: { flex: 1, backgroundColor: GuardColors.bg },
+    scroll: { padding: 20, paddingBottom: 36 },
+
+    fastNote: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 11,
+        backgroundColor: GuardColors.goldPale,
+        borderWidth: 1,
+        borderColor: '#F3D37A',
+        borderRadius: 16,
+        padding: 12,
+        marginBottom: 20,
+    },
+    fastNoteIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center' },
+    fastNoteTitle: { fontSize: 14, fontWeight: '900', color: GuardColors.t1, marginBottom: 2 },
+    fastNoteText: { fontSize: 12, lineHeight: 16, fontWeight: '600', color: GuardColors.t2 },
 
     sectionLabel: {
         fontSize: 12,
         fontWeight: '800',
-        color: '#9CA3AF',
+        color: GuardColors.t3,
         letterSpacing: 1.5,
-        marginBottom: 14,
+        marginBottom: 10,
         marginLeft: 2,
     },
 
-    // ── Type grid — 2×2 big tiles ─────────────────────────────────────────────
+    // ── Type grid — one-tap, single row ───────────────────────────────────────
     typeGrid: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
-        marginBottom: 28,
+        gap: 8,
+        marginBottom: 20,
     },
     typeCard: {
-        width: (SW - 52) / 2,
+        width: (SW - 64) / 4,
         alignItems: 'center',
         backgroundColor: '#fff',
-        borderRadius: 20,
-        paddingVertical: 22,
-        paddingHorizontal: 8,
-        borderWidth: 2.5,
-        borderColor: '#F0EEEB',
-        gap: 10,
-        ...Platform.select({
-            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10 },
-            android: { elevation: 2 },
-        }),
+        justifyContent: 'center',
+        borderRadius: 16,
+        height: 76,
+        paddingHorizontal: 4,
+        borderWidth: 1,
+        borderColor: GuardColors.border,
+        gap: 5,
     },
+    typeCardActive: { borderColor: GuardColors.goldDeep, backgroundColor: GuardColors.goldPale },
     typeIconWrap: {
-        width: 60,
-        height: 60,
-        borderRadius: 18,
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: GuardColors.surface,
         alignItems: 'center',
         justifyContent: 'center',
     },
+    typeIconActive: { backgroundColor: GuardColors.gold },
     typeLabel: {
-        fontSize: 15,
+        fontSize: 10,
         fontWeight: '700',
         color: '#6B7280',
         textAlign: 'center',
     },
+    typeLabelActive: { color: GuardColors.t1, fontWeight: '900' },
 
-    // ── Provider grid — 2 columns, bigger tiles ────────────────────────────────
+    // ── Provider shortcuts ─────────────────────────────────────────────────────
     providerGrid: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 10,
-        marginBottom: 28,
+        gap: 8,
+        paddingRight: 8,
+        marginBottom: 20,
     },
     providerCard: {
-        width: (SW - 50) / 2,
-        flexDirection: 'row',
+        width: 88,
         alignItems: 'center',
         backgroundColor: '#fff',
-        borderRadius: 16,
-        paddingVertical: 14,
-        paddingHorizontal: 14,
-        borderWidth: 2,
-        borderColor: '#F0EEEB',
-        gap: 12,
-        ...Platform.select({
-            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8 },
-            android: { elevation: 1 },
-        }),
+        borderRadius: 14,
+        paddingVertical: 10,
+        paddingHorizontal: 7,
+        borderWidth: 1,
+        borderColor: GuardColors.border,
+        gap: 6,
     },
     providerIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
+        width: 34,
+        height: 34,
+        borderRadius: 11,
         alignItems: 'center',
         justifyContent: 'center',
     },
     providerLabel: {
-        fontSize: 14,
+        fontSize: 10,
         fontWeight: '700',
         color: '#9CA3AF',
-        flex: 1,
+        textAlign: 'center',
     },
 
     // ── Flat search ────────────────────────────────────────────────────────────
-    flatWrap: { marginBottom: 24, zIndex: 10 },
+    recentRow: { alignItems: 'center', gap: 7, paddingRight: 8, marginTop: -2, marginBottom: 9 },
+    recentLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingRight: 2 },
+    recentLabelText: { fontSize: 11, fontWeight: '700', color: GuardColors.t2 },
+    recentChip: { backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, borderRadius: 12, paddingHorizontal: 11, paddingVertical: 7 },
+    recentChipText: { fontSize: 12, fontWeight: '800', color: GuardColors.t1 },
+    flatWrap: { marginBottom: 18, zIndex: 10 },
     flatInputRow: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#fff',
-        borderRadius: 16,
-        borderWidth: 1.5,
-        borderColor: '#E5E7EB',
-        ...Platform.select({
-            ios: { shadowColor: '#1F2937', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8 },
-            android: { elevation: 2 },
-        }),
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: GuardColors.border,
     },
     flatIcon: { marginLeft: 14 },
     flatInput: {
         flex: 1,
-        fontSize: 17,
+        fontSize: 15,
         fontWeight: '600',
         color: '#0D0F14',
-        paddingVertical: 18,
+        paddingVertical: 13,
         paddingHorizontal: 12,
     },
     flatCheckmark: { marginRight: 14 },
@@ -605,35 +654,36 @@ const S = StyleSheet.create({
 
     // ── Photo ──────────────────────────────────────────────────────────────────
     photoBtn: {
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: '#BFDBFE',
-        borderStyle: 'dashed',
-        borderRadius: 20,
-        paddingVertical: 32,
-        backgroundColor: '#EFF6FF',
-        marginBottom: 20,
-        gap: 8,
+        borderWidth: 1,
+        borderColor: GuardColors.border,
+        borderRadius: 16,
+        padding: 12,
+        backgroundColor: GuardColors.card,
+        marginBottom: 16,
+        gap: 11,
     },
     photoBtnIcon: {
-        width: 68,
-        height: 68,
-        borderRadius: 20,
-        backgroundColor: '#DBEAFE',
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: GuardColors.gold,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 4,
     },
+    photoBtnCopy: { flex: 1 },
     photoBtnTitle: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '800',
-        color: '#1E40AF',
+        color: GuardColors.t1,
+        marginBottom: 2,
     },
     photoBtnSub: {
-        fontSize: 13,
+        fontSize: 11,
+        lineHeight: 15,
         fontWeight: '500',
-        color: '#60A5FA',
+        color: GuardColors.t2,
     },
     photoPreviewWrap: {
         height: 220,
@@ -680,14 +730,10 @@ const S = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        backgroundColor: '#10B981',
-        borderRadius: 18,
-        paddingVertical: 18,
-        marginTop: 8,
-        ...Platform.select({
-            ios: { shadowColor: '#10B981', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16 },
-            android: { elevation: 6 },
-        }),
+        backgroundColor: GuardColors.black,
+        borderRadius: 16,
+        paddingVertical: 16,
+        marginTop: 4,
     },
     submitBtnDisabled: {
         backgroundColor: '#E5E7EB',
@@ -712,7 +758,7 @@ const cam = StyleSheet.create({
     },
     permTitle: { fontSize: 20, fontWeight: '800', color: '#1F2937', textAlign: 'center' },
     permBtn: {
-        backgroundColor: '#3B82F6',
+        backgroundColor: GuardColors.gold,
         paddingHorizontal: 32,
         paddingVertical: 14,
         borderRadius: 14,

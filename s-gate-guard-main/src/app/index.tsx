@@ -1,399 +1,116 @@
+import { GuardBrandMark } from '@/components/GuardBrandMark';
+import { GuardColors, GuardFonts, GuardRadius } from '@/constants/theme';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
-import {
-    Platform,
-    Pressable,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const SHIFT_LABEL: Record<string, string> = {
-    MORNING: 'Morning Shift',
-    EVENING: 'Evening Shift',
-    NIGHT:   'Night Shift',
-};
+const SHIFT_LABEL: Record<string, string> = { MORNING: 'Morning shift', EVENING: 'Evening shift', NIGHT: 'Night shift' };
+
+type Route = '/new-entry' | '/scan-verify' | '/today-entries' | '/approvals' | '/staff-scan' | '/profile' | '/emergencies';
+
+const quickActions: { label: string; detail: string; icon: keyof typeof Ionicons.glyphMap; route: Route }[] = [
+  { label: "Today's entries", detail: 'View gate activity', icon: 'receipt-outline', route: '/today-entries' },
+  { label: 'Approvals', detail: 'Resident responses', icon: 'checkmark-done-outline', route: '/approvals' },
+  { label: 'Staff check-in', detail: 'Verify staff ID', icon: 'people-outline', route: '/staff-scan' },
+  { label: 'My profile', detail: 'Duty and gate details', icon: 'person-outline', route: '/profile' },
+];
 
 export default function GuardDashboard() {
-    const insets = useSafeAreaInsets();
-    const router = useRouter();
-    const { user } = useAuthStore();
-    const [pendingCount, setPendingCount] = useState(0);
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const [pendingCount, setPendingCount] = useState(0);
 
-    useFocusEffect(useCallback(() => {
-        api.get('/api/v1/gate/entry-requests?status=PENDING')
-            .then((res) => {
-                const entries: any[] = res.data?.data?.entries ?? res.data?.data ?? [];
-                setPendingCount(entries.length);
-            })
-            .catch(() => {});
-    }, []));
+  useFocusEffect(useCallback(() => {
+    api.get('/api/v1/gate/entry-requests?status=PENDING').then((res) => {
+      const payload = res.data?.data;
+      const entries: unknown[] = payload?.entryRequests ?? payload?.entries ?? (Array.isArray(payload) ? payload : []);
+      setPendingCount(Array.isArray(entries) ? entries.length : 0);
+    }).catch(() => undefined);
+  }, []));
 
-    return (
-        <View style={[S.root, { paddingTop: insets.top }]}>
-            <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+  const open = (route: Route, strong = false) => {
+    Haptics.impactAsync(strong ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light);
+    router.push(route);
+  };
 
-            {/* ── Header ──────────────────────────────────────────────────────── */}
-            <View style={S.header}>
-                <View>
-                    <Text style={S.gateName}>{user?.gate ?? 'Gate'}</Text>
-                    <Text style={S.guardName}>{user?.name ?? 'Guard'}</Text>
-                </View>
-                <View style={S.dutyBadge}>
-                    <View style={S.dutyDot} />
-                    <Text style={S.dutyText}>
-                        {user?.shift ? SHIFT_LABEL[user.shift] : 'On Duty'}
-                    </Text>
-                </View>
-            </View>
-
-            {/* ── Pending approvals banner ─────────────────────────────────── */}
-            {pendingCount > 0 && (
-                <Pressable
-                    style={S.pendingBanner}
-                    onPress={() => router.push('/approvals')}
-                >
-                    <View style={S.pendingLeft}>
-                        <View style={S.pendingIconBox}>
-                            <Ionicons name="time" size={26} color="#fff" />
-                        </View>
-                        <View>
-                            <Text style={S.pendingCount}>{pendingCount} waiting for approval</Text>
-                            <Text style={S.pendingSub}>Tap to review →</Text>
-                        </View>
-                    </View>
-                </Pressable>
-            )}
-
-            <ScrollView
-                contentContainerStyle={[S.scroll, { paddingBottom: insets.bottom + 100 }]}
-                showsVerticalScrollIndicator={false}
-            >
-
-                {/* ── Primary actions ──────────────────────────────────────── */}
-                <Text style={S.sectionLabel}>MAIN ACTIONS</Text>
-                <View style={S.bigRow}>
-                    {/* New Entry — largest, most important */}
-                    <TouchableOpacity
-                        style={[S.bigTile, { backgroundColor: '#0D0F14' }]}
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            router.push('/new-entry');
-                        }}
-                        activeOpacity={0.85}
-                    >
-                        <View style={[S.tileIcon, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-                            <Ionicons name="add-circle" size={34} color="#fff" />
-                        </View>
-                        <Text style={[S.tileTitle, { color: '#fff' }]}>New Entry</Text>
-                        <Text style={[S.tileSub, { color: 'rgba(255,255,255,0.6)' }]}>Let visitor in</Text>
-                    </TouchableOpacity>
-
-                    {/* Scan QR */}
-                    <TouchableOpacity
-                        style={[S.bigTile, { backgroundColor: '#EFF6FF' }]}
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            router.push('/scan-verify');
-                        }}
-                        activeOpacity={0.85}
-                    >
-                        <View style={[S.tileIcon, { backgroundColor: '#DBEAFE' }]}>
-                            <Ionicons name="qr-code" size={34} color="#1D4ED8" />
-                        </View>
-                        <Text style={[S.tileTitle, { color: '#0D0F14' }]}>Scan QR</Text>
-                        <Text style={[S.tileSub, { color: '#6B7280' }]}>Verify pass</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* ── Secondary actions ─────────────────────────────────────── */}
-                <Text style={S.sectionLabel}>MORE ACTIONS</Text>
-                <View style={S.smallGrid}>
-                    <TouchableOpacity
-                        style={S.smallTile}
-                        onPress={() => router.push('/today-entries')}
-                        activeOpacity={0.82}
-                    >
-                        <Ionicons name="list-circle" size={28} color="#16A34A" />
-                        <Text style={S.smallLabel}>Today's{'\n'}Entries</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[S.smallTile, pendingCount > 0 && S.smallTileAlert]}
-                        onPress={() => router.push('/approvals')}
-                        activeOpacity={0.82}
-                    >
-                        <Ionicons name="time" size={28} color="#D97706" />
-                        <Text style={S.smallLabel}>Approvals</Text>
-                        {pendingCount > 0 && (
-                            <View style={S.smallBadge}>
-                                <Text style={S.smallBadgeText}>{pendingCount}</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={S.smallTile}
-                        onPress={() => router.push('/staff-scan')}
-                        activeOpacity={0.82}
-                    >
-                        <Ionicons name="people" size={28} color="#7C3AED" />
-                        <Text style={S.smallLabel}>Staff{'\n'}Check-In</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={S.smallTile}
-                        onPress={() => router.push('/profile')}
-                        activeOpacity={0.82}
-                    >
-                        <Ionicons name="person-circle" size={28} color="#0891B2" />
-                        <Text style={S.smallLabel}>My{'\n'}Profile</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* ── Emergency ─────────────────────────────────────────────── */}
-                <TouchableOpacity
-                    style={S.emergencyTile}
-                    onPress={() => {
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                        router.push('/emergencies');
-                    }}
-                    activeOpacity={0.85}
-                >
-                    <Ionicons name="warning" size={28} color="#fff" />
-                    <Text style={S.emergencyLabel}>Report Emergency</Text>
-                </TouchableOpacity>
-
-            </ScrollView>
-
-            {/* ── FAB: New Entry ───────────────────────────────────────────── */}
-            <TouchableOpacity
-                style={[S.fab, { bottom: insets.bottom + 20 }]}
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-                    router.push('/new-entry');
-                }}
-                activeOpacity={0.85}
-            >
-                <Ionicons name="add" size={34} color="#fff" />
-            </TouchableOpacity>
+  return (
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={GuardColors.bg} />
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 28 }]} showsVerticalScrollIndicator={false}>
+        <View style={styles.topbar}>
+          <GuardBrandMark compact />
+          <Pressable style={styles.avatar} onPress={() => open('/profile')}><Text style={styles.avatarText}>{(user?.name ?? 'G').charAt(0).toUpperCase()}</Text></Pressable>
         </View>
-    );
+
+        <View style={styles.welcomeRow}>
+          <View style={styles.welcomeCopy}>
+            <Text style={styles.eyebrow}>SECURITY DESK</Text>
+            <Text style={styles.title}>Good to see you,{`\n`}{user?.name?.split(' ')[0] ?? 'Guard'}.</Text>
+            <Text style={styles.gate}>{user?.gate ?? 'Main Gate'}</Text>
+          </View>
+          <View style={styles.dutyChip}><View style={styles.dutyDot} /><Text style={styles.dutyText}>{user?.shift ? SHIFT_LABEL[user.shift] : 'On duty'}</Text></View>
+        </View>
+
+        {pendingCount > 0 && (
+          <Pressable style={styles.notice} onPress={() => open('/approvals')}>
+            <View style={styles.noticeIcon}><Ionicons name="time-outline" size={20} color={GuardColors.black} /></View>
+            <View style={styles.noticeCopy}><Text style={styles.noticeTitle}>{pendingCount} visitor{pendingCount === 1 ? '' : 's'} waiting</Text><Text style={styles.noticeText}>Review resident approvals</Text></View>
+            <Ionicons name="arrow-forward" size={19} color={GuardColors.black} />
+          </Pressable>
+        )}
+
+        <Text style={styles.sectionTitle}>Gate operations</Text>
+        <View style={styles.primaryRow}>
+          <Pressable style={[styles.primary, styles.primaryDark]} onPress={() => open('/new-entry', true)}>
+            <View style={styles.darkIcon}><Ionicons name="person-add-outline" size={25} color={GuardColors.gold} /></View>
+            <Text style={styles.primaryDarkTitle}>New entry</Text><Text style={styles.primaryDarkText}>Register a visitor</Text>
+            <View style={styles.arrowDark}><Ionicons name="arrow-forward" size={18} color={GuardColors.black} /></View>
+          </Pressable>
+          <Pressable style={[styles.primary, styles.primaryGold]} onPress={() => open('/scan-verify')}>
+            <View style={styles.goldIcon}><Ionicons name="qr-code-outline" size={25} color={GuardColors.black} /></View>
+            <Text style={styles.primaryTitle}>Scan pass</Text><Text style={styles.primaryText}>Verify QR access</Text>
+            <View style={styles.arrowLight}><Ionicons name="arrow-forward" size={18} color={GuardColors.card} /></View>
+          </Pressable>
+        </View>
+
+        <Text style={styles.sectionLabel}>QUICK ACCESS</Text>
+        <View style={styles.quickGrid}>
+          {quickActions.map((item) => (
+            <Pressable key={item.route} style={styles.quickTile} onPress={() => open(item.route)}>
+              <View style={[styles.quickIcon, item.route === '/approvals' && styles.quickIconGold]}>
+                <Ionicons name={item.icon} size={23} color={item.route === '/approvals' ? GuardColors.goldDeep : GuardColors.t1} />
+              </View>
+              <Text style={styles.quickTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>{item.label}</Text>
+              <Text style={styles.quickText} numberOfLines={1}>{item.detail}</Text>
+              {item.route === '/approvals' && pendingCount > 0 && <View style={styles.countBadge}><Text style={styles.countText}>{pendingCount}</Text></View>}
+            </Pressable>
+          ))}
+        </View>
+
+        <Pressable style={styles.emergency} onPress={() => open('/emergencies', true)}>
+          <View style={styles.emergencyIcon}><Ionicons name="warning-outline" size={24} color={GuardColors.red} /></View>
+          <View style={styles.emergencyCopy}><Text style={styles.emergencyTitle}>Emergency assistance</Text><Text style={styles.emergencyText}>Alert your society response team</Text></View>
+          <View style={styles.emergencyArrow}><Ionicons name="arrow-forward" size={18} color={GuardColors.card} /></View>
+        </Pressable>
+      </ScrollView>
+    </View>
+  );
 }
 
-const S = StyleSheet.create({
-    root: {
-        flex: 1,
-        backgroundColor: '#F5F5F4',
-    },
-
-    // ── Header ────────────────────────────────────────────────────────────────
-    header: {
-        backgroundColor: '#fff',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F0EEEB',
-    },
-    gateName: {
-        fontSize: 28,
-        fontWeight: '900',
-        color: '#0D0F14',
-        letterSpacing: -0.5,
-    },
-    guardName: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: '#6B7280',
-        marginTop: 2,
-    },
-    dutyBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        backgroundColor: '#F0FDF4',
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 20,
-    },
-    dutyDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#16A34A',
-    },
-    dutyText: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: '#15803D',
-    },
-
-    // ── Pending banner ────────────────────────────────────────────────────────
-    pendingBanner: {
-        backgroundColor: '#1D4ED8',
-        marginHorizontal: 16,
-        marginTop: 14,
-        borderRadius: 18,
-        paddingHorizontal: 18,
-        paddingVertical: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        ...Platform.select({
-            ios: { shadowColor: '#1D4ED8', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 14 },
-            android: { elevation: 6 },
-        }),
-    },
-    pendingLeft: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-    pendingIconBox: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    pendingCount: { fontSize: 17, fontWeight: '800', color: '#fff' },
-    pendingSub: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-
-    // ── Scroll / sections ─────────────────────────────────────────────────────
-    scroll: { padding: 16 },
-    sectionLabel: {
-        fontSize: 11,
-        fontWeight: '800',
-        color: '#9CA3AF',
-        letterSpacing: 1.5,
-        marginBottom: 10,
-        marginTop: 20,
-        marginLeft: 2,
-    },
-
-    // ── Big 2-col tiles ───────────────────────────────────────────────────────
-    bigRow: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    bigTile: {
-        flex: 1,
-        borderRadius: 22,
-        padding: 20,
-        minHeight: 148,
-        justifyContent: 'flex-end',
-        ...Platform.select({
-            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 14 },
-            android: { elevation: 3 },
-        }),
-    },
-    tileIcon: {
-        width: 58,
-        height: 58,
-        borderRadius: 18,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 14,
-    },
-    tileTitle: {
-        fontSize: 18,
-        fontWeight: '900',
-        letterSpacing: -0.3,
-    },
-    tileSub: {
-        fontSize: 13,
-        fontWeight: '500',
-        marginTop: 3,
-    },
-
-    // ── Small 4-col grid ──────────────────────────────────────────────────────
-    smallGrid: {
-        flexDirection: 'row',
-        gap: 10,
-    },
-    smallTile: {
-        flex: 1,
-        backgroundColor: '#fff',
-        borderRadius: 18,
-        paddingVertical: 18,
-        paddingHorizontal: 8,
-        alignItems: 'center',
-        gap: 8,
-        borderWidth: 1,
-        borderColor: '#F0EEEB',
-        ...Platform.select({
-            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8 },
-            android: { elevation: 1 },
-        }),
-    },
-    smallTileAlert: {
-        borderColor: '#FDE68A',
-        backgroundColor: '#FFFBEB',
-    },
-    smallLabel: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: '#374151',
-        textAlign: 'center',
-        lineHeight: 15,
-    },
-    smallBadge: {
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        backgroundColor: '#DC2626',
-        minWidth: 20,
-        height: 20,
-        borderRadius: 10,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 5,
-    },
-    smallBadgeText: { fontSize: 10, fontWeight: '900', color: '#fff' },
-
-    // ── Emergency ─────────────────────────────────────────────────────────────
-    emergencyTile: {
-        backgroundColor: '#DC2626',
-        borderRadius: 18,
-        marginTop: 10,
-        paddingVertical: 20,
-        paddingHorizontal: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        ...Platform.select({
-            ios: { shadowColor: '#DC2626', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12 },
-            android: { elevation: 5 },
-        }),
-    },
-    emergencyLabel: {
-        fontSize: 17,
-        fontWeight: '900',
-        color: '#fff',
-        letterSpacing: -0.3,
-    },
-
-    // ── FAB ───────────────────────────────────────────────────────────────────
-    fab: {
-        position: 'absolute',
-        right: 20,
-        width: 66,
-        height: 66,
-        borderRadius: 33,
-        backgroundColor: '#0D0F14',
-        alignItems: 'center',
-        justifyContent: 'center',
-        ...Platform.select({
-            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 18 },
-            android: { elevation: 10 },
-        }),
-    },
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: GuardColors.bg }, content: { paddingHorizontal: 20, paddingTop: 12 },
+  topbar: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  avatar: { width: 42, height: 42, borderRadius: 15, backgroundColor: GuardColors.ink, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: GuardColors.gold, fontFamily: GuardFonts.bold, fontSize: 17, fontWeight: '800' },
+  welcomeRow: { marginTop: 27, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }, welcomeCopy: { flex: 1 }, eyebrow: { color: GuardColors.goldDeep, fontSize: 10, fontWeight: '800', letterSpacing: 1.6 }, title: { marginTop: 8, color: GuardColors.t1, fontSize: 31, lineHeight: 36, fontWeight: '900', letterSpacing: -0.8 }, gate: { marginTop: 8, color: GuardColors.t2, fontSize: 14, fontWeight: '600' },
+  dutyChip: { marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: GuardColors.greenBg, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 99 }, dutyDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: GuardColors.green }, dutyText: { color: GuardColors.green, fontSize: 11, fontWeight: '800', textTransform: 'capitalize' },
+  notice: { marginTop: 22, minHeight: 66, borderRadius: GuardRadius.lg, backgroundColor: GuardColors.gold, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 }, noticeIcon: { width: 38, height: 38, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center' }, noticeCopy: { flex: 1, marginLeft: 12 }, noticeTitle: { color: GuardColors.black, fontSize: 14, fontWeight: '900' }, noticeText: { marginTop: 2, color: '#5E4900', fontSize: 11, fontWeight: '600' },
+  sectionTitle: { marginTop: 27, marginBottom: 12, color: GuardColors.t1, fontSize: 17, fontWeight: '900', letterSpacing: -0.2 }, sectionLabel: { marginTop: 28, marginBottom: 14, color: GuardColors.t3, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 }, primaryRow: { flexDirection: 'row', justifyContent: 'space-between' }, primary: { width: '48.3%', height: 176, borderRadius: 24, padding: 16, overflow: 'hidden' }, primaryDark: { backgroundColor: GuardColors.ink, borderWidth: 1, borderColor: GuardColors.ink }, primaryGold: { backgroundColor: GuardColors.goldPale, borderWidth: 1, borderColor: '#EAD58D' }, darkIcon: { width: 46, height: 46, borderRadius: 15, backgroundColor: '#2B2F3A', alignItems: 'center', justifyContent: 'center' }, goldIcon: { width: 46, height: 46, borderRadius: 15, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center' }, primaryDarkTitle: { marginTop: 21, color: GuardColors.card, fontSize: 18, fontWeight: '900' }, primaryTitle: { marginTop: 21, color: GuardColors.t1, fontSize: 18, fontWeight: '900' }, primaryDarkText: { marginTop: 4, color: '#A7ABB5', fontSize: 12, fontWeight: '600' }, primaryText: { marginTop: 4, color: GuardColors.t2, fontSize: 12, fontWeight: '600' }, arrowDark: { position: 'absolute', right: 14, bottom: 14, width: 32, height: 32, borderRadius: 11, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center' }, arrowLight: { position: 'absolute', right: 14, bottom: 14, width: 32, height: 32, borderRadius: 11, backgroundColor: GuardColors.ink, alignItems: 'center', justifyContent: 'center' },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }, quickTile: { width: '48.3%', minHeight: 126, borderRadius: 18, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.borderSoft, padding: 14, justifyContent: 'flex-end' }, quickIcon: { position: 'absolute', left: 14, top: 14, width: 42, height: 42, borderRadius: 13, backgroundColor: GuardColors.surface, alignItems: 'center', justifyContent: 'center' }, quickIconGold: { backgroundColor: GuardColors.goldPale }, quickTitle: { color: GuardColors.t1, fontSize: 13, fontWeight: '900' }, quickText: { marginTop: 3, color: GuardColors.t3, fontSize: 10, fontWeight: '500' }, countBadge: { position: 'absolute', right: 12, top: 12, minWidth: 24, height: 24, borderRadius: 12, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 }, countText: { color: GuardColors.black, fontSize: 11, fontWeight: '900' },
+  emergency: { marginTop: 18, minHeight: 86, borderRadius: 20, borderWidth: 1, borderColor: '#F3CECE', backgroundColor: GuardColors.redBg, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center' }, emergencyIcon: { width: 48, height: 48, borderRadius: 15, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center' }, emergencyCopy: { flex: 1, marginLeft: 12, paddingRight: 8 }, emergencyTitle: { color: GuardColors.red, fontSize: 14, fontWeight: '900' }, emergencyText: { marginTop: 3, color: '#9B5454', fontSize: 11, lineHeight: 15, fontWeight: '600' }, emergencyArrow: { width: 36, height: 36, borderRadius: 12, backgroundColor: GuardColors.red, alignItems: 'center', justifyContent: 'center' }, pressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
 });

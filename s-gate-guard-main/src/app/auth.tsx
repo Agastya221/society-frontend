@@ -1,368 +1,153 @@
-import { useAuthStore } from "@/store/useAuthStore";
-import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useRef, useState } from "react";
-import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import { SafeAreaView } from "react-native-safe-area-context";
-// @ts-ignore — package ships without types
+// @ts-ignore - the native SDK does not publish TypeScript declarations
 import { OTPWidget } from '@msg91comm/sendotp-react-native';
-import api from "@/services/api";
-import { MSG91_WIDGET_ID, MSG91_TOKEN_AUTH } from '@/constants/msg91';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { GuardBrandMark } from '@/components/GuardBrandMark';
+import { GuardColors, GuardFonts, GuardRadius } from '@/constants/theme';
+import { MSG91_TOKEN_AUTH, MSG91_WIDGET_ID } from '@/constants/msg91';
+import api from '@/services/api';
+import { useAuthStore } from '@/store/useAuthStore';
 
 type Screen = 'phone' | 'otp';
 
 export default function AuthScreen() {
-    const login = useAuthStore((s) => s.login);
+  const login = useAuthStore((state) => state.login);
+  const [screen, setScreen] = useState<Screen>('phone');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [reqId, setReqId] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const [screen, setScreen]       = useState<Screen>('phone');
-    const [phone, setPhone]          = useState('');
-    const [otp, setOtp]              = useState('');
-    const [reqId, setReqId]          = useState('');
-    const [isLoading, setIsLoading]  = useState(false);
-    const [error, setError]          = useState('');
-    const [countdown, setCountdown]  = useState(0);
-    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => { OTPWidget.initializeWidget(MSG91_WIDGET_ID, MSG91_TOKEN_AUTH); }, []);
+  useEffect(() => {
+    if (countdown <= 0) { if (timerRef.current) clearInterval(timerRef.current); return; }
+    timerRef.current = setInterval(() => setCountdown((value) => {
+      if (value <= 1) { if (timerRef.current) clearInterval(timerRef.current); return 0; }
+      return value - 1;
+    }), 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [countdown]);
 
-    // ── Initialise MSG91 widget once ──────────────────────────────────────────
-    useEffect(() => {
-        OTPWidget.initializeWidget(MSG91_WIDGET_ID, MSG91_TOKEN_AUTH);
-    }, []);
+  const handleSendOtp = async () => {
+    const cleaned = phone.replace(/\D/g, '');
+    if (!/^[6-9]\d{9}$/.test(cleaned)) { setError('Enter a valid 10-digit mobile number.'); return; }
+    setIsLoading(true); setError('');
+    try {
+      const response = await OTPWidget.sendOTP({ identifier: `91${cleaned}` });
+      if (response?.type === 'error' || response?.success === false) setError('Could not send the OTP. Please try again.');
+      else {
+        setReqId(response?.reqId ?? (response?.type === 'success' ? response?.message ?? '' : ''));
+        setScreen('otp'); setCountdown(30);
+      }
+    } catch { setError('Could not send the OTP. Check your connection.'); }
+    finally { setIsLoading(false); }
+  };
 
-    // ── Countdown timer ───────────────────────────────────────────────────────
-    useEffect(() => {
-        if (countdown <= 0) { if (timerRef.current) clearInterval(timerRef.current); return; }
-        timerRef.current = setInterval(() => {
-            setCountdown((c) => { if (c <= 1) { clearInterval(timerRef.current!); return 0; } return c - 1; });
-        }, 1000);
-        return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, [countdown]);
+  const handleResendOtp = async () => {
+    if (countdown > 0 || !reqId) return;
+    setIsLoading(true); setError('');
+    try {
+      const response = await OTPWidget.retryOTP({ reqId });
+      if (response?.reqId || response?.message?.toUpperCase() === 'SUCCESS') setCountdown(30);
+      else setError('Could not resend the OTP.');
+    } catch { setError('Could not resend the OTP.'); }
+    finally { setIsLoading(false); }
+  };
 
-    const isValidPhone = (p: string) => /^[6-9]\d{9}$/.test(p.trim());
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) { setError('Enter the 6-digit OTP.'); return; }
+    setIsLoading(true); setError('');
+    try {
+      const response = await OTPWidget.verifyOTP({ reqId, otp });
+      const success = response?.message?.toUpperCase() === 'SUCCESS' || response?.type === 'success';
+      if (!success) { setError('That OTP is incorrect. Please try again.'); return; }
+      const widgetToken = typeof response?.message === 'string' && response.message.startsWith('eyJ') ? response.message : response?.reqId ?? reqId;
+      const backend = await api.post('/api/v1/auth/guard-app/otp/verify', { widgetToken });
+      const data = backend.data?.data;
+      if (!data?.accessToken || !data?.user) { setError('Authentication failed. Contact your administrator.'); return; }
+      if (data.user.role !== 'GUARD' && data.user.role !== 'SUPER_ADMIN') { setError('This app is available only to security staff.'); return; }
+      await login(data.accessToken, data.refreshToken, data.user);
+    } catch (caught: any) {
+      const message = caught?.response?.data?.message || caught?.message || 'Verification failed.';
+      setError(message);
+      if (message.toLowerCase().includes('no guard') || message.includes('404')) {
+        Alert.alert('Guard account not found', 'Ask your society administrator to register this mobile number.', [{ text: 'OK', onPress: () => setScreen('phone') }]);
+      }
+    } finally { setIsLoading(false); }
+  };
 
-    // ── Step 1: Send OTP ──────────────────────────────────────────────────────
-    const handleSendOtp = async () => {
-        const cleaned = phone.trim().replace(/\D/g, '');
-        if (!isValidPhone(cleaned)) {
-            setError('Please enter a valid 10-digit mobile number');
-            return;
-        }
-        setIsLoading(true);
-        setError('');
-        try {
-            const response = await OTPWidget.sendOTP({ identifier: `91${cleaned}` });
-            console.log('📤 MSG91 sendOTP response:', JSON.stringify(response));
+  const isReady = screen === 'phone' ? phone.length === 10 : otp.length === 6;
+  const submit = screen === 'phone' ? handleSendOtp : handleVerifyOtp;
 
-            // MSG91 invisible flow returns { message: widgetId, reqId: undefined } on success.
-            // reqId is only present AFTER silent verification completes or on standard OTP flow.
-            // The ONLY way to detect a real failure is an explicit error type or http exception.
-            // If we got a response object at all without throwing, treat it as success.
-            const isHardError =
-                response?.type === 'error' ||
-                response?.success === false;
+  return (
+    <SafeAreaView style={styles.root}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View style={styles.brandArea}>
+            <GuardBrandMark />
+            <Text style={styles.eyebrow}>TRUSTED SOCIETY ACCESS</Text>
+            <Text style={styles.title}>{screen === 'phone' ? 'Welcome, guard.' : 'Verify your number.'}</Text>
+            <Text style={styles.subtitle}>{screen === 'phone' ? 'Sign in with the mobile number assigned by your society administrator.' : `We sent a security code to +91 ${phone}.`}</Text>
+          </View>
 
-            if (isHardError) {
-                setError('Failed to send OTP. Please try again.');
-            } else {
-                // Store reqId if present (standard flow), empty string if invisible flow
-                setReqId(response?.reqId ?? (response?.type === 'success' ? response?.message ?? '' : ''));
-                setScreen('otp');
-                setCountdown(30);
-            }
-        } catch (err: any) {
-            setError('Failed to send OTP. Please check your connection.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+          <View style={styles.card}>
+            <View style={styles.secureRow}><Ionicons name="shield-checkmark" size={16} color={GuardColors.green} /><Text style={styles.secureText}>SECURE STAFF SIGN IN</Text></View>
+            {screen === 'otp' && <Pressable onPress={() => { setScreen('phone'); setOtp(''); setError(''); }} style={styles.backRow}><Ionicons name="arrow-back" size={18} color={GuardColors.t2} /><Text style={styles.backText}>Change mobile number</Text></Pressable>}
 
-    // ── Resend OTP ────────────────────────────────────────────────────────────
-    const handleResendOtp = async () => {
-        if (countdown > 0 || !reqId) return;
-        setIsLoading(true);
-        setError('');
-        try {
-            const retryResponse = await OTPWidget.retryOTP({ reqId });
-            if (retryResponse?.reqId || retryResponse?.message?.toUpperCase() === 'SUCCESS') {
-                setCountdown(30);
-            } else {
-                setError('Failed to resend OTP. Please try again.');
-            }
-        } catch {
-            setError('Failed to resend OTP. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // ── Step 2: Verify OTP → call guard backend endpoint ─────────────────────
-    const handleVerifyOtp = async () => {
-        if (otp.trim().length !== 6) { setError('Please enter the 6-digit OTP'); return; }
-        setIsLoading(true);
-        setError('');
-        try {
-            // 1. Verify with MSG91 Widget
-            const verifyResponse = await OTPWidget.verifyOTP({ reqId, otp: otp.trim() });
-            console.log('✅ MSG91 verifyOTP (guard):', verifyResponse);
-
-            const isSuccess =
-                verifyResponse?.message?.toUpperCase() === 'SUCCESS' ||
-                verifyResponse?.type === 'success';
-
-            if (!isSuccess) {
-                setError('Invalid OTP. Please check and try again.');
-                setIsLoading(false);
-                return;
-            }
-
-            // MSG91 SDK returns { message: "eyJ...(JWT)", type: "success" }
-            // The JWT in `message` is what our backend needs for verifyAccessToken.
-            // reqId is just the hex request identifier — NOT the access token.
-            const widgetToken =
-                (typeof verifyResponse?.message === 'string' && verifyResponse.message.startsWith('eyJ'))
-                    ? verifyResponse.message
-                    : verifyResponse?.reqId ?? reqId;
-
-            console.log('🔑 widgetToken being sent to backend:', widgetToken.substring(0, 20) + '...');
-
-            // 2. Call guard-specific backend endpoint
-            const backendRes = await api.post('/api/v1/auth/guard-app/otp/verify', { widgetToken });
-            const data = backendRes.data?.data;
-
-            if (!data?.accessToken || !data?.user) {
-                setError('Authentication failed. Please contact support.');
-                return;
-            }
-
-            // 3. Verify this account is actually a guard (role check for UX safety)
-            if (data.user.role !== 'GUARD' && data.user.role !== 'SUPER_ADMIN') {
-                setError('Access denied. This app is for guards only.');
-                return;
-            }
-
-            // 4. Save to store — include refreshToken so silent refresh works
-            await login(data.accessToken, data.refreshToken, data.user);
-
-        } catch (err: any) {
-            const msg = err?.response?.data?.message || err?.message || 'Verification failed.';
-            setError(msg);
-            if (msg.toLowerCase().includes('no guard') || msg.includes('404')) {
-                Alert.alert(
-                    'No Guard Account Found',
-                    'This number is not registered as a guard. Please contact your society admin.',
-                    [{ text: 'OK', onPress: () => setScreen('phone') }]
-                );
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // ─────────────────────────────────────────────────────────────────────────
-    return (
-        <View className="flex-1">
-            {/* Dark green-blue gradient for guard app */}
-            <LinearGradient
-                colors={['#0f2027', '#203a43', '#2c5364']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
-            />
-
-            {/* Decorative blobs */}
-            <View className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <View className="absolute -top-16 -right-16 w-72 h-72 bg-teal-500/20 rounded-full blur-3xl" />
-                <View className="absolute top-48 -left-16 w-56 h-56 bg-cyan-400/15 rounded-full blur-3xl" />
+            <Text style={styles.label}>{screen === 'phone' ? 'MOBILE NUMBER' : '6-DIGIT OTP'}</Text>
+            <View style={[styles.inputWrap, !!error && styles.inputError]}>
+              {screen === 'phone' ? <Text style={styles.prefix}>+91</Text> : <Ionicons name="lock-closed-outline" size={19} color={GuardColors.t3} />}
+              <TextInput
+                value={screen === 'phone' ? phone : otp}
+                onChangeText={(value) => {
+                  const cleaned = value.replace(/\D/g, '').slice(0, screen === 'phone' ? 10 : 6);
+                  if (screen === 'phone') setPhone(cleaned); else setOtp(cleaned);
+                  setError('');
+                }}
+                placeholder={screen === 'phone' ? 'Enter registered number' : '••••••'}
+                placeholderTextColor={GuardColors.t4}
+                keyboardType="number-pad"
+                maxLength={screen === 'phone' ? 10 : 6}
+                autoFocus={screen === 'otp'}
+                editable={!isLoading}
+                style={[styles.input, screen === 'otp' && styles.otpInput]}
+              />
             </View>
+            {!!error && <View style={styles.errorBox}><Ionicons name="alert-circle-outline" size={17} color={GuardColors.red} /><Text style={styles.errorText}>{error}</Text></View>}
 
-            <SafeAreaView className="flex-1" edges={['top']}>
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    className="flex-1"
-                >
-                    <ScrollView
-                        className="flex-1"
-                        contentContainerStyle={{ flexGrow: 1 }}
-                        keyboardShouldPersistTaps="handled"
-                        showsVerticalScrollIndicator={false}
-                    >
-                        <View className="flex-1 px-6 justify-center pb-24">
-
-                            {/* Logo */}
-                            <Animated.View entering={FadeInUp.delay(100).springify()} className="items-center mb-8">
-                                <View className="relative items-center justify-center mb-6 h-40 w-40">
-                                    <View className="bg-teal-500/20 rounded-full p-8">
-                                        <Feather name="shield" size={72} color="#5eead4" />
-                                    </View>
-                                    <View className="absolute inset-0 bg-teal-400/20 blur-3xl rounded-full -z-10" />
-                                </View>
-                                <Text className="text-white text-3xl font-bold tracking-tight mb-1">Guard Portal</Text>
-                                <Text className="text-teal-300 text-base text-center font-medium">S-Gate Security System</Text>
-                            </Animated.View>
-
-                            {/* Card */}
-                            <Animated.View
-                                entering={FadeInDown.delay(200).springify()}
-                                className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border border-white/20"
-                            >
-                                {/* ── Phone screen ── */}
-                                {screen === 'phone' && (
-                                    <>
-                                        <Text className="text-xl font-bold text-white mb-1">Guard Login</Text>
-                                        <Text className="text-teal-200 text-sm mb-6">Enter your registered mobile number</Text>
-
-                                        {error ? (
-                                            <Animated.View entering={FadeInDown.springify()} className="bg-red-500/20 border border-red-400/40 rounded-xl p-4 mb-4 flex-row items-center gap-3">
-                                                <Feather name="alert-circle" size={18} color="#fca5a5" />
-                                                <Text className="text-red-200 text-sm flex-1">{error}</Text>
-                                            </Animated.View>
-                                        ) : null}
-
-                                        {/* Phone Input */}
-                                        <View className="mb-6">
-                                            <Text className="text-teal-200 font-semibold mb-2 text-sm">Mobile Number</Text>
-                                            <View className="bg-white/10 border border-white/20 rounded-xl px-3 py-1 flex-row items-center gap-3">
-                                                <View className="flex-row items-center gap-1 border-r border-white/20 pr-3">
-                                                    <Text className="text-white font-semibold">🇮🇳 +91</Text>
-                                                </View>
-                                                <TextInput
-                                                    className="flex-1 text-white text-base"
-                                                    placeholder="10-digit mobile number"
-                                                    placeholderTextColor="rgba(255,255,255,0.4)"
-                                                    value={phone}
-                                                    onChangeText={(t) => { setPhone(t.replace(/\D/g, '').slice(0, 10)); setError(''); }}
-                                                    keyboardType="number-pad"
-                                                    maxLength={10}
-                                                    editable={!isLoading}
-                                                />
-                                            </View>
-                                        </View>
-
-                                        <TouchableOpacity
-                                            onPress={handleSendOtp}
-                                            disabled={isLoading || phone.length < 10}
-                                            className="overflow-hidden rounded-xl"
-                                            activeOpacity={0.8}
-                                        >
-                                            <LinearGradient
-                                                colors={phone.length === 10 ? ['#0d9488', '#0f766e'] : ['#374151', '#374151']}
-                                                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                                                className="py-4 items-center"
-                                            >
-                                                {isLoading ? (
-                                                    <View className="flex-row items-center gap-2">
-                                                        <ActivityIndicator size="small" color="#fff" />
-                                                        <Text className="text-white font-bold text-base">Sending OTP...</Text>
-                                                    </View>
-                                                ) : (
-                                                    <View className="flex-row items-center gap-2">
-                                                        <Text className="text-white font-bold text-base">Send OTP</Text>
-                                                        <Feather name="arrow-right" size={20} color="#fff" />
-                                                    </View>
-                                                )}
-                                            </LinearGradient>
-                                        </TouchableOpacity>
-                                    </>
-                                )}
-
-                                {/* ── OTP screen ── */}
-                                {screen === 'otp' && (
-                                    <>
-                                        <TouchableOpacity
-                                            onPress={() => { setScreen('phone'); setOtp(''); setError(''); }}
-                                            className="flex-row items-center gap-2 mb-4"
-                                        >
-                                            <Feather name="arrow-left" size={18} color="#5eead4" />
-                                            <Text className="text-teal-300 font-semibold text-sm">Change number</Text>
-                                        </TouchableOpacity>
-
-                                        <Text className="text-xl font-bold text-white mb-1">Enter OTP</Text>
-                                        <Text className="text-teal-200 text-sm mb-6">
-                                            Code sent to <Text className="font-bold text-white">+91 {phone}</Text>
-                                        </Text>
-
-                                        {error ? (
-                                            <Animated.View entering={FadeInDown.springify()} className="bg-red-500/20 border border-red-400/40 rounded-xl p-4 mb-4 flex-row items-center gap-3">
-                                                <Feather name="alert-circle" size={18} color="#fca5a5" />
-                                                <Text className="text-red-200 text-sm flex-1">{error}</Text>
-                                            </Animated.View>
-                                        ) : null}
-
-                                        <View className="mb-4">
-                                            <Text className="text-teal-200 font-semibold mb-2 text-sm">6-Digit OTP</Text>
-                                            <View className="bg-white/10 border border-white/20 rounded-xl px-4 py-1 flex-row items-center gap-3">
-                                                <Feather name="lock" size={20} color="#5eead4" />
-                                                <TextInput
-                                                    className="flex-1 text-white text-xl tracking-widest font-bold"
-                                                    placeholder="• • • • • •"
-                                                    placeholderTextColor="rgba(255,255,255,0.3)"
-                                                    value={otp}
-                                                    onChangeText={(t) => { setOtp(t.replace(/\D/g, '').slice(0, 6)); setError(''); }}
-                                                    keyboardType="number-pad"
-                                                    maxLength={6}
-                                                    autoFocus
-                                                    editable={!isLoading}
-                                                />
-                                            </View>
-                                        </View>
-
-                                        <View className="flex-row justify-end mb-6">
-                                            <TouchableOpacity onPress={handleResendOtp} disabled={countdown > 0 || isLoading}>
-                                                <Text className={`text-sm font-semibold ${countdown > 0 ? 'text-white/30' : 'text-teal-300'}`}>
-                                                    {countdown > 0 ? `Resend in ${countdown}s` : 'Resend OTP'}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        </View>
-
-                                        <TouchableOpacity
-                                            onPress={handleVerifyOtp}
-                                            disabled={isLoading || otp.length < 6}
-                                            className="overflow-hidden rounded-xl"
-                                            activeOpacity={0.8}
-                                        >
-                                            <LinearGradient
-                                                colors={otp.length === 6 ? ['#0d9488', '#0f766e'] : ['#374151', '#374151']}
-                                                start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                                                className="py-4 items-center"
-                                            >
-                                                {isLoading ? (
-                                                    <View className="flex-row items-center gap-2">
-                                                        <ActivityIndicator size="small" color="#fff" />
-                                                        <Text className="text-white font-bold text-base">Verifying...</Text>
-                                                    </View>
-                                                ) : (
-                                                    <View className="flex-row items-center gap-2">
-                                                        <Text className="text-white font-bold text-base">Verify & Sign In</Text>
-                                                        <Feather name="check-circle" size={20} color="#fff" />
-                                                    </View>
-                                                )}
-                                            </LinearGradient>
-                                        </TouchableOpacity>
-                                    </>
-                                )}
-                            </Animated.View>
-
-                            {/* Footer */}
-                            <Animated.View entering={FadeInDown.delay(400).springify()} className="mt-8 items-center">
-                                <View className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-                                    <Text className="text-teal-300 text-xs font-medium">🔒 Guard Access Only</Text>
-                                </View>
-                            </Animated.View>
-
-                        </View>
-                    </ScrollView>
-                </KeyboardAvoidingView>
-            </SafeAreaView>
-        </View>
-    );
+            {screen === 'otp' && <Pressable onPress={handleResendOtp} disabled={countdown > 0 || isLoading} style={styles.resend}><Text style={[styles.resendText, countdown > 0 && styles.resendDisabled]}>{countdown > 0 ? `Resend available in ${countdown}s` : 'Resend OTP'}</Text></Pressable>}
+            <Pressable onPress={submit} disabled={!isReady || isLoading} style={[styles.button, (!isReady || isLoading) && styles.buttonDisabled]}>
+              {isLoading ? <ActivityIndicator color={GuardColors.black} /> : <><Text style={styles.buttonText}>{screen === 'phone' ? 'Continue securely' : 'Verify & sign in'}</Text><Ionicons name="arrow-forward" size={20} color={GuardColors.black} /></>}
+            </Pressable>
+          </View>
+          <Text style={styles.help}>Having trouble? Contact your society administrator.</Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 }
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 }, root: { flex: 1, backgroundColor: GuardColors.bg },
+  content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 22, paddingVertical: 28 },
+  brandArea: { marginBottom: 28 }, eyebrow: { marginTop: 28, fontFamily: GuardFonts.semibold, fontWeight: '800', fontSize: 10, letterSpacing: 1.7, color: GuardColors.goldDeep },
+  title: { marginTop: 8, fontFamily: GuardFonts.bold, fontWeight: '900', fontSize: 32, lineHeight: 38, letterSpacing: -1, color: GuardColors.t1 },
+  subtitle: { marginTop: 8, maxWidth: 340, fontFamily: GuardFonts.regular, fontSize: 14, lineHeight: 21, color: GuardColors.t2 },
+  card: { backgroundColor: GuardColors.card, borderRadius: GuardRadius.xl, borderWidth: 1, borderColor: GuardColors.border, padding: 20 },
+  secureRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 22 }, secureText: { fontFamily: GuardFonts.semibold, fontWeight: '800', fontSize: 10, letterSpacing: 1.2, color: GuardColors.green },
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', marginBottom: 20 }, backText: { fontFamily: GuardFonts.medium, fontWeight: '600', fontSize: 13, color: GuardColors.t2 },
+  label: { marginBottom: 8, fontFamily: GuardFonts.semibold, fontWeight: '800', fontSize: 10, letterSpacing: 1.1, color: GuardColors.t3 },
+  inputWrap: { height: 58, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: GuardRadius.md, borderWidth: 1, borderColor: GuardColors.border, backgroundColor: GuardColors.bg, paddingHorizontal: 16 },
+  inputError: { borderColor: GuardColors.red }, prefix: { fontFamily: GuardFonts.semibold, fontWeight: '700', fontSize: 16, color: GuardColors.t1, paddingRight: 12, borderRightWidth: 1, borderRightColor: GuardColors.border },
+  input: { flex: 1, fontFamily: GuardFonts.medium, fontWeight: '600', fontSize: 16, color: GuardColors.t1, paddingVertical: 0 }, otpInput: { fontSize: 22, letterSpacing: 8 },
+  errorBox: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 10, backgroundColor: GuardColors.redBg, borderRadius: 12, padding: 11 }, errorText: { flex: 1, fontFamily: GuardFonts.regular, fontSize: 12, lineHeight: 17, color: GuardColors.red },
+  resend: { alignSelf: 'flex-end', marginTop: 14 }, resendText: { fontFamily: GuardFonts.semibold, fontWeight: '700', fontSize: 12, color: GuardColors.goldDeep }, resendDisabled: { color: GuardColors.t4 },
+  button: { height: 56, marginTop: 22, borderRadius: GuardRadius.md, backgroundColor: GuardColors.gold, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
+  buttonDisabled: { backgroundColor: GuardColors.surface }, buttonPressed: { opacity: 0.86, transform: [{ scale: 0.99 }] }, buttonText: { fontFamily: GuardFonts.bold, fontWeight: '800', fontSize: 15, color: GuardColors.black },
+  help: { marginTop: 20, textAlign: 'center', fontFamily: GuardFonts.regular, fontSize: 12, color: GuardColors.t3 },
+});

@@ -23,7 +23,7 @@ api.interceptors.request.use(
 
 // ── Response: silent token refresh on 401 ────────────────────────────────────
 let isRefreshing = false;
-let pendingQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
+let pendingQueue: { resolve: (token: string) => void; reject: (err: any) => void }[] = [];
 
 const drainQueue = (token: string | null, error?: any) => {
     pendingQueue.forEach((p) => (token ? p.resolve(token) : p.reject(error)));

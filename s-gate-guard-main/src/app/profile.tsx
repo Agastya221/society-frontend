@@ -1,14 +1,11 @@
 import api from '@/services/api';
+import { GuardColors } from '@/constants/theme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
-    Animated,
-    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -37,15 +34,9 @@ interface GuardProfile {
 }
 
 export default function ProfileScreen() {
-    const router = useRouter();
-    const fadeAnim = React.useRef(new Animated.Value(0)).current;
     const { logout } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<GuardProfile | null>(null);
-
-    React.useEffect(() => {
-        Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }).start();
-    }, []);
 
     // Fetch latest profile from API
     useEffect(() => {
@@ -140,26 +131,27 @@ export default function ProfileScreen() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                <Animated.View style={{ opacity: fadeAnim }}>
+                <View>
 
                     {/* Profile Header */}
                     <View style={styles.profileHeader}>
                         <View style={styles.avatarContainer}>
                             <View style={styles.avatar}>
-                                <Ionicons name="person" size={48} color="#3B82F6" />
+                                <Ionicons name="person" size={48} color={GuardColors.goldDeep} />
                             </View>
                             <View style={styles.statusIndicator}>
                                 <View style={[styles.statusDot, { backgroundColor: profile.isActive ? '#10B981' : '#6B7280' }]} />
                             </View>
                         </View>
 
-                        <Text style={styles.guardName}>{profile.name}</Text>
-                        <Text style={styles.guardId}>{profile.id}</Text>
-
-                        <View style={[styles.statusBadge, { backgroundColor: profile.isActive ? '#D1FAE5' : '#F3F4F6', borderColor: profile.isActive ? '#A7F3D0' : '#E5E7EB' }]}>
-                            <Text style={[styles.statusText, { color: profile.isActive ? '#047857' : '#374151' }]}>
-                                {profile.isActive ? 'ACTIVE' : 'INACTIVE'}
-                            </Text>
+                        <View style={styles.profileIdentity}>
+                            <Text style={styles.guardName}>{profile.name}</Text>
+                            <Text style={styles.guardId}>Security team · ID {profile.id.slice(0, 8).toUpperCase()}</Text>
+                            <View style={[styles.statusBadge, { backgroundColor: profile.isActive ? '#D1FAE5' : '#F3F4F6', borderColor: profile.isActive ? '#A7F3D0' : '#E5E7EB' }]}>
+                                <Text style={[styles.statusText, { color: profile.isActive ? '#047857' : '#374151' }]}>
+                                    {profile.isActive ? 'ON DUTY' : 'INACTIVE'}
+                                </Text>
+                            </View>
                         </View>
                     </View>
 
@@ -169,7 +161,7 @@ export default function ProfileScreen() {
 
                         <View style={styles.infoRow}>
                             <View style={styles.infoIcon}>
-                                <Ionicons name="call" size={20} color="#3B82F6" />
+                                <Ionicons name="call" size={20} color={GuardColors.goldDeep} />
                             </View>
                             <View style={styles.infoContent}>
                                 <Text style={styles.infoLabel}>Contact Number</Text>
@@ -181,7 +173,7 @@ export default function ProfileScreen() {
 
                         <View style={styles.infoRow}>
                             <View style={styles.infoIcon}>
-                                <Ionicons name="shield-checkmark" size={20} color="#3B82F6" />
+                                <Ionicons name="shield-checkmark" size={20} color={GuardColors.goldDeep} />
                             </View>
                             <View style={styles.infoContent}>
                                 <Text style={styles.infoLabel}>Role</Text>
@@ -194,7 +186,7 @@ export default function ProfileScreen() {
                                 <View style={styles.divider} />
                                 <View style={styles.infoRow}>
                                     <View style={styles.infoIcon}>
-                                        <Ionicons name="calendar-outline" size={20} color="#3B82F6" />
+                                        <Ionicons name="calendar-outline" size={20} color={GuardColors.goldDeep} />
                                     </View>
                                     <View style={styles.infoContent}>
                                         <Text style={styles.infoLabel}>Join Date</Text>
@@ -209,7 +201,7 @@ export default function ProfileScreen() {
                                 <View style={styles.divider} />
                                 <View style={styles.infoRow}>
                                     <View style={styles.infoIcon}>
-                                        <Ionicons name="time" size={20} color="#3B82F6" />
+                                        <Ionicons name="time" size={20} color={GuardColors.goldDeep} />
                                     </View>
                                     <View style={styles.infoContent}>
                                         <Text style={styles.infoLabel}>Last Logged In</Text>
@@ -227,7 +219,7 @@ export default function ProfileScreen() {
 
                             <View style={styles.infoRow}>
                                 <View style={styles.infoIcon}>
-                                    <Ionicons name="business" size={20} color="#3B82F6" />
+                                    <Ionicons name="business" size={20} color={GuardColors.goldDeep} />
                                 </View>
                                 <View style={styles.infoContent}>
                                     <Text style={styles.infoLabel}>Society Name</Text>
@@ -239,7 +231,7 @@ export default function ProfileScreen() {
 
                             <View style={styles.infoRow}>
                                 <View style={styles.infoIcon}>
-                                    <Ionicons name="location" size={20} color="#3B82F6" />
+                                    <Ionicons name="location" size={20} color={GuardColors.goldDeep} />
                                 </View>
                                 <View style={styles.infoContent}>
                                     <Text style={styles.infoLabel}>Address</Text>
@@ -249,30 +241,15 @@ export default function ProfileScreen() {
                         </View>
                     )}
 
-                    {/* Action Buttons */}
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.actionButton,
-                            pressed && styles.actionButtonPressed,
-                        ]}
-                    >
-                        <Ionicons name="settings-outline" size={22} color="#374151" />
-                        <Text style={styles.actionButtonText}>App Settings</Text>
-                        <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-                    </Pressable>
-
                     <Pressable
                         onPress={handleLogout}
-                        style={({ pressed }) => [
-                            styles.logoutButton,
-                            pressed && styles.logoutButtonPressed,
-                        ]}
+                        style={styles.logoutButton}
                     >
                         <Ionicons name="log-out-outline" size={22} color="#DC2626" />
                         <Text style={styles.logoutButtonText}>Log Out</Text>
                     </Pressable>
 
-                </Animated.View>
+                </View>
             </ScrollView>
         </View>
     );
@@ -281,7 +258,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FAFBFC',
+        backgroundColor: GuardColors.bg,
     },
     centered: {
         flex: 1,
@@ -300,47 +277,28 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
     },
     profileHeader: {
+        flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 32,
+        padding: 18,
         backgroundColor: '#FFFFFF',
-        borderRadius: 24,
-        marginBottom: 24,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#1F2937',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.06,
-                shadowRadius: 16,
-            },
-            android: {
-                elevation: 3,
-            },
-        }),
+        borderRadius: 20,
+        marginBottom: 18,
+        borderWidth: 1,
+        borderColor: GuardColors.border,
     },
     avatarContainer: {
         position: 'relative',
-        marginBottom: 16,
+        marginRight: 14,
     },
     avatar: {
-        width: 96,
-        height: 96,
-        borderRadius: 48,
-        backgroundColor: '#EFF6FF',
+        width: 72,
+        height: 72,
+        borderRadius: 24,
+        backgroundColor: GuardColors.goldPale,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 4,
+        borderWidth: 2,
         borderColor: '#FFFFFF',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#3B82F6',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 12,
-            },
-            android: {
-                elevation: 4,
-            },
-        }),
     },
     statusIndicator: {
         position: 'absolute',
@@ -355,22 +313,23 @@ const styles = StyleSheet.create({
         height: 12,
         borderRadius: 6,
     },
+    profileIdentity: { flex: 1, alignItems: 'flex-start' },
     guardName: {
-        fontSize: 26,
+        fontSize: 21,
         fontWeight: '900',
         color: '#1F2937',
         marginBottom: 4,
         letterSpacing: -0.5,
     },
     guardId: {
-        fontSize: 14,
-        fontWeight: '700',
+        fontSize: 11,
+        fontWeight: '600',
         color: '#6B7280',
-        marginBottom: 12,
+        marginBottom: 9,
     },
     statusBadge: {
-        paddingHorizontal: 16,
-        paddingVertical: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
         borderRadius: 14,
         borderWidth: 1,
     },
@@ -381,22 +340,11 @@ const styles = StyleSheet.create({
     },
     infoCard: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 20,
-        padding: 20,
-        marginBottom: 20,
+        borderRadius: 18,
+        padding: 16,
+        marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#F3F4F6',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#1F2937',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.06,
-                shadowRadius: 16,
-            },
-            android: {
-                elevation: 3,
-            },
-        }),
+        borderColor: GuardColors.border,
     },
     sectionLabel: {
         fontSize: 11,
@@ -414,7 +362,7 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 12,
-        backgroundColor: '#EFF6FF',
+        backgroundColor: GuardColors.goldPale,
         alignItems: 'center',
         justifyContent: 'center',
     },

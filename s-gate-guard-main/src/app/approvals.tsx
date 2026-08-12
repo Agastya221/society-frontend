@@ -1,4 +1,6 @@
 import api from '@/services/api';
+import { GuardColors } from '@/constants/theme';
+import { ScreenEmpty, ScreenLoading } from '@/components/ScreenState';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
@@ -6,9 +8,7 @@ import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Animated,
     FlatList,
-    Platform,
     Pressable,
     RefreshControl,
     StyleSheet,
@@ -20,8 +20,9 @@ interface PendingEntry {
     id: string;
     visitorName: string;
     type: string;
-    flat?: { flatNumber: string; resident?: { name: string } };
+    flat?: { flatNumber?: string; number?: string; resident?: { name: string } };
     flatNumber?: string;
+    flatLabel?: string;
     purpose?: string;
     createdAt: string;
     status: string;
@@ -41,7 +42,9 @@ export default function ApprovalsScreen() {
     const fetchPending = useCallback(async () => {
         try {
             const res = await api.get('/api/v1/gate/entry-requests?status=PENDING');
-            setEntries(res.data?.data?.entries ?? res.data?.data ?? []);
+            const payload = res.data?.data;
+            const pendingEntries = payload?.entryRequests ?? payload?.entries ?? (Array.isArray(payload) ? payload : []);
+            setEntries(Array.isArray(pendingEntries) ? pendingEntries : []);
         } catch (err: any) {
             console.error('Failed to fetch pending approvals:', err);
         } finally {
@@ -85,33 +88,19 @@ export default function ApprovalsScreen() {
         ]);
     };
 
-    if (loading) {
-        return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#3B82F6" />
-                <Text style={styles.loadingText}>Loading approvals...</Text>
-            </View>
-        );
-    }
-
     return (
         <View style={styles.container}>
-            {entries.length === 0 ? (
-                <View style={styles.emptyState}>
-                    <View style={styles.emptyIcon}>
-                        <Ionicons name="checkmark-done-circle-outline" size={48} color="#9CA3AF" />
-                    </View>
-                    <Text style={styles.emptyTitle}>All Clear!</Text>
-                    <Text style={styles.emptySubtitle}>No pending approvals at this gate</Text>
-                </View>
+            {loading ? (
+                <ScreenLoading label="Checking pending approvals…" />
+            ) : entries.length === 0 ? (
+                <ScreenEmpty icon="checkmark-done-outline" title="All clear" message="There are no visitors waiting for resident approval." />
             ) : (
                 <FlatList
                     data={entries}
                     keyExtractor={(item) => item.id}
-                    renderItem={({ item, index }) => (
+                    renderItem={({ item }) => (
                         <ApprovalCard
                             entry={item}
-                            index={index}
                             isApproving={actioning === item.id + '_approve'}
                             isRejecting={actioning === item.id + '_reject'}
                             onApprove={() => handleApprove(item.id)}
@@ -120,34 +109,25 @@ export default function ApprovalsScreen() {
                     )}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchPending(); }} tintColor="#3B82F6" />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchPending(); }} tintColor={GuardColors.goldDeep} />}
                 />
             )}
         </View>
     );
 }
 
-function ApprovalCard({ entry, index, isApproving, isRejecting, onApprove, onReject }: {
-    entry: PendingEntry; index: number;
+function ApprovalCard({ entry, isApproving, isRejecting, onApprove, onReject }: {
+    entry: PendingEntry;
     isApproving: boolean; isRejecting: boolean;
     onApprove: () => void; onReject: () => void;
 }) {
     const color = TYPE_COLORS[entry.type] ?? '#6B7280';
-    const fadeAnim = React.useRef(new Animated.Value(0)).current;
-    const slideAnim = React.useRef(new Animated.Value(30)).current;
-    const rawFlat = entry.flat?.flatNumber ?? entry.flatNumber ?? '—';
+    const rawFlat = entry.flatLabel || entry.flat?.flatNumber || entry.flat?.number || entry.flatNumber || '—';
     const flatLabel = rawFlat === 'OFFICE' ? 'Admin Office' : rawFlat;
     const residentName = entry.flat?.resident?.name;
 
-    React.useEffect(() => {
-        Animated.parallel([
-            Animated.timing(fadeAnim, { toValue: 1, delay: index * 80, duration: 400, useNativeDriver: true }),
-            Animated.spring(slideAnim, { toValue: 0, delay: index * 80, tension: 50, friction: 8, useNativeDriver: true }),
-        ]).start();
-    }, []);
-
     return (
-        <Animated.View style={[styles.card, { borderLeftColor: color, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        <View style={[styles.card, { borderLeftColor: color }]}>
             {/* Header */}
             <View style={styles.cardHeader}>
                 <View style={[styles.typeIcon, { backgroundColor: color + '18' }]}>
@@ -179,7 +159,7 @@ function ApprovalCard({ entry, index, isApproving, isRejecting, onApprove, onRej
                 <Pressable
                     onPress={onReject}
                     disabled={isApproving || isRejecting}
-                    style={({ pressed }) => [styles.rejectBtn, pressed && styles.btnPressed]}
+                    style={styles.rejectBtn}
                 >
                     {isRejecting ? <ActivityIndicator size="small" color="#DC2626" /> : (
                         <>
@@ -191,7 +171,7 @@ function ApprovalCard({ entry, index, isApproving, isRejecting, onApprove, onRej
                 <Pressable
                     onPress={onApprove}
                     disabled={isApproving || isRejecting}
-                    style={({ pressed }) => [styles.approveBtn, pressed && styles.btnPressed]}
+                    style={styles.approveBtn}
                 >
                     {isApproving ? <ActivityIndicator size="small" color="#fff" /> : (
                         <>
@@ -201,16 +181,14 @@ function ApprovalCard({ entry, index, isApproving, isRejecting, onApprove, onRej
                     )}
                 </Pressable>
             </View>
-        </Animated.View>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#FAFBFC' },
-    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-    loadingText: { fontSize: 15, fontWeight: '600', color: '#6B7280' },
+    container: { flex: 1, width: '100%', height: '100%', backgroundColor: GuardColors.bg },
     listContent: { padding: 20, paddingBottom: 40 },
-    card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, marginBottom: 16, borderLeftWidth: 4, borderWidth: 1, borderColor: '#F3F4F6', ...Platform.select({ ios: { shadowColor: '#1F2937', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.06, shadowRadius: 16 }, android: { elevation: 3 } }) },
+    card: { backgroundColor: GuardColors.card, borderRadius: 18, padding: 16, marginBottom: 12, borderLeftWidth: 3, borderWidth: 1, borderColor: GuardColors.border },
     cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
     typeIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
     cardHeaderText: { flex: 1 },
@@ -222,12 +200,8 @@ const styles = StyleSheet.create({
     timestamp: { fontSize: 12, fontWeight: '600', color: '#9CA3AF', marginBottom: 14 },
     actions: { flexDirection: 'row', gap: 10 },
     rejectBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: '#FECACA', backgroundColor: '#FEF2F2' },
-    approveBtn: { flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13, borderRadius: 12, backgroundColor: '#10B981', ...Platform.select({ ios: { shadowColor: '#10B981', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 }, android: { elevation: 4 } }) },
+    approveBtn: { flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13, borderRadius: 12, backgroundColor: GuardColors.green },
     btnPressed: { opacity: 0.75, transform: [{ scale: 0.97 }] },
     rejectText: { fontSize: 14, fontWeight: '800', color: '#DC2626' },
     approveText: { fontSize: 14, fontWeight: '800', color: '#fff' },
-    emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
-    emptyIcon: { width: 96, height: 96, borderRadius: 48, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-    emptyTitle: { fontSize: 20, fontWeight: '800', color: '#374151', marginBottom: 8 },
-    emptySubtitle: { fontSize: 15, fontWeight: '600', color: '#9CA3AF', textAlign: 'center' },
 });

@@ -1,4 +1,5 @@
 import api from '@/services/api';
+import { GuardColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -15,12 +16,6 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import Animated, {
-    FadeIn,
-    FadeOut,
-    SlideInDown,
-    SlideOutDown,
-} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SW, height: SH } = Dimensions.get('window');
@@ -77,7 +72,7 @@ function ResultCard({
     const modeLabel = result.mode ?? '';
 
     return (
-        <Animated.View entering={SlideInDown.springify().damping(18)} exiting={SlideOutDown} style={S.resultCard}>
+        <View style={S.resultCard}>
             {/* Status icon + headline */}
             <View style={[S.resultIconWrap, { backgroundColor: accentBg }]}>
                 <Ionicons name={iconName} size={52} color={accent} />
@@ -130,7 +125,7 @@ function ResultCard({
                 <Ionicons name="qr-code-outline" size={18} color="#fff" />
                 <Text style={S.scanAgainText}>Scan Again</Text>
             </TouchableOpacity>
-        </Animated.View>
+        </View>
     );
 }
 
@@ -187,7 +182,7 @@ export default function ScanVerifyScreen() {
     if (!permission) {
         return (
             <View style={S.loadingRoot}>
-                <ActivityIndicator size="large" color="#3B82F6" />
+                <ActivityIndicator size="large" color={GuardColors.goldDeep} />
             </View>
         );
     }
@@ -243,17 +238,17 @@ export default function ScanVerifyScreen() {
 
             {/* Hint text below frame */}
             {!result && !verifying && (
-                <Animated.View entering={FadeIn} style={S.hintWrap} pointerEvents="none">
-                    <Text style={S.hintText}>Point camera at resident's QR code</Text>
-                </Animated.View>
+                <View style={S.hintWrap} pointerEvents="none">
+                    <Text style={S.hintText}>Point camera at the resident QR code</Text>
+                </View>
             )}
 
             {/* Verifying spinner */}
             {verifying && (
-                <Animated.View entering={FadeIn} exiting={FadeOut} style={S.verifyingWrap} pointerEvents="none">
+                <View style={S.verifyingWrap} pointerEvents="none">
                     <ActivityIndicator size="large" color="#fff" />
                     <Text style={S.verifyingText}>Verifying…</Text>
-                </Animated.View>
+                </View>
             )}
 
             {/* Result card */}
@@ -313,7 +308,7 @@ const S = StyleSheet.create({
     },
     permBtn: {
         marginTop: 16,
-        backgroundColor: '#3B82F6',
+        backgroundColor: GuardColors.gold,
         paddingHorizontal: 36,
         paddingVertical: 16,
         borderRadius: 16,

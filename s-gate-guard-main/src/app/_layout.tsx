@@ -7,6 +7,7 @@ import { ActivityIndicator, Platform, View } from 'react-native';
 import 'react-native-reanimated';
 import '../global.css';
 import api from '@/services/api';
+import { GuardColors, GuardFonts } from '@/constants/theme';
 
 // Show notifications while app is in foreground
 Notifications.setNotificationHandler({
@@ -27,7 +28,7 @@ export default function RootLayout() {
   // Load stored token on app launch
   useEffect(() => {
     loadToken();
-  }, []);
+  }, [loadToken]);
 
   // Register native FCM token after authentication
   useEffect(() => {
@@ -73,20 +74,28 @@ export default function RootLayout() {
       // Redirect to home if already authenticated
       router.replace('/');
     }
-  }, [isAuthenticated, segments, isLoading]);
+  }, [isAuthenticated, segments, isLoading, router]);
 
   // Show loading screen while checking authentication
   if (isLoading) {
     return (
-      <View className="flex-1 bg-white items-center justify-center">
-        <ActivityIndicator size="large" color="#4f46e5" />
+      <View style={{ flex: 1, backgroundColor: GuardColors.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={GuardColors.goldDeep} />
       </View>
     );
   }
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: GuardColors.bg },
+        animation: 'none',
+        headerStyle: { backgroundColor: GuardColors.card },
+        headerTintColor: GuardColors.t1,
+        headerShadowVisible: false,
+        headerTitleStyle: { fontFamily: GuardFonts.semibold, fontWeight: '700', fontSize: 17 },
+      }}>
         <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen name="index" />
         <Stack.Screen 
@@ -95,9 +104,6 @@ export default function RootLayout() {
             presentation: 'card', 
             headerShown: true,
             title: 'New Entry',
-            headerStyle: { backgroundColor: '#FFFFFF' },
-            headerTintColor: '#1F2937',
-            headerTitleStyle: { fontWeight: '700' },
           }} 
         />
         <Stack.Screen 
@@ -105,9 +111,6 @@ export default function RootLayout() {
           options={{ 
             headerShown: true,
             title: "Today's Entries",
-            headerStyle: { backgroundColor: '#FFFFFF' },
-            headerTintColor: '#1F2937',
-            headerTitleStyle: { fontWeight: '700' },
           }} 
         />
         <Stack.Screen 
@@ -115,9 +118,6 @@ export default function RootLayout() {
           options={{ 
             headerShown: true,
             title: 'Approval Status',
-            headerStyle: { backgroundColor: '#FFFFFF' },
-            headerTintColor: '#1F2937',
-            headerTitleStyle: { fontWeight: '700' },
           }} 
         />
         <Stack.Screen 
@@ -125,9 +125,6 @@ export default function RootLayout() {
           options={{ 
             headerShown: true,
             title: 'Staff Scan',
-            headerStyle: { backgroundColor: '#FFFFFF' },
-            headerTintColor: '#1F2937',
-            headerTitleStyle: { fontWeight: '700' },
           }} 
         />
         <Stack.Screen
@@ -149,13 +146,10 @@ export default function RootLayout() {
           options={{ 
             headerShown: true,
             title: 'My Profile',
-            headerStyle: { backgroundColor: '#FFFFFF' },
-            headerTintColor: '#1F2937',
-            headerTitleStyle: { fontWeight: '700' },
           }} 
         />
       </Stack>
-      <StatusBar style="auto" />
+      <StatusBar style="dark" backgroundColor={GuardColors.card} />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import api from '@/services/api';
+import { GuardColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -6,8 +7,6 @@ import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Animated,
-    Platform,
     Pressable,
     StyleSheet,
     Text,
@@ -19,7 +18,6 @@ export default function StaffScanScreen() {
     const router = useRouter();
     const [staffIdInput, setStaffIdInput] = useState('');
     const [scanning, setScanning] = useState(false);
-    const [scanned, setScanned] = useState(false);
     const [staffData, setStaffData] = useState<any>(null);
 
     const handleCheckIn = async () => {
@@ -44,7 +42,6 @@ export default function StaffScanScreen() {
                     status: attendance.status,
                 });
             }
-            setScanned(true);
             setStaffIdInput(''); // Clear input after successful check-in
 
         } catch (err: any) {
@@ -63,31 +60,32 @@ export default function StaffScanScreen() {
 
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Staff Attendance</Text>
-                <Text style={styles.headerSubtitle}>Enter staff ID manually or scan their QR code</Text>
+                <Text style={styles.eyebrow}>STAFF ACCESS</Text>
+                <Text style={styles.headerTitle}>Mark attendance</Text>
+                <Text style={styles.headerSubtitle}>Scan the helper pass or enter the staff ID.</Text>
             </View>
 
             {/* QR Scan shortcut */}
             <Pressable style={styles.qrShortcut} onPress={() => router.push('/scan-verify' as any)}>
                 <View style={styles.qrShortcutIcon}>
-                    <Ionicons name="qr-code-outline" size={22} color="#8B5CF6" />
+                    <Ionicons name="qr-code-outline" size={22} color={GuardColors.black} />
                 </View>
                 <View style={styles.qrShortcutText}>
-                    <Text style={styles.qrShortcutTitle}>Scan QR Code</Text>
-                    <Text style={styles.qrShortcutSub}>Use camera to verify any pass instantly</Text>
+                    <Text style={styles.qrShortcutTitle}>Scan staff pass</Text>
+                    <Text style={styles.qrShortcutSub}>Fastest way to verify and check in</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color="#C4B5FD" />
+                <Ionicons name="arrow-forward" size={18} color={GuardColors.black} />
             </Pressable>
 
             {/* Manual Entry Form */}
             <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Enter Staff ID *</Text>
+                <Text style={styles.inputLabel}>STAFF ID</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder="e.g. uuid-of-staff"
+                    placeholder="Enter printed staff ID"
                     placeholderTextColor="#9CA3AF"
                     value={staffIdInput}
-                    onChangeText={(t) => { setStaffIdInput(t); setScanned(false); setStaffData(null); }}
+                    onChangeText={(t) => { setStaffIdInput(t); setStaffData(null); }}
                     autoCapitalize="characters"
                     autoCorrect={false}
                 />
@@ -95,16 +93,15 @@ export default function StaffScanScreen() {
                 <Pressable
                     onPress={handleCheckIn}
                     disabled={!staffIdInput.trim() || scanning}
-                    style={({ pressed }) => [
+                    style={[
                         styles.checkInButton,
                         (!staffIdInput.trim() || scanning) && styles.checkInButtonDisabled,
-                        pressed && !!staffIdInput.trim() && !scanning && styles.checkInButtonPressed,
                     ]}
                 >
                     {scanning ? (
                         <ActivityIndicator size="small" color="#fff" />
                     ) : (
-                        <Ionicons name="checkmark-done" size={24} color="#FFFFFF" />
+                        <Ionicons name="checkmark-done" size={21} color={GuardColors.black} />
                     )}
                     <Text style={[styles.scanButtonText, (!staffIdInput.trim() || scanning) && styles.scanButtonTextDisabled]}>
                         {scanning ? 'Verifying...' : 'Check In Staff'}
@@ -114,10 +111,10 @@ export default function StaffScanScreen() {
 
             {/* Staff Info Card (appears after scan) */}
             {staffData ? (
-                <Animated.View style={styles.staffCard}>
+                <View style={styles.staffCard}>
                     <View style={styles.staffHeader}>
                         <View style={styles.staffAvatar}>
-                            <Ionicons name="person" size={32} color="#3B82F6" />
+                            <Ionicons name="person" size={32} color={GuardColors.goldDeep} />
                         </View>
                         <View style={styles.staffInfo}>
                             <Text style={styles.staffName}>{staffData.name}</Text>
@@ -139,7 +136,7 @@ export default function StaffScanScreen() {
                             <Text style={styles.detailText}>Checked-in at {staffData.shift}</Text>
                         </View>
                     </View>
-                </Animated.View>
+                </View>
             ) : null}
 
         </View>
@@ -149,40 +146,42 @@ export default function StaffScanScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FAFBFC',
+        backgroundColor: GuardColors.bg,
         padding: 20,
     },
     header: {
-        marginBottom: 24,
+        marginBottom: 20,
     },
+    eyebrow: { fontSize: 10, fontWeight: '900', color: GuardColors.goldDeep, letterSpacing: 1.5, marginBottom: 7 },
     headerTitle: {
-        fontSize: 24,
+        fontSize: 27,
         fontWeight: '900',
-        color: '#1F2937',
+        color: GuardColors.t1,
         marginBottom: 4,
         letterSpacing: -0.5,
     },
     headerSubtitle: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: '#6B7280',
+        fontSize: 14,
+        lineHeight: 20,
+        fontWeight: '500',
+        color: GuardColors.t2,
     },
     qrShortcut: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 14,
-        backgroundColor: '#F5F3FF',
+        backgroundColor: GuardColors.goldPale,
         borderRadius: 16,
         padding: 16,
         marginBottom: 20,
         borderWidth: 1,
-        borderColor: '#DDD6FE',
+        borderColor: '#ECD587',
     },
     qrShortcutIcon: {
         width: 44,
         height: 44,
         borderRadius: 12,
-        backgroundColor: '#EDE9FE',
+        backgroundColor: GuardColors.gold,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -192,62 +191,51 @@ const styles = StyleSheet.create({
     qrShortcutTitle: {
         fontSize: 15,
         fontWeight: '700',
-        color: '#5B21B6',
+        color: GuardColors.t1,
         marginBottom: 2,
     },
     qrShortcutSub: {
         fontSize: 12,
         fontWeight: '500',
-        color: '#7C3AED',
+        color: GuardColors.t2,
     },
     inputContainer: {
         backgroundColor: '#FFFFFF',
-        borderRadius: 20,
-        padding: 20,
+        borderRadius: 18,
+        padding: 16,
         marginBottom: 32,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
-        ...Platform.select({
-            ios: { shadowColor: '#1F2937', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.05, shadowRadius: 16 },
-            android: { elevation: 3 },
-        }),
+        borderColor: GuardColors.border,
     },
     inputLabel: {
         fontSize: 13,
         fontWeight: '700',
-        color: '#374151',
+        color: GuardColors.t3,
+        letterSpacing: 1.1,
         marginBottom: 8,
     },
     input: {
-        backgroundColor: '#F9FAFB',
+        backgroundColor: GuardColors.bg,
         borderRadius: 12,
         padding: 16,
         fontSize: 16,
         color: '#1F2937',
         borderWidth: 1.5,
-        borderColor: '#E5E7EB',
+        borderColor: GuardColors.border,
         fontWeight: '500',
         marginBottom: 16,
     },
     checkInButton: {
-        backgroundColor: '#3B82F6',
+        backgroundColor: GuardColors.gold,
         borderRadius: 16,
         padding: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
-        ...Platform.select({
-            ios: { shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 },
-            android: { elevation: 4 },
-        }),
     },
     checkInButtonDisabled: {
         backgroundColor: '#E5E7EB',
-        ...Platform.select({
-            ios: { shadowOpacity: 0 },
-            android: { elevation: 0 },
-        }),
     },
     checkInButtonPressed: {
         transform: [{ scale: 0.98 }],
@@ -255,7 +243,7 @@ const styles = StyleSheet.create({
     scanButtonText: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#FFFFFF',
+        color: GuardColors.black,
     },
     scanButtonTextDisabled: {
         color: '#9CA3AF',
@@ -266,18 +254,7 @@ const styles = StyleSheet.create({
         padding: 20,
         marginBottom: 20,
         borderWidth: 1,
-        borderColor: '#E5E7EB',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#1F2937',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.08,
-                shadowRadius: 16,
-            },
-            android: {
-                elevation: 4,
-            },
-        }),
+        borderColor: GuardColors.border,
     },
     staffHeader: {
         flexDirection: 'row',
@@ -291,7 +268,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 16,
-        backgroundColor: '#EFF6FF',
+        backgroundColor: GuardColors.goldPale,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
