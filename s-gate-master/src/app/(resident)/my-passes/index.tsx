@@ -1,4 +1,4 @@
-import { Feather, MaterialIcons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { 
@@ -83,16 +83,13 @@ const DAYS_SHORT: Record<string, string> = {
 
 function scheduleLabel(entry: PreApprovedEntry): string {
     const s = entry.schedule;
+    if (!s) return '';
     if (s.scheduleType === 'ONCE') {
         if (s.date) return `${s.date} ${s.startTime ?? ''}–${s.endTime ?? ''}`.trim();
         return 'One-time';
     }
     const days = (s.daysOfWeek ?? []).map(d => DAYS_SHORT[d] ?? d).join(' ');
     return `${days} ${s.timeFrom ?? ''}–${s.timeTo ?? ''}`.trim();
-}
-
-function fmtDate(iso: string): string {
-    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 const TABS = ['Pre-Approvals', 'Invites'] as const;
@@ -253,8 +250,8 @@ export default function PassesScreen() {
     };
 
     const renderPreApproval = useCallback(({ item }: { item: PreApprovedEntry }) => {
-        const tc = PA_TYPE[item.type];
-        const sc = PA_STATUS[item.status];
+        const tc = PA_TYPE[item.type] ?? PA_TYPE.HELP;
+        const sc = PA_STATUS[item.status] ?? PA_STATUS.ACTIVE;
         const sched = scheduleLabel(item);
         return (
             <View style={styles.card}>
@@ -592,12 +589,14 @@ export default function PassesScreen() {
 const styles = StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: SgateColors.bg,
     },
     header: {
         backgroundColor: '#FFFFFF',
         paddingHorizontal: 20,
-        paddingBottom: 16,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: SgateColors.borderSoft,
     },
     headerInner: {
         flexDirection: 'row',
@@ -611,8 +610,8 @@ const styles = StyleSheet.create({
     },
     headerTitleMain: {
         flex: 1,
-        fontSize: 20,
-        fontFamily: SgateFonts.bold,
+        fontSize: 18,
+        fontFamily: SgateFonts.semibold,
         color: SgateColors.t1,
         marginLeft: 12,
     },
@@ -627,17 +626,18 @@ const styles = StyleSheet.create({
     tabWrapper: {
         backgroundColor: '#FFF',
         paddingHorizontal: 20,
-        paddingBottom: 20,
+        paddingTop: 8,
+        paddingBottom: 12,
     },
     segmentedContainer: {
         flexDirection: 'row',
-        backgroundColor: '#F3F4F6',
+        backgroundColor: SgateColors.surface,
         borderRadius: 12,
         padding: 4,
     },
     segment: {
         flex: 1,
-        paddingVertical: 10,
+        paddingVertical: 9,
         alignItems: 'center',
         borderRadius: 10,
     },
@@ -655,7 +655,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         padding: 20,
-        paddingBottom: 100,
+        paddingBottom: 40,
     },
     centered: {
         flex: 1,
@@ -714,11 +714,11 @@ const styles = StyleSheet.create({
 
     card: {
         backgroundColor: '#FFF',
-        borderRadius: 18,
+        borderRadius: 16,
         padding: 16,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#F0F0F0',
+        borderColor: SgateColors.borderSoft,
     },
     cardTop: {
         flexDirection: 'row',
@@ -740,9 +740,11 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     cardName: {
+        flex: 1,
         fontSize: 16,
-        fontFamily: SgateFonts.bold,
+        fontFamily: SgateFonts.semibold,
         color: SgateColors.t1,
+        marginRight: 8,
     },
     statusBadge: {
         paddingHorizontal: 8,
@@ -756,13 +758,16 @@ const styles = StyleSheet.create({
     },
     pillRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: 6,
         marginTop: 4,
     },
     pill: {
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 6,
+        paddingVertical: 3,
+        borderRadius: 8,
     },
     pillText: {
         fontSize: 11,

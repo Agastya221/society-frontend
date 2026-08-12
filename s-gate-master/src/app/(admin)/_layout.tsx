@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { AdminTabBar } from '@/components/Sgate/AdminTabBar';
+import { SgateColors } from '@/constants/Sgate-theme';
 
 export default function AdminTabsLayout() {
     return (
@@ -10,7 +11,8 @@ export default function AdminTabsLayout() {
             backBehavior="history"
             screenOptions={{
                 headerShown: false,
-                animation: 'fade',
+                animation: 'none',
+                sceneStyle: { backgroundColor: SgateColors.bg },
             }}
         >
             <Tabs.Screen

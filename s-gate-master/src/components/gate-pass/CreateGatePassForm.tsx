@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
@@ -27,7 +26,6 @@ interface CreateGatePassFormProps {
 }
 
 export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps) {
-    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     
     // Form State
@@ -142,14 +140,14 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
                             const flatsRes = await api.get(
                                 `/resident/onboarding/societies/${societyId}/blocks/${block.id}/flats`
                             );
-                            const blockFlats = (flatsRes.data?.data ?? []).map(
-                                (f: { id: string; number: string }) => ({
-                                    id: f.id,
-                                    number: f.number,
-                                    block: block.name,
-                                    ownerName: '',
-                                })
-                            );
+                            const blockFlats = (flatsRes.data?.data ?? [])
+                                .map((f: any) => ({
+                                    id: String(f?.id ?? ''),
+                                    number: String(f?.flatNumber ?? f?.number ?? ''),
+                                    block: String(f?.blockName ?? block?.name ?? ''),
+                                    ownerName: String(f?.ownerName ?? ''),
+                                }))
+                                .filter((flat: FlatOption) => flat.id && flat.number);
                             all.push(...blockFlats);
                         } catch {
                             // skip
@@ -158,8 +156,8 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
                 );
 
                 all.sort((a, b) =>
-                    a.block.localeCompare(b.block) ||
-                    a.number.localeCompare(b.number)
+                    a.block.localeCompare(b.block, undefined, { numeric: true }) ||
+                    a.number.localeCompare(b.number, undefined, { numeric: true })
                 );
                 setFlatOptions(all);
                 if (all.length > 0) setSelectedFlatId(all[0].id);

@@ -1,7 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
     FlatList,
     Modal,
     ScrollView,
@@ -89,13 +88,13 @@ export default function ResidentsScreen() {
                             const flatsRes = await api.get(
                                 `/resident/onboarding/societies/${societyId}/blocks/${block.id}/flats`
                             );
-                            const blockFlats = (flatsRes.data?.data ?? []).map(
-                                (f: { id: string; number: string }) => ({
-                                    id: f.id,
-                                    number: f.number,
-                                    block: block.name,
-                                })
-                            );
+                            const blockFlats = (flatsRes.data?.data ?? [])
+                                .map((f: any) => ({
+                                    id: String(f?.id ?? ''),
+                                    number: String(f?.flatNumber ?? f?.number ?? ''),
+                                    block: String(f?.blockName ?? block?.name ?? ''),
+                                }))
+                                .filter((flat: FlatOption) => flat.id && flat.number);
                             all.push(...blockFlats);
                         } catch {
                             // skip
@@ -104,8 +103,8 @@ export default function ResidentsScreen() {
                 );
 
                 all.sort((a, b) =>
-                    a.block.localeCompare(b.block) ||
-                    a.number.localeCompare(b.number)
+                    a.block.localeCompare(b.block, undefined, { numeric: true }) ||
+                    a.number.localeCompare(b.number, undefined, { numeric: true })
                 );
                 setFlatOptions(all);
                 if (all.length > 0) setFlatId(all[0].id);

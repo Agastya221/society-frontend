@@ -6,6 +6,7 @@ import { AppState, Vibration, View } from 'react-native';
 import { EmergencyOverlay } from '../../components/emergency/EmergencyOverlay';
 import { SgateTabBar } from '../../components/Sgate';
 import { EmergencyProvider, useActiveEmergency } from '../../context/EmergencyContext';
+import { SgateColors } from '../../constants/Sgate-theme';
 
 function ResidentLayoutInner() {
   const { hasActiveEmergency, activeEmergency, dismissAlert } = useActiveEmergency();
@@ -104,7 +105,8 @@ function ResidentLayoutInner() {
         backBehavior="history"
         screenOptions={{
           headerShown: false,
-          animation: 'fade',
+          animation: 'none',
+          sceneStyle: { backgroundColor: SgateColors.bg },
         }}
       >
         {/* ── Visible tabs ──────────────────────────────────────────────── */}
