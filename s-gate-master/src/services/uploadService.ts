@@ -1,8 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import api from './api';
 
-const API_BASE_URL = 'https://society-gate-backend-gsrq.onrender.com/api/v1'; // kept for legacy direct-fetch usage
-
 interface PresignedUrlResponse {
     success: boolean;
     message: string;
@@ -13,7 +11,7 @@ interface PresignedUrlResponse {
 }
 
 interface UploadContext {
-    context: 'entry-photo' | 'onboarding';
+    context: 'entry-photo' | 'onboarding' | 'staff-photo';
     documentType?: string; // For onboarding: 'AADHAR_CARD', 'PAN_CARD', etc.
 }
 

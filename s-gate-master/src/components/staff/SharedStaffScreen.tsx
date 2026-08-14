@@ -1,15 +1,32 @@
 import { AppLoader } from '@/components/ui/AppLoader';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Avatar } from '@/components/ui/Avatar';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
-import { getStaffAttendance, getStaffList, StaffAttendance, StaffMember } from '@/services/staffService';
+import { createDomesticStaff, DomesticStaffRole, getStaffAttendance, getStaffList, StaffAttendance, StaffMember, updateDomesticStaff } from '@/services/staffService';
+import { uploadImage } from '@/services/uploadService';
+
+const STAFF_ROLES: { value: DomesticStaffRole; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
+    { value: 'MAID', label: 'House Help', icon: 'broom' },
+    { value: 'COOK', label: 'Cook', icon: 'chef-hat' },
+    { value: 'NANNY', label: 'Nanny', icon: 'baby-face-outline' },
+    { value: 'DRIVER', label: 'Driver', icon: 'car-outline' },
+    { value: 'CLEANER', label: 'Cleaner', icon: 'spray-bottle' },
+    { value: 'GARDENER', label: 'Gardener', icon: 'flower-outline' },
+    { value: 'LAUNDRY', label: 'Laundry', icon: 'washing-machine' },
+    { value: 'CARETAKER', label: 'Caretaker', icon: 'account-heart-outline' },
+    { value: 'SECURITY_GUARD', label: 'Security', icon: 'shield-account-outline' },
+    { value: 'OTHER', label: 'Other', icon: 'account-outline' },
+];
 
 // Helpers
 const formatTime = (iso?: string) => {
@@ -25,6 +42,14 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
     const [staff, setStaff] = useState<StaffMember[]>([]);
     const [attendance, setAttendance] = useState<StaffAttendance[]>([]);
     const [loading, setLoading] = useState(true);
+    const [formVisible, setFormVisible] = useState(false);
+    const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
+    const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
+    const [role, setRole] = useState<DomesticStaffRole>('MAID');
+    const [photoUri, setPhotoUri] = useState('');
+    const [photoChanged, setPhotoChanged] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -41,11 +66,112 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
         setLoading(false);
     };
 
+    const closeForm = () => {
+        setFormVisible(false);
+        setEditingStaff(null);
+        setName('');
+        setPhone('');
+        setRole('MAID');
+        setPhotoUri('');
+        setPhotoChanged(false);
+    };
+
+    const openCreateForm = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setEditingStaff(null);
+        setName('');
+        setPhone('');
+        setRole('MAID');
+        setPhotoUri('');
+        setPhotoChanged(false);
+        setFormVisible(true);
+    };
+
+    const openEditForm = (item: StaffMember) => {
+        if (item.source !== 'DOMESTIC') return;
+        setEditingStaff(item);
+        setName(item.name);
+        setPhone(item.phone);
+        setRole(item.role as DomesticStaffRole);
+        setPhotoUri(item.photoUrl || '');
+        setPhotoChanged(false);
+        setFormVisible(true);
+    };
+
+    const choosePhoto = async () => {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+            AppAlert.show('Permission required', 'Allow photo access to select a clear staff face photo.');
+            return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.65,
+        });
+        if (!result.canceled && result.assets[0]?.uri) {
+            setPhotoUri(result.assets[0].uri);
+            setPhotoChanged(true);
+        }
+    };
+
+    const saveStaff = async () => {
+        const cleanName = name.trim();
+        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+        if (!cleanName) return AppAlert.show('Name required', 'Enter the staff member’s full name.');
+        if (cleanPhone.length !== 10) return AppAlert.show('Phone required', 'Enter a valid 10-digit phone number.');
+        if (!photoUri) return AppAlert.show('Photo required', 'Add a clear face photo so guards and residents can identify the staff member.');
+
+        setSaving(true);
+        try {
+            let photoUrl: string | undefined;
+            if (photoChanged || !editingStaff) {
+                photoUrl = await uploadImage(photoUri, { context: 'staff-photo' });
+            }
+            const input = { name: cleanName, phone: cleanPhone, staffType: role, ...(photoUrl ? { photoUrl } : {}) };
+            if (editingStaff) await updateDomesticStaff(editingStaff.id, input);
+            else await createDomesticStaff({ ...input, photoUrl: photoUrl! });
+            closeForm();
+            await loadData();
+            AppAlert.show('Success', editingStaff ? 'Staff details updated.' : 'Staff added and ready to sign in.');
+        } catch (error: any) {
+            AppAlert.show('Failed', error?.response?.data?.message || error?.message || 'Could not save staff details.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const toggleStaffStatus = () => {
+        if (!editingStaff) return;
+        const activating = editingStaff.status !== 'ACTIVE';
+        AppAlert.show(
+            activating ? 'Activate staff?' : 'Deactivate staff?',
+            activating ? 'They will be able to sign in again.' : 'They will immediately lose access to the staff app.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: activating ? 'Activate' : 'Deactivate',
+                    style: activating ? 'default' : 'destructive',
+                    onPress: async () => {
+                        try {
+                            await updateDomesticStaff(editingStaff.id, { isActive: activating });
+                            closeForm();
+                            await loadData();
+                        } catch (error: any) {
+                            AppAlert.show('Failed', error?.response?.data?.message || 'Could not update staff access.');
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
     const renderStaffCard = ({ item, index }: { item: StaffMember; index: number }) => (
         <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-            <TouchableOpacity style={styles.card} activeOpacity={0.97}>
+            <TouchableOpacity style={styles.card} activeOpacity={0.97} onPress={() => openEditForm(item)} disabled={item.source !== 'DOMESTIC'}>
                 <View style={styles.cardHeader}>
-                    <Avatar name={item.name} size={46} />
+                    <Avatar name={item.name} photoUrl={item.photoUrl} size={46} />
                     <View style={styles.cardInfo}>
                         <Text style={styles.staffName} numberOfLines={1}>{item.name}</Text>
                         <View style={styles.roleWrap}>
@@ -68,6 +194,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                             {item.status === 'ACTIVE' ? 'Active' : 'Inactive'}
                         </Text>
                     </View>
+                    {item.source === 'DOMESTIC' && <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t4} />}
                 </View>
 
                 <View style={styles.cardMetrics}>
@@ -103,7 +230,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
             <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
                 <View style={styles.card}>
                     <View style={styles.cardHeader}>
-                        <Avatar name={item.name} size={42} />
+                        <Avatar name={item.name} photoUrl={item.photoUrl} size={42} />
                         <View style={styles.cardInfo}>
                             <Text style={styles.staffName}>{item.name}</Text>
                             <Text style={styles.staffRole}>{item.role}</Text>
@@ -154,7 +281,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                         <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, isTab && { marginLeft: 0 }]}>Staff</Text>
-                    <TouchableOpacity style={styles.addBtn} onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
+                    <TouchableOpacity style={styles.addBtn} onPress={openCreateForm} accessibilityLabel="Add staff">
                         <MaterialCommunityIcons name="plus" size={18} color="#fff" />
                     </TouchableOpacity>
                 </View>
@@ -174,7 +301,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                             onPress={() => { Haptics.selectionAsync(); setActiveTab('ATTENDANCE'); }}
                             activeOpacity={0.8}
                         >
-                            <Text style={[styles.segmentText, activeTab === 'ATTENDANCE' && styles.segmentTextActive]}>Today's Logs</Text>
+                            <Text style={[styles.segmentText, activeTab === 'ATTENDANCE' && styles.segmentTextActive]}>Today&apos;s Logs</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -218,6 +345,65 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                     }
                 />
             )}
+
+            <Modal visible={formVisible} animationType="slide" transparent onRequestClose={closeForm}>
+                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={closeForm} />
+                    <View style={[styles.formSheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+                        <View style={styles.sheetHandle} />
+                        <View style={styles.formHeader}>
+                            <View>
+                                <Text style={styles.formTitle}>{editingStaff ? 'Edit staff' : 'Add staff member'}</Text>
+                                <Text style={styles.formSubtitle}>Admin registration gives immediate app access</Text>
+                            </View>
+                            <Pressable style={styles.closeButton} onPress={closeForm} accessibilityLabel="Close form">
+                                <MaterialCommunityIcons name="close" size={20} color={SgateColors.t2} />
+                            </Pressable>
+                        </View>
+                        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.formContent}>
+                            <Pressable style={styles.photoPicker} onPress={choosePhoto}>
+                                {photoUri ? (
+                                    <Image source={{ uri: photoUri }} style={styles.photoPreview} contentFit="cover" />
+                                ) : (
+                                    <View style={styles.photoPlaceholder}><MaterialCommunityIcons name="camera-plus-outline" size={30} color={SgateColors.goldDeep} /></View>
+                                )}
+                                <View style={styles.photoCopy}>
+                                    <Text style={styles.photoTitle}>{photoUri ? 'Change face photo' : 'Add face photo'}</Text>
+                                    <Text style={styles.photoHint}>Use a clear, front-facing photo</Text>
+                                </View>
+                                <MaterialCommunityIcons name="chevron-right" size={20} color={SgateColors.t4} />
+                            </Pressable>
+
+                            <Text style={styles.fieldLabel}>FULL NAME</Text>
+                            <TextInput style={styles.formInput} value={name} onChangeText={setName} placeholder="e.g. Sunita Devi" placeholderTextColor={SgateColors.t4} autoCapitalize="words" />
+                            <Text style={styles.fieldLabel}>PHONE NUMBER</Text>
+                            <TextInput style={styles.formInput} value={phone} onChangeText={value => setPhone(value.replace(/\D/g, '').slice(0, 10))} placeholder="10-digit mobile number" placeholderTextColor={SgateColors.t4} keyboardType="phone-pad" maxLength={10} />
+                            <Text style={styles.fieldLabel}>ROLE</Text>
+                            <View style={styles.roleGrid}>
+                                {STAFF_ROLES.map(option => (
+                                    <Pressable key={option.value} style={[styles.roleChip, role === option.value && styles.roleChipActive]} onPress={() => setRole(option.value)}>
+                                        <MaterialCommunityIcons name={option.icon} size={17} color={role === option.value ? SgateColors.goldDeep : SgateColors.t3} />
+                                        <Text style={[styles.roleChipText, role === option.value && styles.roleChipTextActive]}>{option.label}</Text>
+                                    </Pressable>
+                                ))}
+                            </View>
+                            <View style={styles.accessNote}>
+                                <MaterialCommunityIcons name="check-decagram" size={20} color={SgateColors.green} />
+                                <Text style={styles.accessNoteText}>This number is verified automatically and can sign in to the Staff app immediately.</Text>
+                            </View>
+                            {editingStaff && (
+                                <Pressable style={[styles.statusAction, editingStaff.status === 'ACTIVE' && styles.deactivateAction]} onPress={toggleStaffStatus}>
+                                    <MaterialCommunityIcons name={editingStaff.status === 'ACTIVE' ? 'account-off-outline' : 'account-check-outline'} size={19} color={editingStaff.status === 'ACTIVE' ? SgateColors.red : SgateColors.green} />
+                                    <Text style={[styles.statusActionText, { color: editingStaff.status === 'ACTIVE' ? SgateColors.red : SgateColors.green }]}>{editingStaff.status === 'ACTIVE' ? 'Deactivate app access' : 'Reactivate app access'}</Text>
+                                </Pressable>
+                            )}
+                            <Pressable style={[styles.saveButton, saving && styles.saveButtonDisabled]} onPress={saveStaff} disabled={saving}>
+                                {saving ? <ActivityIndicator color={SgateColors.t1} /> : <Text style={styles.saveButtonText}>{editingStaff ? 'Save changes' : 'Add & activate staff'}</Text>}
+                            </Pressable>
+                        </ScrollView>
+                    </View>
+                </KeyboardAvoidingView>
+            </Modal>
         </View>
     );
 }
@@ -342,4 +528,34 @@ const styles = StyleSheet.create({
     loader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     empty: { alignItems: 'center', paddingTop: 60 },
     emptyText: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t3, marginTop: 12 },
+
+    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(13,15,20,0.45)' },
+    formSheet: { maxHeight: '92%', backgroundColor: SgateColors.card, borderTopLeftRadius: 26, borderTopRightRadius: 26 },
+    sheetHandle: { width: 42, height: 4, borderRadius: 2, backgroundColor: SgateColors.borderSoft, alignSelf: 'center', marginTop: 10 },
+    formHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+    formTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    formSubtitle: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
+    closeButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
+    formContent: { padding: 20, paddingBottom: 30 },
+    photoPicker: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 16, backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.borderSoft, marginBottom: 20 },
+    photoPreview: { width: 58, height: 58, borderRadius: 16 },
+    photoPlaceholder: { width: 58, height: 58, borderRadius: 16, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+    photoCopy: { flex: 1, marginLeft: 12 },
+    photoTitle: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    photoHint: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 3 },
+    fieldLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 0.7, marginBottom: 7, marginTop: 4 },
+    formInput: { height: 50, borderRadius: 14, borderWidth: 1, borderColor: SgateColors.borderSoft, backgroundColor: SgateColors.bg, paddingHorizontal: 15, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1, marginBottom: 16 },
+    roleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 },
+    roleChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, height: 38, borderRadius: 12, backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.borderSoft },
+    roleChipActive: { backgroundColor: SgateColors.goldPale, borderColor: SgateColors.gold },
+    roleChipText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    roleChipTextActive: { color: SgateColors.t1 },
+    accessNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, borderRadius: 14, padding: 13, backgroundColor: SgateColors.greenBg, marginBottom: 16 },
+    accessNoteText: { flex: 1, fontSize: 12, lineHeight: 18, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
+    statusAction: { height: 48, borderRadius: 14, borderWidth: 1, borderColor: SgateColors.green, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 },
+    deactivateAction: { borderColor: SgateColors.red },
+    statusActionText: { fontSize: 14, fontFamily: SgateFonts.bold },
+    saveButton: { height: 52, borderRadius: 15, backgroundColor: SgateColors.gold, alignItems: 'center', justifyContent: 'center' },
+    saveButtonDisabled: { opacity: 0.65 },
+    saveButtonText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 });

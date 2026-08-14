@@ -1,7 +1,7 @@
-import axios from 'axios';
 import api from './api';
 
-export type StaffRole = 'MAID' | 'COOK' | 'PLUMBER' | 'ELECTRICIAN' | 'GUARD' | 'GARDENER' | 'OTHER';
+export type DomesticStaffRole = 'MAID' | 'COOK' | 'NANNY' | 'DRIVER' | 'CLEANER' | 'GARDENER' | 'LAUNDRY' | 'CARETAKER' | 'SECURITY_GUARD' | 'OTHER';
+export type StaffRole = DomesticStaffRole | 'GUARD';
 export type StaffStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
 
 export interface StaffMember {
@@ -11,12 +11,21 @@ export interface StaffMember {
     role: StaffRole;
     status: StaffStatus;
     agencyName?: string;
-    salary: number; // monthly salary for payroll
-    shiftStart: string; // e.g., '09:00'
-    shiftEnd: string; // e.g., '18:00'
+    salary: number | null; // monthly salary for payroll
+    shiftStart: string | null; // e.g., '09:00'
+    shiftEnd: string | null; // e.g., '18:00'
     assignedFlats: string[]; // flat IDs they serve (or 'SOCIETY' if common)
     photoUrl?: string;
+    source?: 'USER' | 'DOMESTIC';
+    isVerified?: boolean;
     createdAt: string;
+}
+
+export interface StaffInput {
+    name: string;
+    phone: string;
+    photoUrl: string;
+    staffType: DomesticStaffRole;
 }
 
 export interface StaffAttendance {
@@ -37,4 +46,15 @@ export const getStaffList = async (): Promise<StaffMember[]> => {
 export const getStaffAttendance = async (date: string): Promise<StaffAttendance[]> => {
     const response = await api.get<{ success: boolean; data: StaffAttendance[] }>(`/admin/staff/attendance?date=${date}`);
     return response.data.data;
+};
+
+export const createDomesticStaff = async (input: StaffInput): Promise<void> => {
+    await api.post('/staff/domestic', input);
+};
+
+export const updateDomesticStaff = async (
+    id: string,
+    input: Partial<StaffInput> & { isActive?: boolean },
+): Promise<void> => {
+    await api.patch(`/staff/domestic/${id}`, input);
 };
