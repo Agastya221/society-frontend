@@ -82,7 +82,10 @@ api.interceptors.response.use(
             }
         }
 
-        console.error('❌ API Error:', error.response?.status, error.config?.url, error.response?.data?.message);
+        const status = error.response?.status;
+        const details = ['API request failed:', status, error.config?.url, error.response?.data?.message];
+        if (status && status >= 500) console.error(...details);
+        else console.warn(...details);
         return Promise.reject(error);
     }
 );

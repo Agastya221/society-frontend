@@ -255,13 +255,25 @@ export const getAttendanceRecords = async (
 // ─── Bookings ─────────────────────────────────────────────────────────────────
 
 export interface CreateStaffBookingPayload {
-    staffId: string;
-    flatId: string;
-    date: string;
+    domesticStaffId: string;
+    bookingDate: string;
     startTime: string;
     endTime: string;
-    taskDescription?: string;
+    durationHours: number;
+    workType: string;
+    requirements?: string;
 }
+
+export interface StaffOpenSlot {
+    startTime: string;
+    endTime: string;
+    durationMinutes: number;
+}
+
+export const getStaffOpenSlots = async (staffId: string, date: string): Promise<StaffOpenSlot[]> => {
+    const res = await api.get(`/staff/domestic/${staffId}/open-slots`, { params: { date } });
+    return res.data?.data?.slots ?? [];
+};
 
 export const bookStaff = async (data: CreateStaffBookingPayload): Promise<StaffBooking> => {
     const res = await api.post<{ success: boolean; data: StaffBooking }>(

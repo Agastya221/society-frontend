@@ -32,6 +32,9 @@ interface VerifyResult {
     scheduleType?: string;
     mode?: string;
     type?: string;
+    staffType?: string;
+    isCurrentlyWorking?: boolean;
+    attendanceAction?: 'CHECKED_IN' | 'CHECKED_OUT';
 }
 
 // ─── Permission Gate ──────────────────────────────────────────────────────────
@@ -64,6 +67,7 @@ function ResultCard({
     onScanAgain: () => void;
 }) {
     const isAllowed = result.allowed;
+    const isStaff = result.type === 'DOMESTIC_STAFF';
     const accent = isAllowed ? '#16A34A' : '#DC2626';
     const accentBg = isAllowed ? '#F0FDF4' : '#FEF2F2';
     const iconName: any = isAllowed ? 'checkmark-circle' : 'close-circle';
@@ -79,7 +83,11 @@ function ResultCard({
             </View>
 
             <Text style={[S.resultHeadline, { color: accent }]}>
-                {isAllowed ? 'Entry Allowed' : 'Entry Denied'}
+                {isAllowed
+                    ? (isStaff
+                        ? (result.attendanceAction === 'CHECKED_OUT' ? 'Staff Checked Out' : 'Staff Checked In')
+                        : 'Entry Allowed')
+                    : 'Entry Denied'}
             </Text>
 
             {!isAllowed && !!result.reason && (
@@ -109,6 +117,20 @@ function ResultCard({
                             <Ionicons name="layers-outline" size={16} color="#6B7280" />
                             <Text style={S.resultRowLabel}>Type</Text>
                             <Text style={S.resultRowValue}>{typeLabel}</Text>
+                        </View>
+                    )}
+                    {isStaff && !!result.staffType && (
+                        <View style={S.resultRow}>
+                            <Ionicons name="briefcase-outline" size={16} color="#6B7280" />
+                            <Text style={S.resultRowLabel}>Role</Text>
+                            <Text style={S.resultRowValue}>{result.staffType.replace(/_/g, ' ')}</Text>
+                        </View>
+                    )}
+                    {isStaff && (
+                        <View style={S.resultRow}>
+                            <Ionicons name="time-outline" size={16} color="#6B7280" />
+                            <Text style={S.resultRowLabel}>Status</Text>
+                            <Text style={S.resultRowValue}>{result.isCurrentlyWorking ? 'Checked in' : 'Not checked in'}</Text>
                         </View>
                     )}
                     {!!modeLabel && modeLabel !== 'NORMAL' && (
@@ -148,11 +170,29 @@ export default function ScanVerifyScreen() {
             setVerifying(true);
 
             try {
-                const res = await api.post<{ success: boolean; data: VerifyResult }>(
-                    '/api/v1/guard-app/verify-code',
-                    { code: data }
+                const res = await api.post<{
+                    success: boolean;
+                    message?: string;
+                    data: { type: string; allowed: boolean; pass?: Record<string, any> };
+                }>(
+                    '/api/v1/guard/scan',
+                    { qrToken: data }
                 );
-                const payload = res.data?.data;
+                const scan = res.data?.data;
+                const pass = scan?.pass ?? {};
+                const payload: VerifyResult = {
+                    allowed: Boolean(scan?.allowed),
+                    reason: res.data?.message,
+                    type: scan?.type,
+                    inviteType: pass.inviteType,
+                    visitorName: scan?.type === 'DOMESTIC_STAFF' ? pass.name : pass.visitorName,
+                    flatNumber: pass.flatNumber ?? pass.flat?.flatNumber,
+                    scheduleType: pass.scheduleType,
+                    mode: pass.mode,
+                    staffType: pass.staffType,
+                    isCurrentlyWorking: pass.isCurrentlyWorking,
+                    attendanceAction: pass.attendanceAction,
+                };
                 setResult(payload);
 
                 if (payload?.allowed) {
@@ -239,7 +279,7 @@ export default function ScanVerifyScreen() {
             {/* Hint text below frame */}
             {!result && !verifying && (
                 <View style={S.hintWrap} pointerEvents="none">
-                    <Text style={S.hintText}>Point camera at the resident QR code</Text>
+                    <Text style={S.hintText}>Point camera at a visitor or staff QR code</Text>
                 </View>
             )}
 

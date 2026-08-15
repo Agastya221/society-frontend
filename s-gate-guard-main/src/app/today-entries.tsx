@@ -4,7 +4,7 @@ import { ScreenEmpty, ScreenLoading } from '@/components/ScreenState';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -20,31 +20,35 @@ import {
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Entry {
     id: string;
+    recordKind: 'ENTRY' | 'STAFF_ATTENDANCE';
     visitorName: string;
-    type: string;
+    type: 'VISITOR' | 'DELIVERY' | 'DOMESTIC_STAFF' | 'CAB' | 'VENDOR';
     flatNumber?: string;
-    flat?: { flatNumber: string; resident?: { name: string } };
     purpose?: string;
+    companyName?: string;
+    visitorType?: string;
+    staffType?: string;
     checkInTime: string;
     checkOutTime: string | null;
-    status: 'INSIDE' | 'EXITED' | 'WAITING_APPROVAL' | 'WAITING' | 'DENIED' | 'APPROVED';
-    approvedBy?: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CHECKED_IN' | 'CHECKED_OUT';
 }
 
 const TYPE_COLORS: Record<string, string> = {
-    GUEST: '#3B82F6',
-    DELIVERY_PERSON: '#F59E0B',
-    SERVICE_PROVIDER: '#8B5CF6',
-    CAB_DRIVER: '#10B981',
+    VISITOR: '#3B82F6',
+    DELIVERY: '#F59E0B',
+    DOMESTIC_STAFF: '#0D9488',
+    VENDOR: '#8B5CF6',
+    CAB: '#10B981',
 };
 
-type FilterType = 'ALL' | 'GUEST' | 'DELIVERY_PERSON' | 'SERVICE_PROVIDER' | 'CAB_DRIVER';
+type FilterType = 'ALL' | Entry['type'];
 const FILTERS: { label: string; value: FilterType }[] = [
     { label: 'All', value: 'ALL' },
-    { label: 'Guests', value: 'GUEST' },
-    { label: 'Deliveries', value: 'DELIVERY_PERSON' },
-    { label: 'Workers', value: 'SERVICE_PROVIDER' },
-    { label: 'Cabs', value: 'CAB_DRIVER' },
+    { label: 'Guests', value: 'VISITOR' },
+    { label: 'Deliveries', value: 'DELIVERY' },
+    { label: 'Staff', value: 'DOMESTIC_STAFF' },
+    { label: 'Services', value: 'VENDOR' },
+    { label: 'Cabs', value: 'CAB' },
 ];
 
 const formatTime = (iso: string) =>
@@ -56,67 +60,95 @@ const formatDuration = (checkIn: string, checkOut: string) => {
     return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 };
 
+const isToday = (iso: string) => {
+    const date = new Date(iso);
+    const now = new Date();
+    return date.getFullYear() === now.getFullYear()
+        && date.getMonth() === now.getMonth()
+        && date.getDate() === now.getDate();
+};
+
+const cleanLabel = (value?: string) => value?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
 // ── Screen ────────────────────────────────────────────────────────────────────
 export default function TodayEntriesScreen() {
     const [entries, setEntries] = useState<Entry[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [fetchingMore, setFetchingMore] = useState(false);
     const [checkingOut, setCheckingOut] = useState<string | null>(null);
-    
-    // Pagination & Filters
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
     const [filter, setFilter] = useState<FilterType>('ALL');
 
-    const fetchEntries = useCallback(async (fetchPage: number, currentFilter: FilterType, append = false) => {
+    const fetchEntries = useCallback(async () => {
         try {
-            const typeQuery = currentFilter !== 'ALL' ? `&type=${currentFilter}` : '';
-            const res = await api.get(`/api/v1/gate/entries?limit=10&page=${fetchPage}${typeQuery}`);
-            
-            const newEntries = res.data?.data?.entries ?? [];
-            const pagination = res.data?.data?.pagination;
+            const res = await api.get('/api/v1/guard/today');
+            const rawEntries = res.data?.data?.entries ?? [];
+            const staffAttendances = res.data?.data?.staffAttendances ?? [];
 
-            if (append) {
-                setEntries(prev => [...prev, ...newEntries]);
-            } else {
-                setEntries(newEntries);
-            }
+            const visitorEntries: Entry[] = rawEntries.map((entry: any) => ({
+                id: entry.id,
+                recordKind: 'ENTRY',
+                visitorName: entry.visitorName ?? entry.companyName ?? 'Visitor',
+                type: entry.type,
+                flatNumber: entry.flat?.flatNumber ?? entry.flat?.number ?? entry.flatNumber,
+                purpose: entry.purpose,
+                companyName: entry.companyName,
+                visitorType: entry.visitorType,
+                checkInTime: entry.checkInTime ?? entry.createdAt,
+                checkOutTime: entry.checkOutTime ?? entry.checkOutAt ?? null,
+                status: entry.status,
+            }));
 
-            setPage(fetchPage);
-            setHasMore(pagination?.page < pagination?.pages);
+            const staffEntries: Entry[] = staffAttendances.map((attendance: any) => ({
+                id: attendance.id,
+                recordKind: 'STAFF_ATTENDANCE',
+                visitorName: attendance.domesticStaff?.name ?? attendance.staffName ?? 'Staff member',
+                type: 'DOMESTIC_STAFF',
+                flatNumber: attendance.flat?.flatNumber ?? attendance.flatNumber,
+                staffType: attendance.domesticStaff?.staffType ?? attendance.staffType,
+                checkInTime: attendance.checkInTime,
+                checkOutTime: attendance.checkOutTime ?? null,
+                status: attendance.checkOutTime ? 'CHECKED_OUT' : 'CHECKED_IN',
+            }));
+
+            const todayEntries = [...visitorEntries, ...staffEntries]
+                .filter((entry) => entry.checkInTime && isToday(entry.checkInTime))
+                .sort((a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime());
+
+            setEntries(todayEntries);
         } catch (err: any) {
             console.error('Failed to fetch entries:', err);
         } finally {
             setLoading(false);
             setRefreshing(false);
-            setFetchingMore(false);
         }
     }, []);
+
+    const visibleEntries = useMemo(
+        () => filter === 'ALL' ? entries : entries.filter((entry) => entry.type === filter),
+        [entries, filter]
+    );
 
     // Refresh every time screen is focused (resets everything)
     useFocusEffect(useCallback(() => {
         setLoading(true);
-        fetchEntries(1, filter);
-    }, [fetchEntries, filter]));
+        fetchEntries();
+    }, [fetchEntries]));
 
     const handleFilterChange = (f: FilterType) => {
         if (f === filter) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setFilter(f);
-        setLoading(true);
-        fetchEntries(1, f);
     };
 
-    const handleCheckOut = async (id: string) => {
+    const handleCheckOut = useCallback(async (id: string) => {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setCheckingOut(id);
         try {
-            await api.patch(`/api/v1/gate/entries/${id}/checkout`);
+            await api.patch(`/api/v1/guard/entries/${id}/checkout`);
             // Optimistic update
             setEntries((prev) =>
                 prev.map((e) =>
-                    e.id === id ? { ...e, checkOutTime: new Date().toISOString(), status: 'EXITED' } : e
+                    e.id === id ? { ...e, checkOutTime: new Date().toISOString(), status: 'CHECKED_OUT' } : e
                 )
             );
         } catch (err: any) {
@@ -124,18 +156,20 @@ export default function TodayEntriesScreen() {
         } finally {
             setCheckingOut(null);
         }
+    }, []);
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchEntries();
     };
 
-    const onRefresh = () => { 
-        setRefreshing(true); 
-        fetchEntries(1, filter);
-    };
-
-    const onLoadMore = () => {
-        if (!hasMore || fetchingMore || loading) return;
-        setFetchingMore(true);
-        fetchEntries(page + 1, filter, true);
-    };
+    const renderEntry = useCallback(({ item }: { item: Entry }) => (
+        <EntryCard
+            entry={item}
+            checkingOut={checkingOut === item.id}
+            onCheckOut={handleCheckOut}
+        />
+    ), [checkingOut, handleCheckOut]);
 
     return (
         <View style={styles.container}>
@@ -159,25 +193,16 @@ export default function TodayEntriesScreen() {
 
             {loading ? (
                 <ScreenLoading label="Loading gate activity…" />
-            ) : entries.length === 0 ? (
-                <ScreenEmpty icon="calendar-outline" title="No entries yet" message="Visitors checked in at this gate will appear here." />
+            ) : visibleEntries.length === 0 ? (
+                <ScreenEmpty icon="calendar-outline" title="No entries yet" message="Today’s matching gate activity will appear here." />
             ) : (
                 <FlatList
-                    data={entries}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <EntryCard
-                            entry={item}
-                            checkingOut={checkingOut === item.id}
-                            onCheckOut={() => handleCheckOut(item.id)}
-                        />
-                    )}
+                    data={visibleEntries}
+                    keyExtractor={(item) => `${item.recordKind}:${item.id}`}
+                    renderItem={renderEntry}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GuardColors.goldDeep} />}
-                    onEndReached={onLoadMore}
-                    onEndReachedThreshold={0.5}
-                    ListFooterComponent={fetchingMore ? <ActivityIndicator size="small" color={GuardColors.goldDeep} style={{ marginVertical: 20 }} /> : null}
                 />
             )}
         </View>
@@ -185,17 +210,19 @@ export default function TodayEntriesScreen() {
 }
 
 // ── Entry Card ────────────────────────────────────────────────────────────────
-function EntryCard({
+const EntryCard = memo(function EntryCard({
     entry, checkingOut, onCheckOut,
 }: {
-    entry: Entry; checkingOut: boolean; onCheckOut: () => void;
+    entry: Entry; checkingOut: boolean; onCheckOut: (id: string) => void;
 }) {
     const color = TYPE_COLORS[entry.type] ?? '#6B7280';
     
     // Status Logic
-    const isInside = entry.status === 'INSIDE';
-    const isExited = entry.status === 'EXITED';
-    const isWaiting = ['WAITING_APPROVAL', 'WAITING'].includes(entry.status);
+    const isInside = entry.status === 'CHECKED_IN';
+    const isExited = entry.status === 'CHECKED_OUT';
+    const isWaiting = entry.status === 'PENDING';
+    const isApproved = entry.status === 'APPROVED';
+    const isDenied = entry.status === 'REJECTED';
 
     let statusColor = '#374151'; // default text
     let statusBg = '#F3F4F6'; // default bg
@@ -213,17 +240,35 @@ function EntryCard({
         statusBg = '#FEF3C7';
         statusColor = '#D97706';
         statusDot = '#F59E0B';
+    } else if (isApproved) {
+        statusBg = '#DBEAFE';
+        statusColor = '#1D4ED8';
+        statusDot = '#3B82F6';
+    } else if (isDenied) {
+        statusBg = '#FEE2E2';
+        statusColor = '#B91C1C';
+        statusDot = '#EF4444';
     }
 
-    const rawFlat = entry.flat?.flatNumber ?? entry.flatNumber ?? '—';
-    const flatLabel = rawFlat === 'OFFICE' ? 'Admin Office' : rawFlat;
-    const residentName = entry.flat?.resident?.name;
+    const flatLabel = entry.flatNumber === 'OFFICE' ? 'Admin Office' : entry.flatNumber;
+    const locationLabel = flatLabel
+        ? `Flat ${flatLabel}`
+        : entry.type === 'DOMESTIC_STAFF' ? 'Society staff' : 'Flat not assigned';
+    const typeLabel = entry.type === 'DOMESTIC_STAFF'
+        ? cleanLabel(entry.staffType) ?? 'Staff'
+        : entry.companyName ?? cleanLabel(entry.visitorType) ?? cleanLabel(entry.type);
+    const statusLabel = isInside ? 'INSIDE'
+        : isExited ? 'EXITED'
+        : isApproved ? 'APPROVED'
+        : isDenied ? 'DENIED'
+        : 'WAITING';
 
     // Infer Icon
     let iconName: any = 'person';
-    if (entry.type === 'DELIVERY_PERSON') iconName = 'cube';
-    else if (entry.type === 'SERVICE_PROVIDER') iconName = 'construct';
-    else if (entry.type === 'CAB_DRIVER') iconName = 'car';
+    if (entry.type === 'DELIVERY') iconName = 'cube';
+    else if (entry.type === 'VENDOR') iconName = 'construct';
+    else if (entry.type === 'CAB') iconName = 'car';
+    else if (entry.type === 'DOMESTIC_STAFF') iconName = 'people';
 
     return (
         <View style={[styles.card, { borderLeftColor: color }]}>
@@ -236,7 +281,7 @@ function EntryCard({
                     <View style={styles.cardHeaderText}>
                         <Text style={styles.visitorName}>{entry.visitorName}</Text>
                         <Text style={styles.visitorDetails}>
-                            Flat {flatLabel}{residentName ? ` • ${residentName}` : ''}
+                            {locationLabel}{typeLabel ? ` • ${typeLabel}` : ''}
                             {entry.purpose ? ` • ${entry.purpose}` : ''}
                         </Text>
                     </View>
@@ -244,7 +289,7 @@ function EntryCard({
                 <View style={[styles.statusBadge, { backgroundColor: statusBg, borderColor: statusBg }]}>
                     <View style={[styles.statusDot, { backgroundColor: statusDot }]} />
                     <Text style={[styles.statusText, { color: statusColor }]}>
-                        {isInside ? 'INSIDE' : isExited ? 'EXITED' : 'WAITING'}
+                        {statusLabel}
                     </Text>
                 </View>
             </View>
@@ -253,7 +298,7 @@ function EntryCard({
             <View style={styles.timeSection}>
                 <View style={styles.timeRow}>
                     <Ionicons name="enter-outline" size={16} color="#10B981" />
-                    <Text style={styles.timeLabel}>Check-In:</Text>
+                    <Text style={styles.timeLabel}>{isInside || isExited ? 'Check-In:' : 'Arrived:'}</Text>
                     <Text style={styles.timeValue}>{entry.checkInTime ? formatTime(entry.checkInTime) : '—'}</Text>
                 </View>
                 <View style={styles.timeRow}>
@@ -272,9 +317,9 @@ function EntryCard({
             </View>
 
             {/* Check-out button */}
-            {isInside && (
+            {isInside && entry.recordKind === 'ENTRY' && (
                 <Pressable
-                    onPress={onCheckOut}
+                    onPress={() => onCheckOut(entry.id)}
                     disabled={checkingOut}
                     style={[styles.checkOutButton, checkingOut && styles.checkOutButtonPressed]}
                 >
@@ -290,7 +335,7 @@ function EntryCard({
             )}
         </View>
     );
-}
+});
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: GuardColors.bg },

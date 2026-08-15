@@ -1,14 +1,15 @@
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-Linking, ScrollView, Share, StyleSheet,
+ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
 import api from '../../../../services/api';
+import { bookStaff, getStaffOpenSlots, StaffOpenSlot } from '../../../../services/staffDomesticService';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface WorksInEntry { flat: string; flatId: string; durationMonths: number }
@@ -53,7 +54,7 @@ function normalise(raw: any): Helper {
   };
 }
 
-const RATING_ICONS: Array<'clock' | 'repeat' | 'star' | 'smile'> = ['clock', 'repeat', 'star', 'smile'];
+const RATING_ICONS: ('clock' | 'repeat' | 'star' | 'smile')[] = ['clock', 'repeat', 'star', 'smile'];
 
 const TYPE_LABELS: Record<string, string> = {
   MAID: 'Maid', COOK: 'Cook', DRIVER: 'Driver',
@@ -67,6 +68,32 @@ export default function DailyHelpProfile() {
 
   const [helper, setHelper] = useState<Helper | null>(null);
   const [loading, setLoading] = useState(true);
+  const bookingDates = useMemo(() => Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() + index);
+    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return { value, day: date.toLocaleDateString('en-IN', { weekday: 'short' }), label: date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) };
+  }), []);
+  const [bookingDate, setBookingDate] = useState(bookingDates[0].value);
+  const [slots, setSlots] = useState<StaffOpenSlot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<StaffOpenSlot | null>(null);
+  const [booking, setBooking] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    setSlotsLoading(true);
+    setSelectedSlot(null);
+    getStaffOpenSlots(id, bookingDate)
+      .then((result) => { if (active) setSlots(result); })
+      .catch((error) => {
+        if (active) setSlots([]);
+        console.error('Failed to load staff slots:', error);
+      })
+      .finally(() => { if (active) setSlotsLoading(false); });
+    return () => { active = false; };
+  }, [bookingDate, id]);
 
   useFocusEffect(useCallback(() => {
     const fetch = async () => {
@@ -116,6 +143,28 @@ export default function DailyHelpProfile() {
   const totalRatings = helper.ratings.reduce((sum, r) => sum + r.count, 0);
   const maskedPhone = helper.phone.replace(/\d(?=\d{4})/g, '*');
 
+  const submitBooking = async () => {
+    if (!selectedSlot) return;
+    try {
+      setBooking(true);
+      await bookStaff({
+        domesticStaffId: helper.id,
+        bookingDate,
+        startTime: selectedSlot.startTime,
+        endTime: selectedSlot.endTime,
+        durationHours: selectedSlot.durationMinutes / 60,
+        workType: typeLabel,
+      });
+      Alert.alert('Request sent', `${helper.name} will be notified and can accept this booking.`);
+      setSlots((current) => current.filter((slot) => slot.startTime !== selectedSlot.startTime));
+      setSelectedSlot(null);
+    } catch (error: any) {
+      Alert.alert('Could not book', error?.response?.data?.message ?? 'This slot may no longer be available.');
+    } finally {
+      setBooking(false);
+    }
+  };
+
   return (
     <View style={s.safe}>
       <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
@@ -145,6 +194,46 @@ export default function DailyHelpProfile() {
               <Feather name="share-2" size={20} color={SgateColors.t2} />
             </TouchableOpacity>
           </View>
+        </View>
+
+        <View style={s.card}>
+          <View style={s.cardHeaderRow}>
+            <View style={s.cardIconWrap}><Feather name="clock" size={18} color={SgateColors.gold} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={s.cardTitle}>Book an open slot</Text>
+              <Text style={s.cardSubtitle}>Only free time between scheduled homes is shown</Text>
+            </View>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.dateRow}>
+            {bookingDates.map((date) => {
+              const active = date.value === bookingDate;
+              return (
+                <Pressable key={date.value} onPress={() => setBookingDate(date.value)} style={[s.dateChip, active && s.dateChipActive]}>
+                  <Text style={[s.dateDay, active && s.dateTextActive]}>{date.day}</Text>
+                  <Text style={[s.dateLabel, active && s.dateTextActive]}>{date.label}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          {slotsLoading ? (
+            <ActivityIndicator color={SgateColors.gold} style={{ marginVertical: 20 }} />
+          ) : slots.length === 0 ? (
+            <Text style={s.noSlots}>No open slots on this day</Text>
+          ) : (
+            <View style={s.slotGrid}>
+              {slots.map((slot) => {
+                const active = selectedSlot?.startTime === slot.startTime && selectedSlot?.endTime === slot.endTime;
+                return (
+                  <Pressable key={`${slot.startTime}-${slot.endTime}`} onPress={() => setSelectedSlot(slot)} style={[s.slotChip, active && s.slotChipActive]}>
+                    <Text style={[s.slotText, active && s.slotTextActive]}>{slot.startTime} – {slot.endTime}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+          <Pressable disabled={!selectedSlot || booking} onPress={submitBooking} style={({ pressed }) => [s.bookButton, (!selectedSlot || booking) && s.bookButtonDisabled, pressed && selectedSlot && { opacity: 0.85 }]}>
+            {booking ? <ActivityIndicator color={SgateColors.black} /> : <Text style={s.bookButtonText}>Request this slot</Text>}
+          </Pressable>
         </View>
 
         {/* Attendance */}
@@ -244,4 +333,19 @@ const s = StyleSheet.create({
   worksInFlat: { flex: 1, fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
   worksInDuration: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
   emptyTitle: { fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
+  dateRow: { gap: 8, paddingVertical: 16 },
+  dateChip: { minWidth: 72, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14, backgroundColor: SgateColors.surface, alignItems: 'center', borderWidth: 1, borderColor: SgateColors.borderSoft },
+  dateChipActive: { backgroundColor: SgateColors.t1, borderColor: SgateColors.t1 },
+  dateDay: { fontSize: 11, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
+  dateLabel: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginTop: 2 },
+  dateTextActive: { color: SgateColors.card },
+  slotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 },
+  slotChip: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: SgateColors.goldPale, borderWidth: 1, borderColor: SgateColors.goldPale },
+  slotChipActive: { backgroundColor: SgateColors.gold, borderColor: SgateColors.goldDeep },
+  slotText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.goldDeep },
+  slotTextActive: { color: SgateColors.black },
+  noSlots: { paddingVertical: 20, textAlign: 'center', fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+  bookButton: { minHeight: 50, borderRadius: 15, backgroundColor: SgateColors.gold, alignItems: 'center', justifyContent: 'center' },
+  bookButtonDisabled: { opacity: 0.45 },
+  bookButtonText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.black },
 });
