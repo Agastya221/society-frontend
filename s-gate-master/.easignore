@@ -1,0 +1,37 @@
+# Dependencies and local tooling
+node_modules/
+**/node_modules/
+.git/
+.expo/
+**/.expo/
+.codex-remote-attachments/
+
+# Old SDK backup and generated native projects/build output
+android-sdk57-backup/
+**/android-sdk57-backup/
+/android/
+/ios/
+**/android/
+**/ios/
+
+# This repository also contains separate guard and staff apps.
+/s-gate-guard-main/
+/s-gate-staff-main/
+
+# Other generated output
+dist/
+web-build/
+coverage/
+.eas-archive-inspect/
+*.tsbuildinfo
+*.log
+
+# Local-only configuration and signing files
+.env*.local
+*.jks
+*.keystore
+*.p12
+*.p8
+*.pem
+
+# Generated native folders are recreated by EAS from app.json/plugins.

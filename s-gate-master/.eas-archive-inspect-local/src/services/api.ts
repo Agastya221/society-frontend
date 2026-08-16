@@ -1,0 +1,113 @@
+import axios, { AxiosInstance } from 'axios';
+import { useAuthStore } from '../store/useAuthStore';
+import { logApiRequest, logApiResponse, logApiError } from '../logger/apiLogger';
+
+const BASE_URL = 'https://society-gate-backend-gsrq.onrender.com/api/v1';
+
+const api: AxiosInstance = axios.create({
+    baseURL: BASE_URL,
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 60000,
+});
+
+// ── Request: attach access token + log ───────────────────────────────────────
+api.interceptors.request.use(
+    (config) => {
+        const accessToken = useAuthStore.getState().accessToken;
+        if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+
+        logApiRequest(
+            config.method ?? 'GET',
+            `${BASE_URL}${config.url}`,
+            config.data
+        );
+
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+// ── Response: silent token refresh on 401 + structured logging ───────────────
+let isRefreshing = false;
+let pendingQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
+
+const drainQueue = (token: string | null, error?: any) => {
+    pendingQueue.forEach((p) => (token ? p.resolve(token) : p.reject(error)));
+    pendingQueue = [];
+};
+
+api.interceptors.response.use(
+    (response) => {
+        logApiResponse(
+            response.config.method ?? 'GET',
+            `${BASE_URL}${response.config.url}`,
+            response.status,
+            response.data
+        );
+        return response;
+    },
+    async (error) => {
+        const originalRequest = error.config;
+
+        // Skip token refresh for endpoints that may legitimately 401 during onboarding
+        const requestUrl: string = originalRequest?.url ?? '';
+        const shouldSkip =
+            requestUrl.includes('/resident/onboarding') ||
+            requestUrl.includes('/society-registration') ||
+            requestUrl.includes('/upload');
+
+        if (error.response?.status === 401 && !originalRequest._retry && !shouldSkip) {
+            const { isAuthenticated, refreshToken, refreshAccessToken, logout } = useAuthStore.getState();
+
+            // Already logged out — don't attempt refresh, silently reject
+            if (!isAuthenticated || !refreshToken) {
+                return Promise.reject(error);
+            }
+
+            // If already refreshing, queue this request until we get a new token
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    pendingQueue.push({
+                        resolve: (token) => {
+                            originalRequest.headers.Authorization = `Bearer ${token}`;
+                            resolve(api(originalRequest));
+                        },
+                        reject,
+                    });
+                });
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                // Call refresh endpoint stored in zustand
+                const newAccessToken = await refreshAccessToken();
+                drainQueue(newAccessToken);
+
+                // Retry original request with new token
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                return api(originalRequest);
+            } catch (refreshError) {
+                drainQueue(null, refreshError);
+                await logout();
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
+        }
+
+        // ── Log error via centralized logger ─────────────────────────────
+        logApiError(
+            originalRequest?.method ?? 'UNKNOWN',
+            `${BASE_URL}${requestUrl}`,
+            error.response?.status,
+            error.response?.data,
+            error.response?.data?.message ?? error.message
+        );
+
+        return Promise.reject(error);
+    }
+);
+
+export default api;

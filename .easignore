@@ -1,0 +1,27 @@
+# EAS archive rules for the resident app inside this monorepo
+
+# Keep only source/config needed by s-gate-master.
+/s-gate-guard-main/
+/s-gate-staff-main/
+
+# Generated dependencies/native output inside the resident app.
+/s-gate-master/node_modules/
+/s-gate-master/android/
+/s-gate-master/ios/
+/s-gate-master/android-sdk57-backup/
+/s-gate-master/.expo/
+/s-gate-master/.eas-archive-inspect/
+
+# Local repository/build artifacts.
+**/node_modules/
+**/.expo/
+**/android-sdk57-backup/
+**/android/
+**/ios/
+**/.gradle/
+**/build/
+**/.cxx/
+**/coverage/
+**/*.log
+**/.codex-remote-attachments/
+**/.git/

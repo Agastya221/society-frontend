@@ -1,0 +1,87 @@
+diff --git a/node_modules/@msg91comm/sendotp-react-native/API/api.service.ts b/node_modules/@msg91comm/sendotp-react-native/API/api.service.ts
+index 5c44ca8..e29a685 100644
+--- a/node_modules/@msg91comm/sendotp-react-native/API/api.service.ts
++++ b/node_modules/@msg91comm/sendotp-react-native/API/api.service.ts
+@@ -6,7 +6,7 @@ import { apiUrls } from './api.url';
+ * @returns {Promise<any>}
+ * @private
+ */
+-function postAPI(url, body) {
++function postAPI(url: any, body: any) {
+   return fetch(url, {
+     method: "POST",
+     body: JSON.stringify(body),
+@@ -15,7 +15,7 @@ function postAPI(url, body) {
+     }
+   }).then(response => response.json());
+ }
+-function getAPI(url) {
++function getAPI(url: any) {
+   return fetch(url, {
+     method: "GET",
+     headers:{
+@@ -30,7 +30,7 @@ export class ApiService {
+    * @param body
+    * @returns {Promise<any>}
+    */
+-  static async sendOTP(body) {
++  static async sendOTP(body: any) {
+     return postAPI(apiUrls.sendOTP, body);
+   }
+ 
+@@ -38,7 +38,7 @@ export class ApiService {
+    * @param body
+    * @returns {Promise<any>}
+    */
+-  static async verifyOTP(body) {
++  static async verifyOTP(body: any) {
+     return postAPI(apiUrls.verifyOTP, body);
+   }
+ 
+@@ -46,7 +46,7 @@ export class ApiService {
+    * @param body
+    * @returns {Promise<any>}
+    */
+-  static async retryOTP(body) {
++  static async retryOTP(body: any) {
+     return postAPI(apiUrls.retryOTP, body);
+   }
+ 
+diff --git a/node_modules/@msg91comm/sendotp-react-native/API/api.url.ts b/node_modules/@msg91comm/sendotp-react-native/API/api.url.ts
+index d60303a..9b85a2b 100644
+--- a/node_modules/@msg91comm/sendotp-react-native/API/api.url.ts
++++ b/node_modules/@msg91comm/sendotp-react-native/API/api.url.ts
+@@ -1,4 +1,4 @@
+-const createEndpoint = (endpoint) => {
++const createEndpoint = (endpoint: any) => {
+     const url = 'https://control.msg91.com/api/v5/widget'
+     return `${url}${endpoint}`;
+   };
+diff --git a/node_modules/@msg91comm/sendotp-react-native/DefaultWidget/components/buttons/PrimaryButton.tsx b/node_modules/@msg91comm/sendotp-react-native/DefaultWidget/components/buttons/PrimaryButton.tsx
+index b387545..58d23d2 100644
+--- a/node_modules/@msg91comm/sendotp-react-native/DefaultWidget/components/buttons/PrimaryButton.tsx
++++ b/node_modules/@msg91comm/sendotp-react-native/DefaultWidget/components/buttons/PrimaryButton.tsx
+@@ -46,7 +46,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
+ 
+   return (
+     <TouchableOpacity
+-      style={[styles.button, dynamicButtonStyle, isDisabled && styles.disabled, style]}
++      style={[styles.button, dynamicButtonStyle, isDisabled && styles.disabled, style as any]}
+       onPress={onPress}
+       disabled={isDisabled}
+       activeOpacity={0.7}
+@@ -58,12 +58,12 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
+             color={colors.primaryButtonText} 
+             style={styles.loader} 
+           />
+-          <Text style={[styles.text, dynamicTextStyle, textStyle]}>
++          <Text style={[styles.text, dynamicTextStyle, textStyle as any]}>
+             {loadingText || title}
+           </Text>
+         </>
+       ) : (
+-        <Text style={[styles.text, dynamicTextStyle, textStyle]}>{title}</Text>
++        <Text style={[styles.text, dynamicTextStyle, textStyle as any]}>{title}</Text>
+       )}
+     </TouchableOpacity>
+   );
