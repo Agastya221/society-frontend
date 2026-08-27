@@ -5,14 +5,14 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
     ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform,
-    ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput,
+    ScrollView, StyleSheet, Switch, Text, TextInput,
     TouchableOpacity, View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
 import { ComplaintCategory, ComplaintUrgency, createComplaint } from '../../../services/complaints';
 import { uploadImage } from '../../../services/uploadService';
 import { AppAlert } from '../../../components/ui/AppAlert';
+import { SafeBottomSheetSurface } from '../../../components/ui/SafeBottomSheetSurface';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
@@ -321,10 +321,9 @@ export default function CreateComplaintScreen() {
             </KeyboardAvoidingView>
 
             {/* ── Category Picker ─────────────────────────────────────────── */}
-            <Modal visible={showCategoryPicker} transparent animationType="slide" onRequestClose={() => setShowCategoryPicker(false)}>
+            <Modal visible={showCategoryPicker} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowCategoryPicker(false)}>
                 <TouchableOpacity style={S.modalOverlay} activeOpacity={1} onPress={() => setShowCategoryPicker(false)}>
-                    <View style={S.pickerSheet}>
-                        <View style={S.pickerHandle} />
+                    <SafeBottomSheetSurface style={S.pickerSheet} showHandle minimumBottomPadding={24}>
                         <Text style={S.pickerTitle}>Choose Category</Text>
                         <FlatList
                             data={CATEGORIES}
@@ -340,15 +339,14 @@ export default function CreateComplaintScreen() {
                                 );
                             }}
                         />
-                    </View>
+                    </SafeBottomSheetSurface>
                 </TouchableOpacity>
             </Modal>
 
             {/* ── Time Picker ────────────────────────────────────────────── */}
-            <Modal visible={showTimePicker} transparent animationType="slide" onRequestClose={() => setShowTimePicker(false)}>
+            <Modal visible={showTimePicker} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowTimePicker(false)}>
                 <TouchableOpacity style={S.modalOverlay} activeOpacity={1} onPress={() => setShowTimePicker(false)}>
-                    <View style={S.pickerSheet}>
-                        <View style={S.pickerHandle} />
+                    <SafeBottomSheetSurface style={S.pickerSheet} showHandle minimumBottomPadding={24}>
                         <Text style={S.pickerTitle}>Preferred Time</Text>
                         {PREFERRED_TIMES.map(t => {
                             const active = preferredTime === t.value;
@@ -360,7 +358,7 @@ export default function CreateComplaintScreen() {
                                 </TouchableOpacity>
                             );
                         })}
-                    </View>
+                    </SafeBottomSheetSurface>
                 </TouchableOpacity>
             </Modal>
         </ComplaintScreenLayout>
@@ -447,8 +445,7 @@ const S = StyleSheet.create({
 
     // Modals
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-    pickerSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40, maxHeight: '70%' },
-    pickerHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: '#E0E0E0', alignSelf: 'center', marginBottom: 16 },
+    pickerSheet: { paddingHorizontal: 20, maxHeight: '70%' },
     pickerTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111', marginBottom: 12 },
     pickerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
     pickerRowActive: { backgroundColor: SgateColors.goldPale, marginHorizontal: -20, paddingHorizontal: 20, borderRadius: 0 },

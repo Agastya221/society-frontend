@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useState } from 'react';
 import {
@@ -37,10 +37,9 @@ async function downloadAndOpen(doc: { id: string; name: string; fileType: string
   // 2. Download to local cache
   const ext = FILE_EXT[doc.fileType] ?? '.pdf';
   const safeName = doc.name.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 60);
-  const localUri = FileSystem.cacheDirectory + safeName + ext;
-  const download = await FileSystem.downloadAsync(url, localUri);
+  const download = await File.downloadFileAsync(url, new File(Paths.cache, safeName + ext));
 
-  if (!download?.uri) throw new Error('DOWNLOAD_FAILED');
+  if (!download.uri) throw new Error('DOWNLOAD_FAILED');
 
   // 3. Open / share the file
   const canShare = await Sharing.isAvailableAsync();

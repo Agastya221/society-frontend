@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Modal, RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
+import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import { ComplaintStatusBadge } from '../../../components/complaints/ComplaintStatusBadge';
@@ -297,9 +298,9 @@ export default function AdminComplaintDetailScreen() {
             </Modal>
 
             {/* ASSIGNMENT MODAL */}
-            <Modal visible={showAssignModal} transparent animationType="slide">
+            <Modal visible={showAssignModal} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowAssignModal(false)}>
                 <View style={S.bottomSheetOverlay}>
-                    <View style={S.bottomSheet}>
+                    <SafeBottomSheetSurface style={S.bottomSheet} showHandle>
                         <View style={S.bottomSheetHeader}>
                             <Text style={S.bottomSheetTitle}>Assign Staff</Text>
                             <TouchableOpacity onPress={() => setShowAssignModal(false)}>
@@ -337,7 +338,7 @@ export default function AdminComplaintDetailScreen() {
                                 })
                             )}
                         </ScrollView>
-                    </View>
+                    </SafeBottomSheetSurface>
                 </View>
             </Modal>
         </View>
@@ -504,10 +505,7 @@ const S = StyleSheet.create({
     // Assignment Bottom Sheet
     bottomSheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     bottomSheet: {
-        backgroundColor: SgateColors.card,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        padding: 24,
+        paddingHorizontal: 24,
         maxHeight: '75%',
     },
     bottomSheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },

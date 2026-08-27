@@ -147,7 +147,7 @@ export default function SelectBlockScreen() {
                             </View>
                             <Text style={styles.emptyTitle}>No blocks found</Text>
                             <Text style={styles.emptySubtitle}>
-                                This society doesn't have any blocks/towers set up yet.
+                                This society doesn’t have any blocks/towers set up yet.
                             </Text>
                         </View>
                     }

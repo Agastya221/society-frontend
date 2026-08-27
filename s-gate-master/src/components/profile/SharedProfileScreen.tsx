@@ -30,6 +30,7 @@ import type {
     ResidentRequestDetails,
 } from '@/services/profile.service';
 import { AppAlert } from '@/components/ui/AppAlert';
+import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { ResidentContextPicker } from '@/components/context/ResidentContextPicker';
 import { ResidentRequestDetailsSheet } from '@/components/context/ResidentRequestDetailsSheet';
 import { SettingRow } from '@/components/ui/SettingRow';
@@ -596,10 +597,12 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 visible={isEditModalVisible}
                 transparent
                 animationType="slide"
+                statusBarTranslucent
+                navigationBarTranslucent
                 onRequestClose={() => setEditModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={[styles.modalSheet, { paddingBottom: insets.bottom + 20 }]}>
+                    <SafeBottomSheetSurface style={styles.modalSheet} showHandle minimumBottomPadding={20}>
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitle}>Edit Profile</Text>
                             <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.modalClose} hitSlop={8}>
@@ -636,7 +639,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                                 {saving ? 'Saving…' : 'Save Changes'}
                             </Text>
                         </TouchableOpacity>
-                    </View>
+                    </SafeBottomSheetSurface>
                 </View>
             </Modal>
 
@@ -774,11 +777,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalSheet: {
-        backgroundColor: SgateColors.card,
-        borderTopLeftRadius: 32,
-        borderTopRightRadius: 32,
         paddingHorizontal: 24,
-        paddingTop: 24,
     },
     modalHeader: {
         flexDirection: 'row',

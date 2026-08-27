@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
+import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
@@ -310,6 +311,8 @@ export default function AdminCommunityScreen() {
                 visible={!!menuTarget}
                 transparent
                 animationType="fade"
+                statusBarTranslucent
+                navigationBarTranslucent
                 onRequestClose={() => setMenuTarget(null)}
             >
                 <TouchableOpacity
@@ -317,7 +320,7 @@ export default function AdminCommunityScreen() {
                     activeOpacity={1}
                     onPress={() => setMenuTarget(null)}
                 >
-                    <View style={styles.menuSheet}>
+                    <SafeBottomSheetSurface style={styles.menuSheet} showHandle minimumBottomPadding={20}>
                         <Text style={styles.menuPostTitle} numberOfLines={1}>
                             {menuTarget?.title}
                         </Text>
@@ -347,7 +350,7 @@ export default function AdminCommunityScreen() {
                                 Cancel
                             </Text>
                         </TouchableOpacity>
-                    </View>
+                    </SafeBottomSheetSurface>
                 </TouchableOpacity>
             </Modal>
 
@@ -486,9 +489,7 @@ const styles = StyleSheet.create({
     // 3-dot menu
     menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
     menuSheet: {
-        backgroundColor: SgateColors.card,
-        borderTopLeftRadius: 24, borderTopRightRadius: 24,
-        paddingHorizontal: 20, paddingTop: 20, paddingBottom: 36,
+        paddingHorizontal: 20,
     },
     menuPostTitle: {
         fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t3,
@@ -512,6 +513,12 @@ const styles = StyleSheet.create({
         color: SgateColors.t1, marginBottom: 14,
     },
     chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
+    chip: { minHeight: 42, paddingHorizontal: 14, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+    chipActive: { backgroundColor: SgateColors.goldPale, borderColor: SgateColors.gold },
+    chipInactive: { backgroundColor: SgateColors.card, borderColor: SgateColors.border },
+    chipText: { fontSize: 13, fontFamily: SgateFonts.semibold },
+    chipTextActive: { color: SgateColors.t1 },
+    chipTextInactive: { color: SgateColors.t2 },
     submitBtn: {
         backgroundColor: SgateColors.gold, borderRadius: 16,
         paddingVertical: 17, alignItems: 'center',

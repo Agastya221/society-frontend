@@ -288,7 +288,6 @@ export default function SelectFlatScreen() {
                     keyExtractor={keyExtractor}
                     renderItem={renderItem}
                     getItemType={getItemType}
-                    estimatedItemSize={60}
                     contentContainerStyle={{ paddingBottom: 120 }}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import type { ResidentContext, ResidentContextRequest } from '@/services/profile.service';
 
 const BRAND_YELLOW = '#FFD60A';
@@ -103,14 +104,15 @@ export function ResidentContextPicker({
         >
             <View style={[S.root, isDropdown ? S.dropdownRoot : S.sheetRoot]}>
                 <Pressable style={S.backdrop} onPress={onClose} />
-                <View
+                <SafeBottomSheetSurface
                     style={[
                         S.panel,
                         isDropdown ? [S.dropdownPanel, { top: topOffset }] : S.sheetPanel,
                     ]}
+                    showHandle={!isDropdown}
+                    respectBottomInset={!isDropdown}
+                    minimumBottomPadding={isDropdown ? 16 : 22}
                 >
-                    {!isDropdown && <View style={S.handle} />}
-
                     <View style={S.header}>
                         <View style={S.headerText}>
                             <Text style={S.title}>{title}</Text>
@@ -220,7 +222,7 @@ export function ResidentContextPicker({
                             <MaterialCommunityIcons name="chevron-right" size={20} color={SgateColors.t4} />
                         </TouchableOpacity>
                     </ScrollView>
-                </View>
+                </SafeBottomSheetSurface>
             </View>
         </Modal>
     );
@@ -264,16 +266,7 @@ const S = StyleSheet.create({
         maxHeight: '78%',
         borderTopLeftRadius: 26,
         borderTopRightRadius: 26,
-        paddingTop: 10,
-        paddingBottom: 22,
-    },
-    handle: {
-        width: 42,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: SgateColors.border,
-        alignSelf: 'center',
-        marginBottom: 18,
+        paddingTop: 0,
     },
     header: {
         flexDirection: 'row',

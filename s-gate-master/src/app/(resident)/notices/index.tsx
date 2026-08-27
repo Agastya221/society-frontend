@@ -317,7 +317,7 @@ export default function NoticesScreen() {
                                 <Feather name="bell" size={32} color={SgateColors.t3} />
                             </View>
                             <Text style={S.emptyTitle}>No notices yet</Text>
-                            <Text style={S.emptySub}>You're all caught up. Check back later for updates.</Text>
+                            <Text style={S.emptySub}>You’re all caught up. Check back later for updates.</Text>
                         </View>
                     }
                 />

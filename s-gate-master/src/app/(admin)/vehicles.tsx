@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
+    KeyboardAvoidingView,
     Modal,
     Platform,
     ScrollView,
@@ -15,6 +16,7 @@ import {
     View,
 } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
+import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
@@ -373,7 +375,7 @@ export default function AdminVehiclesScreen() {
                                         style={styles.issueUnknownBtn} 
                                         onPress={() => setIssueTarget(query.toUpperCase())}
                                     >
-                                        <Text style={styles.issueUnknownText}>Issue Ticket to "{query.toUpperCase()}"</Text>
+                                        <Text style={styles.issueUnknownText}>Issue ticket to {query.toUpperCase()}</Text>
                                     </TouchableOpacity>
                                 </View>
                             ) : null
@@ -404,9 +406,9 @@ export default function AdminVehiclesScreen() {
             )}
 
             {/* Issue Violation Modal */}
-            <Modal visible={!!issueTarget} transparent animationType="slide">
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+            <Modal visible={!!issueTarget} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setIssueTarget(null)}>
+                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+                    <SafeBottomSheetSurface style={styles.modalContent} showHandle minimumBottomPadding={20}>
                         <Text style={styles.modalTitle}>Issue Violation</Text>
                         <Text style={styles.modalSub}>
                             Target: {typeof issueTarget === 'string' ? issueTarget : issueTarget?.plateNumber}
@@ -452,8 +454,8 @@ export default function AdminVehiclesScreen() {
                                 </TouchableOpacity>
                             </View>
                         </ScrollView>
-                    </View>
-                </View>
+                    </SafeBottomSheetSurface>
+                </KeyboardAvoidingView>
             </Modal>
 
             {/* Resolve/Dismiss Modal */}
@@ -594,7 +596,7 @@ const styles = StyleSheet.create({
     issueUnknownText: { color: '#fff', fontSize: 14, fontFamily: SgateFonts.bold },
 
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-    modalContent: { backgroundColor: SgateColors.card, borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 28, maxHeight: '80%', shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 10 },
+    modalContent: { paddingHorizontal: 28, maxHeight: '80%', shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 10 },
     smallModal: { backgroundColor: SgateColors.card, margin: 24, padding: 28, borderRadius: 32, marginBottom: 'auto', marginTop: 'auto', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 30, elevation: 20 },
     modalTitle: { fontSize: 22, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, marginBottom: 8 },
     modalSub: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3, marginBottom: 24 },

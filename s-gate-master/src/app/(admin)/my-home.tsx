@@ -18,13 +18,13 @@ import { useAuthStore } from '@/store/useAuthStore';
 
 // ─── Section data ─────────────────────────────────────────────────────────────
 const VISITOR_ACTIONS = [
-    { title: 'Pre-Approve',  icon: 'user-check' as const, id: 'pre-approve',  bg: SgateColors.goldPale,  iconColor: SgateColors.goldDeep },
+    { title: 'Pre-Approve',  icon: 'account-check-outline' as const, id: 'pre-approve',  bg: SgateColors.goldPale,  iconColor: SgateColors.goldDeep },
     { title: 'My Passes',    icon: 'shield'     as const, id: 'my-passes',    bg: SgateColors.blueBg,    iconColor: SgateColors.blue },
 ];
 
 const FLAT_ACTIONS = [
-    { title: 'My Dues',      icon: 'credit-card' as const, id: 'dues',      bg: SgateColors.greenBg,   iconColor: SgateColors.green },
-    { title: 'SOS Alert',    icon: 'alert-triangle' as const, id: 'sos',    bg: SgateColors.redBg,     iconColor: SgateColors.red },
+    { title: 'My Dues',      icon: 'credit-card-outline' as const, id: 'dues',      bg: SgateColors.greenBg,   iconColor: SgateColors.green },
+    { title: 'SOS Alert',    icon: 'alert-outline' as const, id: 'sos',    bg: SgateColors.redBg,     iconColor: SgateColors.red },
 ];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────

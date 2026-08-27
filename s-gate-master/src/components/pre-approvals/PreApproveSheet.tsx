@@ -11,6 +11,7 @@ import {
     Pressable,
     ScrollView,
     StyleSheet,
+    StatusBar,
     Text,
     TextInput,
     TouchableOpacity,
@@ -45,6 +46,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { SelectGuestsPanel } from './SelectGuestsPanel';
 import { Share } from 'react-native';
 import { QRCarousel, type QRPassData } from './QRCarousel';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -858,7 +860,7 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
         ctaLabel = 'Pre-approve Cab';
     } else if (inviteType === 'DELIVERY') {
         ctaLabel = 'Pre-approve Delivery';
-    } else if (inviteType === 'HELP') {
+    } else if (inviteType === 'SERVICE') {
         ctaLabel = 'Pre-approve Service';
     } else {
         ctaLabel = 'Create Pre-Approval';
@@ -1682,6 +1684,9 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
 
 export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: PreApproveSheetProps) {
     const { user, role } = useAuthStore();
+    const insets = useSafeAreaInsets();
+    const topInset = Math.max(insets.top, Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0);
+    const [sheetWrapHeight, setSheetWrapHeight] = useState(0);
     
     // Nested sheet state
     const [guestSheetConfig, setGuestSheetConfig] = useState<any>();
@@ -2332,15 +2337,25 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                 </Animated.View>
 
                 {/* Sheet container */}
-                <Animated.View style={[S.sheetWrap, sheetStyle]} pointerEvents="box-none">
+                <Animated.View
+                    style={[S.sheetWrap, sheetStyle]}
+                    pointerEvents="box-none"
+                    onLayout={(event) => setSheetWrapHeight(event.nativeEvent.layout.height)}
+                >
 
 
 
                 {/* THE SINGLE CONTAINER — never unmounts, height animated with spring */}
                 <GestureDetector gesture={panGesture}>
-                <Animated.View style={[S.sheet, sheetSizeStyle]}>
+                <Animated.View
+                    style={[
+                        S.sheet,
+                        sheetWrapHeight > 0 && { maxHeight: Math.max(0, sheetWrapHeight - topInset) },
+                        sheetSizeStyle,
+                    ]}
+                >
 
-                    {/* All steps stacked — fill the entire sheet including handle zone */}
+                    {/* All steps share a protected gutter below the drag handle. */}
                     <View style={S.contentArea}>
                         {/* Layer 1: Type selector */}
                         <Animated.View style={[S.stepLayer, selectAnimStyle]} pointerEvents={step === 'select' ? 'auto' : 'none'}>
@@ -2354,7 +2369,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         </Animated.View>
 
                         {/* Layer 3: Party/Group Invite – Step 1 – theme/note picker */}
-                        <Animated.View style={[S.stepLayer, partyThemeAnimStyle]} pointerEvents={step === 'party_theme' ? 'auto' : 'none'}>
+                        <Animated.View style={[S.stepLayer, S.fullBleedLayer, partyThemeAnimStyle]} pointerEvents={step === 'party_theme' ? 'auto' : 'none'}>
                             {step === 'party_theme' && (
                                 <PartyGroupThemePanel onBack={goBackFromPartyTheme} onNext={goToPartyForm} />
                             )}
@@ -2479,7 +2494,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         </Animated.View>
 
                         {/* Layer 5: Success confirmation */}
-                        <Animated.View style={[S.stepLayer, successAnimStyle]} pointerEvents={step === 'success' ? 'auto' : 'none'}>
+                        <Animated.View style={[S.stepLayer, S.fullBleedLayer, successAnimStyle]} pointerEvents={step === 'success' ? 'auto' : 'none'}>
                             {step === 'success' && (
                                 inviteType === 'GUEST' ? (
                                     <View style={{ flex: 1, backgroundColor: 'transparent', borderTopLeftRadius: 20, borderTopRightRadius: 20, overflow: 'hidden' }}>
@@ -2547,7 +2562,8 @@ const S = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.48)',
     },
     sheetWrap: {
-        position: 'absolute', bottom: 0, left: 0, right: 0,
+        position: 'absolute', top: 0, bottom: 0, left: 0, right: 0,
+        justifyContent: 'flex-end',
     },
 
     // ── Floating icon ─────────────────────────────────────────────────────────
@@ -2566,8 +2582,9 @@ const S = StyleSheet.create({
     sheet: {
         backgroundColor: SgateColors.card,
         borderTopLeftRadius: 26, borderTopRightRadius: 26,
+        maxHeight: '100%',
         paddingTop: 0,
-        paddingBottom: 34,
+        paddingBottom: 0,
         overflow: 'hidden',
     },
     contentArea: {
@@ -2575,6 +2592,10 @@ const S = StyleSheet.create({
     },
     stepLayer: {
         ...StyleSheet.absoluteFillObject,
+        top: 24,
+    },
+    fullBleedLayer: {
+        top: 0,
     },
     stepLayerCenter: {
         alignItems: 'center',
@@ -2814,6 +2835,7 @@ const S = StyleSheet.create({
     },
 
     successContent: {
+        flex: 1,
         alignItems: 'center', justifyContent: 'center',
         paddingHorizontal: 24, paddingTop: 30, paddingBottom: 20,
     },

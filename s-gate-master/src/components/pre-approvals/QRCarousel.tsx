@@ -21,7 +21,6 @@ import Animated, {
 import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const welcomeBg = require('@/assets/mygate-style-bg.png');
 
 const { width: SW } = Dimensions.get('window');
@@ -243,20 +242,25 @@ function MultiCard({
 
 // ─── Pagination Dots ─────────────────────────────────────────────────────────
 
+function PaginationDot({ index, scrollX }: { index: number; scrollX: SharedValue<number> }) {
+    const dotStyle = useAnimatedStyle(() => {
+        const input = [(index - 1) * SNAP_INTERVAL, index * SNAP_INTERVAL, (index + 1) * SNAP_INTERVAL];
+        return {
+            width: interpolate(scrollX.value, input, [6, 22, 6], Extrapolation.CLAMP),
+            opacity: interpolate(scrollX.value, input, [0.25, 1, 0.25], Extrapolation.CLAMP),
+        };
+    });
+
+    return <Animated.View style={[S.dot, dotStyle]} />;
+}
+
 function PaginationDots({ total, scrollX }: { total: number; scrollX: SharedValue<number> }) {
     if (total <= 1) return null;
     return (
         <View style={S.dotsRow}>
-            {Array.from({ length: total }).map((_, i) => {
-                const dotStyle = useAnimatedStyle(() => {
-                    const input = [(i - 1) * SNAP_INTERVAL, i * SNAP_INTERVAL, (i + 1) * SNAP_INTERVAL];
-                    return {
-                        width: interpolate(scrollX.value, input, [6, 22, 6], Extrapolation.CLAMP),
-                        opacity: interpolate(scrollX.value, input, [0.25, 1, 0.25], Extrapolation.CLAMP),
-                    };
-                });
-                return <Animated.View key={i} style={[S.dot, dotStyle]} />;
-            })}
+            {Array.from({ length: total }).map((_, index) => (
+                <PaginationDot key={index} index={index} scrollX={scrollX} />
+            ))}
         </View>
     );
 }
@@ -363,7 +367,7 @@ const S = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
-        paddingBottom: 20,
+        paddingBottom: 0,
     },
 
     passContentWrapper: {
@@ -533,7 +537,7 @@ const S = StyleSheet.create({
         backgroundColor: '#FFD60A',
         paddingVertical: 15,
         borderRadius: 12,
-        marginBottom: 10,
+        marginBottom: 0,
         width: '100%',
         marginTop: 'auto', // Pushes to bottom of content
     },

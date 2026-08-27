@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Linking } from 'react-native';
 import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { Feather } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
@@ -7,6 +7,7 @@ import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { AppAlert } from '@/components/ui/AppAlert';
 
 type Tab = 'contacts' | 'recent' | 'manual';
+type SelectedGuest = { key: string; name: string; phone: string };
 
 export function SelectGuestsPanel({ 
     initialGuests = [],
@@ -31,13 +32,18 @@ export function SelectGuestsPanel({
     const [mobileNumber, setMobileNumber] = useState('');
 
     // Selection
-    const [selectedGuests, setSelectedGuests] = useState<{name: string, phone: string}[]>(initialGuests);
+    const [selectedGuests, setSelectedGuests] = useState<SelectedGuest[]>(() =>
+        initialGuests.map((guest, index) => ({
+            ...guest,
+            key: `initial:${cleanPhone(guest.phone)}:${index}`,
+        }))
+    );
 
     useEffect(() => {
         if (activeTab === 'contacts' && allContacts.length === 0) {
             loadContacts();
         }
-    }, [activeTab]);
+    }, [activeTab, allContacts.length]);
 
     const loadContacts = async () => {
         setLoadingContacts(true);
@@ -62,25 +68,29 @@ export function SelectGuestsPanel({
         setLoadingContacts(false);
     };
 
-    const filteredContacts = allContacts.filter(c => 
-        c.name?.toLowerCase().includes(search.toLowerCase())
-    );
-
     /** Normalise any phone format → 10-digit number */
-    const cleanPhone = (raw: string) => {
-        let p = raw.replace(/[\s\-()]/g, '');
-        p = p.replace(/^(\+91|0091|91)/, '');
-        p = p.replace(/^0/, '');
+    function cleanPhone(raw: string) {
+        let p = raw.replace(/\D/g, '');
+        if (p.startsWith('0091') && p.length > 10) p = p.slice(4);
+        else if (p.startsWith('91') && p.length > 10) p = p.slice(2);
+        if (p.startsWith('0') && p.length > 10) p = p.slice(1);
         return p;
-    };
+    }
 
-    const toggleSelection = (name: string, phone: string) => {
+    const filteredContacts = allContacts.filter(contact => {
+        const phone = cleanPhone(contact.phoneNumbers?.[0]?.number ?? '');
+        const name = contact.name?.trim() ?? '';
+        return phone.length > 0 && (name || phone).toLowerCase().includes(search.toLowerCase());
+    });
+
+    const toggleSelection = (key: string, name: string, phone: string) => {
         const normalised = cleanPhone(phone);
-        const exists = selectedGuests.find(g => g.phone === normalised);
+        if (!normalised) return;
+        const exists = selectedGuests.some(guest => guest.key === key);
         if (exists) {
-            setSelectedGuests(prev => prev.filter(g => g.phone !== normalised));
+            setSelectedGuests(prev => prev.filter(guest => guest.key !== key));
         } else {
-            setSelectedGuests(prev => [...prev, { name, phone: normalised }]);
+            setSelectedGuests(prev => [...prev, { key, name: name.trim() || normalised, phone: normalised }]);
         }
     };
 
@@ -89,7 +99,7 @@ export function SelectGuestsPanel({
             AppAlert.show("Required", "Enter guest name and mobile number.");
             return;
         }
-        toggleSelection(guestName, mobileNumber);
+        toggleSelection(`manual:${cleanPhone(mobileNumber)}`, guestName, mobileNumber);
         setGuestName('');
         setMobileNumber('');
     };
@@ -99,7 +109,7 @@ export function SelectGuestsPanel({
             AppAlert.show("Required", "Select at least one guest.");
             return;
         }
-        onNext?.(selectedGuests);
+        onNext?.(selectedGuests.map(({ name, phone }) => ({ name, phone })));
     };
 
     return (
@@ -152,18 +162,20 @@ export function SelectGuestsPanel({
                             <FlatList
                                 ref={scrollRef}
                                 data={filteredContacts}
-                                keyExtractor={i => (i as any).id || Math.random().toString()}
+                                keyExtractor={(item, index) => (item as any).id || `contact-${index}`}
                                 showsVerticalScrollIndicator={false}
-                                renderItem={({item}) => {
+                                renderItem={({item, index}) => {
                                     const phone = item.phoneNumbers?.[0]?.number || '';
-                                    const isSelected = selectedGuests.some(g => g.phone === cleanPhone(phone));
+                                    const contactKey = `contact:${(item as any).id || index}`;
+                                    const displayName = item.name?.trim() || cleanPhone(phone);
+                                    const isSelected = selectedGuests.some(guest => guest.key === contactKey);
                                     return (
-                                        <TouchableOpacity style={S.contactRow} onPress={() => toggleSelection(item.name || 'Unknown', phone)} activeOpacity={0.7}>
+                                        <TouchableOpacity style={S.contactRow} onPress={() => toggleSelection(contactKey, displayName, phone)} activeOpacity={0.7}>
                                             <View style={S.contactAvatar}>
-                                                <Text style={S.contactInitial}>{item.name?.[0]?.toUpperCase()}</Text>
+                                                <Text style={S.contactInitial}>{displayName[0]?.toUpperCase()}</Text>
                                             </View>
                                             <View style={S.contactInfo}>
-                                                <Text style={S.contactName}>{item.name}</Text>
+                                                <Text style={S.contactName}>{displayName}</Text>
                                             </View>
                                             {isSelected && <Feather name="check" size={20} color={SgateColors.t1} />}
                                         </TouchableOpacity>
@@ -211,7 +223,7 @@ export function SelectGuestsPanel({
                                 {selectedGuests.map((g, i) => (
                                     <View key={i} style={S.selectedPill}>
                                         <Text style={S.pillText}>{g.name}</Text>
-                                        <TouchableOpacity onPress={() => toggleSelection(g.name, g.phone)}>
+                                            <TouchableOpacity onPress={() => toggleSelection(g.key, g.name, g.phone)}>
                                             <Feather name="x" size={16} color={SgateColors.t3} />
                                         </TouchableOpacity>
                                     </View>

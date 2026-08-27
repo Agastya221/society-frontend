@@ -14,6 +14,7 @@ FlatList,
     Image,
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
+import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
@@ -512,10 +513,9 @@ export default function PassesScreen() {
             </View>
 
             {/* ── Pre-Approval action menu ────────────── */}
-            <Modal visible={!!paMenuEntry} transparent animationType="slide">
+            <Modal visible={!!paMenuEntry} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setPaMenuEntry(null)}>
                 <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setPaMenuEntry(null)}>
-                    <View style={styles.sheet}>
-                        <View style={styles.sheetHandle} />
+                    <SafeBottomSheetSurface style={styles.sheet} showHandle minimumBottomPadding={20}>
                         <Text style={styles.sheetTitle}>{paMenuEntry?.meta.visitorName ?? 'Pre-Approval'}</Text>
                         
                         <TouchableOpacity style={styles.sheetItem} onPress={() => { setPaMenuEntry(null); handlePaCancel(paMenuEntry!); }}>
@@ -529,15 +529,14 @@ export default function PassesScreen() {
                         <TouchableOpacity style={styles.sheetDismiss} onPress={() => setPaMenuEntry(null)}>
                             <Text style={styles.sheetDismissText}>Dismiss</Text>
                         </TouchableOpacity>
-                    </View>
+                    </SafeBottomSheetSurface>
                 </TouchableOpacity>
             </Modal>
 
             {/* ── Invite action menu ─────────────────── */}
-            <Modal visible={!!invMenuEntry} transparent animationType="slide">
+            <Modal visible={!!invMenuEntry} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setInvMenuEntry(null)}>
                 <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setInvMenuEntry(null)}>
-                    <View style={styles.sheet}>
-                        <View style={styles.sheetHandle} />
+                    <SafeBottomSheetSurface style={styles.sheet} showHandle minimumBottomPadding={20}>
                         <Text style={styles.sheetTitle}>{invMenuEntry?.visitorName ?? 'Guest Pass'}</Text>
 
                         {invMenuEntry?.status === 'ACTIVE' && (
@@ -553,15 +552,14 @@ export default function PassesScreen() {
                         <TouchableOpacity style={styles.sheetDismiss} onPress={() => setInvMenuEntry(null)}>
                             <Text style={styles.sheetDismissText}>Dismiss</Text>
                         </TouchableOpacity>
-                    </View>
+                    </SafeBottomSheetSurface>
                 </TouchableOpacity>
             </Modal>
 
             {/* ── Party action menu ──────────────────── */}
-            <Modal visible={!!partyMenuEntry} transparent animationType="slide">
+            <Modal visible={!!partyMenuEntry} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setPartyMenuEntry(null)}>
                 <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setPartyMenuEntry(null)}>
-                    <View style={styles.sheet}>
-                        <View style={styles.sheetHandle} />
+                    <SafeBottomSheetSurface style={styles.sheet} showHandle minimumBottomPadding={20}>
                         <Text style={styles.sheetTitle}>{partyMenuEntry?.venue ?? 'Party Invite'}</Text>
 
                         {partyMenuEntry?.status === 'ACTIVE' && (
@@ -573,7 +571,7 @@ export default function PassesScreen() {
                         <TouchableOpacity style={styles.sheetDismiss} onPress={() => setPartyMenuEntry(null)}>
                             <Text style={styles.sheetDismissText}>Dismiss</Text>
                         </TouchableOpacity>
-                    </View>
+                    </SafeBottomSheetSurface>
                 </TouchableOpacity>
             </Modal>
 
@@ -804,19 +802,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     sheet: {
-        backgroundColor: '#FFF',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        padding: 24,
-        paddingBottom: 40,
-    },
-    sheetHandle: {
-        width: 40,
-        height: 5,
-        backgroundColor: '#E5E7EB',
-        borderRadius: 3,
-        alignSelf: 'center',
-        marginBottom: 20,
+        paddingHorizontal: 24,
     },
     sheetTitle: {
         fontSize: 18,

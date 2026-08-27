@@ -308,7 +308,7 @@ export default function SuperAdminDashboard() {
                         </View>
                         {rejectTarget && (
                             <Text className="text-slate-500 text-sm mb-4">
-                                Rejecting "{rejectTarget.societyName}" by {rejectTarget.contactName}
+                                Rejecting “{rejectTarget.societyName}” by {rejectTarget.contactName}
                             </Text>
                         )}
                         <Text className="text-slate-700 font-medium text-sm mb-2">Reason for rejection *</Text>

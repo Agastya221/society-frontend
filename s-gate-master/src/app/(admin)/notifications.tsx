@@ -29,11 +29,11 @@ interface AdminNotification {
 
 // ─── Icon/colour config ───────────────────────────────────────────────────────
 const TYPE_META: Record<string, { icon: React.ComponentProps<typeof MaterialCommunityIcons>['name']; bg: string; fg: string }> = {
-    ENTRY_REQUEST:     { icon: 'alert-triangle', bg: SgateColors.goldPale, fg: SgateColors.goldDeep },
+    ENTRY_REQUEST:     { icon: 'alert-outline', bg: SgateColors.goldPale, fg: SgateColors.goldDeep },
     DELIVERY_REQUEST:  { icon: 'package',        bg: SgateColors.blueBg,   fg: SgateColors.blue },
     EMERGENCY_ALERT:   { icon: 'shield',         bg: SgateColors.redBg,    fg: SgateColors.red },
-    STAFF_CHECKIN:     { icon: 'user-check',     bg: SgateColors.greenBg,  fg: SgateColors.green },
-    STAFF_CHECKOUT:    { icon: 'user-check',     bg: SgateColors.greenBg,  fg: SgateColors.green },
+    STAFF_CHECKIN:     { icon: 'account-check-outline', bg: SgateColors.greenBg, fg: SgateColors.green },
+    STAFF_CHECKOUT:    { icon: 'account-check-outline', bg: SgateColors.greenBg, fg: SgateColors.green },
     ONBOARDING_STATUS: { icon: 'check-circle',   bg: SgateColors.greenBg,  fg: SgateColors.green },
     COMPLAINT:         { icon: 'alert-circle',   bg: SgateColors.redBg,    fg: SgateColors.red },
     PAYMENT:           { icon: 'credit-card',    bg: SgateColors.greenBg,  fg: SgateColors.green },

@@ -43,7 +43,7 @@ export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: 
     const ringOpacity = useSharedValue(0);
     
     // Timers
-    const holdTimer = useRef<NodeJS.Timeout | null>(null);
+    const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Audio Refs
     const sosSoundRef = useRef<Audio.Sound | null>(null);

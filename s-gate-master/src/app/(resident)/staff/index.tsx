@@ -1,19 +1,23 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
-Image,
     Linking,
+    Pressable,
     RefreshControl,
-    ScrollView,
+    SectionList,
     StyleSheet,
     Text,
-    TouchableOpacity,
     View,
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SgateColors, SgateFonts, SgateRadius, SgateShadows } from '@/constants/Sgate-theme';
 import api from '../../../services/api';
+
+const C = SgateColors;
+const F = SgateFonts;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -84,7 +88,7 @@ function getTypeIcon(type: string): React.ComponentProps<typeof MaterialCommunit
 
 // ─── Staff Card ───────────────────────────────────────────────────────────────
 
-function StaffCard({ item }: { item: StaffMember }) {
+function StaffCard({ item, onOpen }: { item: StaffMember; onOpen: () => void }) {
     const isInside = item.status === 'INSIDE';
     const theme = getTypeTheme(item.staffType);
     const initials = item.name
@@ -100,44 +104,49 @@ function StaffCard({ item }: { item: StaffMember }) {
 
     return (
         <View style={styles.card}>
-            {/* Avatar */}
-            <View style={styles.avatarWrapper}>
-                <View style={[styles.avatarCircle, { backgroundColor: theme.bg }]}>
-                    {item.photoUrl ? (
-                        <Image source={{ uri: item.photoUrl }} style={styles.avatarImg} />
-                    ) : (
-                        <Text style={[styles.avatarInitials, { color: theme.icon }]}>{initials}</Text>
-                    )}
+            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${item.name}'s profile`}
+                onPress={onOpen}
+                style={styles.profileButton}
+                android_ripple={{ color: C.surface }}
+            >
+                <View style={styles.avatarWrapper}>
+                    <View style={[styles.avatarCircle, { backgroundColor: theme.bg }]}>
+                        {item.photoUrl ? (
+                            <Image source={item.photoUrl} style={styles.avatarImg} contentFit="cover" transition={120} />
+                        ) : (
+                            <Text style={[styles.avatarInitials, { color: theme.icon }]}>{initials}</Text>
+                        )}
+                    </View>
+                    <View style={[styles.statusDot, isInside ? styles.dotOnline : styles.dotOffline]} />
                 </View>
-                {/* Status dot */}
-                <View style={[styles.statusDot, isInside ? styles.dotOnline : styles.dotOffline]} />
-            </View>
 
-            {/* Name */}
-            <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+                <View style={styles.staffInfo}>
+                    <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+                    <View style={styles.metaRow}>
+                        <View style={[styles.rolePill, { backgroundColor: theme.pill }]}>
+                            <Text style={[styles.roleText, { color: theme.pillText }]}>{formatType(item.staffType)}</Text>
+                        </View>
+                        <View style={styles.metaDot} />
+                        <Text style={[styles.statusText, isInside && styles.statusTextInside]}>
+                            {isInside ? 'Inside society' : 'Outside'}
+                        </Text>
+                    </View>
+                </View>
+            </Pressable>
 
-            {/* Role pill */}
-            <View style={[styles.rolePill, { backgroundColor: theme.pill }]}>
-                <Text style={[styles.roleText, { color: theme.pillText }]}>{formatType(item.staffType)}</Text>
-            </View>
-
-            {/* Divider */}
-            <View style={styles.divider} />
-
-            {/* Actions */}
-            <View style={styles.actions}>
-                <TouchableOpacity style={styles.actionBtn} onPress={handleCall} activeOpacity={0.7}>
-                    <Ionicons name="call" size={20} color="#22c55e" />
-                </TouchableOpacity>
-                <View style={styles.actionSep} />
-                <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
-                    <Ionicons name="notifications-outline" size={20} color="#374151" />
-                </TouchableOpacity>
-                <View style={styles.actionSep} />
-                <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
-                    <Ionicons name="star-outline" size={20} color="#374151" />
-                </TouchableOpacity>
-            </View>
+            <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Call ${item.name}`}
+                hitSlop={8}
+                onPress={handleCall}
+                style={styles.callButton}
+                android_ripple={{ color: C.border }}
+            >
+                <Ionicons name="call-outline" size={20} color={C.green} />
+            </Pressable>
+            <Ionicons name="chevron-forward" size={18} color={C.t4} />
         </View>
     );
 }
@@ -150,12 +159,10 @@ function CategoryHeader({ type, count }: { type: string; count: number }) {
     return (
         <View style={styles.catHeader}>
             <View style={[styles.catIconBox, { backgroundColor: theme.bg }]}>
-                <MaterialCommunityIcons name={icon} size={20} color={theme.icon} />
+                <MaterialCommunityIcons name={icon} size={18} color={theme.icon} />
             </View>
             <Text style={styles.catTitle}>{formatType(type)}</Text>
-            <View style={[styles.catCountPill, { backgroundColor: theme.pill }]}>
-                <Text style={[styles.catCount, { color: theme.pillText }]}>{count}</Text>
-            </View>
+            <Text style={styles.catCount}>{count} {count === 1 ? 'helper' : 'helpers'}</Text>
         </View>
     );
 }
@@ -189,7 +196,7 @@ export default function StaffScreen() {
     };
 
     // Group staff by staffType, preserving a stable order
-    const grouped = useMemo(() => {
+    const sections = useMemo(() => {
         const map: Record<string, StaffMember[]> = {};
         staff.forEach((s) => {
             const key = s.staffType.toUpperCase();
@@ -205,58 +212,57 @@ export default function StaffScreen() {
             if (ia === -1) return 1;
             if (ib === -1) return -1;
             return ia - ib;
-        });
+        }).map(([type, data]) => ({ type, data }));
     }, [staff]);
 
     return (
         <View style={styles.root}>
             {/* Header */}
-            <SafeAreaView edges={['top']} style={{ backgroundColor: 'white' }}>
+            <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                        <Ionicons name="arrow-back" size={24} color="#374151" />
-                    </TouchableOpacity>
+                    <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn} android_ripple={{ color: C.border }}>
+                        <Ionicons name="arrow-back" size={22} color={C.t1} />
+                    </Pressable>
                     <Text style={styles.headerTitle}>My House Help</Text>
-                    <View style={styles.badgeTotal}>
-                        <Text style={styles.badgeTotalText}>{staff.length}</Text>
-                    </View>
+                    <Text style={styles.totalText}>{staff.length} total</Text>
                 </View>
             </SafeAreaView>
 
             {loading ? (
                 <AppLoader />
             ) : (
-                <ScrollView
-                    style={{ flex: 1 }}
+                <SectionList
+                    sections={sections}
+                    keyExtractor={(item) => item.id}
+                    renderSectionHeader={({ section }) => <CategoryHeader type={section.type} count={section.data.length} />}
+                    renderItem={({ item }) => (
+                        <StaffCard
+                            item={item}
+                            onOpen={() => router.push({ pathname: '/(resident)/daily-help/profile/[id]' as any, params: { id: item.id } })}
+                        />
+                    )}
+                    ItemSeparatorComponent={() => <View style={styles.cardSeparator} />}
+                    SectionSeparatorComponent={() => <View style={styles.sectionSeparator} />}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
+                    stickySectionHeadersEnabled={false}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={onRefresh}
-                            tintColor="#ca8a04"
-                            colors={['#ca8a04']}
+                            tintColor={C.goldDeep}
+                            colors={[C.goldDeep]}
                         />
                     }
-                >
-                    {grouped.length === 0 ? (
+                    ListEmptyComponent={(
                         <View style={styles.centered}>
-                            <Ionicons name="people-outline" size={64} color="#cbd5e1" />
+                            <View style={styles.emptyIcon}>
+                                <Ionicons name="people-outline" size={30} color={C.goldDeep} />
+                            </View>
                             <Text style={styles.emptyText}>No staff registered yet.</Text>
                         </View>
-                    ) : (
-                        grouped.map(([type, members]) => (
-                            <View key={type} style={styles.section}>
-                                <CategoryHeader type={type} count={members.length} />
-                                <View style={styles.grid}>
-                                    {members.map((item) => (
-                                        <StaffCard key={item.id} item={item} />
-                                    ))}
-                                </View>
-                            </View>
-                        ))
                     )}
-                </ScrollView>
+                />
             )}
         </View>
     );
@@ -267,197 +273,162 @@ export default function StaffScreen() {
 const styles = StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: '#f8fafc',
+        backgroundColor: C.bg,
     },
+    headerSafeArea: { backgroundColor: C.card },
 
     // Header
     header: {
-        paddingTop: 12,
-        paddingBottom: 16,
-        paddingHorizontal: 20,
+        minHeight: 58,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
-        backgroundColor: 'white',
+        backgroundColor: C.card,
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
+        borderBottomColor: C.borderSoft,
     },
     backBtn: {
-        height: 40,
-        width: 40,
-        borderRadius: 20,
-        backgroundColor: '#f3f4f6',
+        height: 38,
+        width: 38,
+        borderRadius: 19,
+        backgroundColor: C.surface,
         alignItems: 'center',
         justifyContent: 'center',
     },
+    backBtnPressed: { opacity: 0.65 },
     headerTitle: {
         flex: 1,
-        fontSize: 20,
-        fontFamily: 'Sora-Bold',
-        color: '#111827',
-        fontWeight: '700',
+        fontSize: 18,
+        fontFamily: F.bold,
+        color: C.t1,
     },
-    badgeTotal: {
-        backgroundColor: '#FEF9C3',
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderWidth: 1,
-        borderColor: '#FDE047',
-    },
-    badgeTotalText: {
-        fontSize: 13,
-        fontWeight: '700',
-        color: '#a16207',
-    },
+    totalText: { fontSize: 12, fontFamily: F.semibold, color: C.goldDeep, backgroundColor: C.goldPale, paddingHorizontal: 10, paddingVertical: 6, borderRadius: SgateRadius.full },
 
     // Scroll
     scrollContent: {
-        padding: 16,
+        paddingHorizontal: 16,
+        paddingTop: 18,
         paddingBottom: 48,
-    },
-
-    // Section
-    section: {
-        marginBottom: 28,
     },
 
     // Category header
     catHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
-        marginBottom: 14,
+        gap: 9,
+        marginBottom: 10,
     },
     catIconBox: {
-        width: 36,
-        height: 36,
+        width: 32,
+        height: 32,
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
     },
     catTitle: {
         flex: 1,
-        fontSize: 17,
-        fontFamily: 'Sora-Bold',
-        fontWeight: '700',
-        color: '#111827',
-    },
-    catCountPill: {
-        borderRadius: 12,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
+        fontSize: 15,
+        fontFamily: F.bold,
+        color: C.t1,
     },
     catCount: {
-        fontSize: 12,
-        fontWeight: '700',
+        fontSize: 11,
+        fontFamily: F.medium,
+        color: C.t3,
     },
-
-    // Grid
-    grid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 12,
-    },
+    sectionSeparator: { height: 22 },
+    cardSeparator: { height: 8 },
 
     // Card
     card: {
-        width: '47.5%',
-        backgroundColor: 'white',
-        borderRadius: 20,
+        minHeight: 82,
+        flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: 24,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOpacity: 0.06,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 3,
+        paddingRight: 12,
+        backgroundColor: C.card,
+        borderRadius: SgateRadius.lg,
+        borderWidth: 1,
+        borderColor: C.borderSoft,
+        ...SgateShadows.minimal,
     },
+    profileButton: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+    cardPressed: { opacity: 0.78, transform: [{ scale: 0.995 }] },
     avatarWrapper: {
         position: 'relative',
-        marginBottom: 14,
     },
     avatarCircle: {
-        width: 86,
-        height: 86,
-        borderRadius: 43,
+        width: 54,
+        height: 54,
+        borderRadius: 27,
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
     },
     avatarImg: {
-        width: 86,
-        height: 86,
-        borderRadius: 43,
+        width: 54,
+        height: 54,
+        borderRadius: 27,
     },
     avatarInitials: {
-        fontSize: 30,
-        fontWeight: '700',
-        fontFamily: 'Sora-Bold',
+        fontSize: 19,
+        fontFamily: F.bold,
     },
     statusDot: {
         position: 'absolute',
-        bottom: 4,
-        right: 2,
-        width: 14,
-        height: 14,
-        borderRadius: 7,
+        bottom: 1,
+        right: 0,
+        width: 12,
+        height: 12,
+        borderRadius: 6,
         borderWidth: 2,
-        borderColor: 'white',
+        borderColor: C.card,
     },
-    dotOnline: { backgroundColor: '#22c55e' },
-    dotOffline: { backgroundColor: '#94a3b8' },
+    dotOnline: { backgroundColor: C.green },
+    dotOffline: { backgroundColor: C.t4 },
+    staffInfo: { flex: 1, minWidth: 0 },
     name: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: '#111827',
-        fontFamily: 'Sora-Bold',
-        marginBottom: 10,
-        paddingHorizontal: 10,
-        textAlign: 'center',
+        fontSize: 14,
+        color: C.t1,
+        fontFamily: F.bold,
+        marginBottom: 7,
     },
+    metaRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
     rolePill: {
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 5,
-        marginBottom: 18,
+        borderRadius: SgateRadius.full,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
     },
     roleText: {
-        fontSize: 12,
-        fontWeight: '600',
+        fontSize: 10,
+        fontFamily: F.semibold,
     },
-    divider: {
-        width: '100%',
-        height: 1,
-        backgroundColor: '#f1f5f9',
-    },
-    actions: {
-        flexDirection: 'row',
-        width: '100%',
-    },
-    actionBtn: {
-        flex: 1,
-        paddingVertical: 14,
+    metaDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: C.t4 },
+    statusText: { fontSize: 10, fontFamily: F.medium, color: C.t3 },
+    statusTextInside: { color: C.green },
+    callButton: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: C.greenBg,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    actionSep: {
-        width: 1,
-        backgroundColor: '#f1f5f9',
-    },
+    callButtonPressed: { opacity: 0.65 },
 
     // Empty / loading
     centered: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingTop: 80,
+        paddingTop: 100,
         gap: 12,
     },
+    emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: C.goldPale, alignItems: 'center', justifyContent: 'center' },
     emptyText: {
         fontSize: 14,
-        color: '#64748b',
-        fontWeight: '500',
+        color: C.t3,
+        fontFamily: F.medium,
     },
 });

@@ -9,6 +9,7 @@ import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import * as Haptics from 'expo-haptics';
 import { AppAlert } from '../../../components/ui/AppAlert';
+import { SafeBottomSheetSurface } from '../../../components/ui/SafeBottomSheetSurface';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface VehicleResult {
@@ -303,7 +304,7 @@ export default function SearchVehicleScreen() {
                     <MaterialCommunityIcons name="shield-check-outline" size={32} color={SgateColors.goldDeep} />
                   </View>
                   <Text style={S.emptyTitle}>No Reports</Text>
-                  <Text style={S.emptySub}>You haven't filed any parking complaints.</Text>
+                  <Text style={S.emptySub}>You haven&apos;t filed any parking complaints.</Text>
                 </View>
               ) : null
             }
@@ -312,9 +313,9 @@ export default function SearchVehicleScreen() {
       </KeyboardAvoidingView>
 
       {/* ── Modal: File Complaint ───────────────────────────────────────── */}
-      <Modal visible={!!reportTarget} transparent animationType="slide">
+      <Modal visible={!!reportTarget} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setReportTarget(null)}>
         <View style={S.modalOverlay}>
-          <View style={S.modalContent}>
+          <SafeBottomSheetSurface style={S.modalContent} showHandle minimumBottomPadding={20}>
             <Text style={S.modalTitle}>File Parking Complaint</Text>
             <Text style={S.modalSub}>Vehicle: {reportTarget}</Text>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
@@ -344,7 +345,7 @@ export default function SearchVehicleScreen() {
                 </TouchableOpacity>
               </View>
             </ScrollView>
-          </View>
+          </SafeBottomSheetSurface>
         </View>
       </Modal>
     </View>
@@ -436,7 +437,7 @@ const S = StyleSheet.create({
 
   // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
+  modalContent: { paddingHorizontal: 24, maxHeight: '80%' },
   modalTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
   modalSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 20 },
   fieldLabel: { fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginBottom: 8, marginTop: 16, textTransform: 'uppercase' },

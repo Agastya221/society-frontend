@@ -54,6 +54,43 @@ export const SgateRadius = {
   full: 9999,
 } as const;
 
+/** Shared layout values. Screens should use these instead of one-off gutters. */
+export const SgateLayout = {
+  screenGutter: 20,
+  compactGutter: 16,
+  headerTopGap: 16,
+  headerBottomGap: 16,
+  headerContentGap: 6,
+  cardGap: 12,
+  controlHeight: 52,
+  iconButtonSize: 44,
+  sheetMaxHeight: '88%' as const,
+} as const;
+
+/** Reusable surface recipes matching the Community Notices visual language. */
+export const SgateSurfaces = {
+  card: {
+    backgroundColor: SgateColors.card,
+    borderWidth: 1,
+    borderColor: SgateColors.borderSoft,
+    borderRadius: SgateRadius.md,
+  },
+  input: {
+    minHeight: SgateLayout.controlHeight,
+    backgroundColor: SgateColors.surface,
+    borderWidth: 1,
+    borderColor: SgateColors.border,
+    borderRadius: SgateRadius.sm,
+  },
+  sheet: {
+    backgroundColor: SgateColors.card,
+    borderTopLeftRadius: SgateRadius['2xl'],
+    borderTopRightRadius: SgateRadius['2xl'],
+    maxHeight: SgateLayout.sheetMaxHeight,
+    overflow: 'hidden' as const,
+  },
+} as const;
+
 export const SgateFonts = {
   regular: 'Sora-Regular',
   medium: 'Sora-Medium',

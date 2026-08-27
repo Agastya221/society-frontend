@@ -113,7 +113,7 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.borderSoft },
-  headerTitle: { fontSize: 18, fontFamily: F.semiBold, color: C.t1, marginLeft: 12, flex: 1 },
+  headerTitle: { fontSize: 18, fontFamily: F.semibold, color: C.t1, marginLeft: 12, flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
   
   sectionTitle: { fontSize: 12, fontFamily: F.bold, color: C.t3, letterSpacing: 1, marginBottom: 16, marginTop: 8 },

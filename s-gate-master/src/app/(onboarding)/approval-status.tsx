@@ -202,7 +202,7 @@ export default function ApprovalStatusScreen() {
                                     Your request is under review by the society admin.
                                 </Text>
                                 <Text style={styles.statusHint}>
-                                    We'll notify you once it's approved.
+                                    We’ll notify you once it’s approved.
                                 </Text>
 
                                 {/* Details */}

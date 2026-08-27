@@ -352,6 +352,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: SgateColors.borderSoft,
     },
+    backButton: { width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' },
     headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
 
     // ── Segmented control ───────────────────────────────────────────────

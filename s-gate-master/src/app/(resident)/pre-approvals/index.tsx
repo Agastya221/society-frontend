@@ -9,6 +9,7 @@ import { FlatList,
     TouchableOpacity,
     View } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
+import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import {
@@ -310,6 +311,8 @@ export default function PreApprovalsScreen() {
                 visible={!!menuEntry}
                 transparent
                 animationType="fade"
+                statusBarTranslucent
+                navigationBarTranslucent
                 onRequestClose={() => setMenuEntry(null)}
             >
                 <TouchableOpacity
@@ -317,8 +320,7 @@ export default function PreApprovalsScreen() {
                     activeOpacity={1}
                     onPress={() => setMenuEntry(null)}
                 >
-                    <View style={styles.actionSheet}>
-                        <View style={styles.actionSheetHandle} />
+                    <SafeBottomSheetSurface style={styles.actionSheet} showHandle minimumBottomPadding={20}>
                         <Text style={styles.actionSheetTitle} numberOfLines={1}>
                             {menuEntry?.meta.visitorName ?? TYPE_CONFIG[menuEntry?.type ?? 'CAB']?.label}
                         </Text>
@@ -369,7 +371,7 @@ export default function PreApprovalsScreen() {
                         >
                             <Text style={styles.actionCancelText}>Dismiss</Text>
                         </TouchableOpacity>
-                    </View>
+                    </SafeBottomSheetSurface>
                 </TouchableOpacity>
             </Modal>
 
@@ -579,19 +581,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: SgateColors.card,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        padding: 20,
-        paddingBottom: 32,
-    },
-    actionSheetHandle: {
-        width: 36,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: SgateColors.border,
-        alignSelf: 'center',
-        marginBottom: 16,
+        paddingHorizontal: 20,
     },
     actionSheetTitle: {
         fontSize: 14,

@@ -8,7 +8,7 @@ import { Feather } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -82,8 +82,7 @@ export default function DocumentDetailScreen() {
       const extMap: Record<string, string> = { PDF: '.pdf', DOC: '.doc', DOCX: '.docx', IMAGE: '.jpg' };
       const ext = extMap[doc.fileType] ?? '.pdf';
       const safeName = doc.name.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 60);
-      const localUri = FileSystem.cacheDirectory + safeName + ext;
-      const download = await FileSystem.downloadAsync(url, localUri);
+      const download = await File.downloadFileAsync(url, new File(Paths.cache, safeName + ext));
 
       if (!download?.uri) {
         AppAlert.show('Error', 'Download failed. Please try again.');

@@ -158,7 +158,7 @@ export default function OnboardingRequestsScreen() {
             });
             const payload = res.data?.data ?? res.data;
             const list = Array.isArray(payload) ? payload : (payload?.requests ?? []);
-            const normalized = list.map(normalizeRequest);
+            const normalized: OnboardingRequest[] = list.map(normalizeRequest);
             setRequests(normalized);
 
             if (routeRequestId && autoOpenedRequestId.current !== routeRequestId) {

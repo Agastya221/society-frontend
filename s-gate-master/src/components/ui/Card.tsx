@@ -1,4 +1,5 @@
-import { View, ViewProps } from 'react-native';
+import { StyleSheet, View, ViewProps } from 'react-native';
+import { SgateLayout, SgateSurfaces } from '@/constants/Sgate-theme';
 
 interface CardProps extends ViewProps {
   className?: string; // Allow overriding/adding classes
@@ -7,11 +8,18 @@ interface CardProps extends ViewProps {
 export function Card({ children, className = '', style, ...props }: CardProps) {
   return (
     <View 
-      className={`bg-white dark:bg-zinc-900 rounded-xl p-4 shadow-sm border border-zinc-200 dark:border-zinc-800 ${className}`}
-      style={style}
+      className={className}
+      style={[styles.card, style]}
       {...props}
     >
       {children}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    ...SgateSurfaces.card,
+    padding: SgateLayout.compactGutter,
+  },
+});

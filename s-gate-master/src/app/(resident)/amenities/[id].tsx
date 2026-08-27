@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Modal,
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
+import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { Calendar } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppScreenLayout } from '../../../components/ui/AppScreenLayout';
@@ -273,6 +274,8 @@ export default function AmenityDetailScreen() {
             visible={showCalendar}
             transparent
             animationType="fade"
+            statusBarTranslucent
+            navigationBarTranslucent
             onRequestClose={() => setShowCalendar(false)}
           >
             <TouchableOpacity
@@ -280,13 +283,13 @@ export default function AmenityDetailScreen() {
               activeOpacity={1}
               onPress={() => setShowCalendar(false)}
             >
-              <TouchableOpacity
-                activeOpacity={1}
+              <SafeBottomSheetSurface
                 style={S.calendarSheet}
-                onPress={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+                onStartShouldSetResponder={() => true}
+                showHandle
+                minimumBottomPadding={20}
               >
-                {/* Sheet Handle */}
-                <View style={S.calendarHandle} />
                 <Text style={S.calendarSheetTitle}>Select a Date</Text>
 
                 <Calendar
@@ -320,15 +323,6 @@ export default function AmenityDetailScreen() {
                     textMonthFontSize: 17,
                     textDayHeaderFontSize: 12,
                     dotColor: SgateColors.gold,
-                    'stylesheet.calendar.header': {
-                      header: {
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        paddingHorizontal: 8,
-                        paddingVertical: 12,
-                      },
-                    },
                   }}
                 />
 
@@ -338,7 +332,7 @@ export default function AmenityDetailScreen() {
                 >
                   <Text style={S.calendarDismissText}>Cancel</Text>
                 </TouchableOpacity>
-              </TouchableOpacity>
+              </SafeBottomSheetSurface>
             </TouchableOpacity>
           </Modal>
 
@@ -568,19 +562,7 @@ const S = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   calendarSheet: {
-    backgroundColor: SgateColors.card,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingBottom: 32,
-    paddingTop: 12,
-  },
-  calendarHandle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    marginBottom: 16,
+    paddingTop: 0,
   },
   calendarSheetTitle: {
     fontSize: 18,

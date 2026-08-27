@@ -1,14 +1,14 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -19,6 +19,12 @@ export interface ScreenHeaderProps {
     showBack?: boolean;
     /** Optional element rendered on the right side of the header (icon button, badge, etc.). */
     rightAction?: React.ReactNode;
+    /** Alias retained for screens using the earlier UI header. */
+    rightElement?: React.ReactNode;
+    /** Optional supporting line below the title. */
+    subtitle?: string;
+    /** Optional custom back handler. */
+    onBack?: () => void;
     /**
      * Optional shared value (0 → 1) driven by scroll position.
      * Controls the animated bottom-border opacity for a premium "shadow on scroll" effect.
@@ -42,10 +48,18 @@ export function ScreenHeader({
     title,
     showBack = true,
     rightAction,
+    rightElement,
+    subtitle,
+    onBack,
     scrollProgress,
 }: ScreenHeaderProps) {
     const insets = useSafeAreaInsets();
     const router = useRouter();
+    const trailingAction = rightAction ?? rightElement;
+    const handleBack = () => {
+        if (onBack) onBack();
+        else if (router.canGoBack()) router.back();
+    };
 
     // ── Animated border (appears on scroll) ──────────────────────────────
     const borderStyle = useAnimatedStyle(() => {
@@ -56,25 +70,30 @@ export function ScreenHeader({
     });
 
     return (
-        <View style={[S.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
+        <View style={[S.header, { paddingTop: insets.top + SgateLayout.headerTopGap }]}>
             {/* Row: back + title + right action */}
             <View style={S.row}>
                 {showBack ? (
-                    <TouchableOpacity
-                        onPress={() => router.back()}
+                    <Pressable
+                        onPress={handleBack}
+                        style={S.backButton}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         accessibilityLabel="Go back"
+                        accessibilityRole="button"
                     >
                         <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
+                    </Pressable>
                 ) : (
                     <View style={S.backPlaceholder} />
                 )}
 
-                <Text style={S.title} numberOfLines={1}>{title}</Text>
+                <View style={S.titleWrap}>
+                    <Text style={S.title} numberOfLines={1}>{title}</Text>
+                    {subtitle ? <Text style={S.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
+                </View>
 
-                {rightAction ? (
-                    <View>{rightAction}</View>
+                {trailingAction ? (
+                    <View>{trailingAction}</View>
                 ) : (
                     /* Invisible spacer to balance the row when showBack is true */
                     showBack ? <View style={S.backPlaceholder} /> : null
@@ -92,21 +111,34 @@ export function ScreenHeader({
 const S = StyleSheet.create({
     header: {
         backgroundColor: SgateColors.card,
+        paddingBottom: SgateLayout.headerBottomGap,
     },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
     },
+    backButton: {
+        width: SgateLayout.iconButtonSize,
+        height: SgateLayout.iconButtonSize,
+        marginLeft: -(SgateLayout.iconButtonSize - 24) / 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    titleWrap: { flex: 1, minWidth: 0, marginLeft: 4 },
     title: {
         fontSize: 18,
         fontFamily: SgateFonts.semibold,
         color: SgateColors.t1,
-        marginLeft: 12,
-        flex: 1,
+    },
+    subtitle: {
+        marginTop: 2,
+        fontSize: 12,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
     },
     backPlaceholder: {
-        width: 24,
+        width: SgateLayout.iconButtonSize,
     },
     borderLine: {
         position: 'absolute',

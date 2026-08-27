@@ -9,17 +9,18 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
+import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import * as billingService from '@/services/billingService';
-import { TextInput } from 'react-native';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type DueStatus = 'PAID' | 'PENDING' | 'OVERDUE';
@@ -296,10 +297,9 @@ export default function PaymentsScreen() {
             />
 
             {/* ── Detail Modal ─────────────────────────────────────────────── */}
-            <Modal visible={!!selectedDue} transparent animationType="slide" onRequestClose={() => setSelectedDue(null)}>
+            <Modal visible={!!selectedDue} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setSelectedDue(null)}>
                 <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setSelectedDue(null)}>
-                    <View style={styles.detailSheet}>
-                        <View style={styles.sheetHandle} />
+                    <SafeBottomSheetSurface style={styles.detailSheet} showHandle minimumBottomPadding={24}>
                         {selectedDue && (
                             <>
                                 <View style={styles.detailHeader}>
@@ -347,7 +347,7 @@ export default function PaymentsScreen() {
                                 </TouchableOpacity>
                             </>
                         )}
-                    </View>
+                    </SafeBottomSheetSurface>
                 </TouchableOpacity>
             </Modal>
 
@@ -533,6 +533,8 @@ const styles = StyleSheet.create({
     },
     statusDot: { width: 6, height: 6, borderRadius: 3 },
     statusLabel: { fontSize: 11, fontFamily: SgateFonts.bold },
+    badge: { borderRadius: 10, paddingHorizontal: 9, paddingVertical: 5 },
+    badgeText: { fontSize: 11, fontFamily: SgateFonts.bold },
 
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 10 },
     emptyTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 8 },
@@ -540,11 +542,8 @@ const styles = StyleSheet.create({
 
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     detailSheet: {
-        backgroundColor: SgateColors.card,
-        borderTopLeftRadius: 28, borderTopRightRadius: 28,
-        padding: 24, paddingBottom: 36,
+        paddingHorizontal: 24,
     },
-    sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: SgateColors.border, alignSelf: 'center', marginBottom: 20 },
     detailHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 },
     detailFlat: { fontSize: 22, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, letterSpacing: -0.5 },
     detailName: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },

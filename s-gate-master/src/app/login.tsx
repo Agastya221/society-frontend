@@ -285,7 +285,7 @@ function PhoneScreen({ phone, setPhone, error, setError, isLoading, onSend }: Ph
                             onBlur={() => { phoneFocus.value = withTiming(0, { duration: 200 }); }}
                         />
                     </Animated.View>
-                    <Text style={S.helper}>We'll send a 6-digit OTP to verify your account.</Text>
+                    <Text style={S.helper}>We’ll send a 6-digit OTP to verify your account.</Text>
                 </Animated.View>
 
                 <Animated.View entering={FadeInDown.delay(200).springify()} style={btnStyle}>

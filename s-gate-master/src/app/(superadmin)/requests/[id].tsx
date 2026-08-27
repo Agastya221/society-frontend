@@ -296,7 +296,7 @@ export default function RequestDetailScreen() {
                             </TouchableOpacity>
                         </View>
                         <Text className="text-slate-500 text-sm mb-4">
-                            Rejecting "{request.societyName}"
+                            Rejecting “{request.societyName}”
                         </Text>
                         <Text className="text-slate-700 font-medium text-sm mb-2">Reason for rejection *</Text>
                         <TextInput

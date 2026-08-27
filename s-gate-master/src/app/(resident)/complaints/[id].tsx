@@ -1,8 +1,9 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Modal, RefreshControl, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, RefreshControl, ScrollView, Share, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
+import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ImageCarousel } from '../../../components/ui/ImageCarousel';
@@ -227,10 +228,9 @@ export default function ComplaintDetailScreen() {
         </ComplaintScreenLayout>
 
         {/* ── Rating Modal ────────────────────────────────────────────────── */}
-        <Modal visible={showRatingModal} transparent animationType="slide" onRequestClose={() => setShowRatingModal(false)}>
+        <Modal visible={showRatingModal} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowRatingModal(false)}>
             <View style={R.overlay}>
-                <View style={R.sheet}>
-                    <View style={R.handle} />
+                <SafeBottomSheetSurface style={R.sheet} showHandle minimumBottomPadding={20}>
                     <TouchableOpacity style={R.closeBtn} onPress={() => setShowRatingModal(false)}>
                         <Feather name="x" size={20} color={SgateColors.t3} />
                     </TouchableOpacity>
@@ -262,7 +262,7 @@ export default function ComplaintDetailScreen() {
                     >
                         <Text style={[R.submitBtnText, rating === 0 && R.submitBtnTextDisabled]}>Submit Feedback</Text>
                     </TouchableOpacity>
-                </View>
+                </SafeBottomSheetSurface>
             </View>
         </Modal>
         </>
@@ -271,6 +271,7 @@ export default function ComplaintDetailScreen() {
 
 // ─── Main Styles ────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
+    root: { flex: 1, backgroundColor: SgateColors.bg },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
 
     // Header
@@ -325,8 +326,7 @@ const S = StyleSheet.create({
 // ─── Rating Modal Styles ────────────────────────────────────────────────────────
 const R = StyleSheet.create({
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-    sheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
-    handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: '#E0E0E0', alignSelf: 'center', marginBottom: 16 },
+    sheet: { paddingHorizontal: 24 },
     closeBtn: { position: 'absolute', top: 20, right: 20, padding: 4 },
     title: { fontSize: 18, fontFamily: SgateFonts.bold, color: '#111', textAlign: 'center', marginBottom: 8 },
     subtitle: { fontSize: 14, fontFamily: SgateFonts.regular, color: '#999', textAlign: 'center', marginBottom: 24, lineHeight: 20 },

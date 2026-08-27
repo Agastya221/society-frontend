@@ -85,6 +85,9 @@ export function AppScreenLayout({
     title,
     showBack = true,
     rightAction,
+    rightElement,
+    subtitle,
+    onBack,
     // Layout props
     children,
     scroll = true,
@@ -110,6 +113,9 @@ export function AppScreenLayout({
                 title={title}
                 showBack={showBack}
                 rightAction={rightAction}
+                rightElement={rightElement}
+                subtitle={subtitle}
+                onBack={onBack}
                 scrollProgress={scrollY}
             />
 

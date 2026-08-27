@@ -1,12 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../../../components/ui/Card';
+import { PrimaryButton } from '../../../components/ui/PrimaryButton';
+import { SafeBottomSheetSurface } from '../../../components/ui/SafeBottomSheetSurface';
+import { ScreenHeader } from '../../../components/ui/ScreenHeader';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
+import { SgateColors, SgateFonts, SgateLayout, SgateRadius, SgateSurfaces } from '../../../constants/Sgate-theme';
 
 interface FamilyMember {
     id: string;
@@ -19,7 +23,6 @@ interface FamilyMember {
 const ROLES = ['SPOUSE', 'CHILD', 'PARENT', 'SIBLING', 'OTHER'];
 
 export default function FamilyScreen() {
-    const router = useRouter();
     const insets = useSafeAreaInsets();
     const [family, setFamily] = useState<FamilyMember[]>([]);
     const [loading, setLoading] = useState(true);
@@ -99,41 +102,43 @@ export default function FamilyScreen() {
     };
 
     const renderItem = ({ item }: { item: FamilyMember }) => (
-        <View className="mb-3 p-4 flex-row items-center gap-4 bg-white rounded-2xl border border-gray-100 shadow-sm" style={{ shadowOpacity: 0.02, shadowRadius: 8 }}>
-             <View className="h-12 w-12 rounded-full bg-yellow-100  items-center justify-center">
-                 <Text className="text-xl font-bold text-yellow-700 ">{item.name[0]}</Text>
+        <Card style={S.memberCard}>
+             <View style={S.avatar}>
+                 <Text style={S.avatarText}>{item.name[0]?.toUpperCase()}</Text>
             </View>
-            <View className="flex-1">
-                <View className="flex-row items-center gap-2">
-                    <Text className="text-lg font-bold text-gray-900 ">{item.name}</Text>
+            <View style={S.memberInfo}>
+                <View style={S.nameRow}>
+                    <Text style={S.memberName} numberOfLines={1}>{item.name}</Text>
                     {item.isActive && (
-                        <View className="bg-emerald-100  px-1.5 py-0.5 rounded flex-row items-center gap-1 border border-emerald-200">
-                            <View className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <Text className="text-[10px] font-bold text-emerald-700  uppercase">Active</Text>
+                        <View style={S.activeBadge}>
+                            <View style={S.activeDot} />
+                            <Text style={S.activeText}>ACTIVE</Text>
                         </View>
                     )}
                 </View>
-                <Text className="text-gray-500  text-xs font-semibold capitalize mt-0.5">{item.role ? item.role.toLowerCase() : 'Family Member'}</Text>
+                <Text style={S.memberRole}>{item.role ? item.role.replace('_', ' ').toLowerCase() : 'family member'}</Text>
                 {item.phone ? (
-                    <Text className="text-gray-400 text-xs mt-1 font-medium tracking-wider">{item.phone}</Text>
+                    <Text style={S.memberPhone}>{item.phone}</Text>
                 )  : null}
             </View>
-        </View>
+        </Card>
+    );
+
+    const addButton = (
+        <Pressable
+            onPress={() => setInviteModalVisible(true)}
+            style={({ pressed }) => [S.addButton, pressed && S.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Invite family member"
+        >
+            <Ionicons name="person-add" size={18} color={SgateColors.t1} />
+        </Pressable>
     );
 
     return (
-        <View className="flex-1 bg-gray-50 ">
-            <View style={{ paddingTop: insets.top + 12, paddingBottom: 16 }} className="px-5 flex-row items-center justify-between bg-white  border-b border-gray-100 ">
-                <View className="flex-row items-center gap-3">
-                    <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100 ">
-                        <Ionicons name="arrow-back" size={24} className="text-gray-700 " />
-                    </TouchableOpacity>
-                    <Text className="text-xl font-bold text-gray-900 ">My Family</Text>
-                </View>
-                <TouchableOpacity onPress={() => setInviteModalVisible(true)} className="bg-yellow-400 h-9 w-9 rounded-full items-center justify-center shadow-lg shadow-yellow-200 active:bg-yellow-500">
-                    <Ionicons name="person-add" size={18} color="black" />
-                </TouchableOpacity>
-            </View>
+        <View style={S.root}>
+            <ScreenHeader title="My Family" subtitle="People connected to your home" rightElement={addButton} />
+            <View style={S.headerGap} />
 
             {loading ? (
                 <AppLoader />
@@ -142,23 +147,25 @@ export default function FamilyScreen() {
                     data={family}
                     keyExtractor={item => item.id}
                     renderItem={renderItem}
-                    contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+                    contentContainerStyle={[S.listContent, { paddingBottom: Math.max(insets.bottom, 20) + 20 }]}
+                    showsVerticalScrollIndicator={false}
                     refreshing={refreshing}
                     onRefresh={onRefresh}
                     ListEmptyComponent={
-                        <View className="flex-1 justify-center items-center py-20 opacity-70">
-                            <Ionicons name="people-circle-outline" size={64} className="text-gray-300 mb-4" />
-                            <Text className="text-gray-600 font-medium">No family members added yet. Invite someone to get started.</Text>
+                        <View style={S.empty}>
+                            <View style={S.emptyIcon}><Ionicons name="people-outline" size={30} color={SgateColors.t3} /></View>
+                            <Text style={S.emptyTitle}>No family members yet</Text>
+                            <Text style={S.emptyText}>Invite someone so they can receive updates and help approve gate entries.</Text>
                         </View>
                     }
                     ListFooterComponent={
                         family.length > 0 ? (
-                            <View className="mt-4 p-4 bg-yellow-50  rounded-xl border border-yellow-100 ">
-                                <View className="flex-row gap-3 mb-2">
-                                    <Ionicons name="information-circle" size={24} color="#ca8a04" />
-                                    <Text className="font-bold text-yellow-900  flex-1">Did you know?</Text>
+                            <View style={S.infoCard}>
+                                <View style={S.infoHeader}>
+                                    <Ionicons name="information-circle-outline" size={20} color={SgateColors.goldDeep} />
+                                    <Text style={S.infoTitle}>Did you know?</Text>
                                 </View>
-                                <Text className="text-yellow-800  text-sm leading-5">
+                                <Text style={S.infoText}>
                                     Family members can approve gate entries and get notifications. Add them by tapping the + button above.
                                 </Text>
                             </View>
@@ -172,72 +179,94 @@ export default function FamilyScreen() {
                 visible={inviteModalVisible}
                 transparent
                 animationType="slide"
+                statusBarTranslucent
+                navigationBarTranslucent
                 onRequestClose={() => setInviteModalVisible(false)}
             >
-                <View className="flex-1 justify-end bg-black/40">
-                    <View className="bg-white rounded-t-3xl p-6 shadow-xl pb-10">
-                        <View className="flex-row justify-between items-center mb-6">
-                            <Text className="text-xl font-bold text-gray-900">Invite Family Member</Text>
-                            <TouchableOpacity onPress={() => setInviteModalVisible(false)} className="p-2 bg-gray-100 rounded-full">
-                                <Ionicons name="close" size={20} color="#4b5563" />
-                            </TouchableOpacity>
+                <KeyboardAvoidingView style={S.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setInviteModalVisible(false)} />
+                    <SafeBottomSheetSurface style={S.inviteSheet} showHandle minimumBottomPadding={20}>
+                        <View style={S.modalHeader}>
+                            <View style={S.modalTitleWrap}>
+                                <Text style={S.modalTitle}>Invite Family Member</Text>
+                                <Text style={S.modalSubtitle}>Add someone connected to your home</Text>
+                            </View>
+                            <Pressable onPress={() => setInviteModalVisible(false)} style={S.closeButton} accessibilityLabel="Close invite form">
+                                <Ionicons name="close" size={20} color={SgateColors.t2} />
+                            </Pressable>
                         </View>
+                        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={S.formContent}>
+                            <Text style={S.fieldLabel}>NAME *</Text>
+                            <TextInput style={S.input} value={inviteName} onChangeText={setInviteName} placeholder="e.g. Anjali Sharma" placeholderTextColor={SgateColors.t4} autoCapitalize="words" />
 
-                        <Text className="text-xs font-bold text-gray-500 uppercase mb-2 ml-1">Name *</Text>
-                        <TextInput
-                            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4 font-medium text-gray-900 text-base"
-                            value={inviteName}
-                            onChangeText={setInviteName}
-                            placeholder="e.g. Anjali Sharma"
-                            autoCapitalize="words"
-                        />
+                            <Text style={S.fieldLabel}>PHONE NUMBER (OPTIONAL)</Text>
+                            <TextInput style={S.input} value={invitePhone} onChangeText={setInvitePhone} placeholder="10-digit mobile" placeholderTextColor={SgateColors.t4} keyboardType="phone-pad" />
 
-                        <Text className="text-xs font-bold text-gray-500 uppercase mb-2 ml-1">Phone Number (Optional)</Text>
-                        <TextInput
-                            className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-4 font-medium text-gray-900 text-base tracking-widest"
-                            value={invitePhone}
-                            onChangeText={setInvitePhone}
-                            placeholder="10-digit mobile"
-                            keyboardType="phone-pad"
-                        />
+                            <Text style={S.fieldLabel}>RELATIONSHIP *</Text>
+                            <View style={S.roleGrid}>
+                                {ROLES.map((r) => {
+                                    const isSelected = inviteRole === r;
+                                    return (
+                                        <Pressable key={r} onPress={() => setInviteRole(r)} style={[S.roleChip, isSelected && S.roleChipActive]} accessibilityRole="radio" accessibilityState={{ checked: isSelected }}>
+                                            <Text style={[S.roleText, isSelected && S.roleTextActive]}>{r.charAt(0) + r.slice(1).toLowerCase()}</Text>
+                                        </Pressable>
+                                    );
+                                })}
+                            </View>
 
-                        <Text className="text-xs font-bold text-gray-500 uppercase mb-2 ml-1">Relationship Role *</Text>
-                        <View className="flex-row flex-wrap gap-2 mb-8">
-                            {ROLES.map((r) => {
-                                const isSelected = inviteRole === r;
-                                return (
-                                    <TouchableOpacity
-                                        key={r}
-                                        onPress={() => setInviteRole(r)}
-                                        className={`px-4 py-2 rounded-xl border-2 ${
-                                            isSelected
-                                                ? 'bg-yellow-50 border-yellow-400' 
-                                                : 'bg-white border-gray-200'
-                                        }`}
-                                    >
-                                        <Text className={`text-sm font-bold ${
-                                            isSelected ? 'text-yellow-800' : 'text-gray-600'
-                                        }`}>
-                                            {r.charAt(0) + r.slice(1).toLowerCase()}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-
-                        <TouchableOpacity
-                            onPress={handleInvite}
-                            disabled={inviting || !inviteName.trim()}
-                            className={`py-4 rounded-xl items-center shadow-sm flex-row justify-center gap-2 ${inviting || !inviteName.trim() ? 'bg-gray-300' : 'bg-yellow-400'}`}
-                        >
-                            {inviting ? <ActivityIndicator size="small" color="#000" /> : <Ionicons name="paper-plane" size={18} color="black" />}
-                            <Text className={`font-bold text-base ${inviting || !inviteName.trim() ? 'text-gray-500' : 'text-black'}`}>
-                                {inviting ? 'Sending Invite...' : 'Send Invitation'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                            <PrimaryButton
+                                title={inviting ? 'Sending invite…' : 'Send Invitation'}
+                                onPress={handleInvite}
+                                disabled={inviting || !inviteName.trim()}
+                                isLoading={inviting}
+                                leftIcon={<Ionicons name="paper-plane" size={18} color={SgateColors.t1} />}
+                            />
+                        </ScrollView>
+                    </SafeBottomSheetSurface>
+                </KeyboardAvoidingView>
             </Modal>
         </View>
     );
 }
+
+const S = StyleSheet.create({
+    root: { flex: 1, backgroundColor: SgateColors.bg },
+    headerGap: { height: SgateLayout.headerContentGap },
+    addButton: { width: SgateLayout.iconButtonSize, height: SgateLayout.iconButtonSize, borderRadius: SgateLayout.iconButtonSize / 2, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+    pressed: { opacity: 0.72 },
+    listContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 12, flexGrow: 1 },
+    memberCard: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: SgateLayout.cardGap },
+    avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+    avatarText: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
+    memberInfo: { flex: 1, minWidth: 0 },
+    nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    memberName: { flexShrink: 1, fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    memberRole: { marginTop: 3, fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.t3, textTransform: 'capitalize' },
+    memberPhone: { marginTop: 4, fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    activeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 3, borderRadius: SgateRadius.full, backgroundColor: SgateColors.greenBg },
+    activeDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: SgateColors.green },
+    activeText: { fontSize: 9, fontFamily: SgateFonts.bold, color: SgateColors.green },
+    empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60, paddingHorizontal: 28 },
+    emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+    emptyTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 6 },
+    emptyText: { fontSize: 13, lineHeight: 19, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center' },
+    infoCard: { marginTop: 4, padding: 16, borderRadius: SgateRadius.md, backgroundColor: SgateColors.goldPale, borderWidth: 1, borderColor: '#FFE8A3' },
+    infoHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+    infoTitle: { fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    infoText: { fontSize: 12, lineHeight: 18, fontFamily: SgateFonts.regular, color: SgateColors.t2 },
+    modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(13,15,20,0.45)' },
+    inviteSheet: { paddingHorizontal: SgateLayout.screenGutter },
+    modalHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+    modalTitleWrap: { flex: 1, minWidth: 0 },
+    modalTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    modalSubtitle: { marginTop: 3, fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    closeButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
+    formContent: { paddingTop: 18, paddingBottom: 4 },
+    fieldLabel: { marginBottom: 8, fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 0.7 },
+    input: { ...SgateSurfaces.input, paddingHorizontal: 15, marginBottom: 16, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
+    roleGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
+    roleChip: { minHeight: 42, paddingHorizontal: 14, borderRadius: SgateRadius.sm, borderWidth: 1, borderColor: SgateColors.border, backgroundColor: SgateColors.card, alignItems: 'center', justifyContent: 'center' },
+    roleChipActive: { borderColor: SgateColors.gold, backgroundColor: SgateColors.goldPale },
+    roleText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
+    roleTextActive: { color: SgateColors.t1 },
+});

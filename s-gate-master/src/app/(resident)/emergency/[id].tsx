@@ -119,7 +119,7 @@ export default function EmergencyDetailScreen() {
                             </Text>
                             {emergency.responseNote && (
                                 <View className="mt-3 bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                                    <Text className="text-[13px] text-blue-800 font-bold">"{emergency.responseNote}"</Text>
+                                    <Text className="text-[13px] text-blue-800 font-bold">“{emergency.responseNote}”</Text>
                                 </View>
                             )}
                         </View>
@@ -144,7 +144,7 @@ export default function EmergencyDetailScreen() {
                             </View>
                             {emergency.resolutionNote && (
                                 <View className={`mt-3 p-4 rounded-2xl border ${emergency.status === 'FALSE_ALARM' ? 'bg-orange-50 border-orange-100' : 'bg-emerald-50 border-emerald-100'}`}>
-                                    <Text className={`text-[13px] font-bold ${emergency.status === 'FALSE_ALARM' ? 'text-orange-800' : 'text-emerald-800'}`}>"{emergency.resolutionNote}"</Text>
+                                    <Text className={`text-[13px] font-bold ${emergency.status === 'FALSE_ALARM' ? 'text-orange-800' : 'text-emerald-800'}`}>“{emergency.resolutionNote}”</Text>
                                 </View>
                             )}
                         </View>

@@ -47,7 +47,7 @@ export default function ActivityCard({ entries, isLoading, onSeeAll }: ActivityC
     return (
         <View style={styles.container}>
             <View style={styles.headerRow}>
-                <Text style={styles.title}>TODAY'S ACTIVITY</Text>
+                <Text style={styles.title}>TODAY’S ACTIVITY</Text>
                 <TouchableOpacity onPress={onSeeAll} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                     <Text style={styles.seeAllText}>See all</Text>
                 </TouchableOpacity>
