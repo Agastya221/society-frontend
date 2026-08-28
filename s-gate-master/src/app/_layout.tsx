@@ -2,7 +2,7 @@ import * as NavigationBar from "expo-navigation-bar";
 import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import * as SplashScreen from "expo-splash-screen";
-import { Slot, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState, useRef } from "react";
 import { Platform, Linking, AppState } from "react-native";
@@ -343,7 +343,14 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <AppAlertProvider>
-            <Slot />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: "fade",
+                animationDuration: 180,
+                contentStyle: { backgroundColor: "#F8F7F4" },
+              }}
+            />
           </AppAlertProvider>
           <StatusBar style="dark" />
         </SafeAreaProvider>

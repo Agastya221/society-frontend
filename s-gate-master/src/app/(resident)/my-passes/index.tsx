@@ -3,7 +3,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { 
 FlatList,
-    Modal,
     RefreshControl,
     StyleSheet,
     Text,
@@ -14,8 +13,9 @@ FlatList,
     Image,
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
+import { AnimatedBottomSheetModal } from '@/components/ui/AnimatedBottomSheetModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
@@ -111,6 +111,20 @@ function DetailRow({ icon, label, value }: {
             <Text style={styles.detailLabel}>{label}</Text>
             <Text style={styles.detailValue}>{value}</Text>
         </View>
+    );
+}
+
+function SheetActionRow({ icon, label, onPress }: {
+    icon: React.ComponentProps<typeof Feather>['name']; label: string; onPress: () => void;
+}) {
+    return (
+        <TouchableOpacity style={styles.sheetItem} onPress={onPress} activeOpacity={0.75}>
+            <View style={styles.sheetItemIcon}>
+                <Feather name={icon} size={18} color={SgateColors.red} />
+            </View>
+            <Text style={styles.sheetItemLabel}>{label}</Text>
+            <Feather name="chevron-right" size={18} color={SgateColors.red} />
+        </TouchableOpacity>
     );
 }
 
@@ -271,12 +285,12 @@ export default function PassesScreen() {
         ]);
     };
 
-    const renderPreApproval = useCallback(({ item }: { item: PreApprovedEntry }) => {
+    const renderPreApproval = useCallback(({ item, index }: { item: PreApprovedEntry; index: number }) => {
         const tc = PA_TYPE[item.type] ?? PA_TYPE.HELP;
         const sc = PA_STATUS[item.status] ?? PA_STATUS.ACTIVE;
         const sched = scheduleLabel(item);
         return (
-            <View style={styles.card}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 30).duration(220)} style={styles.card}>
                 <View style={styles.cardTop}>
                     <View style={[styles.typeBubble, { backgroundColor: tc.bg }]}>
                         <Feather name={tc.icon} size={20} color={tc.color} />
@@ -336,15 +350,15 @@ export default function PassesScreen() {
                         <DetailRow icon="log-in" label="Entries/day" value={String(item.schedule.entriesPerDay)} />
                     )}
                 </View>
-            </View>
+            </Animated.View>
         );
     }, []);
 
-    const renderPartyInvite = useCallback(({ item }: { item: PartyInvite }) => {
+    const renderPartyInvite = useCallback(({ item, index = 0 }: { item: PartyInvite; index?: number }) => {
         const sc = PARTY_STATUS[item.status] ?? PARTY_STATUS.ACTIVE;
         const filledSlots = item.usedSlots ?? item.slots?.filter(s => s.phone !== null).length ?? 0;
         return (
-            <View style={styles.card}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 30).duration(220)} style={styles.card}>
                 <View style={styles.cardTop}>
                     <View style={[styles.typeBubble, { backgroundColor: '#F3EEFF' }]}>
                         <Feather name="users" size={20} color="#9B6DFF" />
@@ -380,15 +394,15 @@ export default function PassesScreen() {
                     {!!item.inviteCode && <DetailRow icon="hash" label="Invite code" value={item.inviteCode} />}
                     {!!item.note && <DetailRow icon="file-text" label="Note" value={item.note} />}
                 </View>
-            </View>
+            </Animated.View>
         );
     }, []);
 
-    const renderInvite = useCallback(({ item }: { item: InvitePass }) => {
+    const renderInvite = useCallback(({ item, index = 0 }: { item: InvitePass; index?: number }) => {
         const tc = INV_TYPE[item.type] ?? INV_TYPE.QUICK;
         const sc = INV_STATUS[item.status] ?? INV_STATUS.ACTIVE;
         return (
-            <View style={styles.card}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 30).duration(220)} style={styles.card}>
                 <View style={styles.cardTop}>
                     <View style={[styles.typeBubble, { backgroundColor: tc.bg }]}>
                         <Feather name="user-check" size={20} color={tc.color} />
@@ -430,7 +444,7 @@ export default function PassesScreen() {
                     {!!item.timeFrom && <DetailRow icon="clock" label="Entry time" value={`${item.timeFrom} – ${item.timeUntil ?? '—'}`} />}
                     <DetailRow icon="check-circle" label="Uses" value={`${item.usedCount}${item.maxUses == null ? '' : ` / ${item.maxUses}`}`} />
                 </View>
-            </View>
+            </Animated.View>
         );
     }, []);
 
@@ -542,10 +556,10 @@ export default function PassesScreen() {
                                 item._kind === 'guest'   ? item.data.id :
                                 `party-${item.data.id}`
                             }
-                            renderItem={({ item }: { item: InviteListItem }) => {
+                            renderItem={({ item, index }: { item: InviteListItem; index: number }) => {
                                 if (item._kind === 'section') return <Text style={styles.sectionLabel}>{item.title}</Text>;
-                                if (item._kind === 'guest') return renderInvite({ item: item.data } as any);
-                                return renderPartyInvite({ item: item.data } as any);
+                                if (item._kind === 'guest') return renderInvite({ item: item.data, index });
+                                return renderPartyInvite({ item: item.data, index });
                             }}
                             contentContainerStyle={styles.listContent}
                             showsVerticalScrollIndicator={false}
@@ -565,67 +579,53 @@ export default function PassesScreen() {
             </View>
 
             {/* ── Pre-Approval action menu ────────────── */}
-            <Modal visible={!!paMenuEntry} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setPaMenuEntry(null)}>
-                <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setPaMenuEntry(null)}>
-                    <SafeBottomSheetSurface style={styles.sheet} showHandle minimumBottomPadding={20}>
-                        <Text style={styles.sheetTitle}>{paMenuEntry?.meta.visitorName ?? 'Pre-Approval'}</Text>
-                        
-                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setPaMenuEntry(null); handlePaCancel(paMenuEntry!); }}>
-                           <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Cancel Pre-Approval</Text>
-                        </TouchableOpacity>
+            <AnimatedBottomSheetModal visible={!!paMenuEntry} onClose={() => setPaMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20}>
+                        <Text style={styles.sheetTitle}>
+                            {paMenuEntry?.meta.visitorName || (paMenuEntry ? PA_TYPE[paMenuEntry.type]?.label : '') || 'Pre-Approval'}
+                        </Text>
+                        <Text style={styles.sheetSubtitle}>Manage this pre-approval</Text>
 
-                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setPaMenuEntry(null); handlePaDelete(paMenuEntry!); }}>
-                           <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Delete Entry</Text>
-                        </TouchableOpacity>
+                        {paMenuEntry?.status === 'ACTIVE' && (
+                            <SheetActionRow icon="x-circle" label="Cancel pre-approval" onPress={() => handlePaCancel(paMenuEntry)} />
+                        )}
+                        {paMenuEntry && (
+                            <SheetActionRow icon="trash-2" label="Delete entry" onPress={() => handlePaDelete(paMenuEntry)} />
+                        )}
 
                         <TouchableOpacity style={styles.sheetDismiss} onPress={() => setPaMenuEntry(null)}>
                             <Text style={styles.sheetDismissText}>Dismiss</Text>
                         </TouchableOpacity>
-                    </SafeBottomSheetSurface>
-                </TouchableOpacity>
-            </Modal>
+            </AnimatedBottomSheetModal>
 
             {/* ── Invite action menu ─────────────────── */}
-            <Modal visible={!!invMenuEntry} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setInvMenuEntry(null)}>
-                <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setInvMenuEntry(null)}>
-                    <SafeBottomSheetSurface style={styles.sheet} showHandle minimumBottomPadding={20}>
+            <AnimatedBottomSheetModal visible={!!invMenuEntry} onClose={() => setInvMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20}>
                         <Text style={styles.sheetTitle}>{invMenuEntry?.visitorName ?? 'Guest Pass'}</Text>
+                        <Text style={styles.sheetSubtitle}>Manage this guest pass</Text>
 
                         {invMenuEntry?.status === 'ACTIVE' && (
-                            <TouchableOpacity style={styles.sheetItem} onPress={() => { setInvMenuEntry(null); handleInvRevoke(invMenuEntry!); }}>
-                                <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Revoke Pass</Text>
-                            </TouchableOpacity>
+                            <SheetActionRow icon="slash" label="Revoke pass" onPress={() => handleInvRevoke(invMenuEntry)} />
                         )}
 
-                        <TouchableOpacity style={styles.sheetItem} onPress={() => { setInvMenuEntry(null); handleInvDelete(invMenuEntry!); }}>
-                            <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Delete Pass</Text>
-                        </TouchableOpacity>
+                        {invMenuEntry && <SheetActionRow icon="trash-2" label="Delete pass" onPress={() => handleInvDelete(invMenuEntry)} />}
 
                         <TouchableOpacity style={styles.sheetDismiss} onPress={() => setInvMenuEntry(null)}>
                             <Text style={styles.sheetDismissText}>Dismiss</Text>
                         </TouchableOpacity>
-                    </SafeBottomSheetSurface>
-                </TouchableOpacity>
-            </Modal>
+            </AnimatedBottomSheetModal>
 
             {/* ── Party action menu ──────────────────── */}
-            <Modal visible={!!partyMenuEntry} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setPartyMenuEntry(null)}>
-                <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setPartyMenuEntry(null)}>
-                    <SafeBottomSheetSurface style={styles.sheet} showHandle minimumBottomPadding={20}>
-                        <Text style={styles.sheetTitle}>{partyMenuEntry?.venue ?? 'Party Invite'}</Text>
+            <AnimatedBottomSheetModal visible={!!partyMenuEntry} onClose={() => setPartyMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20}>
+                        <Text style={styles.sheetTitle}>{partyMenuEntry?.venue || 'Party Invite'}</Text>
+                        <Text style={styles.sheetSubtitle}>Manage this party invite</Text>
 
                         {partyMenuEntry?.status === 'ACTIVE' && (
-                            <TouchableOpacity style={styles.sheetItem} onPress={() => { setPartyMenuEntry(null); handlePartyCancel(partyMenuEntry!); }}>
-                                <Text style={[styles.sheetItemLabel, { color: SgateColors.red }]}>Cancel Party Invite</Text>
-                            </TouchableOpacity>
+                            <SheetActionRow icon="x-circle" label="Cancel party invite" onPress={() => handlePartyCancel(partyMenuEntry)} />
                         )}
 
                         <TouchableOpacity style={styles.sheetDismiss} onPress={() => setPartyMenuEntry(null)}>
                             <Text style={styles.sheetDismissText}>Dismiss</Text>
                         </TouchableOpacity>
-                    </SafeBottomSheetSurface>
-                </TouchableOpacity>
-            </Modal>
+            </AnimatedBottomSheetModal>
 
             <PreApproveSheet
                 visible={sheetVisible}
@@ -875,33 +875,55 @@ const styles = StyleSheet.create({
         marginTop: 20,
         marginBottom: 12,
     },
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.4)',
-        justifyContent: 'flex-end',
-    },
     sheet: {
         paddingHorizontal: 24,
     },
     sheetTitle: {
-        fontSize: 18,
+        fontSize: 21,
         fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
-        marginBottom: 20,
+        marginBottom: 4,
+    },
+    sheetSubtitle: {
+        fontSize: 13,
+        lineHeight: 18,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+        marginBottom: 16,
     },
     sheetItem: {
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F3F4F6',
+        minHeight: 56,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        marginBottom: 10,
+        borderRadius: 14,
+        backgroundColor: SgateColors.redBg,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    sheetItemIcon: {
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FFFFFF',
     },
     sheetItemLabel: {
-        fontSize: 16,
-        fontFamily: SgateFonts.medium,
-        color: SgateColors.t1,
+        flex: 1,
+        fontSize: 15,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.red,
     },
     sheetDismiss: {
-        marginTop: 20,
+        minHeight: 50,
+        marginTop: 4,
+        marginBottom: 16,
+        borderRadius: 14,
+        backgroundColor: SgateColors.surface,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     sheetDismissText: {
         fontSize: 15,

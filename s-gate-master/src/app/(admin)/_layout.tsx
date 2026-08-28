@@ -1,14 +1,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Tabs, usePathname } from 'expo-router';
+import { Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 import { AdminTabBar } from '@/components/Sgate/AdminTabBar';
-import { ScreenTransitionMask } from '@/components/Sgate/ScreenTransitionMask';
 import { SgateColors } from '@/constants/Sgate-theme';
 
 export default function AdminTabsLayout() {
-    const pathname = usePathname();
-
     return (
         <View style={{ flex: 1, backgroundColor: SgateColors.bg }}>
         <Tabs
@@ -16,7 +13,11 @@ export default function AdminTabsLayout() {
             backBehavior="history"
             screenOptions={{
                 headerShown: false,
-                animation: 'none',
+                animation: 'fade',
+                transitionSpec: {
+                    animation: 'timing',
+                    config: { duration: 180 },
+                },
                 sceneStyle: { backgroundColor: SgateColors.bg },
             }}
         >
@@ -69,7 +70,6 @@ export default function AdminTabsLayout() {
             <Tabs.Screen name="vehicles" options={{ href: null }} />
             <Tabs.Screen name="sos-create" options={{ href: null }} />
         </Tabs>
-        <ScreenTransitionMask key={pathname} />
         </View>
     );
 }
