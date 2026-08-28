@@ -145,12 +145,16 @@ export interface PartyInvite {
     hostName: string;
     validFrom: string;
     validUntil: string;
-    venue: string;
+    venue: string | null;
     theme: number;
-    note: string;
+    note: string | null;
     maxGuests: number;
+    usedSlots?: number;       // list endpoint returns this summary instead of slots
     status: PartyInviteStatus;
-    slots: PartySlot[];     // pre-generated pool
+    slots?: PartySlot[];      // detail endpoint returns the pre-generated pool
+    inviteCode?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface CreatePartyInvitePayload {

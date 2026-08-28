@@ -18,6 +18,7 @@ import {
     View,
     BackHandler,
     Modal,
+    Keyboard,
     KeyboardAvoidingView,
 } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
@@ -843,9 +844,10 @@ interface FormState {
 }
 
 // ─── Form panel wrapper ───────────────────────────────────────────────────────
-function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmit }: {
+function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmit, bottomInset = 0 }: {
     inviteType: InviteType; tab: FreqTab; setTab: (t: FreqTab) => void;
     onBack: () => void; state: FormState; submitting: boolean; onSubmit: () => void;
+    bottomInset?: number;
 }) {
     const isGuest    = inviteType === 'GUEST';
     const isPrivate  = isGuest && state.isPrivate;
@@ -881,7 +883,7 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
     return (
         <View style={S.formPanel}>
             {/* Header Area */}
-            <View style={{ paddingTop: 24 }}>
+            <View style={{ paddingTop: 4 }}>
                 {/* Title Row */}
                 <View style={{ flexDirection: 'row', paddingHorizontal: 20, paddingBottom: 16 }}>
                     <TouchableOpacity onPress={onBack} style={{ marginRight: 16, marginTop: 4 }} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
@@ -926,7 +928,7 @@ function FormPanel({ inviteType, tab, setTab, onBack, state, submitting, onSubmi
             </NativeViewGestureHandler>
 
             {/* Fixed CTA */}
-            <View style={S.ctaWrap}>
+            <View style={[S.ctaWrap, { paddingBottom: Math.max(bottomInset, 16) }]}>
                 <TouchableOpacity
                     style={[
                         S.ctaBtn,
@@ -1264,11 +1266,14 @@ function GuestTypePanel({ onSelect, onBack }: {
 }) {
     return (
         <View style={{ flex: 1 }}>
-            <View style={S.tabHeader}>
-                <TouchableOpacity onPress={onBack} style={S.backBtn} hitSlop={{ top:12,bottom:12,left:12,right:12 }}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t2} />
+            <View style={S.guestTypeHeader}>
+                <TouchableOpacity onPress={onBack} style={S.formBackBtn} hitSlop={{ top:12,bottom:12,left:12,right:12 }}>
+                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
                 </TouchableOpacity>
-                <Text style={S.panelTitle}>Guest Invite</Text>
+                <View style={{ flex: 1 }}>
+                    <Text style={S.panelTitle}>Guest Invite</Text>
+                    <Text style={S.panelSubtitle}>Friends, family visiting</Text>
+                </View>
             </View>
             <Text style={S.guestTypeSub}>Create pre-approval of expected visitors to ensure hassle-free entry for them</Text>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, gap: 10 }}>
@@ -1783,7 +1788,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
     const H_GUEST_TYPE  = SH * 0.78;
     const H_GUEST_FORM  = SH * 0.80;
     const H_GUEST_LIST  = SH * 0.92;
-    const H_FORM        = SH * 0.76;
+    const H_FORM        = SH * 0.90;
     const H_GUESTS      = SH * 0.88;
     const H_PARTY_THEME   = SH * 0.85;
     const H_PARTY_FORM    = SH * 0.88;
@@ -2121,6 +2126,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
     };
 
     const showSuccess = () => {
+        Keyboard.dismiss();
         formOp.value       = withTiming(0, { duration: 150 });
         guestsOp.value     = withTiming(0, { duration: 150 });
         guestListOp.value  = withTiming(0, { duration: 150 });
@@ -2490,6 +2496,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                                 state={formState}
                                 submitting={submitting}
                                 onSubmit={handleSubmit}
+                                bottomInset={insets.bottom}
                             />
                         </Animated.View>
 
@@ -2603,13 +2610,29 @@ const S = StyleSheet.create({
     },
 
     // ── Guest Type Panel styles ──────────────────────────────────────────────
+    guestTypeHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingHorizontal: 20,
+        paddingTop: 4,
+        paddingBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: SgateColors.borderSoft,
+    },
+    formBackBtn: {
+        marginRight: 16,
+        marginTop: 4,
+    },
     panelTitle: {
-        flex: 1, fontSize: 17, fontFamily: SgateFonts.semibold, color: SgateColors.t1,
-        paddingBottom: 12,
+        fontSize: 24, fontFamily: SgateFonts.extrabold, color: SgateColors.t1,
+    },
+    panelSubtitle: {
+        fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3,
+        marginTop: 2,
     },
     guestTypeSub: {
         fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3,
-        paddingHorizontal: 20, paddingVertical: 14, lineHeight: 20,
+        paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14, lineHeight: 20,
     },
     guestTypeCard: {
         flexDirection: 'row', alignItems: 'center',
@@ -2918,7 +2941,7 @@ const S = StyleSheet.create({
 
     // Scroll + content
     formScroll: { flex: 1 },
-    formScrollContent: { paddingTop: 16, paddingBottom: 12 },
+    formScrollContent: { paddingTop: 8, paddingBottom: 12 },
 
     formBody: { paddingHorizontal: 20, gap: 0 },
 

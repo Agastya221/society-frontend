@@ -79,18 +79,39 @@ type InviteListItem =
     | { _kind: 'party';   data: PartyInvite };
 
 const DAYS_SHORT: Record<string, string> = {
-    MON: 'M', TUE: 'T', WED: 'W', THU: 'T', FRI: 'F', SAT: 'S', SUN: 'S',
+    MON: 'Mon', TUE: 'Tue', WED: 'Wed', THU: 'Thu', FRI: 'Fri', SAT: 'Sat', SUN: 'Sun',
 };
+
+function formatDate(value?: string, includeTime = false): string {
+    if (!value) return '—';
+    const parsed = /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00`) : new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleString('en-IN', includeTime
+        ? { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }
+        : { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 function scheduleLabel(entry: PreApprovedEntry): string {
     const s = entry.schedule;
     if (!s) return '';
     if (s.scheduleType === 'ONCE') {
-        if (s.date) return `${s.date} ${s.startTime ?? ''}–${s.endTime ?? ''}`.trim();
+        if (s.date) return `${formatDate(s.date)} · ${s.startTime ?? '—'}–${s.endTime ?? '—'}`;
         return 'One-time';
     }
-    const days = (s.daysOfWeek ?? []).map(d => DAYS_SHORT[d] ?? d).join(' ');
-    return `${days} ${s.timeFrom ?? ''}–${s.timeTo ?? ''}`.trim();
+    const days = (s.daysOfWeek ?? []).map(d => DAYS_SHORT[d] ?? d).join(', ');
+    return `${days || 'Every day'} · ${s.timeFrom ?? '—'}–${s.timeTo ?? '—'}`;
+}
+
+function DetailRow({ icon, label, value }: {
+    icon: React.ComponentProps<typeof Feather>['name']; label: string; value: string;
+}) {
+    return (
+        <View style={styles.detailRow}>
+            <Feather name={icon} size={14} color={SgateColors.t4} />
+            <Text style={styles.detailLabel}>{label}</Text>
+            <Text style={styles.detailValue}>{value}</Text>
+        </View>
+    );
 }
 
 const TABS = ['Pre-Approvals', 'Invites'] as const;
@@ -286,12 +307,6 @@ export default function PassesScreen() {
                                 </View>
                             )}
                         </View>
-                        {!!sched && (
-                            <View style={styles.metaRow}>
-                                <Feather name="clock" size={11} color={SgateColors.t4} />
-                                <Text style={styles.metaText} numberOfLines={1}> {sched}</Text>
-                            </View>
-                        )}
                     </View>
                     <TouchableOpacity
                         style={styles.menuBtn}
@@ -300,13 +315,34 @@ export default function PassesScreen() {
                         <Feather name="more-vertical" size={18} color={SgateColors.t3} />
                     </TouchableOpacity>
                 </View>
+                <View style={styles.details}>
+                    <DetailRow icon="calendar" label="Created" value={formatDate(item.createdAt, true)} />
+                    <DetailRow icon="clock" label="Schedule" value={sched || 'Not provided'} />
+                    {item.schedule?.scheduleType === 'RECURRING' && (
+                        <DetailRow icon="calendar" label="Valid dates" value={`${formatDate(item.schedule.validFrom)} – ${formatDate(item.schedule.validUntil)}`} />
+                    )}
+                    {!!item.meta?.vehicleLast4Digits && (
+                        <DetailRow icon="truck" label="Vehicle" value={`Ends in ${item.meta.vehicleLast4Digits}`} />
+                    )}
+                    {!!item.meta?.companyName && <DetailRow icon="shopping-bag" label="Company" value={item.meta.companyName} />}
+                    {!!item.meta?.category && (
+                        <DetailRow
+                            icon="tool"
+                            label="Service"
+                            value={(item.meta.customCategory || item.meta.category).replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase())}
+                        />
+                    )}
+                    {item.schedule?.entriesPerDay != null && (
+                        <DetailRow icon="log-in" label="Entries/day" value={String(item.schedule.entriesPerDay)} />
+                    )}
+                </View>
             </View>
         );
     }, []);
 
     const renderPartyInvite = useCallback(({ item }: { item: PartyInvite }) => {
         const sc = PARTY_STATUS[item.status] ?? PARTY_STATUS.ACTIVE;
-        const filledSlots = item.slots.filter(s => s.phone !== null).length;
+        const filledSlots = item.usedSlots ?? item.slots?.filter(s => s.phone !== null).length ?? 0;
         return (
             <View style={styles.card}>
                 <View style={styles.cardTop}>
@@ -315,7 +351,7 @@ export default function PassesScreen() {
                     </View>
                     <View style={styles.cardInfo}>
                         <View style={styles.cardRow}>
-                            <Text style={styles.cardName} numberOfLines={1}>{item.venue}</Text>
+                            <Text style={styles.cardName} numberOfLines={1}>{item.venue || 'Party Invite'}</Text>
                             <View style={[styles.statusBadge, { backgroundColor: sc.bg }]}>
                                 <Text style={[styles.statusText, { color: sc.color }]}>{sc.label}</Text>
                             </View>
@@ -336,6 +372,13 @@ export default function PassesScreen() {
                     >
                         <Feather name="more-vertical" size={18} color={SgateColors.t3} />
                     </TouchableOpacity>
+                </View>
+                <View style={styles.details}>
+                    <DetailRow icon="calendar" label="Valid from" value={formatDate(item.validFrom, true)} />
+                    <DetailRow icon="calendar" label="Valid until" value={formatDate(item.validUntil, true)} />
+                    {!!item.createdAt && <DetailRow icon="clock" label="Created" value={formatDate(item.createdAt, true)} />}
+                    {!!item.inviteCode && <DetailRow icon="hash" label="Invite code" value={item.inviteCode} />}
+                    {!!item.note && <DetailRow icon="file-text" label="Note" value={item.note} />}
                 </View>
             </View>
         );
@@ -377,6 +420,15 @@ export default function PassesScreen() {
                     >
                         <Feather name="more-vertical" size={18} color={SgateColors.t3} />
                     </TouchableOpacity>
+                </View>
+                <View style={styles.details}>
+                    <DetailRow icon="calendar" label="Valid from" value={formatDate(item.validFrom, true)} />
+                    <DetailRow icon="calendar" label="Valid until" value={formatDate(item.validUntil, true)} />
+                    <DetailRow icon="clock" label="Created" value={formatDate(item.createdAt, true)} />
+                    {!!item.visitorPhone && <DetailRow icon="phone" label="Guest phone" value={item.visitorPhone} />}
+                    {!!item.allowedDays?.length && <DetailRow icon="repeat" label="Allowed days" value={item.allowedDays.join(', ')} />}
+                    {!!item.timeFrom && <DetailRow icon="clock" label="Entry time" value={`${item.timeFrom} – ${item.timeUntil ?? '—'}`} />}
+                    <DetailRow icon="check-circle" label="Uses" value={`${item.usedCount}${item.maxUses == null ? '' : ` / ${item.maxUses}`}`} />
                 </View>
             </View>
         );
@@ -781,6 +833,33 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontFamily: SgateFonts.regular,
         color: SgateColors.t3,
+    },
+    details: {
+        marginTop: 14,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: SgateColors.borderSoft,
+        gap: 9,
+    },
+    detailRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 7,
+    },
+    detailLabel: {
+        width: 82,
+        fontSize: 12,
+        lineHeight: 18,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t3,
+    },
+    detailValue: {
+        flex: 1,
+        fontSize: 12,
+        lineHeight: 18,
+        textAlign: 'right',
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t1,
     },
     passcode: {
         fontFamily: SgateFonts.bold,
