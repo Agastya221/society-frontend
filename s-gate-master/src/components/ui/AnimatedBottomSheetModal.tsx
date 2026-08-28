@@ -1,16 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
     Animated,
+    BackHandler,
     Easing,
-    Modal,
     Pressable,
     StyleSheet,
     View,
     type StyleProp,
     type ViewStyle,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SafeBottomSheetSurface } from './SafeBottomSheetSurface';
+
+const TAB_BAR_SEAM_OVERLAP = 4;
 
 interface AnimatedBottomSheetModalProps {
     visible: boolean;
@@ -19,7 +22,6 @@ interface AnimatedBottomSheetModalProps {
     surfaceStyle?: StyleProp<ViewStyle>;
     showHandle?: boolean;
     minimumBottomPadding?: number;
-    bottomOffset?: number;
 }
 
 /**
@@ -33,8 +35,8 @@ export function AnimatedBottomSheetModal({
     surfaceStyle,
     showHandle = true,
     minimumBottomPadding = 16,
-    bottomOffset = 0,
 }: AnimatedBottomSheetModalProps) {
+    const insets = useSafeAreaInsets();
     const [mounted, setMounted] = useState(visible);
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const sheetTranslateY = useRef(new Animated.Value(72)).current;
@@ -87,19 +89,22 @@ export function AnimatedBottomSheetModal({
         }
     }, [backdropOpacity, mounted, sheetTranslateY, visible]);
 
+    useEffect(() => {
+        if (!mounted) return;
+        const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+            onClose();
+            return true;
+        });
+        return () => subscription.remove();
+    }, [mounted, onClose]);
+
     if (!mounted) return null;
 
     return (
-        <Modal
-            visible
-            transparent
-            animationType="none"
-            statusBarTranslucent
-            navigationBarTranslucent={false}
-            hardwareAccelerated
-            onRequestClose={onClose}
-        >
-            <View style={S.root}>
+            <View
+                style={[S.root, { bottom: -insets.bottom - TAB_BAR_SEAM_OVERLAP }]}
+                pointerEvents="box-none"
+            >
                 <Animated.View style={[S.backdrop, { opacity: backdropOpacity }]}>
                     <Pressable
                         style={StyleSheet.absoluteFill}
@@ -108,27 +113,27 @@ export function AnimatedBottomSheetModal({
                         accessibilityLabel="Close panel"
                     />
                 </Animated.View>
-                <Animated.View
-                    style={[
-                        S.sheetPosition,
-                        { marginBottom: bottomOffset, transform: [{ translateY: sheetTranslateY }] },
-                    ]}
-                >
+                <Animated.View style={[S.sheetPosition, { transform: [{ translateY: sheetTranslateY }] }]}>
                     <SafeBottomSheetSurface
                         style={surfaceStyle}
                         showHandle={showHandle}
                         minimumBottomPadding={minimumBottomPadding}
+                        respectBottomInset={false}
                     >
                         {children}
                     </SafeBottomSheetSurface>
                 </Animated.View>
             </View>
-        </Modal>
     );
 }
 
 const S = StyleSheet.create({
-    root: { flex: 1, justifyContent: 'flex-end' },
+    root: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'flex-end',
+        zIndex: 1000,
+        elevation: 100,
+    },
     sheetPosition: {
         width: '100%',
         maxHeight: '88%',
