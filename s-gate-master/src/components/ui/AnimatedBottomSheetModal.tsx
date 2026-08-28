@@ -19,6 +19,7 @@ interface AnimatedBottomSheetModalProps {
     surfaceStyle?: StyleProp<ViewStyle>;
     showHandle?: boolean;
     minimumBottomPadding?: number;
+    bottomOffset?: number;
 }
 
 /**
@@ -32,6 +33,7 @@ export function AnimatedBottomSheetModal({
     surfaceStyle,
     showHandle = true,
     minimumBottomPadding = 16,
+    bottomOffset = 0,
 }: AnimatedBottomSheetModalProps) {
     const [mounted, setMounted] = useState(visible);
     const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -106,7 +108,12 @@ export function AnimatedBottomSheetModal({
                         accessibilityLabel="Close panel"
                     />
                 </Animated.View>
-                <Animated.View style={[S.sheetPosition, { transform: [{ translateY: sheetTranslateY }] }]}>
+                <Animated.View
+                    style={[
+                        S.sheetPosition,
+                        { marginBottom: bottomOffset, transform: [{ translateY: sheetTranslateY }] },
+                    ]}
+                >
                     <SafeBottomSheetSurface
                         style={surfaceStyle}
                         showHandle={showHandle}

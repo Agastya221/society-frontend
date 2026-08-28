@@ -579,7 +579,7 @@ export default function PassesScreen() {
             </View>
 
             {/* ── Pre-Approval action menu ────────────── */}
-            <AnimatedBottomSheetModal visible={!!paMenuEntry} onClose={() => setPaMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20}>
+            <AnimatedBottomSheetModal visible={!!paMenuEntry} onClose={() => setPaMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20} bottomOffset={62}>
                         <Text style={styles.sheetTitle}>
                             {paMenuEntry?.meta.visitorName || (paMenuEntry ? PA_TYPE[paMenuEntry.type]?.label : '') || 'Pre-Approval'}
                         </Text>
@@ -598,7 +598,7 @@ export default function PassesScreen() {
             </AnimatedBottomSheetModal>
 
             {/* ── Invite action menu ─────────────────── */}
-            <AnimatedBottomSheetModal visible={!!invMenuEntry} onClose={() => setInvMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20}>
+            <AnimatedBottomSheetModal visible={!!invMenuEntry} onClose={() => setInvMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20} bottomOffset={62}>
                         <Text style={styles.sheetTitle}>{invMenuEntry?.visitorName ?? 'Guest Pass'}</Text>
                         <Text style={styles.sheetSubtitle}>Manage this guest pass</Text>
 
@@ -614,7 +614,7 @@ export default function PassesScreen() {
             </AnimatedBottomSheetModal>
 
             {/* ── Party action menu ──────────────────── */}
-            <AnimatedBottomSheetModal visible={!!partyMenuEntry} onClose={() => setPartyMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20}>
+            <AnimatedBottomSheetModal visible={!!partyMenuEntry} onClose={() => setPartyMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20} bottomOffset={62}>
                         <Text style={styles.sheetTitle}>{partyMenuEntry?.venue || 'Party Invite'}</Text>
                         <Text style={styles.sheetSubtitle}>Manage this party invite</Text>
 
