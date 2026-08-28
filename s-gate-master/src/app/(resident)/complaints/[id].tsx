@@ -228,7 +228,7 @@ export default function ComplaintDetailScreen() {
         </ComplaintScreenLayout>
 
         {/* ── Rating Modal ────────────────────────────────────────────────── */}
-        <Modal visible={showRatingModal} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowRatingModal(false)}>
+        <Modal visible={showRatingModal} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowRatingModal(false)}>
             <View style={R.overlay}>
                 <SafeBottomSheetSurface style={R.sheet} showHandle minimumBottomPadding={20}>
                     <TouchableOpacity style={R.closeBtn} onPress={() => setShowRatingModal(false)}>
@@ -275,18 +275,18 @@ const S = StyleSheet.create({
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
 
     // Header
-    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-    backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
-    headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
+    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+    backBtn: { width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 4 },
     headerActions: { flexDirection: 'row', gap: 8 },
-    headerIconBtn: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#F5F5F5', alignItems: 'center', justifyContent: 'center' },
+    headerIconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
 
     // Error
     errorText: { fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.red, marginTop: 12, textAlign: 'center' },
     errorBtn: { marginTop: 20, backgroundColor: SgateColors.gold, borderRadius: 14, paddingHorizontal: 28, paddingVertical: 14 },
     errorBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
-    scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
+    scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
 
     // Title + Badges
     complaintTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: '#111', lineHeight: 30, marginBottom: 12 },
@@ -299,17 +299,15 @@ const S = StyleSheet.create({
 
     // Description
     descCard: {
-        backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16,
-        borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1,
+        backgroundColor: SgateColors.card, borderRadius: 16, padding: 16, marginBottom: 16,
+        borderWidth: 1, borderColor: SgateColors.borderSoft,
     },
     descText: { fontSize: 15, fontFamily: SgateFonts.regular, color: '#444', lineHeight: 24 },
 
     // Details
     detailsCard: {
-        backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16,
-        borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1,
+        backgroundColor: SgateColors.card, borderRadius: 16, padding: 16,
+        borderWidth: 1, borderColor: SgateColors.borderSoft,
     },
     sectionTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111', marginBottom: 16 },
     detailItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 16 },

@@ -19,8 +19,7 @@ export function ComplaintScreenLayout({ headerContent, children }: ComplaintScre
                 </SafeAreaView>
             </View>
             
-            {/* FIXED SPACING: 14px gap between header and content that never scrolls away */}
-            <View style={{ height: 14 }} />
+            <View style={S.spacer} />
             
             <View style={S.contentWrapper}>
                 {children}
@@ -37,4 +36,5 @@ const S = StyleSheet.create({
         borderBottomColor: 'rgba(0,0,0,0.04)' 
     },
     contentWrapper: { flex: 1 },
+    spacer: { height: 6 },
 });

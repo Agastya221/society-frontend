@@ -178,7 +178,7 @@ export default function FamilyScreen() {
             <Modal
                 visible={inviteModalVisible}
                 transparent
-                animationType="slide"
+                animationType="fade"
                 statusBarTranslucent
                 navigationBarTranslucent
                 onRequestClose={() => setInviteModalVisible(false)}

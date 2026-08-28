@@ -8,14 +8,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SgateColors } from '@/constants/Sgate-theme';
 
-const REVEAL_DURATION_MS = 140;
+const REVEAL_DURATION_MS = 100;
 
 /**
  * An opaque mask mounted for each route. It reveals only the new scene, so an
  * inactive tab can never bleed through while React mounts the destination.
  */
 export function ScreenTransitionMask() {
-  const opacity = useSharedValue(1);
+  const opacity = useSharedValue(0.55);
 
   useEffect(() => {
     opacity.value = withTiming(0, {

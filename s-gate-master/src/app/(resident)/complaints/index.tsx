@@ -164,44 +164,40 @@ export default function ComplaintsScreen() {
 
 const S = StyleSheet.create({
     // Header
-    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-    backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
-    headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
+    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+    backBtn: { width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 4 },
     addBtn: {
-        width: 40, height: 40, borderRadius: 12,
-        backgroundColor: SgateColors.gold,
+        width: 44, height: 44, borderRadius: 22,
+        backgroundColor: SgateColors.goldPale,
         alignItems: 'center', justifyContent: 'center',
     },
 
     // Error
-    errorBanner: { backgroundColor: SgateColors.redBg, paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
+    errorBanner: { backgroundColor: SgateColors.redBg, paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
     errorText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.red, textAlign: 'center' },
 
     // Filter Chips
     filterContainer: { paddingBottom: 12, paddingTop: 4 },
-    filterScroll: { paddingHorizontal: 16, gap: 8 },
+    filterScroll: { paddingHorizontal: 20, gap: 8 },
     chip: {
         paddingHorizontal: 18,
-        paddingVertical: 10,
+        minHeight: 40,
+        paddingVertical: 9,
         borderRadius: 999,
-        backgroundColor: '#F5F5F5',
+        backgroundColor: SgateColors.surface,
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.04)',
+        borderColor: SgateColors.borderSoft,
     },
     chipActive: {
         backgroundColor: SgateColors.gold,
         borderColor: SgateColors.gold,
-        shadowColor: SgateColors.gold,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 3,
     },
-    chipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: '#999' },
+    chipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
     chipTextActive: { color: SgateColors.t1 },
 
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    listContent: { paddingHorizontal: 16, paddingBottom: 40 },
+    listContent: { paddingHorizontal: 20, paddingBottom: 40 },
 
     // Empty State
     emptyWrap: { alignItems: 'center', paddingTop: 60 },

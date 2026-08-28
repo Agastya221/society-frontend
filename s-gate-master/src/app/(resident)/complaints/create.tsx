@@ -321,7 +321,7 @@ export default function CreateComplaintScreen() {
             </KeyboardAvoidingView>
 
             {/* ── Category Picker ─────────────────────────────────────────── */}
-            <Modal visible={showCategoryPicker} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowCategoryPicker(false)}>
+            <Modal visible={showCategoryPicker} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowCategoryPicker(false)}>
                 <TouchableOpacity style={S.modalOverlay} activeOpacity={1} onPress={() => setShowCategoryPicker(false)}>
                     <SafeBottomSheetSurface style={S.pickerSheet} showHandle minimumBottomPadding={24}>
                         <Text style={S.pickerTitle}>Choose Category</Text>
@@ -344,7 +344,7 @@ export default function CreateComplaintScreen() {
             </Modal>
 
             {/* ── Time Picker ────────────────────────────────────────────── */}
-            <Modal visible={showTimePicker} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowTimePicker(false)}>
+            <Modal visible={showTimePicker} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowTimePicker(false)}>
                 <TouchableOpacity style={S.modalOverlay} activeOpacity={1} onPress={() => setShowTimePicker(false)}>
                     <SafeBottomSheetSurface style={S.pickerSheet} showHandle minimumBottomPadding={24}>
                         <Text style={S.pickerTitle}>Preferred Time</Text>
@@ -368,11 +368,11 @@ export default function CreateComplaintScreen() {
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
     // Header
-    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-    closeBtn: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#F5F5F5', alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
+    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+    closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 8 },
 
-    scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
+    scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
 
     // Error
     errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: SgateColors.redBg, borderRadius: 12, padding: 14, marginBottom: 14 },
@@ -380,9 +380,8 @@ const S = StyleSheet.create({
 
     // Form Card
     formCard: {
-        backgroundColor: '#FFFFFF', borderRadius: 16, padding: 18, marginBottom: 14,
-        borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1,
+        backgroundColor: SgateColors.card, borderRadius: 16, padding: 18, marginBottom: 14,
+        borderWidth: 1, borderColor: SgateColors.borderSoft,
     },
 
     // Fields
@@ -391,7 +390,7 @@ const S = StyleSheet.create({
     required: { color: SgateColors.red },
     optional: { color: '#999', fontFamily: SgateFonts.regular },
 
-    inputWrap: { backgroundColor: '#FAFAFA', borderRadius: 12, borderWidth: 1, borderColor: '#EAEAEA' },
+    inputWrap: { backgroundColor: SgateColors.surface, borderRadius: 14, borderWidth: 1, borderColor: SgateColors.border },
     inputFocused: { borderColor: SgateColors.gold, backgroundColor: '#FFFFFF' },
     inputWithIcon: { flexDirection: 'row', alignItems: 'center', paddingLeft: 14, gap: 8 },
     textInput: { fontSize: 15, fontFamily: SgateFonts.regular, color: '#111', padding: 14 },
@@ -400,8 +399,9 @@ const S = StyleSheet.create({
     charCount: { fontSize: 11, fontFamily: SgateFonts.regular, color: '#999', textAlign: 'right', marginTop: 4 },
 
     selectWrap: {
+        minHeight: 52,
         flexDirection: 'row', alignItems: 'center', gap: 10,
-        backgroundColor: '#FAFAFA', borderRadius: 12, borderWidth: 1, borderColor: '#EAEAEA', padding: 14,
+        backgroundColor: SgateColors.surface, borderRadius: 14, borderWidth: 1, borderColor: SgateColors.border, padding: 14,
     },
     selectText: { flex: 1, fontSize: 15, fontFamily: SgateFonts.medium, color: '#111' },
 

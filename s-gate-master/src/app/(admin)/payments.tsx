@@ -297,7 +297,7 @@ export default function PaymentsScreen() {
             />
 
             {/* ── Detail Modal ─────────────────────────────────────────────── */}
-            <Modal visible={!!selectedDue} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setSelectedDue(null)}>
+            <Modal visible={!!selectedDue} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setSelectedDue(null)}>
                 <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setSelectedDue(null)}>
                     <SafeBottomSheetSurface style={styles.detailSheet} showHandle minimumBottomPadding={24}>
                         {selectedDue && (

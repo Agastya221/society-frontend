@@ -5,9 +5,10 @@ import {
     ActivityIndicator,
     Linking,
     Modal,
+    Pressable,
     RefreshControl,
     ScrollView,
-    Share,
+    StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
@@ -16,13 +17,15 @@ import {
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppAlert } from '../../components/ui/AppAlert';
 import { Avatar } from '../../components/ui/Avatar';
 import api from '../../services/api';
 import * as profileService from '../../services/profile.service';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useProfileStore } from '../../store/useProfileStore';
+import { ScreenHeader } from '../../components/ui/ScreenHeader';
+import { SgateColors, SgateFonts, SgateLayout, SgateRadius, SgateSurfaces } from '../../constants/Sgate-theme';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -70,19 +73,6 @@ function formatStaffType(type: string): string {
     return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-const STAFF_TYPE_COLORS: Record<string, { bg: string; text: string }> = {
-    MAID: { bg: 'bg-blue-100', text: 'text-blue-700' },
-    COOK: { bg: 'bg-orange-100', text: 'text-orange-700' },
-    NANNY: { bg: 'bg-pink-100', text: 'text-pink-700' },
-    DRIVER: { bg: 'bg-gray-200', text: 'text-gray-700' },
-    CLEANER: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
-    GARDENER: { bg: 'bg-green-100', text: 'text-green-700' },
-    LAUNDRY: { bg: 'bg-purple-100', text: 'text-purple-700' },
-    CARETAKER: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
-    SECURITY_GUARD: { bg: 'bg-red-100', text: 'text-red-700' },
-    OTHER: { bg: 'bg-gray-100', text: 'text-gray-600' },
-};
-
 const VEHICLE_STATUS: Record<string, { bg: string; text: string; label: string }> = {
     ACTIVE: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Active' },
     PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending' },
@@ -93,12 +83,13 @@ const VEHICLE_STATUS: Record<string, { bg: string; text: string; label: string }
 
 function SectionHeader({ title, onAdd }: { title: string; onAdd?: () => void }) {
     return (
-        <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-[20px] font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>{title}</Text>
+        <View style={S.sectionHeader}>
+            <Text style={S.sectionTitle}>{title}</Text>
             {onAdd && (
-                <TouchableOpacity onPress={onAdd} activeOpacity={0.7} className="bg-yellow-100 px-4 py-1.5 rounded-full">
-                    <Text className="text-[12px] font-bold text-yellow-800" style={{ fontFamily: 'Sora-Bold' }}>+ ADD</Text>
-                </TouchableOpacity>
+                <Pressable onPress={onAdd} style={S.sectionAction} accessibilityRole="button" accessibilityLabel={`Add to ${title}`}>
+                    <Ionicons name="add" size={16} color={SgateColors.t1} />
+                    <Text style={S.sectionActionText}>Add</Text>
+                </Pressable>
             )}
         </View>
     );
@@ -108,21 +99,20 @@ function SectionHeader({ title, onAdd }: { title: string; onAdd?: () => void }) 
 
 function EmptyCard({ icon, label, onAdd, comingSoon }: { icon: React.ReactNode; label: string; onAdd?: () => void, comingSoon?: boolean }) {
     return (
-        <TouchableOpacity
-            className={`w-full h-32 bg-gray-50/50 rounded-[24px] items-center justify-center ${comingSoon ? '' : 'border-dashed'}`}
-            style={{ borderWidth: comingSoon ? 1 : 1.5, borderColor: '#E5E7EB', borderStyle: comingSoon ? 'solid' : 'dashed' }}
+        <Pressable
+            style={[S.emptyCard, !comingSoon && S.emptyCardAction]}
             onPress={onAdd}
             disabled={comingSoon}
         >
-            <View className="items-center">
-                <View className="w-10 h-10 rounded-full bg-white border border-gray-100 items-center justify-center mb-2 shadow-sm">
+            <View style={S.emptyCardContent}>
+                <View style={S.emptyCardIcon}>
                     {icon}
                 </View>
-                <Text className="text-[13px] font-bold text-gray-400 uppercase tracking-tight" style={{ fontFamily: 'Sora-Bold' }}>
+                <Text style={S.emptyCardText}>
                     {comingSoon ? 'Coming Soon' : label}
                 </Text>
             </View>
-        </TouchableOpacity>
+        </Pressable>
     );
 }
 
@@ -259,141 +249,127 @@ export default function HouseholdScreen() {
     if (loading) return <AppLoader />;
 
     return (
-        <View className="flex-1 bg-gray-50">
-            {/* Header */}
-            <SafeAreaView edges={['top']} style={{ backgroundColor: 'white' }}>
-                <View className="px-5 flex-row items-center justify-between bg-white border-b border-gray-100" style={{ paddingTop: 12, paddingBottom: 16 }}>
-                    <View className="flex-row items-center gap-3">
-                        <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                            <Ionicons name="arrow-back" size={24} color="#374151" />
-                        </TouchableOpacity>
-                        <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Household</Text>
-                    </View>
-                </View>
-            </SafeAreaView>
+        <View style={S.root}>
+            <ScreenHeader title="Household" subtitle="Family, helpers & vehicles" />
+            <View style={S.headerGap} />
 
-            <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {setRefreshing(true); fetchAll();}} />}>
+            <ScrollView style={S.flex} contentContainerStyle={[S.content, { paddingBottom: Math.max(insets.bottom, 20) + 30 }]} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => {setRefreshing(true); fetchAll();}} />}>
                 
                 {/* Me Card */}
-                <Animated.View entering={FadeInDown.springify()} className="bg-white rounded-[24px] border border-gray-100 overflow-hidden mb-6 shadow-sm">
-                    <View className="flex-row items-center p-4 py-5">
-                        <View className="w-14 h-14 rounded-full bg-gray-200 items-center justify-center mr-4">
-                            <Ionicons name="person" size={28} color="#9ca3af" />
+                <Animated.View entering={FadeInDown.springify()} style={S.meCard}>
+                    <View style={S.meRow}>
+                        <View style={S.meAvatar}>
+                            <Ionicons name="person" size={25} color={SgateColors.t3} />
                         </View>
-                        <View className="flex-1">
-                            <Text className="text-[16px] font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>{displayUser?.name} (Me)</Text>
-                            <View className="bg-blue-100 rounded-full px-3 py-0.5 mt-1 self-start">
-                                <Text className="text-[11px] font-bold text-blue-700">{gateId}</Text>
+                        <View style={S.meCopy}>
+                            <Text style={S.meName} numberOfLines={1}>{displayUser?.name || 'Resident'} <Text style={S.meSuffix}>(Me)</Text></Text>
+                            <View style={S.gateBadge}>
+                                <Text style={S.gateBadgeText}>{gateId.toUpperCase()}</Text>
                             </View>
                         </View>
                     </View>
                 </Animated.View>
 
                 {/* My Family - Unified sizing and Detail Trigger */}
-                <Animated.View entering={FadeInDown.delay(60).springify()} className="mb-8">
+                <Animated.View entering={FadeInDown.delay(60).springify()} style={S.section}>
                     <SectionHeader title="My Family" onAdd={() => setInviteVisible(true)} />
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.horizontalContent}>
                         {family.map((member, idx) => (
                             <Animated.View key={member.id} entering={FadeInRight.delay(idx * 100).springify()}>
-                                <TouchableOpacity
-                                    className="bg-white rounded-[32px] border border-gray-100 w-44 h-52 overflow-hidden shadow-sm p-5 justify-between"
+                                <Pressable
+                                    style={S.personCard}
                                     onPress={() => setDetailMember(member)}
-                                    activeOpacity={0.8}
                                 >
-                                    <View className="bg-blue-50 self-start px-2 py-0.5 rounded-lg">
-                                        <Text className="text-[9px] font-bold text-blue-600 uppercase">{member.role}</Text>
+                                    <View style={S.roleBadge}>
+                                        <Text style={S.roleBadgeText}>{member.role}</Text>
                                     </View>
-                                    <View className="items-center">
-                                        <View className="w-20 h-20 rounded-full bg-yellow-50 items-center justify-center mb-4 border-4 border-white shadow-sm">
-                                            <Text className="text-3xl font-bold text-yellow-700">{member.name[0]}</Text>
+                                    <View style={S.personCenter}>
+                                        <View style={S.personAvatar}>
+                                            <Text style={S.personAvatarText}>{member.name[0]?.toUpperCase()}</Text>
                                         </View>
-                                        <Text className="text-[15px] font-bold text-gray-900 text-center mb-1" numberOfLines={1}>{member.name}</Text>
-                                        <Text className="text-[11px] font-medium text-gray-400">{formatGateId(member.id).toUpperCase()}</Text>
+                                        <Text style={S.personName} numberOfLines={1}>{member.name}</Text>
+                                        <Text style={S.personMeta}>{formatGateId(member.id).toUpperCase()}</Text>
                                     </View>
-                                </TouchableOpacity>
+                                </Pressable>
                             </Animated.View>
                         ))}
-                        <TouchableOpacity className="w-44 h-52 border-2 border-dashed border-gray-200 rounded-[32px] items-center justify-center" onPress={() => setInviteVisible(true)}>
-                            <View className="w-12 h-12 rounded-full bg-yellow-50 items-center justify-center mb-3">
-                                <Ionicons name="add" size={32} color="#ca8a04" />
+                        <Pressable style={S.addCard} onPress={() => setInviteVisible(true)}>
+                            <View style={S.addCardIcon}>
+                                <Ionicons name="add" size={25} color={SgateColors.goldDeep} />
                             </View>
-                            <Text className="text-[14px] font-bold text-gray-400">Add Member</Text>
-                        </TouchableOpacity>
+                            <Text style={S.addCardText}>Add Member</Text>
+                        </Pressable>
                     </ScrollView>
                 </Animated.View>
 
                 {/* Pets - Coming Soon */}
-                <Animated.View entering={FadeInDown.delay(100).springify()} className="mb-8">
+                <Animated.View entering={FadeInDown.delay(100).springify()} style={S.section}>
                     <SectionHeader title="My Pets" />
                     <EmptyCard comingSoon icon={<MaterialCommunityIcons name="paw" size={24} color="#9ca3af" />} label="Add Pet" />
                 </Animated.View>
 
                 {/* Daily Help */}
-                <Animated.View entering={FadeInDown.delay(140).springify()} className="mb-8">
+                <Animated.View entering={FadeInDown.delay(140).springify()} style={S.section}>
                     <SectionHeader title="My Daily Help" onAdd={() => router.push('/(resident)/staff' as any)} />
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.horizontalContent}>
                         {staff.map((member) => {
-                            const tc = STAFF_TYPE_COLORS[member.staffType] ?? STAFF_TYPE_COLORS.OTHER;
                             return (
-                                <TouchableOpacity key={member.id} className="bg-white rounded-[32px] border border-gray-100 w-40 h-52 overflow-hidden shadow-sm p-5 justify-between items-center" onPress={() => router.push('/(resident)/staff' as any)} activeOpacity={0.8}>
-                                    <Avatar name={member.name} size={64} />
-                                    <View className="items-center w-full">
-                                        <Text className="text-[15px] font-bold text-gray-900 text-center mb-1" numberOfLines={1}>{member.name}</Text>
-                                        <View className={`rounded-full px-3 py-1 mb-2 ${tc.bg}`}><Text className={`text-[10px] font-bold ${tc.text}`}>{formatStaffType(member.staffType).toUpperCase()}</Text></View>
-                                        <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Daily Helper</Text>
+                                <Pressable key={member.id} style={S.helperCard} onPress={() => router.push('/(resident)/staff' as any)}>
+                                    <Avatar name={member.name} size={58} />
+                                    <View style={S.personCenter}>
+                                        <Text style={S.personName} numberOfLines={1}>{member.name}</Text>
+                                        <View style={S.helperBadge}><Text style={S.helperBadgeText}>{formatStaffType(member.staffType).toUpperCase()}</Text></View>
+                                        <Text style={S.helperMeta}>DAILY HELPER</Text>
                                     </View>
-                                </TouchableOpacity>
+                                </Pressable>
                             );
                         })}
-                        <TouchableOpacity className="w-40 h-52 border-2 border-dashed border-gray-200 rounded-[32px] items-center justify-center" onPress={() => router.push('/(resident)/staff' as any)}>
-                            <Ionicons name="add" size={28} color="#ca8a04" />
-                        </TouchableOpacity>
+                        <Pressable style={S.addCard} onPress={() => router.push('/(resident)/staff' as any)}><View style={S.addCardIcon}><Ionicons name="add" size={25} color={SgateColors.goldDeep} /></View><Text style={S.addCardText}>Add Helper</Text></Pressable>
                     </ScrollView>
                 </Animated.View>
 
                 {/* Vehicles */}
-                <Animated.View entering={FadeInDown.delay(180).springify()} className="mb-8">
+                <Animated.View entering={FadeInDown.delay(180).springify()} style={S.section}>
                     <SectionHeader title="My Vehicles" onAdd={() => setAddVehicleVisible(true)} />
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.horizontalContent}>
                         {vehicles.map((v, idx) => {
                             const sc = VEHICLE_STATUS[v.status] ?? VEHICLE_STATUS.PENDING;
                             const isBike = v.vehicleType.toUpperCase() === 'BIKE';
                             return (
                                 <Animated.View key={v.id} entering={FadeInRight.delay(idx * 100).springify()}>
-                                    <TouchableOpacity 
-                                        className="bg-white rounded-[32px] border border-gray-100 w-44 h-52 overflow-hidden shadow-sm p-5 justify-between" 
+                                    <Pressable
+                                        style={S.personCard}
                                         onPress={() => setDetailVehicle(v)} 
-                                        activeOpacity={0.8}
                                     >
-                                        <View className={`${sc.bg} self-start px-2 py-0.5 rounded-lg`}>
-                                            <Text className={`text-[9px] font-bold ${sc.text} uppercase`}>{sc.label}</Text>
+                                        <View style={[S.roleBadge, { backgroundColor: v.status === 'ACTIVE' ? SgateColors.greenBg : v.status === 'REJECTED' ? SgateColors.redBg : SgateColors.goldPale }]}>
+                                            <Text style={[S.roleBadgeText, { color: v.status === 'ACTIVE' ? SgateColors.green : v.status === 'REJECTED' ? SgateColors.red : SgateColors.goldDeep }]}>{sc.label}</Text>
                                         </View>
-                                        <View className="items-center">
-                                            <View className="w-20 h-20 rounded-full bg-blue-50/80 items-center justify-center mb-3 border-[5px] border-white shadow-md">
-                                                <MaterialCommunityIcons name={isBike ? 'motorbike' : 'car-sports'} size={42} color="#2563eb" />
+                                        <View style={S.personCenter}>
+                                            <View style={[S.personAvatar, { backgroundColor: SgateColors.blueBg }]}>
+                                                <MaterialCommunityIcons name={isBike ? 'motorbike' : 'car-sports'} size={34} color={SgateColors.blue} />
                                             </View>
-                                            <Text className="text-[15px] font-bold text-gray-900 text-center mb-1" numberOfLines={1}>{v.vehicleNumber}</Text>
-                                            <Text className="text-[11px] font-medium text-gray-400 text-center" numberOfLines={1}>{v.model || v.vehicleType}</Text>
+                                            <Text style={S.personName} numberOfLines={1}>{v.vehicleNumber}</Text>
+                                            <Text style={S.personMeta} numberOfLines={1}>{v.model || v.vehicleType}</Text>
                                         </View>
-                                        <View className="flex-row items-center justify-center gap-1.5">
-                                            <View className="w-2 h-2 rounded-full" style={{ backgroundColor: v.color?.toLowerCase() || '#E5E7EB' }} />
-                                            <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{v.color || 'Color'}</Text>
+                                        <View style={S.colorRow}>
+                                            <View style={[S.colorDot, { backgroundColor: v.color?.toLowerCase() || SgateColors.border }]} />
+                                            <Text style={S.colorText}>{v.color || 'Color'}</Text>
                                         </View>
-                                    </TouchableOpacity>
+                                    </Pressable>
                                 </Animated.View>
                             );
                         })}
-                        <TouchableOpacity className="w-44 h-52 border-2 border-dashed border-gray-200 rounded-[32px] items-center justify-center" onPress={() => setAddVehicleVisible(true)}>
-                            <View className="w-12 h-12 rounded-full bg-blue-50 items-center justify-center mb-3 shadow-inner">
-                                <Ionicons name="add-circle" size={32} color="#3b82f6" />
+                        <Pressable style={S.addCard} onPress={() => setAddVehicleVisible(true)}>
+                            <View style={[S.addCardIcon, { backgroundColor: SgateColors.blueBg }]}>
+                                <Ionicons name="add" size={25} color={SgateColors.blue} />
                             </View>
-                            <Text className="text-[14px] font-bold text-gray-400">Add Vehicle</Text>
-                        </TouchableOpacity>
+                            <Text style={S.addCardText}>Add Vehicle</Text>
+                        </Pressable>
                     </ScrollView>
                 </Animated.View>
 
                 {/* Frequent Guests - Coming Soon */}
-                <Animated.View entering={FadeInDown.delay(220).springify()} className="mb-6">
+                <Animated.View entering={FadeInDown.delay(220).springify()} style={S.section}>
                     <SectionHeader title="Frequent Guests" />
                     <EmptyCard comingSoon icon={<Ionicons name="people-outline" size={24} color="#9ca3af" />} label="Add Guest" />
                 </Animated.View>
@@ -484,7 +460,7 @@ export default function HouseholdScreen() {
     </Modal>
 
             {/* Family Invite Modal - Redesigned to match screenshot */}
-            <Modal visible={inviteVisible} transparent animationType="slide" onRequestClose={() => setInviteVisible(false)}>
+            <Modal visible={inviteVisible} transparent animationType="fade" onRequestClose={() => setInviteVisible(false)}>
                 <TouchableWithoutFeedback onPress={() => setInviteVisible(false)}>
                     <View className="flex-1 justify-end bg-black/40">
                         <TouchableWithoutFeedback onPress={() => {}}>
@@ -555,7 +531,7 @@ export default function HouseholdScreen() {
             </Modal>
 
             {/* Add Vehicle Modal - Ported from add.tsx and matching screenshot */}
-            <Modal visible={addVehicleVisible} transparent animationType="slide" onRequestClose={() => setAddVehicleVisible(false)}>
+            <Modal visible={addVehicleVisible} transparent animationType="fade" onRequestClose={() => setAddVehicleVisible(false)}>
                 <TouchableWithoutFeedback onPress={() => setAddVehicleVisible(false)}>
                     <View className="flex-1 justify-end bg-black/40">
                         <TouchableWithoutFeedback onPress={() => {}}>
@@ -656,3 +632,47 @@ export default function HouseholdScreen() {
         </View>
     );
 }
+
+const S = StyleSheet.create({
+    root: { flex: 1, backgroundColor: SgateColors.bg },
+    flex: { flex: 1 },
+    headerGap: { height: SgateLayout.headerContentGap },
+    content: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 12 },
+    meCard: { ...SgateSurfaces.card, marginBottom: 24 },
+    meRow: { flexDirection: 'row', alignItems: 'center', padding: 16 },
+    meAvatar: { width: 50, height: 50, marginRight: 13, borderRadius: 25, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
+    meCopy: { flex: 1, minWidth: 0 },
+    meName: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    meSuffix: { color: SgateColors.t3, fontFamily: SgateFonts.medium },
+    gateBadge: { alignSelf: 'flex-start', marginTop: 5, paddingHorizontal: 9, paddingVertical: 4, borderRadius: SgateRadius.full, backgroundColor: SgateColors.blueBg },
+    gateBadgeText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.blue, letterSpacing: 0.4 },
+    section: { marginBottom: 26 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+    sectionTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    sectionAction: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 12, borderRadius: SgateRadius.full, backgroundColor: SgateColors.goldPale },
+    sectionActionText: { fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    horizontalContent: { gap: 10, paddingRight: 4 },
+    personCard: { width: 150, height: 174, padding: 14, borderRadius: SgateRadius.lg, borderWidth: 1, borderColor: SgateColors.borderSoft, backgroundColor: SgateColors.card, justifyContent: 'space-between' },
+    helperCard: { width: 140, height: 174, padding: 14, borderRadius: SgateRadius.lg, borderWidth: 1, borderColor: SgateColors.borderSoft, backgroundColor: SgateColors.card, alignItems: 'center', justifyContent: 'space-between' },
+    roleBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, borderRadius: SgateRadius.full, backgroundColor: SgateColors.goldPale },
+    roleBadgeText: { fontSize: 9, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep, textTransform: 'uppercase' },
+    personCenter: { width: '100%', alignItems: 'center' },
+    personAvatar: { width: 64, height: 64, marginBottom: 9, borderRadius: 32, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+    personAvatarText: { fontSize: 24, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep },
+    personName: { width: '100%', fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t1, textAlign: 'center' },
+    personMeta: { width: '100%', marginTop: 3, fontSize: 10, fontFamily: SgateFonts.medium, color: SgateColors.t3, textAlign: 'center' },
+    helperBadge: { marginTop: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: SgateRadius.full, backgroundColor: SgateColors.surface },
+    helperBadgeText: { fontSize: 8, fontFamily: SgateFonts.bold, color: SgateColors.t2 },
+    helperMeta: { marginTop: 4, fontSize: 8, fontFamily: SgateFonts.bold, color: SgateColors.t4, letterSpacing: 0.5 },
+    addCard: { width: 140, height: 174, borderRadius: SgateRadius.lg, borderWidth: 1.5, borderStyle: 'dashed', borderColor: SgateColors.border, alignItems: 'center', justifyContent: 'center' },
+    addCardIcon: { width: 44, height: 44, marginBottom: 9, borderRadius: 22, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+    addCardText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    colorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
+    colorDot: { width: 7, height: 7, borderRadius: 4 },
+    colorText: { fontSize: 9, fontFamily: SgateFonts.bold, color: SgateColors.t3, textTransform: 'uppercase' },
+    emptyCard: { height: 112, borderRadius: SgateRadius.lg, borderWidth: 1, borderColor: SgateColors.borderSoft, backgroundColor: 'rgba(255,255,255,0.5)', alignItems: 'center', justifyContent: 'center' },
+    emptyCardAction: { borderStyle: 'dashed', borderWidth: 1.5 },
+    emptyCardContent: { alignItems: 'center' },
+    emptyCardIcon: { width: 40, height: 40, marginBottom: 7, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, backgroundColor: SgateColors.card, alignItems: 'center', justifyContent: 'center' },
+    emptyCardText: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t4, textTransform: 'uppercase', letterSpacing: 0.5 },
+});

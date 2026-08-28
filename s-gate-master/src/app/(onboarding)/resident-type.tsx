@@ -184,7 +184,7 @@ export default function ResidentTypeScreen() {
 
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: 88 + insets.bottom }]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Section Header */}
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: 20,
         paddingTop: 28,
-        paddingBottom: 120,
+        paddingBottom: 16,
     },
 
     // ── Section Header ──
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderTopWidth: 1,
         borderTopColor: SgateColors.borderSoft,
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingTop: 12,
         ...SgateShadows.card,
     },

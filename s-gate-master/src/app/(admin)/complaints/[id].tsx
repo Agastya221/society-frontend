@@ -298,7 +298,7 @@ export default function AdminComplaintDetailScreen() {
             </Modal>
 
             {/* ASSIGNMENT MODAL */}
-            <Modal visible={showAssignModal} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowAssignModal(false)}>
+            <Modal visible={showAssignModal} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowAssignModal(false)}>
                 <View style={S.bottomSheetOverlay}>
                     <SafeBottomSheetSurface style={S.bottomSheet} showHandle>
                         <View style={S.bottomSheetHeader}>

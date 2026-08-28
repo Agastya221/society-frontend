@@ -346,7 +346,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                 />
             )}
 
-            <Modal visible={formVisible} animationType="slide" transparent onRequestClose={closeForm}>
+            <Modal visible={formVisible} animationType="fade" transparent onRequestClose={closeForm}>
                 <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={closeForm} />
                     <View style={[styles.formSheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>

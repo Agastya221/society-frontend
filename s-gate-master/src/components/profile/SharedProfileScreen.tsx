@@ -596,7 +596,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
             <Modal
                 visible={isEditModalVisible}
                 transparent
-                animationType="slide"
+                animationType="fade"
                 statusBarTranslucent
                 navigationBarTranslucent
                 onRequestClose={() => setEditModalVisible(false)}

@@ -6,7 +6,8 @@ import { StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
+  Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
@@ -131,14 +132,10 @@ function SgateTab({ label, iconName, isFocused, options, onPress, onLongPress }:
   const iconScale = useSharedValue(1);
 
   useEffect(() => {
-    pillOpacity.value = withSpring(isFocused ? 1 : 0, { damping: 18, stiffness: 220 });
-    pillScaleX.value  = withSpring(isFocused ? 1 : 0, { damping: 18, stiffness: 220 });
-
-    if (isFocused) {
-      iconScale.value = withSpring(1.1, { damping: 12, stiffness: 300 });
-    } else {
-      iconScale.value = withSpring(1, { damping: 18, stiffness: 220 });
-    }
+    const timing = { duration: 130, easing: Easing.out(Easing.quad) };
+    pillOpacity.value = withTiming(isFocused ? 1 : 0, timing);
+    pillScaleX.value = withTiming(isFocused ? 1 : 0, timing);
+    iconScale.value = withTiming(isFocused ? 1.05 : 1, timing);
   }, [iconScale, isFocused, pillOpacity, pillScaleX]);
 
   const pillStyle = useAnimatedStyle(() => ({

@@ -313,7 +313,7 @@ export default function SearchVehicleScreen() {
       </KeyboardAvoidingView>
 
       {/* ── Modal: File Complaint ───────────────────────────────────────── */}
-      <Modal visible={!!reportTarget} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setReportTarget(null)}>
+      <Modal visible={!!reportTarget} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setReportTarget(null)}>
         <View style={S.modalOverlay}>
           <SafeBottomSheetSurface style={S.modalContent} showHandle minimumBottomPadding={20}>
             <Text style={S.modalTitle}>File Parking Complaint</Text>

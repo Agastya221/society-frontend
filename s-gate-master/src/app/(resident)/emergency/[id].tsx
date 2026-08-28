@@ -1,15 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBadge } from '../../../components/ui/StatusBadge';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenHeader } from '../../../components/ui/ScreenHeader';
+import { SgateColors, SgateFonts, SgateLayout, SgateRadius, SgateSurfaces } from '../../../constants/Sgate-theme';
 import { EmergencyResponse, getEmergencyById } from '../../../services/emergency';
+
+const TIME_FORMATTER = new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit' });
 
 export default function EmergencyDetailScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [emergency, setEmergency] = useState<EmergencyResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -32,119 +36,115 @@ export default function EmergencyDetailScreen() {
 
     if (isLoading) {
         return (
-            <SafeAreaView className="flex-1 bg-white dark:bg-black items-center justify-center">
+            <View style={S.center}>
                 <AppLoader />
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (!emergency) {
         return (
-            <SafeAreaView className="flex-1 bg-white dark:bg-black items-center justify-center p-5">
-                <Text className="text-gray-500">Emergency not found</Text>
-                <TouchableOpacity onPress={() => router.back()} className="mt-4">
-                    <Text className="text-blue-500 font-bold">Go Back</Text>
-                </TouchableOpacity>
-            </SafeAreaView>
+            <View style={S.center}>
+                <View style={S.emptyIcon}><Ionicons name="alert-circle-outline" size={30} color={SgateColors.t3} /></View>
+                <Text style={S.emptyTitle}>Alert not found</Text>
+                <Text style={S.emptyText}>This alert may have been removed or is no longer available.</Text>
+                <Pressable onPress={() => router.back()} style={S.backAction} accessibilityRole="button">
+                    <Text style={S.backActionText}>Go Back</Text>
+                </Pressable>
+            </View>
         );
     }
 
     return (
-        <View className="flex-1 bg-white" style={{ paddingTop: 0 }}>
-            <View className="px-5 py-4 flex-row items-center gap-3 border-b border-gray-100 bg-white">
-                <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                    <Ionicons name="arrow-back" size={24} color="#374151" />
-                </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Alert Details</Text>
-            </View>
+        <View style={S.root}>
+            <ScreenHeader title="Alert Details" subtitle="Emergency response status" />
+            <View style={S.headerGap} />
 
-            <ScrollView className="flex-1 p-5" showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={S.flex}
+                contentContainerStyle={[S.content, { paddingBottom: Math.max(insets.bottom, 20) + 20 }]}
+                showsVerticalScrollIndicator={false}
+            >
                 {/* Header Card */}
-                <View className="bg-red-50 p-6 rounded-[32px] mb-8 border border-red-100 shadow-sm shadow-red-100">
-                    <View className="flex-row justify-between items-start mb-6">
-                        <View className="flex-row items-center gap-4">
-                            <View className={`h-14 w-14 rounded-full items-center justify-center bg-red-500 shadow-md shadow-red-200`}>
+                <View style={S.heroCard}>
+                    <View style={S.heroHeader}>
+                        <View style={S.alertIcon}>
                                 <Ionicons name={
                                     emergency.type === 'MEDICAL' ? 'medkit' :
                                     emergency.type === 'FIRE' ? 'flame' :
                                     'warning'
-                                } size={28} color="white" />
-                            </View>
-                            <View>
-                                <Text className="font-bold text-xl text-red-900 uppercase tracking-tight" style={{ fontFamily: 'Sora-Bold' }}>
+                                } size={25} color="#FFFFFF" />
+                        </View>
+                        <View style={S.heroCopy}>
+                                <Text style={S.heroTitle} numberOfLines={2}>
                                     {emergency.type.replace('_', ' ')}
                                 </Text>
-                                <Text className="text-[12px] font-bold text-red-600/60 uppercase tracking-widest mt-0.5">
-                                    Type of Alert
-                                </Text>
-                            </View>
+                                <Text style={S.heroLabel}>TYPE OF ALERT</Text>
                         </View>
                     </View>
                     
-                    <View className="bg-white/60 p-4 rounded-2xl border border-white/80">
-                      <Text className="text-red-900 text-[15px] leading-6 font-medium">
+                    <View style={S.descriptionBox}>
+                      <Text style={S.descriptionText}>
                           {emergency.description || 'Instantly reported to gate security and emergency response teams.'}
                       </Text>
                     </View>
                 </View>
 
                 {/* Timeline / Updates */}
-                <Text className="text-[12px] font-bold text-gray-400 mb-6 uppercase tracking-[3px] ml-1">
-                    Alert Timeline
-                </Text>
+                <Text style={S.sectionLabel}>ALERT TIMELINE</Text>
 
-                <View className="ml-2 pl-8 pb-10 border-l border-gray-100 space-y-10">
+                <View style={S.timeline}>
                     {/* Created Step */}
-                    <View className="relative">
-                        <View className="absolute -left-[37px] top-1 h-4 w-4 rounded-full bg-red-500 border-4 border-white shadow-sm" />
-                        <View className="flex-row justify-between items-center">
-                          <Text className="font-bold text-gray-900 text-[16px]" style={{ fontFamily: 'Sora-Bold' }}>Alert Raised</Text>
-                          <Text className="text-[11px] font-bold text-gray-400">{new Date(emergency.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                    <View style={S.timelineItem}>
+                        <View style={[S.timelineDot, { backgroundColor: SgateColors.red }]} />
+                        <View style={S.timelineTitleRow}>
+                          <Text style={S.timelineTitle}>Alert Raised</Text>
+                          <Text style={S.timelineTime}>{TIME_FORMATTER.format(new Date(emergency.createdAt))}</Text>
                         </View>
-                        <Text className="text-xs text-gray-500 mt-1 font-medium">
+                        <Text style={S.timelineMeta}>
                             Sent from flat {emergency.sender.flat}
                         </Text>
                     </View>
 
                     {/* Response Step */}
                     {emergency.respondedBy ? (
-                        <View className="relative">
-                            <View className="absolute -left-[37px] top-1 h-4 w-4 rounded-full bg-blue-500 border-4 border-white shadow-sm" />
-                            <View className="flex-row justify-between items-center">
-                              <Text className="font-bold text-gray-900 text-[16px]" style={{ fontFamily: 'Sora-Bold' }}>Security Acknowledged</Text>
-                              <Text className="text-[11px] font-bold text-gray-400">Response Active</Text>
+                        <View style={S.timelineItem}>
+                            <View style={[S.timelineDot, { backgroundColor: SgateColors.blue }]} />
+                            <View style={S.timelineTitleRow}>
+                              <Text style={S.timelineTitle}>Security Acknowledged</Text>
+                              <Text style={[S.timelineTime, { color: SgateColors.blue }]}>ACTIVE</Text>
                             </View>
-                            <Text className="text-xs text-gray-500 mt-1 font-medium">
+                            <Text style={S.timelineMeta}>
                                 Assigned to {emergency.respondedBy.name} ({emergency.respondedBy.role})
                             </Text>
                             {emergency.responseNote && (
-                                <View className="mt-3 bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                                    <Text className="text-[13px] text-blue-800 font-bold">“{emergency.responseNote}”</Text>
+                                <View style={[S.noteBox, { backgroundColor: SgateColors.blueBg }]}>
+                                    <Text style={S.noteText}>“{emergency.responseNote}”</Text>
                                 </View>
                             )}
                         </View>
                     ): (
-                        <View className="relative opacity-40">
-                            <View className="absolute -left-[37px] top-1 h-4 w-4 rounded-full bg-gray-200 border-4 border-white shadow-sm" />
-                            <Text className="font-bold text-gray-400 text-[16px]" style={{ fontFamily: 'Sora-Bold' }}>Awaiting Security...</Text>
+                        <View style={[S.timelineItem, { opacity: 0.55 }]}>
+                            <View style={[S.timelineDot, { backgroundColor: SgateColors.border }]} />
+                            <Text style={S.timelineTitle}>Awaiting Security…</Text>
                         </View>
                     )}
 
                     {/* Resolution Step */}
                     {(emergency.status === 'RESOLVED' || emergency.status === 'FALSE_ALARM') ? (
-                        <View className="relative">
-                            <View className={`absolute -left-[37px] top-1 h-4 w-4 rounded-full ${emergency.status === 'FALSE_ALARM' ? 'bg-orange-500' : 'bg-emerald-500'} border-4 border-white shadow-sm`} />
-                            <View className="flex-row justify-between items-center">
-                              <Text className="font-bold text-gray-900 text-[16px]" style={{ fontFamily: 'Sora-Bold' }}>
+                        <View style={S.timelineItem}>
+                            <View style={[S.timelineDot, { backgroundColor: emergency.status === 'FALSE_ALARM' ? SgateColors.goldDeep : SgateColors.green }]} />
+                            <View style={S.timelineTitleRow}>
+                              <Text style={S.timelineTitle}>
                                   {emergency.status === 'FALSE_ALARM' ? 'Closed (False Alarm)' : 'Resolved'}
                               </Text>
                               {emergency.resolvedAt && (
-                                <Text className="text-[11px] font-bold text-gray-400">{new Date(emergency.resolvedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                                <Text style={S.timelineTime}>{TIME_FORMATTER.format(new Date(emergency.resolvedAt))}</Text>
                               )}
                             </View>
                             {emergency.resolutionNote && (
-                                <View className={`mt-3 p-4 rounded-2xl border ${emergency.status === 'FALSE_ALARM' ? 'bg-orange-50 border-orange-100' : 'bg-emerald-50 border-emerald-100'}`}>
-                                    <Text className={`text-[13px] font-bold ${emergency.status === 'FALSE_ALARM' ? 'text-orange-800' : 'text-emerald-800'}`}>“{emergency.resolutionNote}”</Text>
+                                <View style={[S.noteBox, { backgroundColor: emergency.status === 'FALSE_ALARM' ? SgateColors.goldPale : SgateColors.greenBg }]}>
+                                    <Text style={S.noteText}>“{emergency.resolutionNote}”</Text>
                                 </View>
                             )}
                         </View>
@@ -155,3 +155,34 @@ export default function EmergencyDetailScreen() {
         </View>
     );
 }
+
+const S = StyleSheet.create({
+    root: { flex: 1, backgroundColor: SgateColors.bg },
+    flex: { flex: 1 },
+    headerGap: { height: SgateLayout.headerContentGap },
+    content: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 12 },
+    center: { flex: 1, padding: 24, backgroundColor: SgateColors.bg, alignItems: 'center', justifyContent: 'center' },
+    emptyIcon: { width: 64, height: 64, marginBottom: 14, borderRadius: 32, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
+    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    emptyText: { maxWidth: 300, marginTop: 6, fontSize: 13, lineHeight: 19, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center' },
+    backAction: { minHeight: 44, marginTop: 18, paddingHorizontal: 20, borderRadius: SgateRadius.sm, backgroundColor: SgateColors.gold, alignItems: 'center', justifyContent: 'center' },
+    backActionText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    heroCard: { padding: 18, marginBottom: 24, borderRadius: SgateRadius.lg, borderWidth: 1, borderColor: '#FFD5D5', backgroundColor: SgateColors.redBg },
+    heroHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14 },
+    alertIcon: { width: 52, height: 52, borderRadius: 16, backgroundColor: SgateColors.red, alignItems: 'center', justifyContent: 'center' },
+    heroCopy: { flex: 1, minWidth: 0, marginLeft: 12 },
+    heroTitle: { fontSize: 19, fontFamily: SgateFonts.bold, color: SgateColors.t1, textTransform: 'capitalize' },
+    heroLabel: { marginTop: 3, fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.red, letterSpacing: 0.8 },
+    descriptionBox: { ...SgateSurfaces.card, padding: 14, backgroundColor: 'rgba(255,255,255,0.72)' },
+    descriptionText: { fontSize: 14, lineHeight: 21, fontFamily: SgateFonts.regular, color: SgateColors.t2 },
+    sectionLabel: { marginBottom: 16, fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 1 },
+    timeline: { marginLeft: 9, paddingLeft: 25, borderLeftWidth: 1, borderLeftColor: SgateColors.border },
+    timelineItem: { position: 'relative', minHeight: 74, marginBottom: 20 },
+    timelineDot: { position: 'absolute', top: 3, left: -31, width: 11, height: 11, borderRadius: 6, borderWidth: 3, borderColor: SgateColors.card },
+    timelineTitleRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 },
+    timelineTitle: { flex: 1, fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    timelineTime: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.t3 },
+    timelineMeta: { marginTop: 5, fontSize: 12, lineHeight: 18, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    noteBox: { marginTop: 10, padding: 12, borderRadius: SgateRadius.sm },
+    noteText: { fontSize: 12, lineHeight: 18, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
+});

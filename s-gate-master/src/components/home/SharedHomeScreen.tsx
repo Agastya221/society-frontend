@@ -61,14 +61,6 @@ function timeAgo(iso: string): string {
     return `${Math.floor(diff / 1440)}d ago`;
 }
 
-function formatType(raw: string): string {
-    if (!raw) return 'Guest';
-    return raw
-        .split('_')
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-        .join(' ');
-}
-
 function shouldOpenAdminArea(redirectTo?: string, nextRole?: string | null): boolean {
     const normalizedRole = nextRole?.toUpperCase();
     return redirectTo === 'ADMIN_PANEL' || normalizedRole === 'ADMIN' || normalizedRole === 'SUPER_ADMIN';
@@ -106,7 +98,14 @@ function getCountFromPayload(raw: any, fallback: number): number {
 export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { user, role: authRole, login } = useAuthStore();
+    const {
+        user,
+        role: authRole,
+        login,
+        userContexts,
+        selectedResidentContextId,
+        selectedAdminContextId,
+    } = useAuthStore();
     const startAddMembershipFlow = useOnboardingStore((s) => s.startAddMembershipFlow);
     const startRequestCorrectionFlow = useOnboardingStore((s) => s.startRequestCorrectionFlow);
 
@@ -258,12 +257,19 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         router.push(route as any);
     }, [router]);
 
-    const societyName = user?.society?.name ?? 'Your Society';
     const notificationsRoute = isAdmin ? '/(admin)/notifications' : '/notifications';
     const activityRoute = isAdmin ? '/(admin)/approval-requests' : '/(resident)/approvals';
     const sosRoute = isAdmin ? '/(admin)/sos-create' : '/(resident)/emergency/create';
     const quickActions = getQuickActionsForRole(role);
-    const activeContext = contextsData?.activeContext ?? null;
+    const selectedContextId = isAdmin ? selectedAdminContextId : selectedResidentContextId;
+    const cachedContext = userContexts.find((context) => context.membershipId === selectedContextId)
+        ?? userContexts.find((context) => context.isActiveContext)
+        ?? null;
+    const activeContext = contextsData?.activeContext ?? cachedContext;
+    const societyName = activeContext?.societyName
+        ?? contextsData?.contexts?.[0]?.societyName
+        ?? user?.society?.name
+        ?? 'Society';
     const contextTitle = activeContext?.label ?? formatUserFlatLabel(user) ?? societyName;
     const canOpenContextSheet = (contextsData?.contexts?.length ?? 0) > 0 || !contextsLoading;
     const pendingAdminActionsCount = pendingSocietyPasses.length + pendingOnboardingCount;

@@ -161,7 +161,7 @@ export default function ReviewSubmitScreen() {
 
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: 88 + insets.bottom }]}
                 showsVerticalScrollIndicator={false}
             >
                 {/* Summary Card */}
@@ -297,9 +297,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingTop: 16,
-        paddingBottom: 120,
+        paddingBottom: 16,
     },
     summaryCard: {
         backgroundColor: '#FFFFFF',
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderTopWidth: 1,
         borderTopColor: SgateColors.borderSoft,
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingTop: 12,
     },
     submitBtn: {

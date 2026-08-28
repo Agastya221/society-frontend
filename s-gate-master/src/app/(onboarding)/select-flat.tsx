@@ -288,7 +288,7 @@ export default function SelectFlatScreen() {
                     keyExtractor={keyExtractor}
                     renderItem={renderItem}
                     getItemType={getItemType}
-                    contentContainerStyle={{ paddingBottom: 120 }}
+                    contentContainerStyle={{ paddingBottom: 88 + insets.bottom }}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     // ── Search ──
     searchContainer: {
         backgroundColor: '#FFFFFF',
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingTop: 12,
         paddingBottom: 10,
         ...SgateShadows.minimal,
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderTopWidth: 1,
         borderTopColor: SgateColors.borderSoft,
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
         paddingTop: 12,
     },
     continueBtn: {

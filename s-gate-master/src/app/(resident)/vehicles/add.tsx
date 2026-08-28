@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateRadius, SgateSurfaces } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
+import { PrimaryButton } from '../../../components/ui/PrimaryButton';
+import { ScreenHeader } from '../../../components/ui/ScreenHeader';
 
 // ─── Type card config ─────────────────────────────────────────────────────────
 
@@ -62,117 +64,122 @@ export default function AddVehicleScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <SafeAreaView edges={['top']} style={{ backgroundColor: 'white' }}>
-        <View 
-          className="px-5 flex-row items-center gap-3 bg-white border-b border-gray-100"
-          style={{ paddingTop: 12, paddingBottom: 16 }}
-        >
-          <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-            <Ionicons name="arrow-back" size={24} className="text-gray-700" />
-          </TouchableOpacity>
-          <Text className="text-xl font-bold text-gray-900">Add Vehicle</Text>
-        </View>
-      </SafeAreaView>
+    <View style={S.root}>
+      <ScreenHeader title="Add Vehicle" subtitle="Register a vehicle for gate access" />
+      <View style={S.headerGap} />
 
-      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView style={S.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          style={S.flex}
+          contentContainerStyle={S.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
 
           {/* ── Vehicle Type ──────────────────────────────────────────────── */}
-          <View className="mb-6">
-            <Text className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 ml-1">Vehicle Type *</Text>
-            <View className="flex-row gap-3">
+          <View style={S.section}>
+            <Text style={S.label}>VEHICLE TYPE *</Text>
+            <View style={S.typeRow}>
               {TYPE_CARDS.map(cfg => {
                 const isSelected = vehicleType === cfg.type;
                 return (
-                  <TouchableOpacity
+                  <Pressable
                     key={cfg.type}
                     onPress={() => setVehicleType(cfg.type)}
-                    activeOpacity={0.7}
-                    className={`flex-1 rounded-2xl items-center py-4 border-2 ${
-                      isSelected ? 'bg-yellow-50 border-yellow-400' : 'bg-white border-gray-100 shadow-sm'
-                    }`}
+                    style={[S.typeCard, isSelected && S.typeCardActive]}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: isSelected }}
                   >
-                    <View className={`w-10 h-10 rounded-full items-center justify-center mb-2 ${
-                      isSelected ? 'bg-yellow-400' : 'bg-gray-100'
-                    }`}>
-                      <MaterialCommunityIcons name={cfg.iconName} size={22} color={isSelected ? 'black' : '#6b7280'} />
+                    <View style={[S.typeIcon, isSelected && S.typeIconActive]}>
+                      <MaterialCommunityIcons name={cfg.iconName} size={22} color={isSelected ? SgateColors.t1 : SgateColors.t3} />
                     </View>
-                    <Text className={`text-[13px] font-bold ${
-                      isSelected ? 'text-yellow-800' : 'text-gray-600'
-                    }`}>
+                    <Text style={[S.typeText, isSelected && S.typeTextActive]} numberOfLines={2}>
                       {cfg.label}
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 );
               })}
             </View>
           </View>
 
           {/* ── Details ───────────────────────────────────────────────────── */}
-          <View className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 mb-6">
-            <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">License Plate Number *</Text>
+          <View style={S.formCard}>
+            <Text style={S.fieldLabel}>LICENSE PLATE NUMBER *</Text>
             <TextInput
-              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 mb-5 font-medium text-gray-900 text-[15px]"
+              style={S.input}
               value={number}
               onChangeText={setNumber}
               placeholder="e.g. MH01AB1234"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={SgateColors.t4}
               autoCapitalize="characters"
+              autoCorrect={false}
             />
 
-            <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Make / Model *</Text>
+            <Text style={S.fieldLabel}>MAKE / MODEL *</Text>
             <TextInput
-              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 mb-5 font-medium text-gray-900 text-[15px]"
+              style={S.input}
               value={model}
               onChangeText={setModel}
               placeholder="e.g. Honda City"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={SgateColors.t4}
               autoCapitalize="words"
             />
 
-            <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Vehicle Color *</Text>
+            <Text style={S.fieldLabel}>VEHICLE COLOR *</Text>
             <TextInput
-              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 font-medium text-gray-900 text-[15px]"
+              style={[S.input, S.lastInput]}
               value={color}
               onChangeText={setColor}
               placeholder="e.g. Matte Black"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={SgateColors.t4}
               autoCapitalize="words"
             />
           </View>
 
           {/* ── Notice ────────────────────────────────────────────────────── */}
-          <View className="flex-row items-start gap-3 bg-yellow-50 border border-yellow-100 rounded-2xl p-4 mb-8">
-            <View className="mt-0.5">
-              <Ionicons name="information-circle" size={20} color="#ca8a04" />
-            </View>
-            <Text className="flex-1 text-sm text-yellow-900 leading-5">
-              Your vehicle will be marked as <Text className="font-bold">Pending Approval</Text> until administration verifies it and assigns your official sticker.
+          <View style={S.infoCard}>
+            <Ionicons name="information-circle-outline" size={20} color={SgateColors.goldDeep} />
+            <Text style={S.infoText}>
+              Your vehicle stays <Text style={S.infoStrong}>Pending Approval</Text> until administration verifies it and assigns a sticker.
             </Text>
           </View>
 
-          {/* ── Submit Button ─────────────────────────────────────────────── */}
-          <TouchableOpacity
-            style={{ shadowColor: '#eab308', shadowOpacity: submitting || isDisabled ? 0 : 0.25, shadowRadius: 10, elevation: 2 }}
-            className={`py-4 rounded-xl items-center flex-row justify-center gap-2 ${isDisabled || submitting ? 'bg-gray-300' : 'bg-yellow-400'}`}
+        </ScrollView>
+
+        <View style={[S.bottomBar, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+          <PrimaryButton
+            title={submitting ? 'Submitting…' : 'Submit Registration'}
             onPress={handleSubmit}
             disabled={isDisabled || submitting}
-            activeOpacity={0.8}
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color="#000" />
-            ) : (
-              <Ionicons name="shield-checkmark" size={20} color={isDisabled ? '#9ca3af' : 'black'} />
-            )}
-            <Text className={`text-base font-bold ${isDisabled ? 'text-gray-500' : 'text-black'}`}>
-              {submitting ? 'Submitting...' : 'Submit Registration'}
-            </Text>
-          </TouchableOpacity>
-
-        </ScrollView>
+            isLoading={submitting}
+            leftIcon={<Ionicons name="shield-checkmark-outline" size={20} color={SgateColors.t1} />}
+          />
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
 }
+
+const S = StyleSheet.create({
+  root: { flex: 1, backgroundColor: SgateColors.bg },
+  flex: { flex: 1 },
+  headerGap: { height: SgateLayout.headerContentGap },
+  content: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 14, paddingBottom: 20 },
+  section: { marginBottom: 22 },
+  label: { marginBottom: 10, fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 0.8 },
+  typeRow: { flexDirection: 'row', gap: 10 },
+  typeCard: { flex: 1, minHeight: 118, paddingHorizontal: 8, paddingVertical: 14, borderRadius: SgateRadius.md, borderWidth: 1, borderColor: SgateColors.borderSoft, backgroundColor: SgateColors.card, alignItems: 'center', justifyContent: 'center' },
+  typeCardActive: { borderColor: SgateColors.gold, backgroundColor: SgateColors.goldPale },
+  typeIcon: { width: 44, height: 44, marginBottom: 9, borderRadius: 22, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
+  typeIconActive: { backgroundColor: SgateColors.gold },
+  typeText: { fontSize: 12, lineHeight: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t2, textAlign: 'center' },
+  typeTextActive: { color: SgateColors.t1, fontFamily: SgateFonts.bold },
+  formCard: { ...SgateSurfaces.card, padding: 18, marginBottom: 16 },
+  fieldLabel: { marginBottom: 7, fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 0.7 },
+  input: { ...SgateSurfaces.input, paddingHorizontal: 14, marginBottom: 16, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
+  lastInput: { marginBottom: 0 },
+  infoCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 14, marginBottom: 20, borderRadius: SgateRadius.md, borderWidth: 1, borderColor: '#FFE39A', backgroundColor: SgateColors.goldPale },
+  infoText: { flex: 1, fontSize: 12, lineHeight: 19, fontFamily: SgateFonts.regular, color: SgateColors.t2 },
+  infoStrong: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+  bottomBar: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 12, borderTopWidth: 1, borderTopColor: SgateColors.borderSoft, backgroundColor: SgateColors.card },
+});

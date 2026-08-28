@@ -406,7 +406,7 @@ export default function AdminVehiclesScreen() {
             )}
 
             {/* Issue Violation Modal */}
-            <Modal visible={!!issueTarget} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setIssueTarget(null)}>
+            <Modal visible={!!issueTarget} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setIssueTarget(null)}>
                 <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
                     <SafeBottomSheetSurface style={styles.modalContent} showHandle minimumBottomPadding={20}>
                         <Text style={styles.modalTitle}>Issue Violation</Text>
