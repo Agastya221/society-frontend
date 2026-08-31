@@ -1,18 +1,30 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    Animated,
     BackHandler,
-    Easing,
     Pressable,
     StyleSheet,
     View,
+    type LayoutChangeEvent,
     type StyleProp,
     type ViewStyle,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+    Easing,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SafeBottomSheetSurface } from './SafeBottomSheetSurface';
 
+// Motion values copied from the proven PreApproveSheet animation system.
+const ENTER_SPRING = { damping: 22, stiffness: 200, mass: 0.8 };
+const EXIT_EASING = Easing.bezier(0.55, 0, 1, 0.45);
+const SETTLE_EASING = Easing.bezier(0.16, 1, 0.3, 1);
 const TAB_BAR_SEAM_OVERLAP = 12;
 
 interface AnimatedBottomSheetModalProps {
@@ -25,8 +37,9 @@ interface AnimatedBottomSheetModalProps {
 }
 
 /**
- * Bottom panel with independent animations: backdrop fades while only the
- * sheet translates. This avoids the black overlay sliding up with the panel.
+ * Reusable action-sheet shell based on PreApproveSheet's presentation:
+ * independent backdrop fade, full-height spring entry, timed reverse exit,
+ * Android back support, and swipe-down dismissal.
  */
 export function AnimatedBottomSheetModal({
     visible,
@@ -38,101 +51,173 @@ export function AnimatedBottomSheetModal({
 }: AnimatedBottomSheetModalProps) {
     const insets = useSafeAreaInsets();
     const [mounted, setMounted] = useState(visible);
-    const backdropOpacity = useRef(new Animated.Value(0)).current;
-    const sheetTranslateY = useRef(new Animated.Value(72)).current;
+    const [sheetHeight, setSheetHeight] = useState(0);
+    const [displayedChildren, setDisplayedChildren] = useState(children);
 
+    const sheetY = useSharedValue(1000);
+    const backdropOpacity = useSharedValue(0);
+
+    const openedRef = useRef(false);
+    const isClosingRef = useRef(false);
+    const onCloseRef = useRef(onClose);
+    const childrenRef = useRef(children);
+    const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    onCloseRef.current = onClose;
+    childrenRef.current = children;
+
+    const travelDistance = sheetHeight + insets.bottom + TAB_BAR_SEAM_OVERLAP;
+
+    const clearCloseTimer = useCallback(() => {
+        if (!closeTimerRef.current) return;
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+    }, []);
+
+    const finishInternalClose = useCallback(() => {
+        clearCloseTimer();
+        openedRef.current = false;
+        isClosingRef.current = false;
+        setMounted(false);
+        onCloseRef.current();
+    }, [clearCloseTimer]);
+
+    const handleClose = useCallback(() => {
+        if (isClosingRef.current) return;
+        isClosingRef.current = true;
+        sheetY.value = withTiming(travelDistance || 1000, {
+            duration: 260,
+            easing: EXIT_EASING,
+        });
+        backdropOpacity.value = withTiming(0, { duration: 220 });
+        clearCloseTimer();
+        closeTimerRef.current = setTimeout(finishInternalClose, 280);
+    }, [backdropOpacity, clearCloseTimer, finishInternalClose, sheetY, travelDistance]);
+
+    // Snapshot children only when opening. They remain stable during exit, so
+    // clearing the selected pass cannot shrink the sheet before it leaves.
     useEffect(() => {
-        if (visible) {
-            setMounted(true);
-            backdropOpacity.stopAnimation();
-            sheetTranslateY.stopAnimation();
-            backdropOpacity.setValue(0);
-            sheetTranslateY.setValue(72);
+        clearCloseTimer();
 
-            requestAnimationFrame(() => {
-                Animated.parallel([
-                    Animated.timing(backdropOpacity, {
-                        toValue: 1,
-                        duration: 180,
-                        easing: Easing.out(Easing.quad),
-                        useNativeDriver: true,
-                    }),
-                    Animated.spring(sheetTranslateY, {
-                        toValue: 0,
-                        damping: 24,
-                        stiffness: 260,
-                        mass: 0.9,
-                        useNativeDriver: true,
-                    }),
-                ]).start();
-            });
+        if (visible) {
+            setDisplayedChildren(childrenRef.current);
+            setSheetHeight(0);
+            openedRef.current = false;
+            isClosingRef.current = false;
+            setMounted(true);
             return;
         }
 
-        if (mounted) {
-            Animated.parallel([
-                Animated.timing(backdropOpacity, {
-                    toValue: 0,
-                    duration: 150,
-                    easing: Easing.in(Easing.quad),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(sheetTranslateY, {
-                    toValue: 48,
-                    duration: 170,
-                    easing: Easing.inOut(Easing.quad),
-                    useNativeDriver: true,
-                }),
-            ]).start(({ finished }) => {
-                if (finished) setMounted(false);
-            });
-        }
-    }, [backdropOpacity, mounted, sheetTranslateY, visible]);
+        if (!mounted || isClosingRef.current) return;
+
+        isClosingRef.current = true;
+        sheetY.value = withTiming(travelDistance || 1000, {
+            duration: 260,
+            easing: EXIT_EASING,
+        });
+        backdropOpacity.value = withTiming(0, { duration: 220 });
+        closeTimerRef.current = setTimeout(() => {
+            openedRef.current = false;
+            isClosingRef.current = false;
+            setMounted(false);
+        }, 280);
+
+        return clearCloseTimer;
+    // Children are intentionally read through a ref only on visibility change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [visible]);
+
+    useEffect(() => {
+        if (!mounted || !visible || sheetHeight <= 0 || openedRef.current) return;
+
+        openedRef.current = true;
+        sheetY.value = travelDistance;
+        backdropOpacity.value = 0;
+
+        const frame = requestAnimationFrame(() => {
+            sheetY.value = withSpring(0, ENTER_SPRING);
+            backdropOpacity.value = withTiming(1, { duration: 280 });
+        });
+
+        return () => cancelAnimationFrame(frame);
+    }, [backdropOpacity, mounted, sheetHeight, sheetY, travelDistance, visible]);
 
     useEffect(() => {
         if (!mounted) return;
         const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-            onClose();
+            handleClose();
             return true;
         });
         return () => subscription.remove();
-    }, [mounted, onClose]);
+    }, [handleClose, mounted]);
+
+    useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
+
+    const panGesture = useMemo(() => Gesture.Pan()
+        .failOffsetX([-20, 20])
+        .activeOffsetY([-10, 10])
+        .onUpdate(event => {
+            if (event.translationY > 0) sheetY.value = event.translationY;
+        })
+        .onEnd(event => {
+            if (event.translationY > 90 || event.velocityY > 500) {
+                runOnJS(handleClose)();
+            } else {
+                sheetY.value = withTiming(0, { duration: 220, easing: SETTLE_EASING });
+            }
+        }), [handleClose, sheetY]);
+
+    const sheetStyle = useAnimatedStyle(() => ({
+        transform: [{ translateY: sheetY.value }],
+    }));
+    const backdropStyle = useAnimatedStyle(() => ({
+        opacity: backdropOpacity.value,
+    }));
+
+    const handleSheetLayout = (event: LayoutChangeEvent) => {
+        const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+        setSheetHeight(current => current === nextHeight ? current : nextHeight);
+    };
 
     if (!mounted) return null;
 
     return (
-            <View
-                style={[S.root, { bottom: -insets.bottom - TAB_BAR_SEAM_OVERLAP }]}
-                pointerEvents="box-none"
-            >
-                <Animated.View style={[S.backdrop, { opacity: backdropOpacity }]}>
-                    <Pressable
-                        style={StyleSheet.absoluteFill}
-                        onPress={onClose}
-                        accessibilityRole="button"
-                        accessibilityLabel="Close panel"
-                    />
-                </Animated.View>
-                <Animated.View style={[S.sheetPosition, { transform: [{ translateY: sheetTranslateY }] }]}>
+        <View
+            style={[styles.root, { bottom: -insets.bottom - TAB_BAR_SEAM_OVERLAP }]}
+            pointerEvents="box-none"
+        >
+            <Animated.View style={[styles.backdrop, backdropStyle]}>
+                <Pressable
+                    style={StyleSheet.absoluteFill}
+                    onPress={handleClose}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close panel"
+                />
+            </Animated.View>
+
+            <GestureDetector gesture={panGesture}>
+                <Animated.View
+                    onLayout={handleSheetLayout}
+                    style={[styles.sheetPosition, sheetStyle]}
+                >
                     <SafeBottomSheetSurface
                         style={surfaceStyle}
                         showHandle={showHandle}
-                        minimumBottomPadding={
-                            Math.max(
-                                minimumBottomPadding,
-                                insets.bottom + TAB_BAR_SEAM_OVERLAP + 12,
-                            )
-                        }
+                        minimumBottomPadding={Math.max(
+                            minimumBottomPadding,
+                            insets.bottom + TAB_BAR_SEAM_OVERLAP + 12,
+                        )}
                         respectBottomInset={false}
                     >
-                        {children}
+                        {displayedChildren}
                     </SafeBottomSheetSurface>
                 </Animated.View>
-            </View>
+            </GestureDetector>
+        </View>
     );
 }
 
-const S = StyleSheet.create({
+const styles = StyleSheet.create({
     root: {
         ...StyleSheet.absoluteFillObject,
         justifyContent: 'flex-end',
@@ -146,6 +231,6 @@ const S = StyleSheet.create({
     },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(13,15,20,0.45)',
+        backgroundColor: 'rgba(0,0,0,0.48)',
     },
 });
