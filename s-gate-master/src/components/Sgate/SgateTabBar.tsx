@@ -186,11 +186,11 @@ function SgateTab({ label, iconName, isFocused, options, onPress, onLongPress }:
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: SgateColors.card,
-    borderTopWidth: 1,
-    borderTopColor: SgateColors.borderSoft,
+    backgroundColor: '#FAF9F6',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#DDDAD3',
+    marginTop: -StyleSheet.hairlineWidth,
     paddingTop: 6,
-    elevation: 4,
   },
   tabRow: {
     flexDirection: 'row',

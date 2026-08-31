@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SafeBottomSheetSurface } from './SafeBottomSheetSurface';
 
-const TAB_BAR_SEAM_OVERLAP = 4;
+const TAB_BAR_SEAM_OVERLAP = 12;
 
 interface AnimatedBottomSheetModalProps {
     visible: boolean;
