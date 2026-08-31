@@ -188,9 +188,9 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FAF9F6',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#DDDAD3',
-    marginTop: -StyleSheet.hairlineWidth,
-    paddingTop: 6,
+    borderTopColor: '#E8E5DF',
+    marginTop: -4,
+    paddingTop: 10,
   },
   tabRow: {
     flexDirection: 'row',

@@ -117,7 +117,12 @@ export function AnimatedBottomSheetModal({
                     <SafeBottomSheetSurface
                         style={surfaceStyle}
                         showHandle={showHandle}
-                        minimumBottomPadding={minimumBottomPadding}
+                        minimumBottomPadding={
+                            Math.max(
+                                minimumBottomPadding,
+                                insets.bottom + TAB_BAR_SEAM_OVERLAP + 6,
+                            )
+                        }
                         respectBottomInset={false}
                     >
                         {children}
@@ -137,6 +142,7 @@ const S = StyleSheet.create({
     sheetPosition: {
         width: '100%',
         maxHeight: '88%',
+        flexShrink: 1,
     },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
