@@ -67,6 +67,7 @@ export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProp
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+      <View pointerEvents="none" style={styles.topCover} />
       <View style={styles.tabRow}>
         {visibleRoutes.map((route, idx) => {
           const { options } = descriptors[route.key];
@@ -187,10 +188,16 @@ function SgateTab({ label, iconName, isFocused, options, onPress, onLongPress }:
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FAF9F6',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E8E5DF',
-    marginTop: -4,
-    paddingTop: 10,
+    paddingTop: 6,
+    overflow: 'visible',
+  },
+  topCover: {
+    position: 'absolute',
+    top: -8,
+    left: 0,
+    right: 0,
+    height: 8,
+    backgroundColor: '#FAF9F6',
   },
   tabRow: {
     flexDirection: 'row',

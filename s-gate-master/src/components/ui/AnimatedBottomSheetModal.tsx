@@ -120,7 +120,7 @@ export function AnimatedBottomSheetModal({
                         minimumBottomPadding={
                             Math.max(
                                 minimumBottomPadding,
-                                insets.bottom + TAB_BAR_SEAM_OVERLAP + 6,
+                                insets.bottom + TAB_BAR_SEAM_OVERLAP + 12,
                             )
                         }
                         respectBottomInset={false}
