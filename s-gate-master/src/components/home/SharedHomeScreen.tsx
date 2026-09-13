@@ -23,6 +23,8 @@ import { ApprovalCard } from '@/components/visitors/ApprovalCard';
 import { SgateColors } from '@/constants/Sgate-theme';
 
 import api from '@/services/api';
+import * as communityService from '@/services/community.service';
+import * as gateService from '@/services/gate.service';
 import {
     getResidentContexts,
     switchResidentContext,
@@ -44,6 +46,8 @@ import HeroCard from './HeroCard';
 import HomeHeader from './HomeHeader';
 import QuickActions from './QuickActions';
 import WaitingGateCard from './WaitingGateCard';
+import ResidentHomeDashboard from './ResidentHomeDashboard';
+import type { ResidentSocietyUpdate } from './ResidentHomeWidgets';
 import { type UserRole, getQuickActionsForRole } from './homeToolsConfig';
 
 const BRAND_YELLOW = '#FFB800';
@@ -77,9 +81,13 @@ function formatUserFlatLabel(user: any): string | null {
     return null;
 }
 
-function countPendingDues(raw: any): number {
+function getPendingDues(raw: any): any[] {
     const list: any[] = Array.isArray(raw) ? raw : raw?.dues ?? raw?.items ?? [];
-    return list.filter((due) => String(due?.status ?? '').toUpperCase() !== 'PAID').length;
+    return list.filter((due) => String(due?.status ?? due?.invoiceStatus ?? '').toUpperCase() !== 'PAID');
+}
+
+function getDueAmount(due: any): number {
+    return Number(due?.totalAmount ?? due?.amount ?? due?.payableAmount ?? due?.balanceAmount ?? 0) || 0;
 }
 
 function getListFromPayload(raw: any, key: string): any[] {
@@ -111,17 +119,15 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
 
     const isAdmin = role === 'admin';
 
-    const {
-        pendingRequests,
-        entries,
-        isLoading: gateLoading,
-        fetchPendingRequests,
-        fetchEntries,
-        approveRequest,
-        rejectRequest,
-    } = useGateStore();
-
-    const { unreadCount, fetchUnreadCount } = useNotificationStore();
+    const pendingRequests = useGateStore((state) => state.pendingRequests);
+    const entries = useGateStore((state) => state.entries);
+    const gateLoading = useGateStore((state) => state.isLoading);
+    const fetchPendingRequests = useGateStore((state) => state.fetchPendingRequests);
+    const fetchEntries = useGateStore((state) => state.fetchEntries);
+    const approveRequest = useGateStore((state) => state.approveRequest);
+    const rejectRequest = useGateStore((state) => state.rejectRequest);
+    const unreadCount = useNotificationStore((state) => state.unreadCount);
+    const fetchUnreadCount = useNotificationStore((state) => state.fetchUnreadCount);
     const canShowAdminPill = isAdmin || authRole === 'ADMIN' || authRole === 'SUPER_ADMIN';
 
     const [showPreApprove, setShowPreApprove] = useState(false);
@@ -137,6 +143,9 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     const [pendingSocietyPasses, setPendingSocietyPasses] = useState<any[]>([]);
     const [pendingOnboardingCount, setPendingOnboardingCount] = useState(0);
     const [pendingDuesCount, setPendingDuesCount] = useState(0);
+    const [pendingDuesAmount, setPendingDuesAmount] = useState<number | null>(null);
+    const [deliveryCount, setDeliveryCount] = useState<number | null>(null);
+    const [societyUpdates, setSocietyUpdates] = useState<ResidentSocietyUpdate[]>([]);
 
     const fetchAdminData = useCallback(async () => {
         if (!isAdmin) return;
@@ -171,14 +180,69 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     const fetchResidentDuesCount = useCallback(async () => {
         if (isAdmin) {
             setPendingDuesCount(0);
+            setPendingDuesAmount(null);
             return;
         }
 
         try {
             const res = await api.get('/resident/dues');
-            setPendingDuesCount(countPendingDues(res.data?.data ?? res.data));
+            const raw = res.data?.data ?? res.data;
+            const pendingDues = getPendingDues(raw);
+            setPendingDuesCount(pendingDues.length);
+            setPendingDuesAmount(pendingDues.reduce((total, due) => total + getDueAmount(due), 0));
         } catch {
             setPendingDuesCount(0);
+            setPendingDuesAmount(null);
+        }
+    }, [isAdmin]);
+
+    const fetchResidentHomeData = useCallback(async () => {
+        if (isAdmin) {
+            setDeliveryCount(null);
+            setSocietyUpdates([]);
+            return;
+        }
+
+        const [deliveryRes, noticesRes] = await Promise.allSettled([
+            gateService.getExpectedDeliveries(),
+            communityService.getNotices({ page: 1, limit: 2 }),
+        ]);
+
+        if (deliveryRes.status === 'fulfilled') {
+            const deliveries = deliveryRes.value as any[];
+            setDeliveryCount(deliveries.length);
+            const firstDelivery = deliveries[0];
+            if (firstDelivery) {
+                setSocietyUpdates((current) => [
+                    ...current.filter((update) => update.kind !== 'delivery'),
+                    {
+                        id: `delivery-${firstDelivery.id ?? 'today'}`,
+                        title: `${firstDelivery.company ?? firstDelivery.provider ?? 'Package'} delivery arriving`,
+                        subtitle: 'Expected today',
+                        detail: 'Keep your phone handy',
+                        kind: 'delivery',
+                    },
+                ]);
+            }
+        } else {
+            setDeliveryCount(null);
+        }
+
+        if (noticesRes.status === 'fulfilled') {
+            const notices = noticesRes.value as any[];
+            const notice = notices[0];
+            if (notice) {
+                setSocietyUpdates((current) => [
+                    {
+                        id: notice.id ?? 'notice-today',
+                        title: notice.title ?? 'Society update',
+                        subtitle: notice.type === 'MAINTENANCE' ? 'Maintenance update' : 'New notice',
+                        detail: notice.location ?? 'Tap to read more',
+                        kind: notice.type === 'MAINTENANCE' ? 'maintenance' : 'notice',
+                    },
+                    ...current.filter((update) => update.kind !== 'notice' && update.kind !== 'maintenance'),
+                ]);
+            }
         }
     }, [isAdmin]);
 
@@ -188,8 +252,9 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
             fetchUnreadCount(),
             fetchEntries({ status: 'CHECKED_IN' }),
             fetchResidentDuesCount(),
+            fetchResidentHomeData(),
         ]);
-    }, [fetchPendingRequests, fetchUnreadCount, fetchEntries, fetchResidentDuesCount]);
+    }, [fetchPendingRequests, fetchUnreadCount, fetchEntries, fetchResidentDuesCount, fetchResidentHomeData]);
 
     const fetchContexts = useCallback(async () => {
         if (!user?.id) return;
@@ -257,7 +322,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         router.push(route as any);
     }, [router]);
 
-    const notificationsRoute = isAdmin ? '/(admin)/notifications' : '/notifications';
+    const notificationsRoute = isAdmin ? '/(admin)/notifications' : '/(resident)/notifications';
     const activityRoute = isAdmin ? '/(admin)/approval-requests' : '/(resident)/approvals';
     const sosRoute = isAdmin ? '/(admin)/sos-create' : '/(resident)/emergency/create';
     const quickActions = getQuickActionsForRole(role);
@@ -266,11 +331,22 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         ?? userContexts.find((context) => context.isActiveContext)
         ?? null;
     const activeContext = contextsData?.activeContext ?? cachedContext;
-    const societyName = activeContext?.societyName
+    const rawSocietyName = activeContext?.societyName
         ?? contextsData?.contexts?.[0]?.societyName
         ?? user?.society?.name
         ?? 'Society';
-    const contextTitle = activeContext?.label ?? formatUserFlatLabel(user) ?? societyName;
+    const societyName = rawSocietyName.trim().toLowerCase() === 'society' ? 'My Society' : rawSocietyName;
+    const activeFlatTitle = activeContext?.flatNumber
+        ? [activeContext.blockName, activeContext.flatNumber].filter(Boolean).join(' - ')
+        : null;
+    const contextLabel = activeContext?.label?.trim();
+    const hasUsefulContextLabel = contextLabel
+        && contextLabel.toLowerCase() !== rawSocietyName.trim().toLowerCase()
+        && contextLabel.toLowerCase() !== 'society';
+    const contextTitle = activeFlatTitle
+        ?? (hasUsefulContextLabel ? contextLabel : null)
+        ?? formatUserFlatLabel(user)
+        ?? 'My Home';
     const canOpenContextSheet = (contextsData?.contexts?.length ?? 0) > 0 || !contextsLoading;
     const pendingAdminActionsCount = pendingSocietyPasses.length + pendingOnboardingCount;
 
@@ -407,6 +483,61 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         });
         router.push('/(onboarding)/select-block' as any);
     }, [requestReturnTo, router, startRequestCorrectionFlow]);
+
+    if (!isAdmin) {
+        return (
+            <View style={S.root}>
+                <ResidentHomeDashboard
+                    user={user as any}
+                    towerName={contextTitle}
+                    societyName={societyName}
+                    notificationCount={unreadCount}
+                    canOpenContextSheet={canOpenContextSheet}
+                    pendingRequests={pendingRequests}
+                    gateLoading={gateLoading}
+                    deliveryCount={deliveryCount}
+                    duesAmount={pendingDuesAmount}
+                    updates={societyUpdates}
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    onContextPress={() => setShowContextSheet(true)}
+                    onNotificationPress={() => nav(notificationsRoute)}
+                    onSosPress={() => nav(sosRoute)}
+                    onNavigate={handleQuickAction}
+                    onAllow={handleApprove}
+                    onDecline={handleDeny}
+                />
+                <PreApproveSheet
+                    visible={showPreApprove}
+                    initialType={preApproveType}
+                    onClose={() => setShowPreApprove(false)}
+                />
+                <ResidentContextPicker
+                    visible={showContextSheet}
+                    contexts={contextsData?.contexts ?? []}
+                    requests={contextsData?.requests ?? []}
+                    activeContext={activeContext}
+                    isLoading={contextsLoading}
+                    switchingContextId={switchingContextId}
+                    onClose={() => setShowContextSheet(false)}
+                    onRefresh={fetchContexts}
+                    onSwitch={handleSwitchContext}
+                    onRequestPress={handleRequestPress}
+                    onAddAnother={handleAddAnotherHome}
+                    variant="dropdown"
+                    topOffset={insets.top + 88}
+                />
+                <ResidentRequestDetailsSheet
+                    visible={showRequestDetails}
+                    request={selectedRequest}
+                    onClose={() => setShowRequestDetails(false)}
+                    onDeleted={handleRequestDeleted}
+                    onApplyAgain={handleRequestApplyAgain}
+                    onEditSelection={handleRequestEditSelection}
+                />
+            </View>
+        );
+    }
 
     return (
         <View style={S.root}>

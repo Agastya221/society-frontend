@@ -2,13 +2,8 @@ import * as Haptics from 'expo-haptics';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import { Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 
@@ -41,6 +36,9 @@ function getBaseName(routeName: string): string {
 // ─── SgateTabBar ─────────────────────────────────────────────────────────────
 export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const bottomPadding = Platform.OS === 'android'
+    ? Math.min(Math.max(insets.bottom, 8), 24)
+    : Math.max(insets.bottom, 10);
 
   // Filter: only render exactly one route per VISIBLE_TAB to prevent duplicates
   // (Expo Router auto-generates profile/index alongside explicit profile route)
@@ -66,7 +64,7 @@ export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProp
     : visibleRoutes.findIndex(r => getBaseName(r.name) === 'home');
 
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+    <View style={[styles.container, { paddingBottom: bottomPadding }]}>
       <View pointerEvents="none" style={styles.topCover} />
       <View style={styles.tabRow}>
         {visibleRoutes.map((route, idx) => {
@@ -125,24 +123,13 @@ function SgateTab({ label, iconName, isFocused, options, onPress, onLongPress }:
 }) {
   const iconColor = isFocused ? SgateColors.gold : SgateColors.t3;
 
-  // Animated gold pill indicator
-  const pillOpacity = useSharedValue(isFocused ? 1 : 0);
-  const pillScaleX  = useSharedValue(isFocused ? 1 : 0);
-
   // Icon scale pop on focus
   const iconScale = useSharedValue(1);
 
   useEffect(() => {
     const timing = { duration: 130, easing: Easing.out(Easing.quad) };
-    pillOpacity.value = withTiming(isFocused ? 1 : 0, timing);
-    pillScaleX.value = withTiming(isFocused ? 1 : 0, timing);
     iconScale.value = withTiming(isFocused ? 1.05 : 1, timing);
-  }, [iconScale, isFocused, pillOpacity, pillScaleX]);
-
-  const pillStyle = useAnimatedStyle(() => ({
-    opacity: pillOpacity.value,
-    transform: [{ scaleX: pillScaleX.value }],
-  }));
+  }, [iconScale, isFocused]);
 
   const iconAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: iconScale.value }],
@@ -151,9 +138,6 @@ function SgateTab({ label, iconName, isFocused, options, onPress, onLongPress }:
   return (
     <TouchableWithoutFeedback onPress={onPress} onLongPress={onLongPress}>
       <View style={styles.tabItem}>
-        {/* Gold indicator pill at top */}
-        <Animated.View style={[styles.indicator, pillStyle]} />
-
         {/* Icon */}
         <Animated.View style={[styles.iconWrapper, iconAnimatedStyle]}>
           {options.tabBarIcon?.({
@@ -187,7 +171,7 @@ function SgateTab({ label, iconName, isFocused, options, onPress, onLongPress }:
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FAF9F6',
+    backgroundColor: '#FFFFFF',
     paddingTop: 6,
     overflow: 'visible',
   },
@@ -197,7 +181,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 8,
-    backgroundColor: '#FAF9F6',
+    backgroundColor: '#FFFFFF',
   },
   tabRow: {
     flexDirection: 'row',
@@ -209,13 +193,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 2,
     paddingBottom: 2,
-  },
-  indicator: {
-    width: 20,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: SgateColors.gold,
-    marginBottom: 6,
   },
   iconWrapper: {
     height: 26,

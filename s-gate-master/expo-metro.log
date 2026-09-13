@@ -1,0 +1,573 @@
+
+React Native / Expo is supported as a PRO feature of [33mConsole Ninja[39m [36mhttps://console-ninja.com/pro[39m.
+
+Starting project at C:\Users\javed\Desktop\s-gate-Ag\society-frontend\s-gate-master
+Using src/app as the root directory for Expo Router.
+Starting Metro Bundler
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Android node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android node_modules\expo-router\entry.js ▓▓▓▓▓░░░░░░░░░░░ 34.9% (479/811)
+Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 48.4% ( 955/1383)
+Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 75.3% (1685/1942)
+Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91.6% (2529/2642)
+Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (2840/2841)
+Android node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (2841/2841)
+Android Bundled 21234ms node_modules\expo-router\entry.js (2841 modules)
+ WARN  SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/th3rdwave/react-native-safe-area-context
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Route "./(resident)/profile/_components/AddressCard.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/HouseholdGrid.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileCompletion.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileHeader.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileQrModal.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SectionSkeleton.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SettingRow.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ WARN  [Reanimated] Property "transform" of AnimatedComponent(View) may be overwritten by a layout animation. Please wrap your component with an animated view and apply the layout animation on the wrapper.
+ LOG  📤 MSG91 sendOTP response: {"message":"366968734a4c313436323037","type":"success"}
+ WARN  [Reanimated] Property "transform" of AnimatedComponent(View) may be overwritten by a layout animation. Please wrap your component with an animated view and apply the layout animation on the wrapper.
+ LOG  ✅ MSG91 verifyOTP response: {"message": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyZXF1ZXN0SWQiOiIzNjY5Njg3MzRhNGMzMTM0MzYzMjMwMzciLCJjb21wYW55SWQiOjQ4Njc5Mn0.nJ1fod_BF6cop9MTKZlNhEWZsvnOEs5OBrBBH4KuGnA", "type": "success"}
+ LOG  🔑 widgetToken: eyJ0eXAiOiJKV1QiLCJh...
+ GROUP    🚀 POST /auth/otp/verify
+ LOG    ⏱️  Time: 2026-09-08T19:36:46.363Z
+ LOG    📦 Body: {"widgetToken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyZXF1ZXN0SWQiOiIzNjY5Njg3MzRhNGMzMTM0MzYzMjMwMzciLCJjb21wYW55SWQiOjQ4Njc5Mn0.nJ1fod_BF6cop9MTKZlNhEWZsvnOEs5OBrBBH4KuGnA"}
+ GROUP    ❌ NETWORK_ERROR POST /auth/otp/verify  (42882ms)
+ LOG    💬 Message: Network Error
+ ERROR  Verify error: [AxiosError: Network Error] 
+
+Call Stack
+  handleError (node_modules\axios\dist\esm\axios.js)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  INTERNAL_DISPATCH_METHOD_KEY (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatchTrustedEvent (node_modules\react-native\src\private\webapis\dom\events\internals\EventTargetInternals.js)
+  setReadyState (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  __didCompleteResponse (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  RCTNetworking.addListener$argument_1 (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js)
+  apply (<native>)
+  <anonymous> (node_modules\@babel\runtime\helpers\superPropGet.js)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js)
+  Axios$1#request (node_modules\axios\dist\esm\axios.js)
+  throw (<native>)
+  asyncGeneratorStep (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  _throw (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+ LOG  ✅ MSG91 verifyOTP response: {"code": 703, "message": "otp already verifed", "type": "error"}
+ LOG  ✅ MSG91 verifyOTP response: {"code": 703, "message": "otp already verifed", "type": "error"}
+ LOG  ✅ MSG91 verifyOTP response: {"code": 703, "message": "otp already verifed", "type": "error"}
+ LOG  ✅ MSG91 verifyOTP response: {"code": 703, "message": "otp already verifed", "type": "error"}
+ WARN  Route "./(resident)/profile/_components/AddressCard.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/HouseholdGrid.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileCompletion.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileHeader.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileQrModal.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SectionSkeleton.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SettingRow.tsx" is missing the required default export. Ensure a React component is exported as default.
+ ERROR  Looks like you have configured linking in multiple places. This is likely an error since deep links should only be handled in one place to avoid conflicts. Make sure that:
+- You don't have multiple NavigationContainers in the app each with 'linking' enabled
+- Only a single instance of the root component is rendered
+- You have set 'android:launchMode=singleTask' in the '<activity />' section of the 'AndroidManifest.xml' file to avoid launching multiple instances 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  React.useEffect$argument_0 (node_modules\expo-router\build\fork\useLinking.native.js)
+  callCreate.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitHookEffectListMount (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitHookPassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  flushPassiveEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  flushPendingEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performSyncWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  flushSyncWorkAcrossRoots_impl (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  flushSpawnedWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitRootWhenReady (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ WARN  [Layout children]: No route named "gate-pass" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "onboarding-requests" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "community" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "elections" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Reanimated] Property "transform" of AnimatedComponent(View) may be overwritten by a layout animation. Please wrap your component with an animated view and apply the layout animation on the wrapper.
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-09-08T19:50:57.769Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-09-08T19:50:57.770Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-09-08T19:50:57.771Z
+ ERROR  fetchUnreadCount failed: [AxiosError: Request failed with status code 401] 
+
+Call Stack
+  settle (node_modules\axios\dist\esm\axios.js)
+  onloadend (node_modules\axios\dist\esm\axios.js)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  INTERNAL_DISPATCH_METHOD_KEY (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatchTrustedEvent (node_modules\react-native\src\private\webapis\dom\events\internals\EventTargetInternals.js)
+  setReadyState (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  __didCompleteResponse (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  RCTNetworking.addListener$argument_1 (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js)
+  apply (<native>)
+  <anonymous> (node_modules\@babel\runtime\helpers\superPropGet.js)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js)
+  Axios$1#request (node_modules\axios\dist\esm\axios.js)
+  throw (<native>)
+  asyncGeneratorStep (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  _throw (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+ ERROR  fetchPendingRequests failed: [AxiosError: Request failed with status code 401] 
+
+Call Stack
+  settle (node_modules\axios\dist\esm\axios.js)
+  onloadend (node_modules\axios\dist\esm\axios.js)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  INTERNAL_DISPATCH_METHOD_KEY (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatchTrustedEvent (node_modules\react-native\src\private\webapis\dom\events\internals\EventTargetInternals.js)
+  setReadyState (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  __didCompleteResponse (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  RCTNetworking.addListener$argument_1 (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js)
+  apply (<native>)
+  <anonymous> (node_modules\@babel\runtime\helpers\superPropGet.js)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js)
+  Axios$1#request (node_modules\axios\dist\esm\axios.js)
+  throw (<native>)
+  asyncGeneratorStep (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  _throw (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+ ERROR  fetchEntries failed: [AxiosError: Request failed with status code 401] 
+
+Call Stack
+  settle (node_modules\axios\dist\esm\axios.js)
+  onloadend (node_modules\axios\dist\esm\axios.js)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  INTERNAL_DISPATCH_METHOD_KEY (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatchTrustedEvent (node_modules\react-native\src\private\webapis\dom\events\internals\EventTargetInternals.js)
+  setReadyState (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  __didCompleteResponse (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  RCTNetworking.addListener$argument_1 (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js)
+  apply (<native>)
+  <anonymous> (node_modules\@babel\runtime\helpers\superPropGet.js)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js)
+  Axios$1#request (node_modules\axios\dist\esm\axios.js)
+  throw (<native>)
+  asyncGeneratorStep (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  _throw (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+ WARN  Route "./(resident)/profile/_components/AddressCard.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/HouseholdGrid.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileCompletion.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileHeader.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileQrModal.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SectionSkeleton.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SettingRow.tsx" is missing the required default export. Ensure a React component is exported as default.
+ ERROR  Looks like you have configured linking in multiple places. This is likely an error since deep links should only be handled in one place to avoid conflicts. Make sure that:
+- You don't have multiple NavigationContainers in the app each with 'linking' enabled
+- Only a single instance of the root component is rendered
+- You have set 'android:launchMode=singleTask' in the '<activity />' section of the 'AndroidManifest.xml' file to avoid launching multiple instances 
+
+Call Stack
+  construct (<native>)
+  apply (<native>)
+  _construct (node_modules\@babel\runtime\helpers\construct.js)
+  Wrapper (node_modules\@babel\runtime\helpers\wrapNativeSuper.js)
+  construct (<native>)
+  _callSuper (node_modules\@babel\runtime\helpers\callSuper.js)
+  NamelessError (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  captureCurrentStack (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  HMRClient.log (node_modules\@expo\metro-runtime\src\metroServerLogs.native.ts)
+  console.level (node_modules\react-native\Libraries\Core\setUpDeveloperTools.js)
+  React.useEffect$argument_0 (node_modules\expo-router\build\fork\useLinking.native.js)
+  callCreate.reactStackBottomFrame (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  runWithFiberInDEV (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitHookEffectListMount (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitHookPassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  recursivelyTraversePassiveMountEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitPassiveMountOnFiber (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  flushPassiveEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  flushPendingEffects (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performSyncWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  flushSyncWorkAcrossRoots_impl (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  flushSpawnedWork (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  commitRootWhenReady (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRoot (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js)
+  performWorkOnRootViaSchedulerTask (node_modules\react-native\Libraries\Renderer\implementations\ReactFabric-dev.js) 
+
+Call Stack
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ContextNavigator (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  ExpoRoot (node_modules\expo-router\build\ExpoRoot.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  App (node_modules\expo-router\build\qualified-entry.js)
+  call (<native>)
+  apply (<native>)
+  <anonymous> (node_modules\react-native-css-interop\dist\runtime\wrap-jsx.js)
+  WithDevTools (node_modules\expo\src\launch\withDevTools.tsx)
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ WARN  [Layout children]: No route named "gate-pass" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "onboarding-requests" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "community" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "elections" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Reanimated] Property "transform" of AnimatedComponent(View) may be overwritten by a layout animation. Please wrap your component with an animated view and apply the layout animation on the wrapper.
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-09-08T19:51:10.082Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-09-08T19:51:10.083Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-09-08T19:51:10.085Z
+ ERROR  fetchPendingRequests failed: [AxiosError: Request failed with status code 401] 
+
+Call Stack
+  settle (node_modules\axios\dist\esm\axios.js)
+  onloadend (node_modules\axios\dist\esm\axios.js)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  INTERNAL_DISPATCH_METHOD_KEY (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatchTrustedEvent (node_modules\react-native\src\private\webapis\dom\events\internals\EventTargetInternals.js)
+  setReadyState (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  __didCompleteResponse (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  RCTNetworking.addListener$argument_1 (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js)
+  apply (<native>)
+  <anonymous> (node_modules\@babel\runtime\helpers\superPropGet.js)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js)
+  Axios$1#request (node_modules\axios\dist\esm\axios.js)
+  throw (<native>)
+  asyncGeneratorStep (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  _throw (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+ ERROR  fetchEntries failed: [AxiosError: Request failed with status code 401] 
+
+Call Stack
+  settle (node_modules\axios\dist\esm\axios.js)
+  onloadend (node_modules\axios\dist\esm\axios.js)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  INTERNAL_DISPATCH_METHOD_KEY (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatchTrustedEvent (node_modules\react-native\src\private\webapis\dom\events\internals\EventTargetInternals.js)
+  setReadyState (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  __didCompleteResponse (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  RCTNetworking.addListener$argument_1 (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js)
+  apply (<native>)
+  <anonymous> (node_modules\@babel\runtime\helpers\superPropGet.js)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js)
+  Axios$1#request (node_modules\axios\dist\esm\axios.js)
+  throw (<native>)
+  asyncGeneratorStep (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  _throw (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+ ERROR  fetchUnreadCount failed: [AxiosError: Request failed with status code 401] 
+
+Call Stack
+  settle (node_modules\axios\dist\esm\axios.js)
+  onloadend (node_modules\axios\dist\esm\axios.js)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  INTERNAL_DISPATCH_METHOD_KEY (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatchTrustedEvent (node_modules\react-native\src\private\webapis\dom\events\internals\EventTargetInternals.js)
+  setReadyState (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  __didCompleteResponse (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  RCTNetworking.addListener$argument_1 (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js)
+  apply (<native>)
+  <anonymous> (node_modules\@babel\runtime\helpers\superPropGet.js)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js)
+  Axios$1#request (node_modules\axios\dist\esm\axios.js)
+  throw (<native>)
+  asyncGeneratorStep (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  _throw (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+ LOG  📤 MSG91 sendOTP response: {"message":"366968733142303735383535","type":"success"}
+ WARN  [Reanimated] Property "transform" of AnimatedComponent(View) may be overwritten by a layout animation. Please wrap your component with an animated view and apply the layout animation on the wrapper.
+Android node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Android Bundled 107ms node_modules\expo-router\entry.js (1 module)
+ WARN  SafeAreaView has been deprecated and will be removed in a future release. Please use 'react-native-safe-area-context' instead. See https://github.com/th3rdwave/react-native-safe-area-context
+ WARN  [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+ WARN  Route "./(resident)/profile/_components/AddressCard.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/HouseholdGrid.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileCompletion.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileHeader.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/ProfileQrModal.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SectionSkeleton.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  Route "./(resident)/profile/_components/SettingRow.tsx" is missing the required default export. Ensure a React component is exported as default.
+ WARN  `setPositionAsync` is not supported with edge-to-edge enabled.
+ WARN  `setBackgroundColorAsync` is not supported with edge-to-edge enabled.
+ WARN  [Layout children]: No route named "gate-pass" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "onboarding-requests" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "community" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Layout children]: No route named "elections" exists in nested children: ["all-tools", "broadcast", "emergencies", "gate-passes", "gate-points", "index", "my-dues", "my-home", "my-passes", "notices", "notifications", "payments", "profile", "residents", "settings", "sos-create", "staff", "vehicles", "approval-requests", "community/index", "complaints", "elections/index", "flats", "gate-pass/create", "guards", "onboarding-requests/index"]
+ WARN  [Reanimated] Property "transform" of AnimatedComponent(View) may be overwritten by a layout animation. Please wrap your component with an animated view and apply the layout animation on the wrapper.
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-09-08T19:54:34.230Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-09-08T19:54:34.231Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-09-08T19:54:34.232Z
+ ERROR  fetchUnreadCount failed: [AxiosError: Request failed with status code 401] 
+
+Call Stack
+  settle (node_modules\axios\dist\esm\axios.js)
+  onloadend (node_modules\axios\dist\esm\axios.js)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  INTERNAL_DISPATCH_METHOD_KEY (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatchTrustedEvent (node_modules\react-native\src\private\webapis\dom\events\internals\EventTargetInternals.js)
+  setReadyState (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  __didCompleteResponse (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  RCTNetworking.addListener$argument_1 (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js)
+  apply (<native>)
+  <anonymous> (node_modules\@babel\runtime\helpers\superPropGet.js)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js)
+  Axios$1#request (node_modules\axios\dist\esm\axios.js)
+  throw (<native>)
+  asyncGeneratorStep (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  _throw (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+ ERROR  fetchEntries failed: [AxiosError: Request failed with status code 401] 
+
+Call Stack
+  settle (node_modules\axios\dist\esm\axios.js)
+  onloadend (node_modules\axios\dist\esm\axios.js)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  INTERNAL_DISPATCH_METHOD_KEY (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatchTrustedEvent (node_modules\react-native\src\private\webapis\dom\events\internals\EventTargetInternals.js)
+  setReadyState (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  __didCompleteResponse (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  RCTNetworking.addListener$argument_1 (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js)
+  apply (<native>)
+  <anonymous> (node_modules\@babel\runtime\helpers\superPropGet.js)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js)
+  Axios$1#request (node_modules\axios\dist\esm\axios.js)
+  throw (<native>)
+  asyncGeneratorStep (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  _throw (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+ ERROR  fetchPendingRequests failed: [AxiosError: Request failed with status code 401] 
+
+Call Stack
+  settle (node_modules\axios\dist\esm\axios.js)
+  onloadend (node_modules\axios\dist\esm\axios.js)
+  invoke (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatch (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  INTERNAL_DISPATCH_METHOD_KEY (node_modules\react-native\src\private\webapis\dom\events\EventTarget.js)
+  dispatchTrustedEvent (node_modules\react-native\src\private\webapis\dom\events\internals\EventTargetInternals.js)
+  setReadyState (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  __didCompleteResponse (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  RCTNetworking.addListener$argument_1 (node_modules\react-native\Libraries\Network\XMLHttpRequest.js)
+  apply (<native>)
+  emit (node_modules\react-native\Libraries\vendor\emitter\EventEmitter.js)
+  apply (<native>)
+  <anonymous> (node_modules\@babel\runtime\helpers\superPropGet.js)
+  RCTDeviceEventEmitterImpl#emit (node_modules\react-native\Libraries\EventEmitter\RCTDeviceEventEmitter.js)
+  Axios$1#request (node_modules\axios\dist\esm\axios.js)
+  throw (<native>)
+  asyncGeneratorStep (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  _throw (node_modules\@babel\runtime\helpers\asyncToGenerator.js)
+  tryCallOne (address at (InternalBytecode.js:1:1180)
+  anonymous (address at (InternalBytecode.js:1:1874)
+ LOG  📤 MSG91 sendOTP response: {"message":"36696873324f373431303038","type":"success"}
+ WARN  [Reanimated] Property "transform" of AnimatedComponent(View) may be overwritten by a layout animation. Please wrap your component with an animated view and apply the layout animation on the wrapper.
+ LOG  ✅ MSG91 verifyOTP response: {"code": 705, "message": "invalid otp", "type": "error"}
+ WARN  [Reanimated] Property "transform" of AnimatedComponent(View) may be overwritten by a layout animation. Please wrap your component with an animated view and apply the layout animation on the wrapper.
+ LOG  📤 MSG91 sendOTP response: {"message":"366968746459303038303435","type":"success"}
+ WARN  [Reanimated] Property "transform" of AnimatedComponent(View) may be overwritten by a layout animation. Please wrap your component with an animated view and apply the layout animation on the wrapper.
+ LOG  ✅ MSG91 verifyOTP response: {"message": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyZXF1ZXN0SWQiOiIzNjY5Njg3NDY0NTkzMDMwMzgzMDM0MzUiLCJjb21wYW55SWQiOjQ4Njc5Mn0.n9e2sWShvx_rBkEIV96wM9wnr1zqJx36lbI9LezLDSk", "type": "success"}
+ LOG  🔑 widgetToken: eyJ0eXAiOiJKV1QiLCJh...
+ GROUP    🚀 POST /auth/otp/verify
+ LOG    ⏱️  Time: 2026-09-08T20:10:19.206Z
+ LOG    📦 Body: {"widgetToken":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyZXF1ZXN0SWQiOiIzNjY5Njg3NDY0NTkzMDMwMzgzMDM0MzUiLCJjb21wYW55SWQiOjQ4Njc5Mn0.n9e2sWShvx_rBkEIV96wM9wnr1zqJx36lbI9LezLDSk"}
+ GROUP    ✅ 200 POST /auth/otp/verify  (38714ms)
+ LOG    📄 Response: {"success":true,"message":"Welcome back, Agastya Kumar!","data":{"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3OTEyMDQ3Mi02OWJjLTQ0NDMtOGM2NS1mMDRkZGRhOTYxOGYiLCJyb2xlIjoiUkVTSURFTlQiLCJzb2NpZXR5SWQiOiJlZGZjY2FmYi02MmFiLTQzMzEtYTQyMy1lYjQwNTQyNjE1MDgiLCJmbGF0SWQiOiI1MzUyYWVhMS01MjM3LTQ0Y2ItOWRhZC03NmZiZDQ0MDZhZjQiLCJhcHBUeXBlIjoiUkVTSURFTlRfQVBQIiwidHlwZSI6ImFjY2VzcyIsImp0aSI6IjBjZjgyNTUxLWM4MDUtNDE0Ny05OGYyLWE2ZmI1MTNkOWY2OSIsImlhdCI6MTc4ODg5ODI1NiwiZXhwIjoxNzg4OTAxODU2fQ.YkxgAo-K6vo0FXjVVW-grBl0n4K6q-fwTXOxaMvUtIA","refreshToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ey… (4852 chars)
+ WARN  [Layout children]: No route named "pre-approve" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ LOG  🚨 ResidentLayout: hasActiveEmergency changed to: false
+ WARN  [Layout children]: No route named "pre-approve" exists in nested children: ["all-tools", "deliveries", "expect-delivery", "home", "household", "notifications", "society", "visitors", "amenities/[id]", "amenities/index", "amenities/my-bookings", "amenities/book/[id]", "approvals/index", "communication/[id]", "communication/create", "communication/index", "complaints", "daily-help/[type]", "daily-help/index", "daily-help/profile/[id]", "documents/[id]", "documents/index", "elections/[id]", "elections/index", "emergency/[id]", "emergency/create", "emergency/index", "emergency/sent", "family/index", "local-directory/[category]", "local-directory/index", "local-directory/contact/[id]", "my-passes/index", "notices/index", "pre-approvals/index", "profile/index", "search-vehicle/index", "society-dues/[id]", "society-dues/index", "staff/index", "vehicles/add", "vehicles/index"]
+ GROUP    🚀 GET /community/emergencies/my
+ LOG    ⏱️  Time: 2026-09-08T20:10:58.962Z
+ GROUP    🚀 GET /gate/entry-requests
+ LOG    ⏱️  Time: 2026-09-08T20:10:58.964Z
+ GROUP    🚀 GET /resident/notifications/unread-count
+ LOG    ⏱️  Time: 2026-09-08T20:10:58.965Z
+ GROUP    🚀 GET /gate/entries
+ LOG    ⏱️  Time: 2026-09-08T20:10:58.966Z
+ GROUP    🚀 GET /resident/dues
+ LOG    ⏱️  Time: 2026-09-08T20:10:58.967Z
+ GROUP    🚀 GET /users/resident-app/contexts
+ LOG    ⏱️  Time: 2026-09-08T20:10:58.967Z
+ GROUP    ✅ 200 GET /resident/notifications/unread-count  (1338ms)
+ LOG    📄 Response: {"success":true,"data":{"unreadCount":7}}
+ GROUP    ✅ 200 GET /gate/entry-requests  (2256ms)
+ LOG    📄 Response: {"success":true,"data":{"entryRequests":[],"pagination":{"total":0,"page":1,"limit":20,"pages":0}}}
+ GROUP    ✅ 200 GET /gate/entries  (2386ms)
+ LOG    📄 Response: {"success":true,"data":{"entries":[{"id":"31286c18-8190-4357-9b2d-ab1257e12474","type":"DOMESTIC_STAFF","status":"CHECKED_IN","visitorName":"Savita Bai","visitorPhone":"9700000001","companyName":null,"createdAt":"2026-07-04T18:17:03.567Z","checkInTime":"2026-07-04T17:17:03.566Z","checkOutTime":null,"flat":{"flatNumber":"A101"},"flatNumber":"A101"}],"pagination":{"total":1,"page":1,"limit":20,"pages":1}}}
+ GROUP    ✅ 200 GET /community/emergencies/my  (2541ms)
+ LOG    📄 Response: {"success":true,"data":{"emergencies":[]}}
+ GROUP    ✅ 200 GET /resident/dues  (2542ms)
+ LOG    📄 Response: {"success":true,"data":[{"id":"01c7ac80-13af-49ec-a16e-4bed26154189","societyId":"edfccafb-62ab-4331-a423-eb4054261508","flatId":"5352aea1-5237-44cb-9dad-76fbd4406af4","month":"March 2026","amount":4500,"penalty":0,"totalAmount":4500,"status":"PAID","isPaid":true,"description":"Monthly maintenance fee — March 2026","dueDate":"2026-03-05T00:00:00.000Z","paidAt":"2026-05-30T18:17:15.959Z","societyName":"Dalma Heights Residency","flatNumber":"A101","blockName":"Tower A","lineItems":[{"id":"70489c3b-2a7c-4032-8642-12b373fdc9bf","label":"Monthly Maintenance Fee","description":"Monthly Maintenance F… (1297 chars)
+ GROUP    ✅ 200 GET /users/resident-app/contexts  (2854ms)
+ LOG    📄 Response: {"success":true,"data":{"activeContext":{"membershipId":"905f7702-a596-4368-8c3c-3c5d579e657d","societyId":"edfccafb-62ab-4331-a423-eb4054261508","societyName":"Dalma Heights Residency","societyCity":"Jamshedpur","societyIsActive":true,"flatId":"5352aea1-5237-44cb-9dad-76fbd4406af4","flatNumber":"A101","blockId":"5c1e73c7-90e8-4033-977e-bb27b5f6ab59","blockName":"Tower A","floor":"1","label":"Tower A - A101","subtitle":"Dalma Heights Residency","role":"RESIDENT","residentType":"OWNER","isOwner":true,"isLivingHere":true,"canUseDailyGateFeatures":true,"isPrimary":true,"isDefault":true,"isActiveC… (2931 chars)
+ GROUP    🚀 GET /community/emergencies/my
+ LOG    ⏱️  Time: 2026-09-08T20:13:01.112Z
+ GROUP    ✅ 200 GET /community/emergencies/my  (583ms)
+ LOG    📄 Response: {"success":true,"data":{"emergencies":[]}}
+ GROUP    🚀 GET /community/emergencies/my
+ LOG    ⏱️  Time: 2026-09-08T20:13:04.405Z
+ LOG  FCM token registration skipped: [Error: Make sure to complete the guide at https://docs.expo.dev/push-notifications/fcm-credentials/ : Default FirebaseApp is not initialized in this process com.sgate.app. Make sure to call FirebaseApp.initializeApp(Context) first.]
+ GROUP    ✅ 200 GET /community/emergencies/my  (380ms)
+ LOG    📄 Response: {"success":true,"data":{"emergencies":[]}}
+ ERROR  Your app just crashed. See the error below.
+java.lang.NullPointerException: java.lang.NullPointerException
+  com.facebook.react.devsupport.CxxInspectorPackagerConnection$WebSocketDelegate.didReceiveMessage(Native Method)
+  com.facebook.react.devsupport.CxxInspectorPackagerConnection$DelegateImpl$connectWebSocket$webSocket$1.onMessage$lambda$1(CxxInspectorPackagerConnection.kt:111)
+  com.facebook.react.devsupport.CxxInspectorPackagerConnection$DelegateImpl$connectWebSocket$webSocket$1.$r8$lambda$O31gJ9mPudNC5xHMm3nPJgxbPDI(CxxInspectorPackagerConnection.kt:0)
+  com.facebook.react.devsupport.CxxInspectorPackagerConnection$DelegateImpl$connectWebSocket$webSocket$1$$ExternalSyntheticLambda3.run(D8$$SyntheticClass:0)
+  android.os.Handler.handleCallback(Handler.java:1051)
+  android.os.Handler.dispatchMessage(Handler.java:107)
+  android.os.Looper.loopOnce(Looper.java:266)
+  android.os.Looper.loop(Looper.java:361)
+  android.app.ActivityThread.main(ActivityThread.java:10406)
+  java.lang.reflect.Method.invoke(Native Method)
+  com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:675)
+  com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1002)
