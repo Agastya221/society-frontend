@@ -1,35 +1,44 @@
 export const SgateColors = {
+  // Source of truth: the resident Home screen (src/components/home/ResidentHomeTheme.ts).
+  // Keep these values in sync with ResidentHomeColors — Home is the design reference.
+
   // PRIMARY (Brand)
-  black: '#0D0F14',
-  ink: '#161922',
-  charcoal: '#1E212B',
+  black: '#111318',
+  ink: '#111318',
+  charcoal: '#253047',
 
   // ACCENT (Gold)
-  gold: '#FFB800',
-  goldDeep: '#E5A500',
-  goldPale: '#FFF8E1',
+  gold: '#FACC15',
+  goldDeep: '#F28D12',
+  goldPale: '#FFF6D6',
 
   // SEMANTIC
-  green: '#00D68F',
-  greenBg: '#E5FBF3',
-  red: '#FF5C5C',
-  redBg: '#FFF0F0',
-  blue: '#4C9AFF',
-  blueBg: '#EBF3FF',
-  violet: '#9B6DFF',
+  green: '#12B977',
+  greenBg: '#EFFBF5',
+  greenText: '#17617A',
+  red: '#EF4052',
+  redBg: '#FFF7F7',
+  redBorder: 'rgba(239, 64, 82, 0.14)',
+  blue: '#1688E9',
+  blueBg: '#EFF7FF',
+  orange: '#F28D12',
+  orangeBg: '#FFF8EF',
+  violet: '#8738D1',
+  violetBg: '#F7F0FD',
 
   // NEUTRALS
-  bg: '#F5F4F0',
+  bg: '#FCFCFB',
   card: '#FFFFFF',
-  surface: '#EEECEA',
-  border: '#E5E3DE',
-  borderSoft: '#F0EEEB',
+  surface: '#F6F6F7',
+  border: '#ECEDEF',
+  borderSoft: '#ECEDEF',
 
   // TEXT
-  t1: '#0D0F14',
-  t2: '#4A4D57',
-  t3: '#8A8D97',
-  t4: '#B5B8C0',
+  t1: '#111318',
+  t2: '#73798C',
+  t3: '#9297A8',
+  t4: '#9297A8',
+  section: '#747A91',
 } as const;
 
 export const SgateSpacing = {
@@ -45,18 +54,19 @@ export const SgateSpacing = {
 } as const;
 
 export const SgateRadius = {
-  sm: 14,
-  md: 16,
-  lg: 20,
+  sm: 13,
+  md: 17,
+  lg: 19,
   xl: 22,
-  '2xl': 24,
+  '2xl': 26,
+  icon: 14,
   pill: 20,
   full: 9999,
 } as const;
 
 /** Shared layout values. Screens should use these instead of one-off gutters. */
 export const SgateLayout = {
-  screenGutter: 20,
+  screenGutter: 18,
   compactGutter: 16,
   headerTopGap: 16,
   headerBottomGap: 16,
@@ -112,6 +122,6 @@ export const SgateTypography = {
 } as const;
 
 export const SgateShadows = {
-  minimal: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 },
-  card: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.06, shadowRadius: 40, elevation: 3 },
+  minimal: { shadowColor: '#253047', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
+  card: { shadowColor: '#253047', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.045, shadowRadius: 10, elevation: 1 },
 } as const;

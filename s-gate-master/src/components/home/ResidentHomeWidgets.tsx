@@ -10,7 +10,6 @@ import type { EntryRequest } from '@/types/api';
 import {
     ResidentHomeColors,
     ResidentHomeRadius,
-    ResidentHomeShadow,
     ResidentHomeSpacing,
 } from './ResidentHomeTheme';
 
@@ -403,7 +402,7 @@ const styles = StyleSheet.create({
     liveLabel: { flexDirection: 'row', alignItems: 'center', gap: 7 },
     liveDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: '#10C979' },
     liveText: { fontSize: 12, fontFamily: SgateFonts.medium, color: ResidentHomeColors.green },
-    waitingCard: { minHeight: 78, borderRadius: ResidentHomeRadius.largeCard, paddingHorizontal: ResidentHomeSpacing.md, paddingVertical: ResidentHomeSpacing.xs, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border, flexDirection: 'row', alignItems: 'center', gap: ResidentHomeSpacing.sm, ...ResidentHomeShadow },
+    waitingCard: { minHeight: 78, borderRadius: ResidentHomeRadius.largeCard, paddingHorizontal: ResidentHomeSpacing.md, paddingVertical: ResidentHomeSpacing.xs, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border, flexDirection: 'row', alignItems: 'center', gap: ResidentHomeSpacing.sm },
     loadingCard: { paddingHorizontal: 20 },
     loadingCircle: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#F0F1F4' },
     loadingCopy: { flex: 1, gap: 10 },
@@ -438,13 +437,13 @@ const styles = StyleSheet.create({
     quickCard: { flex: 1, minWidth: 0, height: 76, borderRadius: ResidentHomeRadius.card, paddingHorizontal: 4, paddingVertical: ResidentHomeSpacing.xs, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border, alignItems: 'center', justifyContent: 'center' },
     quickIcon: { width: 40, height: 40, borderRadius: ResidentHomeRadius.icon, alignItems: 'center', justifyContent: 'center' },
     quickLabel: { marginTop: 5, textAlign: 'center', fontSize: 9.5, lineHeight: 12, fontFamily: SgateFonts.semibold, color: ResidentHomeColors.primaryText },
-    allServices: { height: 56, borderRadius: ResidentHomeRadius.largeCard, paddingHorizontal: ResidentHomeSpacing.md, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border, flexDirection: 'row', alignItems: 'center', gap: ResidentHomeSpacing.sm, ...ResidentHomeShadow },
+    allServices: { height: 56, borderRadius: ResidentHomeRadius.largeCard, paddingHorizontal: ResidentHomeSpacing.md, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border, flexDirection: 'row', alignItems: 'center', gap: ResidentHomeSpacing.sm },
     allServicesIcon: { width: 40, height: 40, borderRadius: ResidentHomeRadius.icon, backgroundColor: ResidentHomeColors.neutralSurface, alignItems: 'center', justifyContent: 'center' },
     allServicesCopy: { flex: 1, minWidth: 0 },
     allServicesTitle: { fontSize: 13, fontFamily: SgateFonts.semibold, color: ResidentHomeColors.primaryText },
     allServicesSubtitle: { marginTop: 1, fontSize: 10, fontFamily: SgateFonts.regular, color: ResidentHomeColors.secondaryText },
     updatesRow: { flexDirection: 'row', gap: ResidentHomeSpacing.xs },
-    updateCard: { flex: 1, minWidth: 0, height: 88, borderRadius: ResidentHomeRadius.card, paddingLeft: ResidentHomeSpacing.xs, paddingRight: 20, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border, flexDirection: 'row', alignItems: 'center', gap: 7, position: 'relative', ...ResidentHomeShadow },
+    updateCard: { flex: 1, minWidth: 0, height: 88, borderRadius: ResidentHomeRadius.card, paddingLeft: ResidentHomeSpacing.xs, paddingRight: 20, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border, flexDirection: 'row', alignItems: 'center', gap: 7, position: 'relative' },
     updateIcon: { width: 40, height: 40, borderRadius: ResidentHomeRadius.icon, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     updateCopy: { flex: 1, minWidth: 0 },
     updateTitle: { fontSize: 10, lineHeight: 13.5, fontFamily: SgateFonts.semibold, color: ResidentHomeColors.primaryText },
