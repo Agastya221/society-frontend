@@ -21,9 +21,9 @@ export function ListItem({ title, subtitle, rightElement, onPress, className, sh
             activeOpacity={0.7}
         >
             <View className="flex-1 mr-4">
-                <Text className="text-base font-medium text-zinc-900 dark:text-zinc-100">{title}</Text>
+                <Text className="text-base font-sora-medium text-zinc-900 dark:text-zinc-100">{title}</Text>
                 {subtitle && (
-                    <Text className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">{subtitle}</Text>
+                    <Text className="font-sora text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">{subtitle}</Text>
                 )}
             </View>
 

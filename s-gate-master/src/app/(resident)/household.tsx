@@ -84,11 +84,11 @@ const VEHICLE_STATUS: Record<string, { bg: string; text: string; label: string }
 function SectionHeader({ title, onAdd }: { title: string; onAdd?: () => void }) {
     return (
         <View style={S.sectionHeader}>
-            <Text style={S.sectionTitle}>{title}</Text>
+            <Text className="font-sora" style={S.sectionTitle}>{title}</Text>
             {onAdd && (
                 <Pressable onPress={onAdd} style={S.sectionAction} accessibilityRole="button" accessibilityLabel={`Add to ${title}`}>
                     <Ionicons name="add" size={16} color={SgateColors.t1} />
-                    <Text style={S.sectionActionText}>Add</Text>
+                    <Text className="font-sora" style={S.sectionActionText}>Add</Text>
                 </Pressable>
             )}
         </View>
@@ -108,7 +108,7 @@ function EmptyCard({ icon, label, onAdd, comingSoon }: { icon: React.ReactNode; 
                 <View style={S.emptyCardIcon}>
                     {icon}
                 </View>
-                <Text style={S.emptyCardText}>
+                <Text className="font-sora" style={S.emptyCardText}>
                     {comingSoon ? 'Coming Soon' : label}
                 </Text>
             </View>
@@ -262,9 +262,9 @@ export default function HouseholdScreen() {
                             <Ionicons name="person" size={25} color={SgateColors.t3} />
                         </View>
                         <View style={S.meCopy}>
-                            <Text style={S.meName} numberOfLines={1}>{displayUser?.name || 'Resident'} <Text style={S.meSuffix}>(Me)</Text></Text>
+                            <Text className="font-sora" style={S.meName} numberOfLines={1}>{displayUser?.name || 'Resident'} <Text className="font-sora" style={S.meSuffix}>(Me)</Text></Text>
                             <View style={S.gateBadge}>
-                                <Text style={S.gateBadgeText}>{gateId.toUpperCase()}</Text>
+                                <Text className="font-sora" style={S.gateBadgeText}>{gateId.toUpperCase()}</Text>
                             </View>
                         </View>
                     </View>
@@ -281,14 +281,14 @@ export default function HouseholdScreen() {
                                     onPress={() => setDetailMember(member)}
                                 >
                                     <View style={S.roleBadge}>
-                                        <Text style={S.roleBadgeText}>{member.role}</Text>
+                                        <Text className="font-sora" style={S.roleBadgeText}>{member.role}</Text>
                                     </View>
                                     <View style={S.personCenter}>
                                         <View style={S.personAvatar}>
-                                            <Text style={S.personAvatarText}>{member.name[0]?.toUpperCase()}</Text>
+                                            <Text className="font-sora" style={S.personAvatarText}>{member.name[0]?.toUpperCase()}</Text>
                                         </View>
-                                        <Text style={S.personName} numberOfLines={1}>{member.name}</Text>
-                                        <Text style={S.personMeta}>{formatGateId(member.id).toUpperCase()}</Text>
+                                        <Text className="font-sora" style={S.personName} numberOfLines={1}>{member.name}</Text>
+                                        <Text className="font-sora" style={S.personMeta}>{formatGateId(member.id).toUpperCase()}</Text>
                                     </View>
                                 </Pressable>
                             </Animated.View>
@@ -297,7 +297,7 @@ export default function HouseholdScreen() {
                             <View style={S.addCardIcon}>
                                 <Ionicons name="add" size={25} color={SgateColors.goldDeep} />
                             </View>
-                            <Text style={S.addCardText}>Add Member</Text>
+                            <Text className="font-sora" style={S.addCardText}>Add Member</Text>
                         </Pressable>
                     </ScrollView>
                 </Animated.View>
@@ -317,14 +317,14 @@ export default function HouseholdScreen() {
                                 <Pressable key={member.id} style={S.helperCard} onPress={() => router.push('/(resident)/staff' as any)}>
                                     <Avatar name={member.name} size={58} />
                                     <View style={S.personCenter}>
-                                        <Text style={S.personName} numberOfLines={1}>{member.name}</Text>
-                                        <View style={S.helperBadge}><Text style={S.helperBadgeText}>{formatStaffType(member.staffType).toUpperCase()}</Text></View>
-                                        <Text style={S.helperMeta}>DAILY HELPER</Text>
+                                        <Text className="font-sora" style={S.personName} numberOfLines={1}>{member.name}</Text>
+                                        <View style={S.helperBadge}><Text className="font-sora" style={S.helperBadgeText}>{formatStaffType(member.staffType).toUpperCase()}</Text></View>
+                                        <Text className="font-sora" style={S.helperMeta}>DAILY HELPER</Text>
                                     </View>
                                 </Pressable>
                             );
                         })}
-                        <Pressable style={S.addCard} onPress={() => router.push('/(resident)/staff' as any)}><View style={S.addCardIcon}><Ionicons name="add" size={25} color={SgateColors.goldDeep} /></View><Text style={S.addCardText}>Add Helper</Text></Pressable>
+                        <Pressable style={S.addCard} onPress={() => router.push('/(resident)/staff' as any)}><View style={S.addCardIcon}><Ionicons name="add" size={25} color={SgateColors.goldDeep} /></View><Text className="font-sora" style={S.addCardText}>Add Helper</Text></Pressable>
                     </ScrollView>
                 </Animated.View>
 
@@ -342,18 +342,18 @@ export default function HouseholdScreen() {
                                         onPress={() => setDetailVehicle(v)} 
                                     >
                                         <View style={[S.roleBadge, { backgroundColor: v.status === 'ACTIVE' ? SgateColors.greenBg : v.status === 'REJECTED' ? SgateColors.redBg : SgateColors.goldPale }]}>
-                                            <Text style={[S.roleBadgeText, { color: v.status === 'ACTIVE' ? SgateColors.green : v.status === 'REJECTED' ? SgateColors.red : SgateColors.goldDeep }]}>{sc.label}</Text>
+                                            <Text className="font-sora" style={[S.roleBadgeText, { color: v.status === 'ACTIVE' ? SgateColors.green : v.status === 'REJECTED' ? SgateColors.red : SgateColors.goldDeep }]}>{sc.label}</Text>
                                         </View>
                                         <View style={S.personCenter}>
                                             <View style={[S.personAvatar, { backgroundColor: SgateColors.blueBg }]}>
                                                 <MaterialCommunityIcons name={isBike ? 'motorbike' : 'car-sports'} size={34} color={SgateColors.blue} />
                                             </View>
-                                            <Text style={S.personName} numberOfLines={1}>{v.vehicleNumber}</Text>
-                                            <Text style={S.personMeta} numberOfLines={1}>{v.model || v.vehicleType}</Text>
+                                            <Text className="font-sora" style={S.personName} numberOfLines={1}>{v.vehicleNumber}</Text>
+                                            <Text className="font-sora" style={S.personMeta} numberOfLines={1}>{v.model || v.vehicleType}</Text>
                                         </View>
                                         <View style={S.colorRow}>
                                             <View style={[S.colorDot, { backgroundColor: v.color?.toLowerCase() || SgateColors.border }]} />
-                                            <Text style={S.colorText}>{v.color || 'Color'}</Text>
+                                            <Text className="font-sora" style={S.colorText}>{v.color || 'Color'}</Text>
                                         </View>
                                     </Pressable>
                                 </Animated.View>
@@ -363,7 +363,7 @@ export default function HouseholdScreen() {
                             <View style={[S.addCardIcon, { backgroundColor: SgateColors.blueBg }]}>
                                 <Ionicons name="add" size={25} color={SgateColors.blue} />
                             </View>
-                            <Text style={S.addCardText}>Add Vehicle</Text>
+                            <Text className="font-sora" style={S.addCardText}>Add Vehicle</Text>
                         </Pressable>
                     </ScrollView>
                 </Animated.View>
@@ -387,17 +387,17 @@ export default function HouseholdScreen() {
                                 </View>
                                 <View className="items-center px-6 pt-2 pb-8">
                                     <View className="w-32 h-32 rounded-full bg-gray-100 items-center justify-center mb-6"><Ionicons name="people" size={60} color="#9ca3af" /></View>
-                                    <Text className="text-2xl font-bold text-gray-900 mb-2 text-center" style={{ fontFamily: 'Sora-Bold' }}>{detailMember?.name}</Text>
+                                    <Text className="text-2xl font-sora-bold text-gray-900 mb-2 text-center" style={{ fontFamily: 'Sora-Bold' }}>{detailMember?.name}</Text>
                                     <View className="flex-row items-center gap-2 mb-2">
-                                        <View className="bg-blue-50 px-4 py-1.5 rounded-xl border border-blue-100"><Text className="text-lg font-bold text-blue-600 tracking-widest">{detailMember ? formatGateId(detailMember.id) : ''}</Text></View>
+                                        <View className="bg-blue-50 px-4 py-1.5 rounded-xl border border-blue-100"><Text className="text-lg font-sora-bold text-blue-600 tracking-widest">{detailMember ? formatGateId(detailMember.id) : ''}</Text></View>
                                         <Ionicons name="help-circle-outline" size={18} color="#9ca3af" />
                                     </View>
-                                    <Text className="text-gray-500 text-lg mb-1">{detailMember?.phone || 'No phone number'}</Text>
-                                    <Text className="text-gray-400 font-bold uppercase tracking-widest text-[12px]">{detailMember?.role}</Text>
+                                    <Text className="font-sora text-gray-500 text-lg mb-1">{detailMember?.phone || 'No phone number'}</Text>
+                                    <Text className="text-gray-400 font-sora-bold uppercase tracking-widest text-[12px]">{detailMember?.role}</Text>
                                 </View>
                                 <TouchableOpacity onPress={() => detailMember?.phone && Linking.openURL(`tel:${detailMember.phone}`)} className="bg-yellow-400 flex-row items-center justify-center py-5 gap-3">
                                     <Ionicons name="call" size={24} color="black" />
-                                    <Text className="text-xl font-bold text-black" style={{ fontFamily: 'Sora-Bold' }}>Call</Text>
+                                    <Text className="text-xl font-sora-bold text-black" style={{ fontFamily: 'Sora-Bold' }}>Call</Text>
                                 </TouchableOpacity>
                             </Animated.View>
                         </TouchableWithoutFeedback>
@@ -419,39 +419,39 @@ export default function HouseholdScreen() {
                             <View className="w-32 h-32 rounded-full bg-blue-50/50 items-center justify-center mb-6 border-8 border-white shadow-xl">
                                 <MaterialCommunityIcons name={detailVehicle?.vehicleType.toUpperCase() === 'BIKE' ? 'motorbike' : 'car-sports'} size={64} color="#2563eb" />
                             </View>
-                            <Text className="text-3xl font-bold text-gray-900 mb-1 text-center" style={{ fontFamily: 'Sora-Bold' }}>{detailVehicle?.vehicleNumber}</Text>
-                            <Text className="text-lg font-bold text-gray-400 uppercase tracking-[2px] mb-6">
+                            <Text className="text-3xl font-sora-bold text-gray-900 mb-1 text-center" style={{ fontFamily: 'Sora-Bold' }}>{detailVehicle?.vehicleNumber}</Text>
+                            <Text className="text-lg font-sora-bold text-gray-400 uppercase tracking-[2px] mb-6">
                                 {detailVehicle?.make ? `${detailVehicle.make} ` : ''}{detailVehicle?.model} {detailVehicle?.color ? `• ${detailVehicle.color}` : ''}
                             </Text>
                             
                             <View className="w-full flex-row flex-wrap justify-between gap-y-4">
                                 <View className="w-[48%] bg-gray-50 p-4 rounded-3xl items-center border border-gray-100">
-                                    <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Status</Text>
-                                    <Text className={`text-[13px] font-extrabold ${detailVehicle ? (VEHICLE_STATUS[detailVehicle.status]?.text ?? 'text-gray-900') : ''}`}>{detailVehicle?.status}</Text>
+                                    <Text className="text-[10px] font-sora-bold text-gray-400 uppercase tracking-widest mb-1">Status</Text>
+                                    <Text className={`text-[13px] font-sora-extrabold ${detailVehicle ? (VEHICLE_STATUS[detailVehicle.status]?.text ?? 'text-gray-900') : ''}`}>{detailVehicle?.status}</Text>
                                 </View>
                                 <View className="w-[48%] bg-gray-50 p-4 rounded-3xl items-center border border-gray-100">
-                                    <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Sticker</Text>
-                                    <Text className="text-[13px] font-extrabold text-blue-600">{detailVehicle?.stickerNumber || 'Pending'}</Text>
+                                    <Text className="text-[10px] font-sora-bold text-gray-400 uppercase tracking-widest mb-1">Sticker</Text>
+                                    <Text className="text-[13px] font-sora-extrabold text-blue-600">{detailVehicle?.stickerNumber || 'Pending'}</Text>
                                 </View>
                                 <View className="w-[48%] bg-gray-50 p-4 rounded-3xl items-center border border-gray-100">
-                                    <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Parking Slot</Text>
-                                    <Text className="text-[13px] font-extrabold text-orange-600">{detailVehicle?.parkingSlot || 'Not Assigned'}</Text>
+                                    <Text className="text-[10px] font-sora-bold text-gray-400 uppercase tracking-widest mb-1">Parking Slot</Text>
+                                    <Text className="text-[13px] font-sora-extrabold text-orange-600">{detailVehicle?.parkingSlot || 'Not Assigned'}</Text>
                                 </View>
                                 <View className="w-[48%] bg-gray-50 p-4 rounded-3xl items-center border border-gray-100">
-                                    <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Type</Text>
-                                    <Text className="text-[13px] font-extrabold text-gray-900">{detailVehicle?.vehicleType}</Text>
+                                    <Text className="text-[10px] font-sora-bold text-gray-400 uppercase tracking-widest mb-1">Type</Text>
+                                    <Text className="text-[13px] font-sora-extrabold text-gray-900">{detailVehicle?.vehicleType}</Text>
                                 </View>
                 {detailVehicle?.lastSeen && (
                                     <View className="w-full bg-gray-50 p-4 rounded-3xl items-center border border-gray-100">
-                                        <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Last Seen At Gate</Text>
-                                        <Text className="text-[13px] font-extrabold text-gray-900">{detailVehicle.lastSeen}</Text>
+                                        <Text className="text-[10px] font-sora-bold text-gray-400 uppercase tracking-widest mb-1">Last Seen At Gate</Text>
+                                        <Text className="text-[13px] font-sora-extrabold text-gray-900">{detailVehicle.lastSeen}</Text>
                                     </View>
                                 )}
                             </View>
                         </View>
                         <TouchableOpacity onPress={() => { setDetailVehicle(null); router.push('/(resident)/vehicles' as any); }} className="bg-yellow-400 flex-row items-center justify-center py-5 gap-3">
                             <Ionicons name="qr-code" size={22} color="black" />
-                            <Text className="text-xl font-bold text-black" style={{ fontFamily: 'Sora-Bold' }}>Manage Sticker</Text>
+                            <Text className="text-xl font-sora-bold text-black" style={{ fontFamily: 'Sora-Bold' }}>Manage Sticker</Text>
                         </TouchableOpacity>
                     </Animated.View>
                 </TouchableWithoutFeedback>
@@ -466,24 +466,24 @@ export default function HouseholdScreen() {
                         <TouchableWithoutFeedback onPress={() => {}}>
                             <View className="bg-white rounded-t-[40px] p-6 shadow-2xl" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
                                 <View className="flex-row justify-between items-center mb-6">
-                            <Text className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Invite Family Member</Text>
+                            <Text className="text-2xl font-sora-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Invite Family Member</Text>
                             <TouchableOpacity onPress={() => setInviteVisible(false)} className="p-2 bg-gray-100 rounded-full">
                                 <Ionicons name="close" size={20} color="#4b5563" />
                             </TouchableOpacity>
                         </View>
 
-                        <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Name *</Text>
+                        <Text className="text-[11px] font-sora-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Name *</Text>
                         <TextInput 
-                            className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 mb-5 font-medium text-gray-900 text-[15px]" 
+                            className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 mb-5 font-sora-medium text-gray-900 text-[15px]" 
                             placeholder="e.g. Anjali Sharma" 
                             placeholderTextColor="#9ca3af"
                             value={inviteName} 
                             onChangeText={setInviteName} 
                         />
 
-                        <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Phone Number (Optional)</Text>
+                        <Text className="text-[11px] font-sora-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Phone Number (Optional)</Text>
                         <TextInput 
-                            className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 mb-6 font-medium text-gray-900 text-[15px]" 
+                            className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 mb-6 font-sora-medium text-gray-900 text-[15px]" 
                             placeholder="10-digit mobile" 
                             placeholderTextColor="#9ca3af"
                             keyboardType="phone-pad"
@@ -492,7 +492,7 @@ export default function HouseholdScreen() {
                             onChangeText={setInvitePhone} 
                         />
 
-                        <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Relationship Role *</Text>
+                        <Text className="text-[11px] font-sora-bold text-gray-400 uppercase tracking-widest mb-3 ml-1">Relationship Role *</Text>
                         <View className="flex-row flex-wrap gap-2 mb-8">
                             {ROLES.map((role) => {
                                 const isSelected = inviteRole === role;
@@ -503,7 +503,7 @@ export default function HouseholdScreen() {
                                         onPress={() => setInviteRole(role)}
                                         className={`px-5 py-2.5 rounded-xl border ${isSelected ? 'bg-yellow-50 border-yellow-400' : 'bg-white border-gray-200'}`}
                                     >
-                                        <Text className={`text-[13px] font-bold ${isSelected ? 'text-yellow-800' : 'text-gray-500'}`}>{label}</Text>
+                                        <Text className={`text-[13px] font-sora-bold ${isSelected ? 'text-yellow-800' : 'text-gray-500'}`}>{label}</Text>
                                     </TouchableOpacity>
                                 );
                             })}
@@ -520,7 +520,7 @@ export default function HouseholdScreen() {
                             ) : (
                                 <>
                                     <Ionicons name="send" size={18} color="black" />
-                                    <Text className="font-bold text-base text-black">Send Invitation</Text>
+                                    <Text className="font-sora-bold text-base text-black">Send Invitation</Text>
                                 </>
                             )}
                         </TouchableOpacity>
@@ -537,14 +537,14 @@ export default function HouseholdScreen() {
                         <TouchableWithoutFeedback onPress={() => {}}>
                             <View className="bg-white rounded-t-[40px] p-6 shadow-2xl" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
                                 <View className="flex-row justify-between items-center mb-6">
-                            <Text className="text-2xl font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Add Vehicle</Text>
+                            <Text className="text-2xl font-sora-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Add Vehicle</Text>
                             <TouchableOpacity onPress={() => setAddVehicleVisible(false)} className="p-2 bg-gray-100 rounded-full">
                                 <Ionicons name="close" size={20} color="#4b5563" />
                             </TouchableOpacity>
                         </View>
 
                         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                            <Text className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-3 ml-1">Vehicle Type *</Text>
+                            <Text className="text-[11px] font-sora-bold text-gray-500 uppercase tracking-wider mb-3 ml-1">Vehicle Type *</Text>
                             <View className="flex-row gap-3 mb-8">
                                 {[
                                     { type: 'Car' as const, icon: 'car', label: 'Four Wheeler' },
@@ -561,16 +561,16 @@ export default function HouseholdScreen() {
                                             <View className={`w-10 h-10 rounded-full items-center justify-center mb-2 ${isSelected ? 'bg-yellow-400' : 'bg-gray-100'}`}>
                                                 <MaterialCommunityIcons name={cfg.icon as any} size={22} color={isSelected ? 'black' : '#6b7280'} />
                                             </View>
-                                            <Text className={`text-[12px] font-bold ${isSelected ? 'text-yellow-800' : 'text-gray-600'}`}>{cfg.label}</Text>
+                                            <Text className={`text-[12px] font-sora-bold ${isSelected ? 'text-yellow-800' : 'text-gray-600'}`}>{cfg.label}</Text>
                                         </TouchableOpacity>
                                     );
                                 })}
                             </View>
 
                             <View className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 mb-6">
-                                <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">License Plate Number *</Text>
+                                <Text className="text-[11px] font-sora-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">License Plate Number *</Text>
                                 <TextInput
-                                    className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 mb-5 font-medium text-gray-900 text-[15px]"
+                                    className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 mb-5 font-sora-medium text-gray-900 text-[15px]"
                                     placeholder="e.g. MH01AB1234"
                                     placeholderTextColor="#9ca3af"
                                     autoCapitalize="characters"
@@ -578,9 +578,9 @@ export default function HouseholdScreen() {
                                     onChangeText={setNewVehicleNumber}
                                 />
 
-                                <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Make / Model *</Text>
+                                <Text className="text-[11px] font-sora-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Make / Model *</Text>
                                 <TextInput
-                                    className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 mb-5 font-medium text-gray-900 text-[15px]"
+                                    className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 mb-5 font-sora-medium text-gray-900 text-[15px]"
                                     placeholder="e.g. Honda City"
                                     placeholderTextColor="#9ca3af"
                                     autoCapitalize="words"
@@ -588,9 +588,9 @@ export default function HouseholdScreen() {
                                     onChangeText={setNewVehicleModel}
                                 />
 
-                                <Text className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Vehicle Color *</Text>
+                                <Text className="text-[11px] font-sora-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Vehicle Color *</Text>
                                 <TextInput
-                                    className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 font-medium text-gray-900 text-[15px]"
+                                    className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 font-sora-medium text-gray-900 text-[15px]"
                                     placeholder="e.g. Matte Black"
                                     placeholderTextColor="#9ca3af"
                                     autoCapitalize="words"
@@ -603,8 +603,8 @@ export default function HouseholdScreen() {
                                 <View className="mt-1">
                                     <Ionicons name="information-circle" size={22} color="#ca8a04" />
                                 </View>
-                                <Text className="flex-1 text-[13px] text-yellow-900 leading-5">
-                                    Your vehicle will be marked as <Text className="font-bold">Pending Approval</Text> until administration verifies it and assigns your official sticker.
+                                <Text className="font-sora flex-1 text-[13px] text-yellow-900 leading-5">
+                                    Your vehicle will be marked as <Text className="font-sora-bold">Pending Approval</Text> until administration verifies it and assigns your official sticker.
                                 </Text>
                             </View>
 
@@ -619,7 +619,7 @@ export default function HouseholdScreen() {
                                 ) : (
                                     <>
                                         <Ionicons name="shield-checkmark" size={20} color="#4b5563" />
-                                        <Text className="text-base font-bold text-gray-600">Submit Registration</Text>
+                                        <Text className="text-base font-sora-bold text-gray-600">Submit Registration</Text>
                                     </>
                                 )}
                             </TouchableOpacity>

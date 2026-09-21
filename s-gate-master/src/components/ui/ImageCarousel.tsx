@@ -66,7 +66,7 @@ export function ImageCarousel({ images, height = 256, resizeMode = 'cover' }: Im
 
             {/* Pagination Indicator */}
             <View className="absolute bottom-3 right-3 bg-black/50 px-3 py-1 rounded-full">
-                <Text className="text-white text-xs font-bold">
+                <Text className="text-white text-xs font-sora-bold">
                     {currentIndex + 1} / {images.length}
                 </Text>
             </View>

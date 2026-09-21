@@ -136,7 +136,7 @@ export default function RequestsListScreen() {
                     >
                         <Feather name="arrow-left" size={20} color="#374151" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold text-slate-900">All Requests</Text>
+                    <Text className="text-xl font-sora-bold text-slate-900">All Requests</Text>
                 </View>
 
                 {/* Tabs */}
@@ -150,7 +150,7 @@ export default function RequestsListScreen() {
                             }`}
                         >
                             <Text
-                                className={`text-sm font-medium ${
+                                className={`text-sm font-sora-medium ${
                                     activeTab === tab.key ? 'text-white' : 'text-slate-500'
                                 }`}
                             >
@@ -175,7 +175,7 @@ export default function RequestsListScreen() {
                     ListEmptyComponent={
                         <View className="items-center py-20">
                             <Feather name="inbox" size={48} color="#d1d5db" />
-                            <Text className="text-slate-500 mt-4 text-base font-medium">No requests found</Text>
+                            <Text className="text-slate-500 mt-4 text-base font-sora-medium">No requests found</Text>
                         </View>
                     }
                     ListFooterComponent={
@@ -195,36 +195,36 @@ export default function RequestsListScreen() {
                             >
                                 <View className="flex-row items-start justify-between mb-2">
                                     <View className="flex-1 mr-3">
-                                        <Text className="text-base font-bold text-slate-900">{item.societyName}</Text>
-                                        <Text className="text-slate-400 text-sm mt-0.5">
+                                        <Text className="text-base font-sora-bold text-slate-900">{item.societyName}</Text>
+                                        <Text className="font-sora text-slate-400 text-sm mt-0.5">
                                             {item.city}, {item.state}
                                         </Text>
                                     </View>
                                     <View className={`${statusStyle.bg} px-2.5 py-1 rounded-full`}>
-                                        <Text className={`${statusStyle.text} text-xs font-bold`}>{item.status}</Text>
+                                        <Text className={`${statusStyle.text} text-xs font-sora-bold`}>{item.status}</Text>
                                     </View>
                                 </View>
 
                                 <View className="flex-row flex-wrap gap-x-4 gap-y-1 mt-1">
                                     <View className="flex-row items-center gap-1">
                                         <Feather name="grid" size={12} color="#94a3b8" />
-                                        <Text className="text-slate-500 text-xs">{item.totalFlats} flats</Text>
+                                        <Text className="font-sora text-slate-500 text-xs">{item.totalFlats} flats</Text>
                                     </View>
                                     <View className="flex-row items-center gap-1">
                                         <Feather name="credit-card" size={12} color="#94a3b8" />
-                                        <Text className="text-slate-500 text-xs">₹{item.monthlyFee}/mo</Text>
+                                        <Text className="font-sora text-slate-500 text-xs">₹{item.monthlyFee}/mo</Text>
                                     </View>
                                     <View className="flex-row items-center gap-1">
                                         <Feather name="user" size={12} color="#94a3b8" />
-                                        <Text className="text-slate-500 text-xs">{item.contactName}</Text>
+                                        <Text className="font-sora text-slate-500 text-xs">{item.contactName}</Text>
                                     </View>
                                     <View className="flex-row items-center gap-1">
                                         <Feather name="phone" size={12} color="#94a3b8" />
-                                        <Text className="text-slate-500 text-xs">{item.contactPhone}</Text>
+                                        <Text className="font-sora text-slate-500 text-xs">{item.contactPhone}</Text>
                                     </View>
                                     <View className="flex-row items-center gap-1">
                                         <Feather name="calendar" size={12} color="#94a3b8" />
-                                        <Text className="text-slate-500 text-xs">{formatDate(item.createdAt)}</Text>
+                                        <Text className="font-sora text-slate-500 text-xs">{formatDate(item.createdAt)}</Text>
                                     </View>
                                 </View>
                             </TouchableOpacity>

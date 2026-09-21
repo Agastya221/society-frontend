@@ -76,7 +76,7 @@ export function S3Image({ fileId, style, className }: S3ImageProps) {
     if (error || !viewUrl) {
         return (
             <View style={[styles.container, style]} className={className}>
-                <Text style={styles.errorText}>📷</Text>
+                <Text className="font-sora" style={styles.errorText}>📷</Text>
             </View>
         );
     }

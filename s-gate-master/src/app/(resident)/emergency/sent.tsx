@@ -115,16 +115,16 @@ export default function EmergencySentScreen() {
                     </View>
                 </Animated.View>
                 
-                <Text className="text-4xl font-extrabold text-white text-center mb-2" style={{ fontFamily: 'Sora-Bold' }}>Alert Sent!</Text>
-                <Text className="text-red-100 text-center text-lg font-medium mb-12">Security team has been notified.</Text>
+                <Text className="text-4xl font-sora-extrabold text-white text-center mb-2" style={{ fontFamily: 'Sora-Bold' }}>Alert Sent!</Text>
+                <Text className="text-red-100 text-center text-lg font-sora-medium mb-12">Security team has been notified.</Text>
             </View>
 
             <View className="bg-white p-6 rounded-[32px] w-full shadow-xl mb-10">
                 <View className="flex-row items-center gap-3 mb-3">
                     <Ionicons name="shield-checkmark" size={24} color="#10b981" />
-                    <Text className="text-lg font-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Help is coming</Text>
+                    <Text className="text-lg font-sora-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Help is coming</Text>
                 </View>
-                <Text className="text-gray-500 text-sm leading-6">
+                <Text className="font-sora text-gray-500 text-sm leading-6">
                     Stay calm. Keep your phone with you and remain at your current location for assistance.
                 </Text>
             </View>
@@ -136,7 +136,7 @@ export default function EmergencySentScreen() {
                     activeOpacity={0.8}
                     className="bg-black/10 py-5 rounded-2xl items-center border border-white/20"
                 >
-                    <Text className="text-white font-bold text-[15px]">
+                    <Text className="text-white font-sora-bold text-[15px]">
                         {cancelling ? 'CANCELLING...' : 'FALSE ALARM — CANCEL'}
                     </Text>
                 </TouchableOpacity>
@@ -146,7 +146,7 @@ export default function EmergencySentScreen() {
                     activeOpacity={0.7}
                     className="py-2 items-center"
                 >
-                    <Text className="text-white/80 font-bold text-sm underline">VIEW ALERT HISTORY</Text>
+                    <Text className="text-white/80 font-sora-bold text-sm underline">VIEW ALERT HISTORY</Text>
                 </TouchableOpacity>
             </View>
         </View>

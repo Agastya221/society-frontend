@@ -25,12 +25,12 @@ export function ProfileScreen() {
             </TouchableOpacity>
           </View>
           
-          <Text className="text-[26px] font-bold text-[#1A1A1A] mb-1">Javed Mia</Text>
-          <Text className="text-[14px] font-medium text-[#6B7280] mb-4">Greenfield Heights • Unit 402</Text>
+          <Text className="text-[26px] font-sora-bold text-[#1A1A1A] mb-1">Javed Mia</Text>
+          <Text className="text-[14px] font-sora-medium text-[#6B7280] mb-4">Greenfield Heights • Unit 402</Text>
           
           <View className="bg-[#FFF8D6] px-4 py-2 rounded-full flex-row items-center">
             <Ionicons name="checkmark-circle" size={16} color="#000" className="mr-1.5" />
-            <Text className="ml-1.5 text-black text-[12px] font-bold tracking-wider">PREMIUM RESIDENT</Text>
+            <Text className="ml-1.5 text-black text-[12px] font-sora-bold tracking-wider">PREMIUM RESIDENT</Text>
           </View>
         </View>
 
@@ -42,7 +42,7 @@ export function ProfileScreen() {
         </View>
 
         {/* Preferences Section */}
-        <Text className="text-[12px] font-bold text-[#9CA3AF] tracking-widest mb-4 ml-2">PREFERENCES</Text>
+        <Text className="text-[12px] font-sora-bold text-[#9CA3AF] tracking-widest mb-4 ml-2">PREFERENCES</Text>
         
         <PreferenceItem 
           icon="person-outline" 
@@ -66,8 +66,8 @@ function StatBox({ value, label, color }: { value: string, label: string, color:
       className="bg-white flex-1 mx-1.5 rounded-[24px] py-6 px-2 items-center justify-center shadow-sm" 
       style={{ shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 10, elevation: 1 }}
     >
-      <Text className="text-[32px] font-bold mb-1" style={{ color }}>{value}</Text>
-      <Text className="text-[11px] font-bold text-[#6B7280] tracking-wider">{label}</Text>
+      <Text className="text-[32px] font-sora-bold mb-1" style={{ color }}>{value}</Text>
+      <Text className="text-[11px] font-sora-bold text-[#6B7280] tracking-wider">{label}</Text>
     </View>
   );
 }
@@ -79,8 +79,8 @@ function PreferenceItem({ icon, title, subtitle }: { icon: any, title: string, s
         <Ionicons name={icon} size={22} color="#1A1A1A" />
       </View>
       <View className="flex-1 justify-center">
-        <Text className="text-[16px] font-bold text-[#1A1A1A] mb-0.5">{title}</Text>
-        <Text className="text-[13px] text-[#6B7280]">{subtitle}</Text>
+        <Text className="text-[16px] font-sora-bold text-[#1A1A1A] mb-0.5">{title}</Text>
+        <Text className="font-sora text-[13px] text-[#6B7280]">{subtitle}</Text>
       </View>
       <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
     </TouchableOpacity>

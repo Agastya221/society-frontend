@@ -25,7 +25,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
 
     return (
         <View className={clsx("px-2.5 py-0.5 rounded-full self-start", bgClass, className)}>
-            <Text className={clsx("text-xs font-medium", textClass)}>
+            <Text className={clsx("text-xs font-sora-medium", textClass)}>
                 {status}
             </Text>
         </View>

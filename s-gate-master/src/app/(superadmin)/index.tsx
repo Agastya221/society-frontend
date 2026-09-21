@@ -153,8 +153,8 @@ export default function SuperAdminDashboard() {
                 <View className={`w-9 h-9 ${iconBgMap[color]} rounded-xl items-center justify-center mb-3`}>
                     <Feather name={icon} size={18} color={textMap[color]} />
                 </View>
-                <Text className="text-2xl font-bold text-slate-900">{loading ? '—' : value}</Text>
-                <Text className={`text-xs font-semibold ${labelMap[color]} mt-0.5`}>{label}</Text>
+                <Text className="text-2xl font-sora-bold text-slate-900">{loading ? '—' : value}</Text>
+                <Text className={`text-xs font-sora-semibold ${labelMap[color]} mt-0.5`}>{label}</Text>
             </View>
         );
     };
@@ -164,8 +164,8 @@ export default function SuperAdminDashboard() {
             {/* Header */}
             <View className="flex-row items-center justify-between mb-8">
                 <View>
-                    <Text className="text-2xl font-bold text-slate-900">S-Gate Platform</Text>
-                    <Text className="text-slate-400 text-sm mt-0.5">Super Admin Dashboard</Text>
+                    <Text className="text-2xl font-sora-bold text-slate-900">S-Gate Platform</Text>
+                    <Text className="font-sora text-slate-400 text-sm mt-0.5">Super Admin Dashboard</Text>
                 </View>
                 <TouchableOpacity
                     onPress={handleLogout}
@@ -184,10 +184,10 @@ export default function SuperAdminDashboard() {
 
             {/* Section Header */}
             <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-lg font-bold text-slate-900">Pending Approvals</Text>
+                <Text className="text-lg font-sora-bold text-slate-900">Pending Approvals</Text>
                 {pendingCount > 5 && (
                     <TouchableOpacity onPress={() => router.push('/(superadmin)/requests')}>
-                        <Text className="text-indigo-600 text-sm font-semibold">View All</Text>
+                        <Text className="text-indigo-600 text-sm font-sora-semibold">View All</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -202,7 +202,7 @@ export default function SuperAdminDashboard() {
                 activeOpacity={0.7}
             >
                 <Feather name="list" size={18} color="#4f46e5" />
-                <Text className="text-indigo-600 font-semibold text-base">View All Requests</Text>
+                <Text className="text-indigo-600 font-sora-semibold text-base">View All Requests</Text>
             </TouchableOpacity>
         </View>
     );
@@ -214,8 +214,8 @@ export default function SuperAdminDashboard() {
                 <View className="w-16 h-16 bg-emerald-50 rounded-full items-center justify-center mb-4">
                     <Feather name="check-circle" size={32} color="#059669" />
                 </View>
-                <Text className="text-slate-700 font-semibold text-base mb-1">All caught up!</Text>
-                <Text className="text-slate-400 text-sm text-center">No pending requests right now.</Text>
+                <Text className="text-slate-700 font-sora-semibold text-base mb-1">All caught up!</Text>
+                <Text className="font-sora text-slate-400 text-sm text-center">No pending requests right now.</Text>
             </View>
         );
     };
@@ -247,30 +247,30 @@ export default function SuperAdminDashboard() {
                     >
                         <View className="flex-row items-start justify-between mb-2">
                             <View className="flex-1 mr-3">
-                                <Text className="text-base font-bold text-slate-900">{item.societyName}</Text>
-                                <Text className="text-slate-400 text-sm mt-0.5">{item.city}, {item.state}</Text>
+                                <Text className="text-base font-sora-bold text-slate-900">{item.societyName}</Text>
+                                <Text className="font-sora text-slate-400 text-sm mt-0.5">{item.city}, {item.state}</Text>
                             </View>
                             <View className="bg-amber-100 px-2.5 py-1 rounded-full">
-                                <Text className="text-amber-700 text-xs font-bold">PENDING</Text>
+                                <Text className="text-amber-700 text-xs font-sora-bold">PENDING</Text>
                             </View>
                         </View>
 
                         <View className="flex-row flex-wrap gap-x-4 gap-y-1 mt-2 mb-3">
                             <View className="flex-row items-center gap-1">
                                 <Feather name="user" size={12} color="#94a3b8" />
-                                <Text className="text-slate-500 text-xs">{item.contactName}</Text>
+                                <Text className="font-sora text-slate-500 text-xs">{item.contactName}</Text>
                             </View>
                             <View className="flex-row items-center gap-1">
                                 <Feather name="phone" size={12} color="#94a3b8" />
-                                <Text className="text-slate-500 text-xs">{item.contactPhone}</Text>
+                                <Text className="font-sora text-slate-500 text-xs">{item.contactPhone}</Text>
                             </View>
                             <View className="flex-row items-center gap-1">
                                 <Feather name="grid" size={12} color="#94a3b8" />
-                                <Text className="text-slate-500 text-xs">{item.totalFlats} flats</Text>
+                                <Text className="font-sora text-slate-500 text-xs">{item.totalFlats} flats</Text>
                             </View>
                             <View className="flex-row items-center gap-1">
                                 <Feather name="calendar" size={12} color="#94a3b8" />
-                                <Text className="text-slate-500 text-xs">{formatDate(item.createdAt)}</Text>
+                                <Text className="font-sora text-slate-500 text-xs">{formatDate(item.createdAt)}</Text>
                             </View>
                         </View>
 
@@ -281,7 +281,7 @@ export default function SuperAdminDashboard() {
                                 activeOpacity={0.8}
                             >
                                 <Feather name="check" size={16} color="#fff" />
-                                <Text className="text-white font-semibold text-sm">Approve</Text>
+                                <Text className="text-white font-sora-semibold text-sm">Approve</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => { setRejectTarget(item); setRejectReason(''); }}
@@ -289,7 +289,7 @@ export default function SuperAdminDashboard() {
                                 activeOpacity={0.8}
                             >
                                 <Feather name="x" size={16} color="#dc2626" />
-                                <Text className="text-red-600 font-semibold text-sm">Reject</Text>
+                                <Text className="text-red-600 font-sora-semibold text-sm">Reject</Text>
                             </TouchableOpacity>
                         </View>
                     </TouchableOpacity>
@@ -301,19 +301,19 @@ export default function SuperAdminDashboard() {
                 <View className="flex-1 bg-black/50 justify-end">
                     <View className="bg-white rounded-t-3xl p-6 pb-10">
                         <View className="flex-row items-center justify-between mb-4">
-                            <Text className="text-xl font-bold text-slate-900">Reject Registration</Text>
+                            <Text className="text-xl font-sora-bold text-slate-900">Reject Registration</Text>
                             <TouchableOpacity onPress={() => setRejectTarget(null)}>
                                 <Feather name="x" size={24} color="#94a3b8" />
                             </TouchableOpacity>
                         </View>
                         {rejectTarget && (
-                            <Text className="text-slate-500 text-sm mb-4">
+                            <Text className="font-sora text-slate-500 text-sm mb-4">
                                 Rejecting “{rejectTarget.societyName}” by {rejectTarget.contactName}
                             </Text>
                         )}
-                        <Text className="text-slate-700 font-medium text-sm mb-2">Reason for rejection *</Text>
+                        <Text className="text-slate-700 font-sora-medium text-sm mb-2">Reason for rejection *</Text>
                         <TextInput
-                            className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 mb-4"
+                            className="font-sora bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 mb-4"
                             multiline
                             numberOfLines={4}
                             textAlignVertical="top"
@@ -336,7 +336,7 @@ export default function SuperAdminDashboard() {
                             ) : (
                                 <>
                                     <Feather name="x-circle" size={18} color={rejectReason.trim() ? '#fff' : '#94a3b8'} />
-                                    <Text className={`font-bold text-base ${rejectReason.trim() ? 'text-white' : 'text-slate-400'}`}>
+                                    <Text className={`font-sora-bold text-base ${rejectReason.trim() ? 'text-white' : 'text-slate-400'}`}>
                                         Reject Registration
                                     </Text>
                                 </>

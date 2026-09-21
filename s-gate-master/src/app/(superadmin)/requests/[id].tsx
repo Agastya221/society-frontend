@@ -132,9 +132,9 @@ export default function RequestDetailScreen() {
         return (
             <SafeAreaView edges={['top']} className="flex-1 bg-slate-50 items-center justify-center">
                 <Feather name="alert-circle" size={48} color="#d1d5db" />
-                <Text className="text-slate-500 mt-4">Request not found</Text>
+                <Text className="font-sora text-slate-500 mt-4">Request not found</Text>
                 <TouchableOpacity onPress={() => router.back()} className="mt-4">
-                    <Text className="text-indigo-600 font-semibold">Go Back</Text>
+                    <Text className="text-indigo-600 font-sora-semibold">Go Back</Text>
                 </TouchableOpacity>
             </SafeAreaView>
         );
@@ -146,8 +146,8 @@ export default function RequestDetailScreen() {
 
     const InfoRow = ({ label, value }: { label: string; value: string }) => (
         <View className="flex-row justify-between py-2.5 border-b border-slate-50">
-            <Text className="text-slate-400 text-sm">{label}</Text>
-            <Text className="text-slate-900 text-sm font-medium text-right flex-1 ml-4">{value}</Text>
+            <Text className="font-sora text-slate-400 text-sm">{label}</Text>
+            <Text className="text-slate-900 text-sm font-sora-medium text-right flex-1 ml-4">{value}</Text>
         </View>
     );
 
@@ -163,7 +163,7 @@ export default function RequestDetailScreen() {
                         <Feather name="arrow-left" size={20} color="#374151" />
                     </TouchableOpacity>
                     <View className="flex-1">
-                        <Text className="text-xl font-bold text-slate-900" numberOfLines={1}>
+                        <Text className="text-xl font-sora-bold text-slate-900" numberOfLines={1}>
                             {request.societyName}
                         </Text>
                     </View>
@@ -173,7 +173,7 @@ export default function RequestDetailScreen() {
                         }`}
                     >
                         <Text
-                            className={`text-xs font-bold ${
+                            className={`text-xs font-sora-bold ${
                                 isPending ? 'text-amber-700' : isApproved ? 'text-emerald-700' : 'text-red-700'
                             }`}
                         >
@@ -191,8 +191,8 @@ export default function RequestDetailScreen() {
                             <Feather name="check-circle" size={20} color="#059669" />
                         </View>
                         <View className="flex-1">
-                            <Text className="text-emerald-800 font-bold text-sm">Approved</Text>
-                            <Text className="text-emerald-600 text-xs mt-0.5">This society is now live on S-Gate.</Text>
+                            <Text className="text-emerald-800 font-sora-bold text-sm">Approved</Text>
+                            <Text className="font-sora text-emerald-600 text-xs mt-0.5">This society is now live on S-Gate.</Text>
                         </View>
                     </View>
                 )}
@@ -204,12 +204,12 @@ export default function RequestDetailScreen() {
                                 <Feather name="x-circle" size={20} color="#dc2626" />
                             </View>
                             <View className="flex-1">
-                                <Text className="text-red-800 font-bold text-sm">Rejected</Text>
+                                <Text className="text-red-800 font-sora-bold text-sm">Rejected</Text>
                             </View>
                         </View>
                         {request.rejectionReason && (
                             <View className="bg-white border border-red-100 rounded-xl p-3 mt-1">
-                                <Text className="text-red-700 text-sm">{request.rejectionReason}</Text>
+                                <Text className="font-sora text-red-700 text-sm">{request.rejectionReason}</Text>
                             </View>
                         )}
                     </View>
@@ -219,7 +219,7 @@ export default function RequestDetailScreen() {
                 <View className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-3">
                     <View className="flex-row items-center gap-2 mb-3">
                         <Feather name="home" size={16} color="#4f46e5" />
-                        <Text className="text-indigo-600 font-bold text-xs uppercase tracking-wider">Society Details</Text>
+                        <Text className="text-indigo-600 font-sora-bold text-xs uppercase tracking-wider">Society Details</Text>
                     </View>
                     <InfoRow label="Name" value={request.societyName} />
                     <InfoRow label="Address" value={request.address} />
@@ -234,7 +234,7 @@ export default function RequestDetailScreen() {
                 <View className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-3">
                     <View className="flex-row items-center gap-2 mb-3">
                         <Feather name="user" size={16} color="#4f46e5" />
-                        <Text className="text-indigo-600 font-bold text-xs uppercase tracking-wider">Contact Person</Text>
+                        <Text className="text-indigo-600 font-sora-bold text-xs uppercase tracking-wider">Contact Person</Text>
                     </View>
                     <InfoRow label="Name" value={request.contactName} />
                     <InfoRow label="Phone" value={request.contactPhone} />
@@ -245,7 +245,7 @@ export default function RequestDetailScreen() {
                 <View className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-3">
                     <View className="flex-row items-center gap-2 mb-3">
                         <Feather name="send" size={16} color="#4f46e5" />
-                        <Text className="text-indigo-600 font-bold text-xs uppercase tracking-wider">Submitted By</Text>
+                        <Text className="text-indigo-600 font-sora-bold text-xs uppercase tracking-wider">Submitted By</Text>
                     </View>
                     <InfoRow label="User" value={request.user.name} />
                     <InfoRow label="Phone" value={request.user.phone} />
@@ -268,7 +268,7 @@ export default function RequestDetailScreen() {
                             ) : (
                                 <>
                                     <Feather name="check-circle" size={18} color="#fff" />
-                                    <Text className="text-white font-bold text-base">Approve</Text>
+                                    <Text className="text-white font-sora-bold text-base">Approve</Text>
                                 </>
                             )}
                         </TouchableOpacity>
@@ -279,7 +279,7 @@ export default function RequestDetailScreen() {
                             activeOpacity={0.8}
                         >
                             <Feather name="x-circle" size={18} color="#fff" />
-                            <Text className="text-white font-bold text-base">Reject</Text>
+                            <Text className="text-white font-sora-bold text-base">Reject</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -290,17 +290,17 @@ export default function RequestDetailScreen() {
                 <View className="flex-1 bg-black/50 justify-end">
                     <View className="bg-white rounded-t-3xl p-6 pb-10">
                         <View className="flex-row items-center justify-between mb-4">
-                            <Text className="text-xl font-bold text-slate-900">Reject Registration</Text>
+                            <Text className="text-xl font-sora-bold text-slate-900">Reject Registration</Text>
                             <TouchableOpacity onPress={() => setRejectVisible(false)}>
                                 <Feather name="x" size={24} color="#94a3b8" />
                             </TouchableOpacity>
                         </View>
-                        <Text className="text-slate-500 text-sm mb-4">
+                        <Text className="font-sora text-slate-500 text-sm mb-4">
                             Rejecting “{request.societyName}”
                         </Text>
-                        <Text className="text-slate-700 font-medium text-sm mb-2">Reason for rejection *</Text>
+                        <Text className="text-slate-700 font-sora-medium text-sm mb-2">Reason for rejection *</Text>
                         <TextInput
-                            className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 mb-4"
+                            className="font-sora bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 mb-4"
                             multiline
                             numberOfLines={4}
                             textAlignVertical="top"
@@ -323,7 +323,7 @@ export default function RequestDetailScreen() {
                             ) : (
                                 <>
                                     <Feather name="x-circle" size={18} color={rejectReason.trim() ? '#fff' : '#94a3b8'} />
-                                    <Text className={`font-bold text-base ${rejectReason.trim() ? 'text-white' : 'text-slate-400'}`}>
+                                    <Text className={`font-sora-bold text-base ${rejectReason.trim() ? 'text-white' : 'text-slate-400'}`}>
                                         Reject Registration
                                     </Text>
                                 </>

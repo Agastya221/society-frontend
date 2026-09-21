@@ -18,7 +18,7 @@ export function AddCommentInput({ onSend }: AddCommentInputProps) {
     return (
         <View className="flex-row items-end gap-2 p-3 bg-white dark:bg-zinc-900 border-t border-gray-100 dark:border-zinc-800">
             <TextInput
-                className="flex-1 bg-gray-100 dark:bg-zinc-800 rounded-2xl px-4 py-3 min-h-[44px] max-h-24 text-gray-900 dark:text-white"
+                className="font-sora flex-1 bg-gray-100 dark:bg-zinc-800 rounded-2xl px-4 py-3 min-h-[44px] max-h-24 text-gray-900 dark:text-white"
                 placeholder="Write a comment..."
                 placeholderTextColor="#9ca3af"
                 multiline

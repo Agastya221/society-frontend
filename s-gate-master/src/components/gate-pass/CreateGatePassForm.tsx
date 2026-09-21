@@ -103,18 +103,18 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
                 {/* Admin passes are issued by the society, not a flat. */}
                 {role === 'ADMIN' && (
                     <View className="mb-6">
-                        <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
+                        <Text className="text-sm font-sora-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">
                             Issued By
                         </Text>
                         <View className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-4">
-                            <Text className="text-lg font-bold text-gray-900 dark:text-gray-100">Society Administration</Text>
-                            <Text className="text-sm text-gray-500 dark:text-gray-400 mt-1">This pass applies to the society and is not linked to a flat.</Text>
+                            <Text className="text-lg font-sora-bold text-gray-900 dark:text-gray-100">Society Administration</Text>
+                            <Text className="font-sora text-sm text-gray-500 dark:text-gray-400 mt-1">This pass applies to the society and is not linked to a flat.</Text>
                         </View>
                     </View>
                 )}
 
                 {/* Type Selection */}
-                <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Pass Type</Text>
+                <Text className="text-sm font-sora-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Pass Type</Text>
                 <View className="flex-row gap-3 mb-6">
                     {GATE_PASS_TYPES.map((option) => (
                         <TouchableOpacity
@@ -131,7 +131,7 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
                                 size={24} 
                                 color={type === option.value ? '#3b82f6' : '#9ca3af'} 
                             />
-                            <Text className={`mt-2 text-xs font-bold ${
+                            <Text className={`mt-2 text-xs font-sora-bold ${
                                 type === option.value ? 'text-blue-600' : 'text-gray-500'
                             }`}>
                                 {option.label}
@@ -142,9 +142,9 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
 
                 {/* Title */}
                 <View className="mb-5">
-                    <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Title <Text className="text-red-500">*</Text></Text>
+                    <Text className="text-sm font-sora-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Title <Text className="font-sora text-red-500">*</Text></Text>
                     <TextInput
-                        className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 text-gray-900 dark:text-gray-100"
+                        className="font-sora bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 text-gray-900 dark:text-gray-100"
                         placeholder="e.g. Furniture Delivery, Construction Material, etc."
                         placeholderTextColor="#9ca3af"
                         value={title}
@@ -154,9 +154,9 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
 
                 {/* Description */}
                 <View className="mb-5">
-                    <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Description <Text className="text-red-500">*</Text></Text>
+                    <Text className="text-sm font-sora-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Description <Text className="font-sora text-red-500">*</Text></Text>
                     <TextInput
-                        className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 text-gray-900 dark:text-gray-100 min-h-[100px]"
+                        className="font-sora bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 text-gray-900 dark:text-gray-100 min-h-[100px]"
                         placeholder="What items are being moved? e.g. Furniture, construction material..."
                         placeholderTextColor="#9ca3af"
                         multiline
@@ -169,15 +169,15 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
                 {/* Dates Row */}
                 <View className="flex-row gap-4 mb-5">
                     <View className="flex-1">
-                        <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Valid From</Text>
+                        <Text className="text-sm font-sora-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Valid From</Text>
                         <TouchableOpacity
                             onPress={() => setShowFromPicker(true)}
                             className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 flex-row items-center gap-2"
                         >
                             <Ionicons name="calendar-outline" size={20} color="#6b7280" />
                             <View>
-                                <Text className="text-xs text-gray-400">Date & Time</Text>
-                                <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                <Text className="font-sora text-xs text-gray-400">Date & Time</Text>
+                                <Text className="text-sm font-sora-medium text-gray-900 dark:text-gray-100">
                                     {validFrom.toLocaleDateString()} {validFrom.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </Text>
                             </View>
@@ -185,15 +185,15 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
                     </View>
 
                     <View className="flex-1">
-                        <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Valid Until</Text>
+                        <Text className="text-sm font-sora-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Valid Until</Text>
                         <TouchableOpacity
                             onPress={() => setShowToPicker(true)}
                             className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 flex-row items-center gap-2"
                         >
                             <Ionicons name="calendar-outline" size={20} color="#6b7280" />
                             <View>
-                                <Text className="text-xs text-gray-400">Date & Time</Text>
-                                <Text className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                <Text className="font-sora text-xs text-gray-400">Date & Time</Text>
+                                <Text className="text-sm font-sora-medium text-gray-900 dark:text-gray-100">
                                     {validUntil.toLocaleDateString()} {validUntil.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </Text>
                             </View>
@@ -223,9 +223,9 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
 
                 {/* Company / Contractor Name */}
                 <View className="mb-8">
-                    <Text className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Company / Contractor Name (Optional)</Text>
+                    <Text className="text-sm font-sora-semibold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-wider">Company / Contractor Name (Optional)</Text>
                     <TextInput
-                        className="bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 text-gray-900 dark:text-gray-100"
+                        className="font-sora bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-4 text-gray-900 dark:text-gray-100"
                         placeholder="e.g. Urban Company, HDFC, Movers & Packers..."
                         placeholderTextColor="#9ca3af"
                         value={companyName}
@@ -248,7 +248,7 @@ export function CreateGatePassForm({ role, onSuccess }: CreateGatePassFormProps)
                     ) : (
                         <>
                             <Ionicons name="checkmark-circle-outline" size={24} color="white" />
-                            <Text className="text-white font-bold text-lg">Create Gate Pass</Text>
+                            <Text className="text-white font-sora-bold text-lg">Create Gate Pass</Text>
                         </>
                     )}
                 </TouchableOpacity>

@@ -100,7 +100,7 @@ function CategoryCard({
                 <View className="mb-2">
                     <MaterialIcons name={icon} size={28} color="#ef4444" />
                 </View>
-                <Text className="text-[11px] text-gray-800 font-bold text-center px-1" style={{ fontFamily: SgateFonts.bold }}>
+                <Text className="text-[11px] text-gray-800 font-sora-bold text-center px-1" style={{ fontFamily: SgateFonts.bold }}>
                     {label}
                 </Text>
             </Pressable>
@@ -219,7 +219,7 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
                     <Animated.View entering={FadeInDown} className="absolute top-0 left-0 right-0 z-[60] py-4 bg-red-500 items-center shadow-lg">
                         <View className="flex-row items-center gap-3" style={{ marginTop: insets.top }}>
                             <ActivityIndicator color="white" size="small" />
-                            <Text className="text-white font-bold text-sm">
+                            <Text className="text-white font-sora-bold text-sm">
                                 {isOffline ? 'Sending when network is available...' : 'Broadcasting Emergency...'}
                             </Text>
                         </View>
@@ -241,7 +241,7 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
                     style={{ marginTop: insets.top }}
                 >
                     <MaterialIcons name="format-list-bulleted" size={18} color="#374151" />
-                    <Text className="text-[13px] font-bold text-gray-700" style={{ fontFamily: SgateFonts.bold }}>Show Alerts</Text>
+                    <Text className="text-[13px] font-sora-bold text-gray-700" style={{ fontFamily: SgateFonts.bold }}>Show Alerts</Text>
                 </TouchableOpacity>
 
                 {/* Close Button */}
@@ -269,10 +269,10 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
                                 <MaterialCommunityIcons name="alarm-light" size={28} color="#ef4444" />
                             </View>
                         </Animated.View>
-                        <Text className="text-2xl font-extrabold text-gray-900 tracking-tight" style={{ fontFamily: SgateFonts.bold }}>
+                        <Text className="text-2xl font-sora-extrabold text-gray-900 tracking-tight" style={{ fontFamily: SgateFonts.bold }}>
                             Emergency SOS
                         </Text>
-                        <Text className="text-gray-500 text-xs mt-1 font-medium">Hold button or tap an emergency type</Text>
+                        <Text className="text-gray-500 text-xs mt-1 font-sora-medium">Hold button or tap an emergency type</Text>
                     </View>
 
                     {/* Main SOS Button Hub */}
@@ -304,7 +304,7 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
                     <View className="mt-auto items-center pt-8" style={{ paddingBottom: Math.max(insets.bottom + 24, 32) }}>
                         <View className="flex-row items-center bg-red-50/90 px-4 py-2.5 rounded-full border border-red-100 shadow-sm shadow-red-100/50">
                             <MaterialIcons name="my-location" size={16} color="#ef4444" />
-                            <Text className="text-red-700 text-[11px] font-bold ml-2 uppercase tracking-wide">
+                            <Text className="text-red-700 text-[11px] font-sora-bold ml-2 uppercase tracking-wide">
                                 Live location will be shared
                             </Text>
                         </View>

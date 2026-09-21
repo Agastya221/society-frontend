@@ -5,34 +5,42 @@ module.exports = {
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
+      // Keep in sync with src/constants/Sgate-theme.ts (Home screen is the source of truth)
       colors: {
-        // Sgate brand primaries
-        'Sgate-black':   '#0D0F14',
-        'Sgate-ink':     '#161922',
-        'Sgate-charcoal':'#1E212B',
-        // Sgate gold accent
-        'Sgate-gold':      '#FFB800',
-        'Sgate-gold-deep': '#E5A500',
-        'Sgate-gold-pale': '#FFF8E1',
-        // Sgate semantic
-        'Sgate-green':    '#00D68F',
-        'Sgate-green-bg': '#E5FBF3',
-        'Sgate-red':      '#FF5C5C',
-        'Sgate-red-bg':   '#FFF0F0',
-        'Sgate-blue':     '#4C9AFF',
-        'Sgate-blue-bg':  '#EBF3FF',
-        'Sgate-violet':   '#9B6DFF',
-        // Sgate neutrals
-        'Sgate-bg':          '#F5F4F0',
+        'Sgate-black':     '#111318',
+        'Sgate-ink':       '#111318',
+        'Sgate-charcoal':  '#253047',
+        'Sgate-gold':      '#FACC15',
+        'Sgate-gold-deep': '#F28D12',
+        'Sgate-gold-pale': '#FFF6D6',
+        'Sgate-green':     '#12B977',
+        'Sgate-green-bg':  '#EFFBF5',
+        'Sgate-red':       '#EF4052',
+        'Sgate-red-bg':    '#FFF7F7',
+        'Sgate-blue':      '#1688E9',
+        'Sgate-blue-bg':   '#EFF7FF',
+        'Sgate-orange':    '#F28D12',
+        'Sgate-orange-bg': '#FFF8EF',
+        'Sgate-violet':    '#8738D1',
+        'Sgate-violet-bg': '#F7F0FD',
+        'Sgate-bg':          '#FCFCFB',
         'Sgate-card':        '#FFFFFF',
-        'Sgate-surface':     '#EEECEA',
-        'Sgate-border':      '#E5E3DE',
-        'Sgate-border-soft': '#F0EEEB',
-        // Sgate text
-        'Sgate-t1': '#0D0F14',
-        'Sgate-t2': '#4A4D57',
-        'Sgate-t3': '#8A8D97',
-        'Sgate-t4': '#B5B8C0',
+        'Sgate-surface':     '#F6F6F7',
+        'Sgate-border':      '#ECEDEF',
+        'Sgate-border-soft': '#ECEDEF',
+        'Sgate-t1': '#111318',
+        'Sgate-t2': '#73798C',
+        'Sgate-t3': '#9297A8',
+        'Sgate-t4': '#9297A8',
+      },
+      // Sora is the only app font. Use font-sora-* instead of font-bold etc. —
+      // on Android a fontWeight on a custom face fake-bolds instead of picking the Bold file.
+      fontFamily: {
+        'sora':           ['Sora-Regular'],
+        'sora-medium':    ['Sora-Medium'],
+        'sora-semibold':  ['Sora-SemiBold'],
+        'sora-bold':      ['Sora-Bold'],
+        'sora-extrabold': ['Sora-ExtraBold'],
       },
     },
   },

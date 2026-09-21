@@ -227,13 +227,13 @@ export function SOSButton({ onTrigger, holdDuration = 2000, disabled = false }: 
                     <View className="absolute top-0 left-2 w-24 h-10 bg-white/20 rounded-full rotate-[-15deg] opacity-60" />
                     
                     <Text 
-                        className="text-white text-3xl font-black tracking-widest leading-none mt-2" 
+                        className="text-white text-3xl font-sora-extrabold tracking-widest leading-none mt-2" 
                         style={{ fontFamily: SgateFonts.extrabold }}
                     >
                         SOS
                     </Text>
                     <Text 
-                        className="text-white/90 text-[10px] font-bold mt-1 uppercase tracking-wider" 
+                        className="text-white/90 text-[10px] font-sora-bold mt-1 uppercase tracking-wider" 
                         style={{ fontFamily: SgateFonts.bold }}
                     >
                         {state === 'success' ? 'TRIGGERED' : state === 'pressing' ? 'ACTIVATING...' : 'HOLD 2 SEC'}

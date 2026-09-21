@@ -158,7 +158,7 @@ export default function VisitorsScreen() {
     const renderItem = useCallback(
         ({ item, index }: { item: ListRow; index: number }) => {
             if (item.kind === 'header') {
-                return <Text className="text-[11px] font-bold text-gray-400 tracking-widest uppercase px-5 pt-6 pb-2">{item.title}</Text>;
+                return <Text className="text-[11px] font-sora-bold text-gray-400 tracking-widest uppercase px-5 pt-6 pb-2">{item.title}</Text>;
             }
 
             const e = item.entry;
@@ -172,10 +172,10 @@ export default function VisitorsScreen() {
 
                         <View className="flex-1 ml-3">
                             <View className="flex-row items-center justify-between mb-1">
-                                <Text className="flex-1 text-[15px] font-semibold text-gray-900 mr-2" numberOfLines={1}>
+                                <Text className="flex-1 text-[15px] font-sora-semibold text-gray-900 mr-2" numberOfLines={1}>
                                     {e.visitorName}
                                 </Text>
-                                <Text className="text-xs font-medium text-gray-500">
+                                <Text className="text-xs font-sora-medium text-gray-500">
                                     {timeOnly(e.createdAt)}
                                 </Text>
                             </View>
@@ -183,7 +183,7 @@ export default function VisitorsScreen() {
                             <View className="flex-row items-center gap-3">
                                 {/* Type pill */}
                                 <View className={`px-2 py-[2px] rounded border ${bgClass}`}>
-                                    <Text className={`text-[10px] font-bold uppercase tracking-wider ${bgClass.split(' ')[1]}`}>
+                                    <Text className={`text-[10px] font-sora-bold uppercase tracking-wider ${bgClass.split(' ')[1]}`}>
                                         {TYPE_LABELS[e.type] ?? e.type}
                                     </Text>
                                 </View>
@@ -191,7 +191,7 @@ export default function VisitorsScreen() {
                                 {/* Status */}
                                 <View className="flex-row items-center gap-[4px]">
                                     <View className={`w-1.5 h-1.5 rounded-full ${isInside ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                                    <Text className={`text-[11px] font-medium ${isInside ? 'text-emerald-600' : 'text-gray-500'}`}>
+                                    <Text className={`text-[11px] font-sora-medium ${isInside ? 'text-emerald-600' : 'text-gray-500'}`}>
                                         {isInside ? 'Inside' : 'Left'}
                                     </Text>
                                 </View>
@@ -219,10 +219,10 @@ export default function VisitorsScreen() {
         () => (
             <View className="flex-1 justify-center items-center py-24 opacity-70">
                 <Ionicons name="shield-checkmark-outline" size={64} className="text-gray-300 mb-4" />
-                <Text className="text-lg font-bold text-gray-700">
+                <Text className="text-lg font-sora-bold text-gray-700">
                     {search ? 'No matches' : 'No visitors yet'}
                 </Text>
-                <Text className="text-gray-500 text-sm mt-1 text-center px-10 leading-5">
+                <Text className="font-sora text-gray-500 text-sm mt-1 text-center px-10 leading-5">
                     {search
                         ? 'Try a different search term or check your spelling'
                         : 'Gate entry records and visitor passes will appear here automatically.'}
@@ -251,9 +251,9 @@ export default function VisitorsScreen() {
                     <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
                         <Ionicons name="arrow-back" size={24} className="text-gray-700" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold text-gray-900">Visitors</Text>
+                    <Text className="text-xl font-sora-bold text-gray-900">Visitors</Text>
                 </View>
-                <Text className="text-xs font-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+                <Text className="text-xs font-sora-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
                     {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
                 </Text>
             </View>
@@ -263,7 +263,7 @@ export default function VisitorsScreen() {
                 <View className={`flex-row items-center bg-white border rounded-xl px-3 h-12 gap-2 shadow-sm ${searchFocused ? 'border-yellow-400' : 'border-gray-100'}`}>
                     <Feather name="search" size={18} color={searchFocused ? '#ca8a04' : '#9ca3af'} />
                     <TextInput
-                        className="flex-1 text-[15px] font-medium text-gray-900 h-full py-0"
+                        className="flex-1 text-[15px] font-sora-medium text-gray-900 h-full py-0"
                         placeholder="Search by name or flat…"
                         placeholderTextColor="#9ca3af"
                         value={search}

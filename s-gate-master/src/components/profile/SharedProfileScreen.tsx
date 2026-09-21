@@ -339,7 +339,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                     <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
                         <Ionicons name="arrow-back" size={24} className="text-gray-700" />
                     </TouchableOpacity>
-                    <Text className="text-xl font-bold text-gray-900">Profile</Text>
+                    <Text className="text-xl font-sora-bold text-gray-900">Profile</Text>
                 </View>
                 <TouchableOpacity onPress={() => Linking.openURL('mailto:support@sgate.app')} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100" hitSlop={8}>
                     <Feather name="headphones" size={20} className="text-gray-700" />
@@ -412,7 +412,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 {/* ── Admin Controls (admin only) ─────────────────────── */}
                 {isAdmin && (
                     <>
-                        <Text style={styles.sectionTitle}>Admin Controls</Text>
+                        <Text className="font-sora" style={styles.sectionTitle}>Admin Controls</Text>
                         <View style={styles.card}>
                             <SettingRow
                                 icon="cog-outline"
@@ -443,7 +443,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 )}
 
                 {/* ── Security & Notifications ────────────────────────── */}
-                <Text style={styles.sectionTitle}>Security & Notifications</Text>
+                <Text className="font-sora" style={styles.sectionTitle}>Security & Notifications</Text>
 
                 <View style={styles.card}>
                     <SettingRow
@@ -475,7 +475,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 <View style={styles.divider} />
 
                 {/* ── Manage Flats ────────────────────────────────────── */}
-                <Text style={styles.sectionTitle}>Manage Flats</Text>
+                <Text className="font-sora" style={styles.sectionTitle}>Manage Flats</Text>
                 <View style={styles.card}>
                     <SettingRow
                         icon="home-city-outline"
@@ -506,7 +506,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 <View style={styles.divider} />
 
                 {/* ── General Settings ────────────────────────────────── */}
-                <Text style={styles.sectionTitle}>General Settings</Text>
+                <Text className="font-sora" style={styles.sectionTitle}>General Settings</Text>
                 <View style={styles.card}>
                     <SettingRow
                         icon="headphones"
@@ -542,7 +542,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                         >
                             <View style={styles.footerRowLeft}>
                                 <MaterialCommunityIcons name="file-document-outline" size={20} color={SgateColors.t2} />
-                                <Text style={styles.footerRowText}>Terms & Conditions</Text>
+                                <Text className="font-sora" style={styles.footerRowText}>Terms & Conditions</Text>
                             </View>
                             <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t4} />
                         </TouchableOpacity>
@@ -556,13 +556,13 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                         >
                             <View style={styles.footerRowLeft}>
                                 <MaterialCommunityIcons name="shield-check-outline" size={20} color={SgateColors.t2} />
-                                <Text style={styles.footerRowText}>Privacy Policy</Text>
+                                <Text className="font-sora" style={styles.footerRowText}>Privacy Policy</Text>
                             </View>
                             <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t4} />
                         </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.footerVersion}>Version 1.0.0</Text>
+                    <Text className="font-sora" style={styles.footerVersion}>Version 1.0.0</Text>
                 </View>
             </ScrollView>
 
@@ -604,14 +604,14 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 <View style={styles.modalOverlay}>
                     <SafeBottomSheetSurface style={styles.modalSheet} showHandle minimumBottomPadding={20}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Edit Profile</Text>
+                            <Text className="font-sora" style={styles.modalTitle}>Edit Profile</Text>
                             <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.modalClose} hitSlop={8}>
                                 <MaterialCommunityIcons name="close" size={22} color={SgateColors.t2} />
                             </TouchableOpacity>
                         </View>
 
-                        <Text style={styles.inputLabel}>FULL NAME</Text>
-                        <TextInput
+                        <Text className="font-sora" style={styles.inputLabel}>FULL NAME</Text>
+                        <TextInput className="font-sora"
                             style={styles.input}
                             value={editData.name}
                             onChangeText={(t) => setEditData((p) => ({ ...p, name: t }))}
@@ -619,8 +619,8 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                             placeholderTextColor={SgateColors.t4}
                         />
 
-                        <Text style={styles.inputLabel}>EMAIL ADDRESS</Text>
-                        <TextInput
+                        <Text className="font-sora" style={styles.inputLabel}>EMAIL ADDRESS</Text>
+                        <TextInput className="font-sora"
                             style={styles.input}
                             value={editData.email}
                             onChangeText={(t) => setEditData((p) => ({ ...p, email: t }))}
@@ -635,7 +635,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                             onPress={handleSave}
                             disabled={saving}
                         >
-                            <Text style={styles.saveBtnText}>
+                            <Text className="font-sora" style={styles.saveBtnText}>
                                 {saving ? 'Saving…' : 'Save Changes'}
                             </Text>
                         </TouchableOpacity>

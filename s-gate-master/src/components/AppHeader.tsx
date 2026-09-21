@@ -83,12 +83,12 @@ export function AppHeader({
             )}
             <View className="flex-1 justify-center">
               {title && (
-                <Text className="text-[20px] font-bold text-[#111827] mb-0.5" numberOfLines={1}>
+                <Text className="text-[20px] font-sora-bold text-[#111827] mb-0.5" numberOfLines={1}>
                   {title}
                 </Text>
               )}
               {subtitle && (
-                <Text className="text-[14px] text-[#6B7280]" numberOfLines={1}>
+                <Text className="font-sora text-[14px] text-[#6B7280]" numberOfLines={1}>
                   {subtitle}
                 </Text>
               )}
@@ -113,15 +113,15 @@ export function AppHeader({
                />
             </View>
             <View className="flex-1 justify-center">
-              <Text className="text-[24px] font-bold text-[#111827] mb-1" numberOfLines={1}>
+              <Text className="text-[24px] font-sora-bold text-[#111827] mb-1" numberOfLines={1}>
                 {title || 'User Name'}
               </Text>
               <View className="flex-row items-center">
                 <View className="bg-emerald-100/80 px-2 py-0.5 rounded-md mr-2">
-                  <Text className="text-[#10B981] text-[12px] font-bold">Premium Resident</Text>
+                  <Text className="text-[#10B981] text-[12px] font-sora-bold">Premium Resident</Text>
                 </View>
                 {subtitle && (
-                  <Text className="text-[14px] font-medium text-[#6B7280] flex-1" numberOfLines={1}>
+                  <Text className="text-[14px] font-sora-medium text-[#6B7280] flex-1" numberOfLines={1}>
                     {subtitle}
                   </Text>
                 )}
@@ -148,7 +148,7 @@ export function AppHeader({
                  <Ionicons name="person" size={20} color="#1A1A1A" opacity={0.5} />
               )}
             </View>
-            <Text className="text-[20px] font-bold text-[#1A1A1A] mb-0.5" numberOfLines={1}>
+            <Text className="text-[20px] font-sora-bold text-[#1A1A1A] mb-0.5" numberOfLines={1}>
               {title}
             </Text>
           </View>

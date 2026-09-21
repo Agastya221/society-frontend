@@ -28,10 +28,10 @@ export function EmergencyBanner({ emergency }: EmergencyBannerProps) {
                         <Ionicons name="warning" size={24} color="white" />
                     </View>
                     <View className="flex-1">
-                        <Text className="text-white font-bold text-base uppercase tracking-wider">
+                        <Text className="text-white font-sora-bold text-base uppercase tracking-wider">
                             Emergency Active
                         </Text>
-                        <Text className="text-red-100 text-xs font-medium" numberOfLines={1}>
+                        <Text className="text-red-100 text-xs font-sora-medium" numberOfLines={1}>
                             {emergency.type} • Tap for status
                         </Text>
                     </View>

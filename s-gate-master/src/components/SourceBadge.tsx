@@ -19,7 +19,7 @@ export function SourceBadge({ source }: SourceBadgeProps) {
 
     return (
         <View className={`px-2 py-1 rounded ${styles[source]}`}>
-            <Text className={`text-xs font-bold uppercase ${textStyles[source]}`}>
+            <Text className={`text-xs font-sora-bold uppercase ${textStyles[source]}`}>
                 {source}
             </Text>
         </View>

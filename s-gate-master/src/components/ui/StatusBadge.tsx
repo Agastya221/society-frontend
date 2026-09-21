@@ -43,7 +43,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
 
   return (
     <View className={`px-2 py-1 rounded-md self-start ${bgClass}`}>
-      <Text className={`text-xs font-medium uppercase ${textClass}`}>
+      <Text className={`text-xs font-sora-medium uppercase ${textClass}`}>
         {label}
       </Text>
     </View>

@@ -23,7 +23,7 @@ export function Button({ title, variant = 'primary', className, textClassName, .
         ghost: 'bg-transparent',
     };
 
-    const textBaseStyles = 'font-bold text-base';
+    const textBaseStyles = 'font-sora-bold text-base';
 
     const textVariants = {
         primary: 'text-white',

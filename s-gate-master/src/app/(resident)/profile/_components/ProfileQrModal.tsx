@@ -69,21 +69,21 @@ export function ProfileQrModal({ visible, onClose, user }: ProfileQrModalProps) 
                         {hasPhoto ? (
                             <Image source={{ uri: user.photoUrl! }} className="w-full h-full" />
                         ) : (
-                            <Text className="text-3xl font-medium text-white">{initials}</Text>
+                            <Text className="text-3xl font-sora-medium text-white">{initials}</Text>
                         )}
                     </View>
 
                     {/* Resident Info */}
-                    <Text className="text-xl font-bold text-gray-900 mt-2">{name}</Text>
+                    <Text className="text-xl font-sora-bold text-gray-900 mt-2">{name}</Text>
                     
                     <View className="flex-row items-center mt-2">
                         <Ionicons name="business" size={14} color="#6b7280" className="mr-1.5" />
-                        <Text className="text-[15px] font-medium text-gray-600">{flatInfo}</Text>
+                        <Text className="text-[15px] font-sora-medium text-gray-600">{flatInfo}</Text>
                     </View>
                     
                     <View className="flex-row items-center mt-1">
                         <Ionicons name="home" size={14} color="#6b7280" className="mr-1.5" />
-                        <Text className="text-[15px] font-medium text-gray-600">{displayRole}</Text>
+                        <Text className="text-[15px] font-sora-medium text-gray-600">{displayRole}</Text>
                     </View>
 
                     {/* QR Code */}
@@ -98,8 +98,8 @@ export function ProfileQrModal({ visible, onClose, user }: ProfileQrModalProps) 
 
                     {/* Resident ID Badge */}
                     <View className="bg-[#FFF8ED] rounded-full px-5 py-2.5 flex-row items-center mb-2">
-                        <Text className="text-[#B45309] text-[13px] font-medium tracking-widest mr-2">RESIDENT ID</Text>
-                        <Text className="text-gray-900 text-[15px] font-bold tracking-widest">{gateId}</Text>
+                        <Text className="text-[#B45309] text-[13px] font-sora-medium tracking-widest mr-2">RESIDENT ID</Text>
+                        <Text className="text-gray-900 text-[15px] font-sora-bold tracking-widest">{gateId}</Text>
                     </View>
 
                 </View>
