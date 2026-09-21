@@ -119,7 +119,7 @@ export function AtAGlanceSection({
                     icon="account-group-outline"
                     iconColor={ResidentHomeColors.blue}
                     iconBackground={ResidentHomeColors.blueSurface}
-                    value={String(waitingCount)}
+                    value={formatCount(waitingCount)}
                     label={['Visitors', 'Waiting']}
                     onPress={onVisitorsPress}
                 />
@@ -127,7 +127,7 @@ export function AtAGlanceSection({
                     icon="package-variant"
                     iconColor={ResidentHomeColors.orange}
                     iconBackground={ResidentHomeColors.orangeSurface}
-                    value={deliveryCount === null ? '—' : String(deliveryCount)}
+                    value={deliveryCount === null ? '—' : formatCount(deliveryCount)}
                     label={['Delivery', 'Today']}
                     onPress={onDeliveryPress}
                 />
@@ -147,14 +147,16 @@ export function AtAGlanceSection({
 function GlanceCard({ icon, iconColor, iconBackground, value, label, onPress }: GlanceCardProps) {
     return (
         <TouchableOpacity onPress={onPress} activeOpacity={0.76} style={styles.glanceCard}>
-            <View style={[styles.glanceIcon, { backgroundColor: iconBackground }]}>
-                <MaterialCommunityIcons name={icon} size={24} color={iconColor} />
+            <View style={styles.glanceTop}>
+                <View style={[styles.glanceIcon, { backgroundColor: iconBackground }]}>
+                    <MaterialCommunityIcons name={icon} size={20} color={iconColor} />
+                </View>
+                <Text style={styles.glanceValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{value}</Text>
             </View>
-            <View style={styles.glanceCopy}>
-                <Text style={styles.glanceValue} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
-                <Text style={styles.glanceLabel} numberOfLines={2}>{label.join('\n')}</Text>
+            <View style={styles.glanceBottom}>
+                <Text style={styles.glanceLabel} numberOfLines={2}>{label.join(' ')}</Text>
+                <MaterialCommunityIcons name="chevron-right" size={16} color={ResidentHomeColors.tertiaryText} />
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={16} color={ResidentHomeColors.tertiaryText} style={styles.glanceChevron} />
         </TouchableOpacity>
     );
 }
@@ -335,7 +337,7 @@ export function SocietyUpdatesSection({ updates, onViewAll }: { updates: Residen
                                 <MaterialCommunityIcons name={config.icon} size={20} color={config.color} />
                             </View>
                             <View style={styles.updateCopy}>
-                                <Text style={styles.updateTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.88}>{update.title}</Text>
+                                <Text style={styles.updateTitle} numberOfLines={2}>{update.title}</Text>
                                 <Text style={styles.updateSubtitle} numberOfLines={1}>{update.subtitle}</Text>
                                 <Text style={styles.updateDetail} numberOfLines={1}>{update.detail}</Text>
                             </View>
@@ -360,8 +362,21 @@ function timeAgo(iso: string) {
     return `${Math.floor(minutes / 60)} hr`;
 }
 
+/** Compact so the amount always fits a 3-up glance card: ₹850 · ₹4K · ₹4.5K · ₹12.5K · ₹1.2L · ₹1.2Cr */
 function formatCurrency(value: number) {
-    return `₹${value.toLocaleString('en-IN')}`;
+    const abs = Math.abs(value);
+    if (abs >= 1_00_00_000) return `₹${trimZero(value / 1_00_00_000)}Cr`;
+    if (abs >= 1_00_000) return `₹${trimZero(value / 1_00_000)}L`;
+    if (abs >= 1_000) return `₹${trimZero(value / 1_000)}K`;
+    return `₹${Math.round(value)}`;
+}
+
+function formatCount(value: number) {
+    return value > 99 ? '99+' : String(value);
+}
+
+function trimZero(n: number) {
+    return n.toFixed(1).replace(/\.0$/, '');
 }
 
 const styles = StyleSheet.create({
@@ -393,12 +408,12 @@ const styles = StyleSheet.create({
     treeRight: { right: 13 },
     ground: { position: 'absolute', left: 16, right: 0, bottom: 0, height: 7, borderRadius: 7, backgroundColor: '#E3B53F' },
     glanceRow: { flexDirection: 'row', gap: ResidentHomeSpacing.xs },
-    glanceCard: { flex: 1, minWidth: 0, height: 68, borderRadius: ResidentHomeRadius.card, paddingLeft: ResidentHomeSpacing.xs, paddingRight: 18, paddingVertical: ResidentHomeSpacing.xs, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border, flexDirection: 'row', alignItems: 'center', gap: ResidentHomeSpacing.xxs, position: 'relative' },
-    glanceIcon: { width: 38, height: 38, borderRadius: ResidentHomeRadius.icon, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-    glanceCopy: { flex: 1, minWidth: 0, justifyContent: 'center' },
-    glanceValue: { fontSize: 17, lineHeight: 20, fontFamily: SgateFonts.bold, color: ResidentHomeColors.primaryText },
-    glanceLabel: { marginTop: 1, fontSize: 9, lineHeight: 11.5, fontFamily: SgateFonts.regular, color: ResidentHomeColors.secondaryText },
-    glanceChevron: { position: 'absolute', right: 3, top: 25 },
+    glanceCard: { flex: 1, minWidth: 0, borderRadius: ResidentHomeRadius.card, paddingHorizontal: ResidentHomeSpacing.sm, paddingVertical: ResidentHomeSpacing.md, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border },
+    glanceTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    glanceIcon: { width: 36, height: 36, borderRadius: ResidentHomeRadius.icon, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    glanceValue: { flex: 1, minWidth: 0, textAlign: 'right', fontSize: 22, lineHeight: 26, fontFamily: SgateFonts.bold, color: ResidentHomeColors.primaryText, letterSpacing: -0.3 },
+    glanceBottom: { marginTop: ResidentHomeSpacing.sm, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 2 },
+    glanceLabel: { flex: 1, minWidth: 0, minHeight: 28, fontSize: 11, lineHeight: 14, fontFamily: SgateFonts.regular, color: ResidentHomeColors.secondaryText },
     liveLabel: { flexDirection: 'row', alignItems: 'center', gap: 7 },
     liveDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: '#10C979' },
     liveText: { fontSize: 12, fontFamily: SgateFonts.medium, color: ResidentHomeColors.green },
@@ -443,11 +458,11 @@ const styles = StyleSheet.create({
     allServicesTitle: { fontSize: 13, fontFamily: SgateFonts.semibold, color: ResidentHomeColors.primaryText },
     allServicesSubtitle: { marginTop: 1, fontSize: 10, fontFamily: SgateFonts.regular, color: ResidentHomeColors.secondaryText },
     updatesRow: { flexDirection: 'row', gap: ResidentHomeSpacing.xs },
-    updateCard: { flex: 1, minWidth: 0, height: 88, borderRadius: ResidentHomeRadius.card, paddingLeft: ResidentHomeSpacing.xs, paddingRight: 20, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border, flexDirection: 'row', alignItems: 'center', gap: 7, position: 'relative' },
+    updateCard: { flex: 1, minWidth: 0, minHeight: 88, borderRadius: ResidentHomeRadius.card, paddingLeft: ResidentHomeSpacing.xs, paddingRight: 6, paddingVertical: 17, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border, flexDirection: 'row', alignItems: 'flex-start', gap: 7 },
     updateIcon: { width: 40, height: 40, borderRadius: ResidentHomeRadius.icon, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     updateCopy: { flex: 1, minWidth: 0 },
-    updateTitle: { fontSize: 10, lineHeight: 13.5, fontFamily: SgateFonts.semibold, color: ResidentHomeColors.primaryText },
-    updateSubtitle: { marginTop: 2, fontSize: 8.5, lineHeight: 11.5, fontFamily: SgateFonts.regular, color: ResidentHomeColors.secondaryText },
+    updateTitle: { minHeight: 27, fontSize: 10, lineHeight: 13.5, fontFamily: SgateFonts.semibold, color: ResidentHomeColors.primaryText },
+    updateSubtitle: { marginTop: 2, minHeight: 11.5, fontSize: 8.5, lineHeight: 11.5, fontFamily: SgateFonts.regular, color: ResidentHomeColors.secondaryText },
     updateDetail: { marginTop: 1, fontSize: 8.5, lineHeight: 11.5, fontFamily: SgateFonts.regular, color: ResidentHomeColors.tertiaryText },
-    updateChevron: { position: 'absolute', right: 3, top: 36 },
+    updateChevron: { alignSelf: 'center', flexShrink: 0 },
 });
