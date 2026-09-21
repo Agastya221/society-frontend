@@ -14,17 +14,17 @@ const IMAGE_BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
 
 // ─── Status & Priority Configs ──────────────────────────────────────────────
 const STATUS_CFG: Record<string, { bg: string; text: string }> = {
-    OPEN:        { bg: '#EAF2FF', text: '#2F6FED' },
-    IN_PROGRESS: { bg: '#FFF6D6', text: '#C58A00' },
-    RESOLVED:    { bg: '#E6F7EC', text: '#2EAD65' },
-    CLOSED:      { bg: '#F2F2F2', text: '#777777' },
+    OPEN:        { bg: SgateColors.blueBg, text: SgateColors.blue },
+    IN_PROGRESS: { bg: SgateColors.goldPale, text: SgateColors.goldDeep },
+    RESOLVED:    { bg: SgateColors.greenBg, text: SgateColors.green },
+    CLOSED:      { bg: SgateColors.surface, text: SgateColors.t2 },
 };
 
 const PRIORITY_CFG: Record<string, { bg: string; text: string; dot: string }> = {
-    LOW:      { bg: '#E6F7EC', text: '#2EAD65', dot: '#2EAD65' },
-    MEDIUM:   { bg: '#FFF6D6', text: '#C58A00', dot: '#C58A00' },
-    HIGH:     { bg: '#FFECEC', text: '#E54848', dot: '#E54848' },
-    CRITICAL: { bg: '#FFECEC', text: '#E54848', dot: '#E54848' },
+    LOW:      { bg: SgateColors.greenBg, text: SgateColors.green, dot: SgateColors.green },
+    MEDIUM:   { bg: SgateColors.goldPale, text: SgateColors.goldDeep, dot: SgateColors.goldDeep },
+    HIGH:     { bg: SgateColors.redBg, text: SgateColors.red, dot: SgateColors.red },
+    CRITICAL: { bg: SgateColors.redBg, text: SgateColors.red, dot: SgateColors.red },
 };
 
 // ─── Detail Row Component ───────────────────────────────────────────────────
@@ -242,7 +242,7 @@ export default function ComplaintDetailScreen() {
                                 <MaterialCommunityIcons
                                     name={s <= rating ? 'star' : 'star-outline'}
                                     size={36}
-                                    color={s <= rating ? SgateColors.gold : '#E0E0E0'}
+                                    color={s <= rating ? SgateColors.gold : SgateColors.border}
                                 />
                             </TouchableOpacity>
                         ))}
@@ -289,7 +289,7 @@ const S = StyleSheet.create({
     scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
 
     // Title + Badges
-    complaintTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: '#111', lineHeight: 30, marginBottom: 12 },
+    complaintTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1, lineHeight: 30, marginBottom: 12 },
     badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
     statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
     statusText: { fontSize: 11, fontFamily: SgateFonts.bold, letterSpacing: 0.5 },
@@ -302,23 +302,23 @@ const S = StyleSheet.create({
         backgroundColor: SgateColors.card, borderRadius: 16, padding: 16, marginBottom: 16,
         borderWidth: 1, borderColor: SgateColors.borderSoft,
     },
-    descText: { fontSize: 15, fontFamily: SgateFonts.regular, color: '#444', lineHeight: 24 },
+    descText: { fontSize: 15, fontFamily: SgateFonts.regular, color: SgateColors.t2, lineHeight: 24 },
 
     // Details
     detailsCard: {
         backgroundColor: SgateColors.card, borderRadius: 16, padding: 16,
         borderWidth: 1, borderColor: SgateColors.borderSoft,
     },
-    sectionTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111', marginBottom: 16 },
+    sectionTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 16 },
     detailItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 16 },
     detailIconWrap: { width: 34, height: 34, borderRadius: 10, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
-    detailLabel: { fontSize: 11, fontFamily: SgateFonts.medium, color: '#999', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 },
-    detailValue: { fontSize: 15, fontFamily: SgateFonts.medium, color: '#111' },
+    detailLabel: { fontSize: 11, fontFamily: SgateFonts.medium, color: SgateColors.t3, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 2 },
+    detailValue: { fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1 },
 
     // Resolution
-    resolutionDivider: { height: 1, backgroundColor: '#EEEEEE', marginVertical: 16 },
-    resolutionLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: '#999', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 },
-    resolutionText: { fontSize: 14, fontFamily: SgateFonts.regular, color: '#444', lineHeight: 22 },
+    resolutionDivider: { height: 1, backgroundColor: SgateColors.border, marginVertical: 16 },
+    resolutionLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t3, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 },
+    resolutionText: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t2, lineHeight: 22 },
 });
 
 // ─── Rating Modal Styles ────────────────────────────────────────────────────────
@@ -326,12 +326,12 @@ const R = StyleSheet.create({
     overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
     sheet: { paddingHorizontal: 24 },
     closeBtn: { position: 'absolute', top: 20, right: 20, padding: 4 },
-    title: { fontSize: 18, fontFamily: SgateFonts.bold, color: '#111', textAlign: 'center', marginBottom: 8 },
-    subtitle: { fontSize: 14, fontFamily: SgateFonts.regular, color: '#999', textAlign: 'center', marginBottom: 24, lineHeight: 20 },
+    title: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, textAlign: 'center', marginBottom: 8 },
+    subtitle: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
     starsRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 20 },
-    commentInput: { borderWidth: 1, borderColor: '#EEEEEE', borderRadius: 12, padding: 14, minHeight: 80, textAlignVertical: 'top', fontFamily: SgateFonts.regular, fontSize: 14, color: '#111', marginBottom: 20, backgroundColor: '#FAFAFA' },
+    commentInput: { borderWidth: 1, borderColor: SgateColors.border, borderRadius: 12, padding: 14, minHeight: 80, textAlignVertical: 'top', fontFamily: SgateFonts.regular, fontSize: 14, color: SgateColors.t1, marginBottom: 20, backgroundColor: SgateColors.bg },
     submitBtn: { backgroundColor: SgateColors.gold, borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
-    submitBtnDisabled: { backgroundColor: '#E8E8E8' },
+    submitBtnDisabled: { backgroundColor: SgateColors.surface },
     submitBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    submitBtnTextDisabled: { color: '#999' },
+    submitBtnTextDisabled: { color: SgateColors.t3 },
 });

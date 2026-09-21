@@ -62,16 +62,16 @@ const TYPE_ICON: Record<string, React.ComponentProps<typeof MaterialCommunityIco
 };
 
 const TYPE_COLOR: Record<string, { bg: string; icon: string; pill: string; pillText: string }> = {
-    MAID:           { bg: '#f0fdf4', icon: '#16a34a', pill: '#dcfce7', pillText: '#15803d' },
-    COOK:           { bg: '#fff7ed', icon: '#ea580c', pill: '#ffedd5', pillText: '#c2410c' },
-    NANNY:          { bg: '#fdf2f8', icon: '#db2777', pill: '#fce7f3', pillText: '#be185d' },
-    DRIVER:         { bg: '#eff6ff', icon: '#2563eb', pill: '#dbeafe', pillText: '#1d4ed8' },
-    CLEANER:        { bg: '#f0f9ff', icon: '#0284c7', pill: '#e0f2fe', pillText: '#0369a1' },
-    GARDENER:       { bg: '#f7fee7', icon: '#65a30d', pill: '#ecfccb', pillText: '#4d7c0f' },
-    LAUNDRY:        { bg: '#f0fdfa', icon: '#0d9488', pill: '#ccfbf1', pillText: '#0f766e' },
-    CARETAKER:      { bg: '#fefce8', icon: '#ca8a04', pill: '#fef9c3', pillText: '#a16207' },
-    SECURITY_GUARD: { bg: '#fff1f2', icon: '#e11d48', pill: '#ffe4e6', pillText: '#be123c' },
-    OTHER:          { bg: '#f8fafc', icon: '#64748b', pill: '#e2e8f0', pillText: '#475569' },
+    MAID:           { bg: C.greenBg,  icon: C.green,    pill: C.greenBg,  pillText: C.green },
+    COOK:           { bg: C.orangeBg, icon: C.orange,   pill: C.orangeBg, pillText: C.orange },
+    NANNY:          { bg: C.violetBg, icon: C.violet,   pill: C.violetBg, pillText: C.violet },
+    DRIVER:         { bg: C.blueBg,   icon: C.blue,     pill: C.blueBg,   pillText: C.blue },
+    CLEANER:        { bg: C.blueBg,   icon: C.blue,     pill: C.blueBg,   pillText: C.blue },
+    GARDENER:       { bg: C.greenBg,  icon: C.green,    pill: C.greenBg,  pillText: C.green },
+    LAUNDRY:        { bg: C.violetBg, icon: C.violet,   pill: C.violetBg, pillText: C.violet },
+    CARETAKER:      { bg: C.goldPale, icon: C.goldDeep, pill: C.goldPale, pillText: C.goldDeep },
+    SECURITY_GUARD: { bg: C.redBg,    icon: C.red,      pill: C.redBg,    pillText: C.red },
+    OTHER:          { bg: C.surface,  icon: C.t2,       pill: C.surface,  pillText: C.t2 },
 };
 
 function getTypeTheme(type: string) {

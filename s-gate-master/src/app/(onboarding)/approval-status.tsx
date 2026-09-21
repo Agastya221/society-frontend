@@ -39,39 +39,39 @@ interface StatusConfig {
 const STATUS_CONFIGS: Record<string, StatusConfig> = {
     PENDING_APPROVAL: {
         icon: 'clock',
-        iconColor: '#d97706',
-        iconBg: '#FEF3C7',
-        cardBg: '#FFFBEB',
-        cardBorder: '#FDE68A',
+        iconColor: SgateColors.goldDeep,
+        iconBg: SgateColors.card,
+        cardBg: SgateColors.goldPale,
+        cardBorder: SgateColors.goldPale,
         title: 'Under Review',
-        titleColor: '#92400E',
+        titleColor: SgateColors.t1,
     },
     RESUBMIT_REQUESTED: {
         icon: 'alert-triangle',
-        iconColor: '#dc2626',
-        iconBg: '#FEE2E2',
-        cardBg: '#FEF2F2',
-        cardBorder: '#FECACA',
+        iconColor: SgateColors.red,
+        iconBg: SgateColors.card,
+        cardBg: SgateColors.redBg,
+        cardBorder: SgateColors.redBorder,
         title: 'Action Required',
-        titleColor: '#991B1B',
+        titleColor: SgateColors.red,
     },
     REJECTED: {
         icon: 'x-circle',
-        iconColor: '#dc2626',
-        iconBg: '#FEE2E2',
-        cardBg: '#FEF2F2',
-        cardBorder: '#FECACA',
+        iconColor: SgateColors.red,
+        iconBg: SgateColors.card,
+        cardBg: SgateColors.redBg,
+        cardBorder: SgateColors.redBorder,
         title: 'Request Rejected',
-        titleColor: '#991B1B',
+        titleColor: SgateColors.red,
     },
     APPROVED: {
         icon: 'check-circle',
-        iconColor: '#16a34a',
-        iconBg: '#DCFCE7',
-        cardBg: '#F0FDF4',
-        cardBorder: '#BBF7D0',
+        iconColor: SgateColors.green,
+        iconBg: SgateColors.card,
+        cardBg: SgateColors.greenBg,
+        cardBorder: SgateColors.greenBg,
         title: "You're All Set!",
-        titleColor: '#166534',
+        titleColor: SgateColors.greenText,
     },
 };
 
@@ -222,7 +222,7 @@ export default function ApprovalStatusScreen() {
                                 )}
 
                                 <View style={styles.pollingBadge}>
-                                    <ActivityIndicator size="small" color="#d97706" />
+                                    <ActivityIndicator size="small" color={SgateColors.goldDeep} />
                                     <Text style={styles.pollingText}>Auto-refreshing...</Text>
                                 </View>
                             </>
@@ -293,7 +293,7 @@ export default function ApprovalStatusScreen() {
                             style={[styles.goldBtn, { backgroundColor: SgateColors.green }]}
                             activeOpacity={0.8}
                         >
-                            <Text style={[styles.goldBtnText, { color: '#FFFFFF' }]}>
+                            <Text style={[styles.goldBtnText, { color: SgateColors.card }]}>
                                 Go to Home
                             </Text>
                         </TouchableOpacity>
@@ -330,7 +330,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
     root: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: SgateColors.card,
     },
     centerContent: {
         flex: 1,
@@ -384,12 +384,12 @@ const styles = StyleSheet.create({
     },
     detailsBox: {
         width: '100%',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: SgateColors.card,
         borderRadius: 12,
         padding: 12,
         marginTop: 16,
         borderWidth: 1,
-        borderColor: '#FDE68A',
+        borderColor: SgateColors.borderSoft,
     },
     detailRow: {
         flexDirection: 'row',
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 8,
         marginTop: 16,
-        backgroundColor: '#FEF3C7',
+        backgroundColor: SgateColors.card,
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
@@ -420,21 +420,21 @@ const styles = StyleSheet.create({
     pollingText: {
         fontSize: 11,
         fontFamily: SgateFonts.medium,
-        color: '#92400E',
+        color: SgateColors.t2,
     },
     reasonBox: {
         width: '100%',
-        backgroundColor: '#FFFFFF',
+        backgroundColor: SgateColors.card,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#FECACA',
+        borderColor: SgateColors.redBorder,
         padding: 12,
         marginTop: 12,
     },
     reasonText: {
         fontSize: 13,
         fontFamily: SgateFonts.regular,
-        color: '#dc2626',
+        color: SgateColors.red,
         lineHeight: 18,
     },
     actionsWrap: {

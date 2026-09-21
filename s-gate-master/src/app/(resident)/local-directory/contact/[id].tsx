@@ -26,16 +26,16 @@ interface Contact {
 
 function getCategoryIcon(name: string): { icon: keyof typeof MaterialCommunityIcons.glyphMap; color: string; bg: string } {
   const lower = name.toLowerCase();
-  if (lower.includes('plumber')) return { icon: 'pipe-wrench', color: '#3B82F6', bg: '#EFF6FF' };
-  if (lower.includes('electrician')) return { icon: 'lightning-bolt', color: '#F97316', bg: '#FFF7ED' };
-  if (lower.includes('carpenter')) return { icon: 'hammer-screwdriver', color: '#D97706', bg: '#FEF3C7' };
-  if (lower.includes('painter')) return { icon: 'format-paint', color: '#A855F7', bg: '#FAF5FF' };
-  if (lower.includes('cleaner')) return { icon: 'broom', color: '#14B8A6', bg: '#F0FDFA' };
-  if (lower.includes('gardener')) return { icon: 'leaf', color: '#22C55E', bg: '#F0FDF4' };
-  if (lower.includes('pest')) return { icon: 'bug', color: '#EF4444', bg: '#FEF2F2' };
-  if (lower.includes('security')) return { icon: 'shield-account', color: '#4B5563', bg: '#F3F4F6' };
-  if (lower.includes('medical') || lower.includes('doctor')) return { icon: 'hospital-box', color: '#EF4444', bg: '#FEF2F2' };
-  return { icon: 'briefcase', color: '#6B7280', bg: '#E5E7EB' };
+  if (lower.includes('plumber')) return { icon: 'pipe-wrench', color: SgateColors.blue, bg: SgateColors.blueBg };
+  if (lower.includes('electrician')) return { icon: 'lightning-bolt', color: SgateColors.orange, bg: SgateColors.orangeBg };
+  if (lower.includes('carpenter')) return { icon: 'hammer-screwdriver', color: SgateColors.goldDeep, bg: SgateColors.goldPale };
+  if (lower.includes('painter')) return { icon: 'format-paint', color: SgateColors.violet, bg: SgateColors.violetBg };
+  if (lower.includes('cleaner')) return { icon: 'broom', color: SgateColors.blue, bg: SgateColors.blueBg };
+  if (lower.includes('gardener')) return { icon: 'leaf', color: SgateColors.green, bg: SgateColors.greenBg };
+  if (lower.includes('pest')) return { icon: 'bug', color: SgateColors.red, bg: SgateColors.redBg };
+  if (lower.includes('security')) return { icon: 'shield-account', color: SgateColors.t2, bg: SgateColors.surface };
+  if (lower.includes('medical') || lower.includes('doctor')) return { icon: 'hospital-box', color: SgateColors.red, bg: SgateColors.redBg };
+  return { icon: 'briefcase', color: SgateColors.t2, bg: SgateColors.surface };
 }
 
 function toInitials(name?: string): string {
@@ -153,7 +153,7 @@ export default function ContactProfile() {
           <Text style={styles.categorySubText}>{contact.category.toUpperCase()}</Text>
           {contact.isVerified && (
             <View style={styles.verifiedRow}>
-              <Feather name="check-circle" size={14} color="#10B981" />
+              <Feather name="check-circle" size={14} color={SgateColors.green} />
               <Text style={styles.verifiedText}>Verified</Text>
             </View>
           )}
@@ -162,24 +162,24 @@ export default function ContactProfile() {
         {/* QUICK ACTIONS ROW */}
         <View style={styles.quickActionsRow}>
           <TouchableOpacity style={styles.quickActionBtn} onPress={handleCall} activeOpacity={0.7}>
-            <View style={[styles.quickActionIconWrap, { backgroundColor: '#10B981' }]}>
-              <Feather name="phone" size={20} color="#FFFFFF" />
+            <View style={[styles.quickActionIconWrap, { backgroundColor: SgateColors.green }]}>
+              <Feather name="phone" size={20} color={SgateColors.card} />
             </View>
-            <Text style={[styles.quickActionLabel, { color: '#10B981' }]}>Call</Text>
+            <Text style={[styles.quickActionLabel, { color: SgateColors.green }]}>Call</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.quickActionBtn} onPress={handleShare} activeOpacity={0.7}>
             <View style={styles.quickActionIconWrap}>
-              <Feather name="share-2" size={20} color="#3B82F6" />
+              <Feather name="share-2" size={20} color={SgateColors.blue} />
             </View>
-            <Text style={[styles.quickActionLabel, { color: '#3B82F6' }]}>Share</Text>
+            <Text style={[styles.quickActionLabel, { color: SgateColors.blue }]}>Share</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.quickActionBtn} onPress={handleLike} activeOpacity={0.7}>
             <View style={styles.quickActionIconWrap}>
-              <Feather name="thumbs-up" size={20} color={contact.isLikedByMe ? '#F59E0B' : '#6B7280'} />
+              <Feather name="thumbs-up" size={20} color={contact.isLikedByMe ? SgateColors.goldDeep : SgateColors.t2} />
             </View>
-            <Text style={[styles.quickActionLabel, { color: contact.isLikedByMe ? '#F59E0B' : '#6B7280' }]}>Helpful</Text>
+            <Text style={[styles.quickActionLabel, { color: contact.isLikedByMe ? SgateColors.goldDeep : SgateColors.t2 }]}>Helpful</Text>
           </TouchableOpacity>
         </View>
 
@@ -189,7 +189,7 @@ export default function ContactProfile() {
             <Text style={styles.detailLabel}>mobile</Text>
             <Text style={styles.detailValueBlue}>{contact.phone}</Text>
             <TouchableOpacity onPress={handleCopy} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-              <Feather name="copy" size={18} color="#9CA3AF" />
+              <Feather name="copy" size={18} color={SgateColors.t3} />
             </TouchableOpacity>
           </View>
           
@@ -226,7 +226,7 @@ export default function ContactProfile() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#F2F2F7' }, // iOS typical light gray background
+  root: { flex: 1, backgroundColor: SgateColors.bg }, // iOS typical light gray background
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingVertical: 32, paddingHorizontal: 16 },
   
@@ -244,10 +244,10 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2,
   },
-  profileName: { fontSize: 26, fontFamily: SgateFonts.medium, color: '#111827', marginBottom: 4 },
-  categorySubText: { fontSize: 13, fontFamily: SgateFonts.medium, color: '#6B7280', letterSpacing: 0.5, marginBottom: 8 },
+  profileName: { fontSize: 26, fontFamily: SgateFonts.medium, color: SgateColors.t1, marginBottom: 4 },
+  categorySubText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2, letterSpacing: 0.5, marginBottom: 8 },
   verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  verifiedText: { fontSize: 13, fontFamily: SgateFonts.medium, color: '#10B981' },
+  verifiedText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.green },
   
   quickActionsRow: { flexDirection: 'row', justifyContent: 'center', gap: 24, marginBottom: 32 },
   quickActionBtn: { alignItems: 'center', gap: 8, width: 80 },
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     width: 46, 
     height: 46, 
     borderRadius: 23, 
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: SgateColors.card, 
     alignItems: 'center', 
     justifyContent: 'center', 
     shadowColor: '#000', 
@@ -267,21 +267,21 @@ const styles = StyleSheet.create({
   quickActionLabel: { fontSize: 12, fontFamily: SgateFonts.medium },
 
   detailsCard: { 
-    backgroundColor: '#FFFFFF', 
+    backgroundColor: SgateColors.card, 
     borderRadius: 16, 
     paddingLeft: 16, 
     marginBottom: 20 
   },
   detailRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingRight: 16 },
-  detailLabel: { width: 80, fontSize: 14, fontFamily: SgateFonts.regular, color: '#111827' }, 
-  detailValue: { flex: 1, fontSize: 15, fontFamily: SgateFonts.regular, color: '#111827' },
-  detailValueBlue: { flex: 1, fontSize: 16, fontFamily: SgateFonts.medium, color: '#3B82F6' }, // iOS phone links are blue
+  detailLabel: { width: 80, fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1 }, 
+  detailValue: { flex: 1, fontSize: 15, fontFamily: SgateFonts.regular, color: SgateColors.t1 },
+  detailValueBlue: { flex: 1, fontSize: 16, fontFamily: SgateFonts.medium, color: SgateColors.blue }, // iOS phone links are blue
   
-  separator: { height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(0,0,0,0.1)', marginLeft: 80 }, 
+  separator: { height: StyleSheet.hairlineWidth, backgroundColor: SgateColors.border, marginLeft: 80 }, 
   
   addedByWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  initialsSmall: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
-  initialsSmallText: { fontSize: 9, fontFamily: SgateFonts.bold, color: '#6B7280' },
+  initialsSmall: { width: 22, height: 22, borderRadius: 11, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
+  initialsSmallText: { fontSize: 9, fontFamily: SgateFonts.bold, color: SgateColors.t2 },
   
   emptyTitle: { fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
 });

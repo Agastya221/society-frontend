@@ -21,17 +21,17 @@ interface MyBooking {
 
 // ─── Amenity Theme Mapping (same as index screen) ──────────────────────────────
 const AMENITY_THEMES: { keywords: string[]; icon: string; bg: string; color: string }[] = [
-  { keywords: ['swim', 'pool'],                    icon: 'pool',               bg: '#DBEEFF', color: '#1A7FD4' },
-  { keywords: ['gym', 'fitness', 'workout'],       icon: 'dumbbell',           bg: '#FFE8E8', color: '#D94040' },
+  { keywords: ['swim', 'pool'],                    icon: 'pool',               bg: SgateColors.blueBg, color: SgateColors.blue },
+  { keywords: ['gym', 'fitness', 'workout'],       icon: 'dumbbell',           bg: SgateColors.redBg, color: SgateColors.red },
   { keywords: ['club', 'hall', 'lounge', 'party'], icon: 'glass-cocktail',     bg: SgateColors.goldPale, color: SgateColors.goldDeep },
-  { keywords: ['badminton', 'tennis', 'squash'],   icon: 'tennis',             bg: '#E8FFE8', color: '#2E9E4F' },
-  { keywords: ['basket', 'cricket', 'football'],   icon: 'basketball',         bg: '#FFF0DB', color: '#E07B00' },
-  { keywords: ['kids', 'play', 'children'],        icon: 'human-child',        bg: '#FFF8DB', color: '#D4A000' },
-  { keywords: ['garden', 'terrace', 'park', 'lawn'], icon: 'pine-tree',        bg: '#E8FFE8', color: '#2E9E4F' },
-  { keywords: ['yoga', 'meditation', 'aerobic'],   icon: 'yoga',               bg: '#EDE9FE', color: '#7C3AED' },
-  { keywords: ['library', 'reading', 'study'],     icon: 'book-open-page-variant', bg: '#EDE9FE', color: '#5B21B6' },
-  { keywords: ['parking', 'car', 'vehicle'],       icon: 'car',                bg: '#F0F0F0', color: '#555555' },
-  { keywords: ['sport', 'court'],                  icon: 'basketball',         bg: '#FFF0DB', color: '#E07B00' },
+  { keywords: ['badminton', 'tennis', 'squash'],   icon: 'tennis',             bg: SgateColors.greenBg, color: SgateColors.green },
+  { keywords: ['basket', 'cricket', 'football'],   icon: 'basketball',         bg: SgateColors.orangeBg, color: SgateColors.orange },
+  { keywords: ['kids', 'play', 'children'],        icon: 'human-child',        bg: SgateColors.goldPale, color: SgateColors.goldDeep },
+  { keywords: ['garden', 'terrace', 'park', 'lawn'], icon: 'pine-tree',        bg: SgateColors.greenBg, color: SgateColors.green },
+  { keywords: ['yoga', 'meditation', 'aerobic'],   icon: 'yoga',               bg: SgateColors.violetBg, color: SgateColors.violet },
+  { keywords: ['library', 'reading', 'study'],     icon: 'book-open-page-variant', bg: SgateColors.violetBg, color: SgateColors.violet },
+  { keywords: ['parking', 'car', 'vehicle'],       icon: 'car',                bg: SgateColors.surface, color: SgateColors.t2 },
+  { keywords: ['sport', 'court'],                  icon: 'basketball',         bg: SgateColors.orangeBg, color: SgateColors.orange },
 ];
 
 function resolveAmenityTheme(name: string) {
@@ -82,9 +82,9 @@ function formatDate(dateStr: string): string {
 // ─── Status Badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: BookingStatus }) {
   const config =
-    status === 'CONFIRMED'  ? { bg: '#E6F7EF', color: '#1BA97F', label: 'Confirmed' }
-    : status === 'CANCELLED' ? { bg: '#FFECEC', color: '#E53935', label: 'Cancelled' }
-    :                          { bg: '#F3F4F6', color: '#6B7280', label: 'Completed' };
+    status === 'CONFIRMED'  ? { bg: SgateColors.greenBg, color: SgateColors.green, label: 'Confirmed' }
+    : status === 'CANCELLED' ? { bg: SgateColors.redBg, color: SgateColors.red, label: 'Cancelled' }
+    :                          { bg: SgateColors.surface, color: SgateColors.t2, label: 'Completed' };
 
   return (
     <View style={[S.badge, { backgroundColor: config.bg }]}>
@@ -132,15 +132,15 @@ function BookingCard({ booking, index, onCancel }: { booking: MyBooking; index: 
         {/* Detail rows */}
         <View style={S.detailsBlock}>
           <View style={S.detailRow}>
-            <Feather name="calendar" size={14} color="#9CA3AF" />
+            <Feather name="calendar" size={14} color={SgateColors.t3} />
             <Text style={S.detailText}>{formatDate(booking.date)}</Text>
           </View>
           <View style={S.detailRow}>
-            <Feather name="clock" size={14} color="#9CA3AF" />
+            <Feather name="clock" size={14} color={SgateColors.t3} />
             <Text style={S.detailText}>{booking.timeSlot}</Text>
           </View>
           <View style={S.detailRow}>
-            <Feather name="users" size={14} color="#9CA3AF" />
+            <Feather name="users" size={14} color={SgateColors.t3} />
             <Text style={S.detailText}>
               {booking.members} member{booking.members > 1 ? 's' : ''}
             </Text>
@@ -155,7 +155,7 @@ function BookingCard({ booking, index, onCancel }: { booking: MyBooking; index: 
               onPress={handleCancelPress}
               style={S.cancelButton}
             >
-              <Feather name="x-circle" size={14} color="#E53935" />
+              <Feather name="x-circle" size={14} color={SgateColors.red} />
               <Text style={S.cancelButtonText}>Cancel Booking</Text>
             </TouchableOpacity>
           </Animated.View>
@@ -317,7 +317,7 @@ const S = StyleSheet.create({
     shadowRadius: 6,
     elevation: 1,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.03)',
+    borderColor: SgateColors.borderSoft,
   },
   tabIndicator: {
     position: 'absolute',
@@ -341,10 +341,10 @@ const S = StyleSheet.create({
   tabBtnText: {
     fontSize: 14,
     fontFamily: SgateFonts.semibold,
-    color: '#888888',
+    color: SgateColors.t3,
   },
   tabBtnTextActive: {
-    color: '#111111',
+    color: SgateColors.t1,
   },
 
   loadingContainer: {
@@ -375,7 +375,7 @@ const S = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#FFF6D6',
+    backgroundColor: SgateColors.goldPale,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
@@ -388,7 +388,7 @@ const S = StyleSheet.create({
   emptySubtitle: {
     fontSize: 14,
     fontFamily: SgateFonts.regular,
-    color: '#777777',
+    color: SgateColors.t3,
     textAlign: 'center',
     lineHeight: 20,
     maxWidth: 280,
@@ -403,7 +403,7 @@ const S = StyleSheet.create({
   emptyCtaText: {
     fontSize: 14,
     fontFamily: SgateFonts.bold,
-    color: '#111111',
+    color: SgateColors.t1,
   },
 
   // Booking Card
@@ -414,7 +414,7 @@ const S = StyleSheet.create({
     marginBottom: 14,
     marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
+    borderColor: SgateColors.borderSoft,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -454,7 +454,7 @@ const S = StyleSheet.create({
   // Divider
   cardDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: SgateColors.border,
     marginVertical: 14,
   },
 
@@ -470,7 +470,7 @@ const S = StyleSheet.create({
   detailText: {
     fontSize: 14,
     fontFamily: SgateFonts.medium,
-    color: '#555555',
+    color: SgateColors.t2,
   },
 
   // Cancel Button
@@ -480,13 +480,13 @@ const S = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     marginTop: 14,
-    backgroundColor: '#FFECEC',
+    backgroundColor: SgateColors.redBg,
     paddingVertical: 12,
     borderRadius: 12,
   },
   cancelButtonText: {
     fontSize: 14,
     fontFamily: SgateFonts.semibold,
-    color: '#E53935',
+    color: SgateColors.red,
   },
 });

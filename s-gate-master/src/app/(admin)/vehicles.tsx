@@ -235,7 +235,7 @@ export default function AdminVehiclesScreen() {
                         style={styles.callBtn} 
                         onPress={() => AppAlert.show('Call', `Calling ${item.resident?.phone}...`)}
                     >
-                        <MaterialCommunityIcons name="phone" size={16} color="#FFF" />
+                        <MaterialCommunityIcons name="phone" size={16} color={SgateColors.card} />
                         <Text style={styles.callText}>Call</Text>
                     </TouchableOpacity>
 
@@ -243,7 +243,7 @@ export default function AdminVehiclesScreen() {
                         style={styles.violationBtn}
                         onPress={() => setIssueTarget(item)}
                     >
-                        <MaterialCommunityIcons name="alert-octagon" size={16} color="#FFF" />
+                        <MaterialCommunityIcons name="alert-octagon" size={16} color={SgateColors.card} />
                         <Text style={styles.violationText}>Issue Ticket</Text>
                     </TouchableOpacity>
                 </View>
@@ -282,7 +282,7 @@ export default function AdminVehiclesScreen() {
                     
                     {!!item.penaltyAmount && isOpen && (
                         <View style={styles.penaltyRow}>
-                            <MaterialCommunityIcons name="cash" size={18} color="#0E3F2D" />
+                            <MaterialCommunityIcons name="cash" size={18} color={SgateColors.green} />
                             <Text style={styles.penaltyText}>Penalty: {item.penaltyAmount} INR {item.addedToInvoice ? '(Invoiced)' : ''}</Text>
                         </View>
                     )}
@@ -293,7 +293,7 @@ export default function AdminVehiclesScreen() {
                                 <Text style={styles.dismissText}>Dismiss</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.resolveBtnDark} onPress={() => setResolveTarget({ id: item.id, type: 'RESOLVED' })}>
-                                <MaterialCommunityIcons name="check-circle-outline" size={16} color="#FFF" />
+                                <MaterialCommunityIcons name="check-circle-outline" size={16} color={SgateColors.card} />
                                 <Text style={styles.resolveTextDark}>Mark Resolved</Text>
                             </TouchableOpacity>
                         </View>
@@ -356,7 +356,7 @@ export default function AdminVehiclesScreen() {
                             />
                         </View>
                         <TouchableOpacity style={[styles.searchBtn, !query.trim() && { opacity: 0.5 }]} onPress={handleSearch} disabled={!query.trim() || searching}>
-                            {searching ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.searchBtnText}>Search</Text>}
+                            {searching ? <ActivityIndicator size="small" color={SgateColors.card} /> : <Text style={styles.searchBtnText}>Search</Text>}
                         </TouchableOpacity>
                     </View>
 
@@ -450,7 +450,7 @@ export default function AdminVehiclesScreen() {
                                     <Text style={styles.modalCancelTxt}>Cancel</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.modalSubmit} onPress={submitViolation} disabled={submitting}>
-                                    {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalSubmitTxt}>Confirm Issue</Text>}
+                                    {submitting ? <ActivityIndicator color={SgateColors.card} /> : <Text style={styles.modalSubmitTxt}>Confirm Issue</Text>}
                                 </TouchableOpacity>
                             </View>
                         </ScrollView>
@@ -476,7 +476,7 @@ export default function AdminVehiclesScreen() {
                                 <Text style={styles.modalCancelTxt}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.modalSubmit, resolveTarget?.type === 'DISMISSED' && { backgroundColor: SgateColors.t3 }]} onPress={submitResolution} disabled={submitting}>
-                                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalSubmitTxt}>Submit</Text>}
+                                {submitting ? <ActivityIndicator color={SgateColors.card} /> : <Text style={styles.modalSubmitTxt}>Submit</Text>}
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
     // ── Header + Tabs (unified block) ────────────────────────────
     headerWrapper: {
-        backgroundColor: '#FFF',
+        backgroundColor: SgateColors.card,
     },
     headerTop: {
         flexDirection: 'row',
@@ -515,13 +515,13 @@ const styles = StyleSheet.create({
 
     // ── Tabs ─────────────────────────────────────────────────────
     tabWrapper: {
-        backgroundColor: '#FFF',
+        backgroundColor: SgateColors.card,
         paddingHorizontal: 20,
         paddingBottom: 12,
     },
     segmentedContainer: {
         flexDirection: 'row',
-        backgroundColor: '#F3F4F6',
+        backgroundColor: SgateColors.surface,
         borderRadius: 12,
         padding: 4,
     },
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
     listContent: { padding: 20, paddingBottom: 60, flexGrow: 1 },
 
     card: { 
-        backgroundColor: '#FFFFFF', 
+        backgroundColor: SgateColors.card, 
         borderRadius: 20, 
         padding: 20, 
         marginBottom: 16, 
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
         shadowRadius: 16,
         elevation: 3,
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.02)',
+        borderColor: SgateColors.borderSoft,
     },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     platePill: {
@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
     emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 16, marginBottom: 8 },
     emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center', marginBottom: 16 },
     issueUnknownBtn: { backgroundColor: SgateColors.gold, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
-    issueUnknownText: { color: '#fff', fontSize: 14, fontFamily: SgateFonts.bold },
+    issueUnknownText: { color: SgateColors.card, fontSize: 14, fontFamily: SgateFonts.bold },
 
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
     modalContent: { paddingHorizontal: 28, maxHeight: '80%', shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 10 },
@@ -602,20 +602,20 @@ const styles = StyleSheet.create({
     modalSub: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3, marginBottom: 24 },
     
     fieldLabel: { fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginBottom: 8, marginTop: 16, textTransform: 'uppercase', letterSpacing: 0.5 },
-    input: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: SgateColors.border, borderRadius: 16, padding: 16, fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
-    inputArea: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: SgateColors.border, borderRadius: 16, padding: 16, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1, height: 100, textAlignVertical: 'top' },
+    input: { backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border, borderRadius: 16, padding: 16, fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    inputArea: { backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border, borderRadius: 16, padding: 16, fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.t1, height: 100, textAlignVertical: 'top' },
     tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    tag: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: SgateColors.border },
+    tag: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border },
     tagActive: { backgroundColor: SgateColors.gold, borderColor: SgateColors.gold },
     tagText: { fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.t2 },
     tagTextActive: { color: SgateColors.t1 },
     rowFields: { flexDirection: 'row', gap: 16, alignItems: 'center' },
 
     modalBtnRow: { flexDirection: 'row', gap: 12, marginTop: 32 },
-    modalCancel: { flex: 1, paddingVertical: 16, borderRadius: 16, backgroundColor: '#F3F4F6', alignItems: 'center' },
+    modalCancel: { flex: 1, paddingVertical: 16, borderRadius: 16, backgroundColor: SgateColors.surface, alignItems: 'center' },
     modalCancelTxt: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t2 },
-    modalSubmit: { flex: 1.2, paddingVertical: 16, borderRadius: 16, backgroundColor: '#ef4444', alignItems: 'center', shadowColor: '#ef4444', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
-    modalSubmitTxt: { fontSize: 15, fontFamily: SgateFonts.extrabold, color: '#FFFFFF' },
+    modalSubmit: { flex: 1.2, paddingVertical: 16, borderRadius: 16, backgroundColor: SgateColors.red, alignItems: 'center', shadowColor: SgateColors.red, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+    modalSubmitTxt: { fontSize: 15, fontFamily: SgateFonts.extrabold, color: SgateColors.card },
 
     // Violations ListItem Styles
     vioTypeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
@@ -624,18 +624,18 @@ const styles = StyleSheet.create({
     vioMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     vioMetaText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
     
-    penaltyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#EFFFF6', padding: 12, borderRadius: 12, marginTop: 16, borderWidth: 1, borderColor: '#A7F3D0' },
-    penaltyText: { color: '#0E3F2D', fontSize: 14, fontFamily: SgateFonts.bold },
+    penaltyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: SgateColors.greenBg, padding: 12, borderRadius: 12, marginTop: 16, borderWidth: 1, borderColor: SgateColors.greenBg },
+    penaltyText: { color: SgateColors.greenText, fontSize: 14, fontFamily: SgateFonts.bold },
     
     actionRow: { flexDirection: 'row', gap: 12, marginTop: 16 },
     dismissBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.surface, paddingVertical: 14, borderRadius: 12 },
     dismissText: { color: SgateColors.t2, fontSize: 14, fontFamily: SgateFonts.bold },
-    resolveBtnDark: { flex: 1.5, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E3F2D', paddingVertical: 14, borderRadius: 12 },
-    resolveTextDark: { color: '#FFF', fontSize: 14, fontFamily: SgateFonts.bold },
+    resolveBtnDark: { flex: 1.5, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.ink, paddingVertical: 14, borderRadius: 12 },
+    resolveTextDark: { color: SgateColors.card, fontSize: 14, fontFamily: SgateFonts.bold },
 
     // Lookup action buttons
-    callBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0E3F2D', borderRadius: 12, paddingVertical: 14, gap: 6 },
-    callText: { color: '#FFF', fontSize: 14, fontFamily: SgateFonts.bold },
+    callBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.ink, borderRadius: 12, paddingVertical: 14, gap: 6 },
+    callText: { color: SgateColors.card, fontSize: 14, fontFamily: SgateFonts.bold },
     violationBtn: { flex: 1.2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.red, borderRadius: 12, paddingVertical: 14, gap: 6 },
-    violationText: { color: '#FFF', fontSize: 14, fontFamily: SgateFonts.bold },
+    violationText: { color: SgateColors.card, fontSize: 14, fontFamily: SgateFonts.bold },
 });

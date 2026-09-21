@@ -148,10 +148,10 @@ function formatAmount(amount: number): string {
 
 // ─── Badge Config ───────────────────────────────────────────────────────────
 const BADGE_CFG: Record<AdminDueStatus, { bg: string; text: string }> = {
-  PAID:    { bg: '#FEF9C3', text: '#92400E' },
-  PENDING: { bg: '#FEF3C7', text: '#B45309' },
-  OVERDUE: { bg: '#FEE2E2', text: '#B91C1C' },
-  WAIVED:  { bg: '#E0F2FE', text: '#0369A1' },
+  PAID:    { bg: SgateColors.greenBg, text: SgateColors.green },
+  PENDING: { bg: SgateColors.goldPale, text: SgateColors.goldDeep },
+  OVERDUE: { bg: SgateColors.redBg, text: SgateColors.red },
+  WAIVED:  { bg: SgateColors.blueBg, text: SgateColors.blue },
 };
 
 // ─── Due Card ───────────────────────────────────────────────────────────────
@@ -177,7 +177,7 @@ function DueCard({ item, index, onPress }: { item: DueItem; index: number; onPre
             <Text style={S.dueMeta}>Due: {formatDate(item.dueDate)}</Text>
             {item.status === 'PAID' && item.paidOn && (
               <View style={S.paidOnRow}>
-                <Feather name="check-circle" size={12} color="#92400E" />
+                <Feather name="check-circle" size={12} color={SgateColors.green} />
                 <Text style={S.paidOnText}>Paid on {formatDate(item.paidOn)}</Text>
               </View>
             )}
@@ -185,7 +185,7 @@ function DueCard({ item, index, onPress }: { item: DueItem; index: number; onPre
 
           {/* Amount */}
           <View style={S.dueCardRight}>
-            <Text style={[S.dueAmount, item.status === 'OVERDUE' && { color: '#EF4444' }]}>
+            <Text style={[S.dueAmount, item.status === 'OVERDUE' && { color: SgateColors.red }]}>
               {formatAmount(item.totalAmount)}
             </Text>
             <Feather name="chevron-right" size={18} color={SgateColors.t4} />
@@ -214,12 +214,12 @@ function SocietyDueCard({ item, index }: { item: SocietyDueItem; index: number }
           <Text style={S.dueMeta}>Society account due: {formatDate(item.dueDate)}</Text>
           {item.status === 'PAID' && item.paidOn && (
             <View style={S.paidOnRow}>
-              <Feather name="check-circle" size={12} color="#92400E" />
+              <Feather name="check-circle" size={12} color={SgateColors.green} />
               <Text style={S.paidOnText}>Paid on {formatDate(item.paidOn)}</Text>
             </View>
           )}
         </View>
-        <Text style={[S.dueAmount, item.status === 'OVERDUE' && { color: '#EF4444' }]}>
+        <Text style={[S.dueAmount, item.status === 'OVERDUE' && { color: SgateColors.red }]}>
           {formatAmount(item.totalAmount)}
         </Text>
       </View>
@@ -268,7 +268,7 @@ function AdminCollectionRow({
             disabled={reminding}
             activeOpacity={0.8}
           >
-            <Feather name="bell" size={13} color="#111827" />
+            <Feather name="bell" size={13} color={SgateColors.t1} />
             <Text style={S.remindBtnText}>{reminding ? 'Sending' : 'Remind'}</Text>
           </TouchableOpacity>
         )}
@@ -388,7 +388,7 @@ export default function DuesScreen({ role }: DuesScreenProps) {
           <View style={S.gridDivider} />
           <View style={S.gridItem}>
             <Text style={S.gridLabel}>OVERDUE</Text>
-            <Text style={[S.gridValue, summary.overdue > 0 && { color: '#EF4444' }]}>
+            <Text style={[S.gridValue, summary.overdue > 0 && { color: SgateColors.red }]}>
               {formatAmount(summary.overdue)}
             </Text>
           </View>
@@ -398,7 +398,7 @@ export default function DuesScreen({ role }: DuesScreenProps) {
       {/* ── Pay Button ────────────────────────────────────────────────── */}
       <TouchableOpacity style={S.payBtn} onPress={handlePayOutstanding} activeOpacity={0.85}>
         <Text style={S.payBtnText}>Pay Outstanding</Text>
-        <Feather name="arrow-right" size={20} color="#111" />
+        <Feather name="arrow-right" size={20} color={SgateColors.t1} />
       </TouchableOpacity>
 
       {role === 'admin' && adminSummary && (
@@ -417,7 +417,7 @@ export default function DuesScreen({ role }: DuesScreenProps) {
             </View>
             <View style={S.collectionStat}>
               <Text style={S.collectionStatLabel}>UNPAID</Text>
-              <Text style={[S.collectionStatValue, unpaidCount > 0 && { color: '#EF4444' }]}>{unpaidCount}</Text>
+              <Text style={[S.collectionStatValue, unpaidCount > 0 && { color: SgateColors.red }]}>{unpaidCount}</Text>
             </View>
             <View style={S.collectionStat}>
               <Text style={S.collectionStatLabel}>COLLECTED</Text>
@@ -425,7 +425,7 @@ export default function DuesScreen({ role }: DuesScreenProps) {
             </View>
             <View style={S.collectionStat}>
               <Text style={S.collectionStatLabel}>OUTSTANDING</Text>
-              <Text style={[S.collectionStatValue, adminSummary.outstandingAmount > 0 && { color: '#EF4444' }]}>
+              <Text style={[S.collectionStatValue, adminSummary.outstandingAmount > 0 && { color: SgateColors.red }]}>
                 {formatAmount(adminSummary.outstandingAmount)}
               </Text>
             </View>
@@ -554,10 +554,10 @@ export default function DuesScreen({ role }: DuesScreenProps) {
 
 // ─── Styles ─────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#FAFAFA' },
+  root: { flex: 1, backgroundColor: SgateColors.bg },
 
   // Header
-  headerBg: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
+  headerBg: { backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
   headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
   headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
@@ -567,29 +567,29 @@ const S = StyleSheet.create({
 
   // Hero Summary
   heroCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: SgateColors.card, borderRadius: 20, padding: 24, alignItems: 'center',
+    borderWidth: 1, borderColor: SgateColors.borderSoft,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2,
     marginBottom: 20,
   },
   heroLabel: {
-    fontSize: 11, fontFamily: SgateFonts.bold, color: '#9CA3AF',
+    fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t3,
     letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8,
   },
   heroAmount: {
-    fontSize: 36, fontFamily: SgateFonts.extrabold, color: '#111827', marginBottom: 16,
+    fontSize: 36, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, marginBottom: 16,
   },
   heroAccent: {
     width: 40, height: 3, borderRadius: 2, backgroundColor: SgateColors.gold, marginBottom: 20,
   },
   gridRow: { flexDirection: 'row', alignItems: 'center', width: '100%' },
   gridItem: { flex: 1, alignItems: 'center' },
-  gridDivider: { width: 1, height: 36, backgroundColor: '#EEEEEE' },
+  gridDivider: { width: 1, height: 36, backgroundColor: SgateColors.border },
   gridLabel: {
-    fontSize: 10, fontFamily: SgateFonts.bold, color: '#9CA3AF',
+    fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.t3,
     letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6,
   },
-  gridValue: { fontSize: 17, fontFamily: SgateFonts.bold, color: '#111827' },
+  gridValue: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
   // Pay Button
   payBtn: {
@@ -598,14 +598,14 @@ const S = StyleSheet.create({
     shadowColor: SgateColors.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 4,
     marginBottom: 32,
   },
-  payBtnText: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111' },
+  payBtnText: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
   // Section Title
-  sectionTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: '#111827', marginBottom: 14 },
+  sectionTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 14 },
   sectionHeaderRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-  viewAllText: { fontSize: 13, fontFamily: SgateFonts.bold, color: '#B45309', marginBottom: 14 },
+  viewAllText: { fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep, marginBottom: 14 },
 
   // Admin Collection
   collectionBlock: { marginBottom: 28 },
@@ -613,32 +613,32 @@ const S = StyleSheet.create({
     flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 18,
   },
   collectionStat: {
-    width: '48%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14,
-    borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
+    width: '48%', backgroundColor: SgateColors.card, borderRadius: 16, padding: 14,
+    borderWidth: 1, borderColor: SgateColors.borderSoft,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1,
   },
   collectionStatLabel: {
-    fontSize: 10, fontFamily: SgateFonts.bold, color: '#9CA3AF',
+    fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.t3,
     letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 6,
   },
-  collectionStatValue: { fontSize: 16, fontFamily: SgateFonts.extrabold, color: '#111827' },
+  collectionStatValue: { fontSize: 16, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 },
   collectionCaption: {
-    fontSize: 12, fontFamily: SgateFonts.bold, color: '#6B7280',
+    fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t2,
     letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 10, marginTop: 4,
   },
   collectionRow: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 10, padding: 14,
-    borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: SgateColors.card, borderRadius: 16, marginBottom: 10, padding: 14,
+    borderWidth: 1, borderColor: SgateColors.borderSoft,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1,
     flexDirection: 'row', alignItems: 'center', gap: 12,
   },
   collectionMain: { flex: 1, minWidth: 0 },
   collectionNameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  collectionName: { flex: 1, fontSize: 14, fontFamily: SgateFonts.bold, color: '#111827' },
-  collectionMeta: { fontSize: 12, fontFamily: SgateFonts.regular, color: '#6B7280' },
+  collectionName: { flex: 1, fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+  collectionMeta: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t2 },
   collectionPaidText: { fontSize: 11, fontFamily: SgateFonts.medium, color: SgateColors.green, marginTop: 4 },
   collectionRight: { alignItems: 'flex-end', gap: 8 },
-  collectionAmount: { fontSize: 14, fontFamily: SgateFonts.bold, color: '#111827' },
+  collectionAmount: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
   miniBadge: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, marginLeft: 8 },
   miniBadgeText: { fontSize: 9, fontFamily: SgateFonts.bold, letterSpacing: 0.2 },
   remindBtn: {
@@ -646,48 +646,48 @@ const S = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 5,
   },
   remindBtnDisabled: { opacity: 0.65 },
-  remindBtnText: { fontSize: 11, fontFamily: SgateFonts.bold, color: '#111827' },
+  remindBtnText: { fontSize: 11, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
   collectionEmpty: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: SgateColors.card, borderRadius: 16, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: SgateColors.borderSoft,
     flexDirection: 'row', alignItems: 'center', gap: 8,
   },
-  collectionEmptyText: { flex: 1, fontSize: 13, fontFamily: SgateFonts.medium, color: '#6B7280' },
+  collectionEmptyText: { flex: 1, fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
 
   // Filter Chips
   filterRow: { gap: 8, paddingBottom: 16 },
   chip: {
     paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: SgateColors.surface,
   },
   chipActive: {
     backgroundColor: SgateColors.gold,
     shadowColor: SgateColors.gold, shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25, shadowRadius: 4, elevation: 3,
   },
-  chipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: '#6B7280' },
-  chipTextActive: { color: '#111', fontFamily: SgateFonts.bold },
+  chipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
+  chipTextActive: { color: SgateColors.t1, fontFamily: SgateFonts.bold },
 
   // Due Card
   dueCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, marginHorizontal: 20, marginBottom: 12, padding: 16,
-    borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: SgateColors.card, borderRadius: 16, marginHorizontal: 20, marginBottom: 12, padding: 16,
+    borderWidth: 1, borderColor: SgateColors.borderSoft,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1,
   },
   dueCardRow: { flexDirection: 'row', alignItems: 'center' },
   dueTitleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  dueTitle: { fontSize: 15, fontFamily: SgateFonts.semibold, color: '#111827' },
+  dueTitle: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
   badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, marginLeft: 10 },
   badgeText: { fontSize: 10, fontFamily: SgateFonts.bold, letterSpacing: 0.3 },
-  dueMeta: { fontSize: 12, fontFamily: SgateFonts.regular, color: '#9CA3AF', marginTop: 2 },
+  dueMeta: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
   paidOnRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  paidOnText: { fontSize: 11, fontFamily: SgateFonts.medium, color: '#92400E' },
+  paidOnText: { fontSize: 11, fontFamily: SgateFonts.medium, color: SgateColors.green },
   dueCardRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  dueAmount: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111827' },
+  dueAmount: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
   societyDuesBlock: { marginBottom: 24 },
   societyDueCard: {
-    backgroundColor: '#FFFFFF', borderRadius: 16, marginBottom: 10, padding: 16,
-    borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)',
+    backgroundColor: SgateColors.card, borderRadius: 16, marginBottom: 10, padding: 16,
+    borderWidth: 1, borderColor: SgateColors.borderSoft,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1,
     flexDirection: 'row', alignItems: 'center', gap: 12,
   },
@@ -698,6 +698,6 @@ const S = StyleSheet.create({
     width: 64, height: 64, borderRadius: 32,
     backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  emptyTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: '#111827', marginBottom: 6 },
-  emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: '#9CA3AF', textAlign: 'center' },
+  emptyTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 6 },
+  emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center' },
 });
