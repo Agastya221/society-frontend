@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
 import { Complaint, ComplaintStatus, deleteComplaint, fetchComplaints } from '../../../services/complaints';
@@ -28,7 +28,7 @@ const FILTER_TABS: { key: ComplaintStatus | 'ALL'; label: string }[] = [
 
 export default function AdminComplaintsScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const [filterStatus, setFilterStatus] = useState<ComplaintStatus | 'ALL'>('ALL');
     const [complaints, setComplaints] = useState<Complaint[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -134,22 +134,19 @@ export default function AdminComplaintsScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header (matches Emergency Alerts) ─────────────────────── */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle} numberOfLines={1}>All Complaints</Text>
-                        <Text style={styles.headerSub} numberOfLines={1}>Resident complaints & issue tracking</Text>
-                    </View>
-                    {complaints.filter(c => c.status === 'OPEN').length > 0 && (
+            <ScreenHeader
+                title="All Complaints"
+                subtitle="Resident complaints & issue tracking"
+                onBack={() => router.back()}
+                rightAction={(
+                    complaints.filter(c => c.status === 'OPEN').length > 0 && (
                         <View style={styles.openBadge}>
                             <View style={styles.openDot} />
                             <Text style={styles.openText}>{complaints.filter(c => c.status === 'OPEN').length} OPEN</Text>
                         </View>
-                    )}
-                </View>
+                    )
+                )}
+            >
                 {/* Filter tabs */}
                 <View>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
@@ -167,7 +164,7 @@ export default function AdminComplaintsScreen() {
                         ))}
                     </ScrollView>
                 </View>
-            </View>
+            </ScreenHeader>
 
             {/* Persistent spacer */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />

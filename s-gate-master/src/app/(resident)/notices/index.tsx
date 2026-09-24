@@ -6,8 +6,9 @@ Animated, Dimensions, FlatList,
     Modal, PanResponder, Pressable, ScrollView, StyleSheet,
     Text, TouchableOpacity, View,
 } from 'react-native';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../../services/api';
 import { SgateColors, SgateFonts, SgateRadius } from '../../../constants/Sgate-theme';
 
@@ -175,7 +176,7 @@ function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () =>
 
 export default function NoticesScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const [notices, setNotices]       = useState<Notice[]>([]);
     const [loading, setLoading]       = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -271,17 +272,7 @@ export default function NoticesScreen() {
     return (
         <View style={S.root}>
             {/* 1. Header & Filters */}
-            <View style={[S.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={S.headerTop}>
-                    <TouchableOpacity onPress={() => router.push('/(resident)/home' as any)} style={S.backButton}>
-                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={S.headerTitle} numberOfLines={1}>Notices</Text>
-                        <Text style={S.headerSub} numberOfLines={1}>Society updates &amp; alerts</Text>
-                    </View>
-                </View>
-
+            <ScreenHeader title="Notices" subtitle="Society updates & alerts" onBack={() => router.push('/(resident)/home' as any)}>
                 <View style={S.filtersContainer}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filtersScroll}>
                         {FILTERS.map(tab => {
@@ -295,7 +286,7 @@ export default function NoticesScreen() {
                         })}
                     </ScrollView>
                 </View>
-            </View>
+            </ScreenHeader>
 
             {/* Persistent spacer — content never touches header */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
@@ -338,26 +329,9 @@ const S = StyleSheet.create({
     root:   { flex: 1, backgroundColor: SgateColors.bg },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-    // Header & Filters
-    headerWrapper: { 
-        backgroundColor: SgateColors.card, 
-        paddingBottom: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.02,
-        shadowRadius: 3,
-        elevation: 2,
-        zIndex: 10,
-    },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
-    backButton: { marginRight: 12 },
-    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
-    
-    filtersContainer: { paddingLeft: 20 },
-    filtersScroll: { flexDirection: 'row', gap: 10, paddingRight: 20 },
+    // Filters (rendered inside ScreenHeader)
+    filtersContainer: { paddingLeft: 18 },
+    filtersScroll: { flexDirection: 'row', gap: 10, paddingRight: 18 },
     chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface },
     chipActive: { backgroundColor: SgateColors.gold },
     chipText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },

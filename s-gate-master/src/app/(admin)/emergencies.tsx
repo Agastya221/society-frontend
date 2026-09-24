@@ -1,11 +1,11 @@
-import { MaterialCommunityIcons, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
     Modal,
-    Platform,
+
     StyleSheet,
     Text,
     TextInput,
@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { SgateColors, SgateFonts} from '@/constants/Sgate-theme';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { FloatingSOSButton } from '@/components/ui/FloatingSOSButton';
 import api from '@/services/api';
@@ -52,7 +52,6 @@ const TYPE_META: Record<string, { icon: React.ComponentProps<typeof MaterialIcon
     OTHER:         { icon: 'more-horiz',            bg: SgateColors.surface,  color: SgateColors.t2,       label: 'Other' },
 };
 
-
 const STATUS_CONFIG: Record<EmergencyStatus, { bg: string; color: string; label: string }> = {
     TRIGGERED:    { bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Active' },
     ACTIVE:       { bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Active' },
@@ -78,7 +77,7 @@ const FILTERS: { key: string; label: string }[] = [
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function AdminEmergenciesScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const [emergencies, setEmergencies] = useState<Emergency[]>([]);
     const [loading, setLoading]         = useState(true);
     const [refreshing, setRefreshing]   = useState(false);
@@ -86,7 +85,6 @@ export default function AdminEmergenciesScreen() {
     const [resolveTarget, setResolveTarget] = useState<Emergency | null>(null);
     const [resolveNote, setResolveNote] = useState('');
     const [resolving, setResolving]     = useState(false);
-
 
     const fetchEmergencies = async (silent = false) => {
         try {
@@ -110,7 +108,6 @@ export default function AdminEmergenciesScreen() {
 
     useFocusEffect(useCallback(() => { fetchEmergencies(); }, []));
     const onRefresh = () => { setRefreshing(true); fetchEmergencies(); };
-
 
     const filtered = emergencies.filter((e) => {
         if (filter === 'ALL') return true;
@@ -241,22 +238,19 @@ export default function AdminEmergenciesScreen() {
     return (
         <View style={styles.root}>
             {/* Header */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                        <MaterialIcons name="arrow-back" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle} numberOfLines={1}>Emergency Alerts</Text>
-                        <Text style={styles.headerSub} numberOfLines={1}>SOS alerts & incident management</Text>
-                    </View>
-                    {activeCount > 0 && (
+            <ScreenHeader
+                title="Emergency Alerts"
+                subtitle="SOS alerts & incident management"
+                onBack={() => router.back()}
+                rightAction={(
+                    activeCount > 0 && (
                         <View style={styles.liveBadge}>
                             <View style={styles.liveDot} />
                             <Text style={styles.liveText}>{activeCount} ACTIVE</Text>
                         </View>
-                    )}
-                </View>
+                    )
+                )}
+            >
                 {/* Filter tabs */}
                 <View style={styles.filterRow}>
                     {FILTERS.map((f) => (
@@ -272,7 +266,7 @@ export default function AdminEmergenciesScreen() {
                         </TouchableOpacity>
                     ))}
                 </View>
-            </View>
+            </ScreenHeader>
 
             {/* Persistent spacer */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />

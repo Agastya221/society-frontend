@@ -9,12 +9,12 @@ FlatList,
     TouchableOpacity,
     View,
     StatusBar,
-    Platform,
+
     Image,
 } from 'react-native';
+import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { AnimatedBottomSheetModal } from '@/components/ui/AnimatedBottomSheetModal';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
@@ -135,7 +135,6 @@ type Tab = typeof TABS[number];
 
 export default function PassesScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
 
     const [activeTab, setActiveTab] = useState<Tab>('Pre-Approvals');
     const [paEntries, setPaEntries]         = useState<PreApprovedEntry[]>([]);
@@ -483,20 +482,11 @@ export default function PassesScreen() {
             <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
             
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'ios' ? 4 : 10) }]}>
-                <View style={styles.headerInner}>
-                    <TouchableOpacity style={styles.headerIconBtn} onPress={() => router.back()}>
-                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitleMain}>My Passes</Text>
-                    <TouchableOpacity 
-                        style={styles.headerIconBtnCircle} 
-                        onPress={() => setSheetVisible(true)}
-                    >
-                        <Feather name="plus" size={22} color="#FFF" />
-                    </TouchableOpacity>
-                </View>
-            </View>
+            <ScreenHeader
+                title="My Passes"
+                onBack={() => router.back()}
+                rightAction={<HeaderIconButton icon="plus" accessibilityLabel="Create pass" onPress={() => setSheetVisible(true)} />}
+            />
 
             {/* Segmented Control */}
             <View style={styles.tabWrapper}>
@@ -575,7 +565,6 @@ export default function PassesScreen() {
                     )
                 )}
 
-
             </View>
 
             {/* ── Pre-Approval action menu ────────────── */}
@@ -640,38 +629,6 @@ const styles = StyleSheet.create({
     root: {
         flex: 1,
         backgroundColor: SgateColors.bg,
-    },
-    header: {
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 20,
-        paddingBottom: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    },
-    headerInner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerIconBtn: {
-        width: 32,
-        height: 32,
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-    },
-    headerTitleMain: {
-        flex: 1,
-        fontSize: 18,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.t1,
-        marginLeft: 12,
-    },
-    headerIconBtnCircle: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
-        backgroundColor: SgateColors.gold,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     tabWrapper: {
         backgroundColor: '#FFF',

@@ -16,7 +16,7 @@ import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
@@ -91,7 +91,7 @@ function normalisePost(raw: any): CommunityPost {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function AdminCommunityScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const [posts, setPosts]               = useState<CommunityPost[]>([]);
     const [activeCategory, setActiveCategory] = useState<string>('ALL');
     const [loading, setLoading]           = useState(true);
@@ -245,23 +245,12 @@ export default function AdminCommunityScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header (matches Emergency Alerts) ─────────────────────── */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle} numberOfLines={1}>Community</Text>
-                        <Text style={styles.headerSub} numberOfLines={1}>Posts, discussions & announcements</Text>
-                    </View>
-                    <TouchableOpacity
-                        onPress={() => setCreateVisible(true)}
-                        style={styles.createBtn}
-                        activeOpacity={0.8}
-                    >
-                        <MaterialCommunityIcons name="pencil-outline" size={16} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                </View>
+            <ScreenHeader
+                title="Community"
+                subtitle="Posts, discussions & announcements"
+                onBack={() => router.back()}
+                rightAction={<HeaderIconButton icon="edit-2" accessibilityLabel="Create" onPress={() => setCreateVisible(true)} />}
+            >
                 {/* Category filter */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                     {ALL_CATEGORIES.map((cat) => {
@@ -281,7 +270,7 @@ export default function AdminCommunityScreen() {
                         );
                     })}
                 </ScrollView>
-            </View>
+            </ScreenHeader>
 
             {/* Persistent spacer */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />

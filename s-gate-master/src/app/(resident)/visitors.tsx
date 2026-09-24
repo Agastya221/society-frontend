@@ -8,13 +8,13 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 import { Avatar } from '../../components/ui/Avatar';
-import { SgateColors } from '../../constants/Sgate-theme';
+
 import type { Entry, EntryType } from '../../types/api';
 import * as gateService from '../../services/gate.service';
 
@@ -67,7 +67,7 @@ type ListRow = SectionHeader | SectionItem;
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
 export default function VisitorsScreen() {
-    const insets = useSafeAreaInsets();
+
     const router = useRouter();
 
     const [entries, setEntries] = useState<Entry[]>([]);
@@ -243,20 +243,15 @@ export default function VisitorsScreen() {
     return (
         <View className="flex-1 bg-gray-50">
             {/* ── Header ──────────────────────────────────────────────── */}
-            <View 
-                className="px-5 flex-row items-center justify-between bg-white border-b border-gray-100"
-                style={{ paddingTop: insets.top + 12, paddingBottom: 16 }}
-            >
-                <View className="flex-row items-center gap-3">
-                    <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                        <Ionicons name="arrow-back" size={24} className="text-gray-700" />
-                    </TouchableOpacity>
-                    <Text className="text-xl font-sora-bold text-gray-900">Visitors</Text>
-                </View>
-                <Text className="text-xs font-sora-bold text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-                    {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
-                </Text>
-            </View>
+            <ScreenHeader
+                title="Visitors"
+                onBack={() => router.back()}
+                rightAction={
+                    <Text className="text-xs font-sora-bold text-Sgate-t2 bg-Sgate-surface px-3 py-1.5 rounded-full">
+                        {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
+                    </Text>
+                }
+            />
 
             {/* ── Search bar ──────────────────────────────────────────── */}
             <View className="px-4 pt-4 pb-2 bg-gray-50">

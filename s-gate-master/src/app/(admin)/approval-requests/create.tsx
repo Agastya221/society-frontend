@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { createGatePass } from '@/services/gatePass';
 import { AppAlert } from '@/components/ui/AppAlert';
@@ -79,17 +80,11 @@ export default function CreateApprovalRequestScreen() {
     return (
         <View style={S.root}>
             {/* ── Header (matches Notices pattern) ─────────────────────── */}
-            <View style={[S.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={S.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={S.backButton}>
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={S.headerTitle} numberOfLines={1}>New Request</Text>
-                        <Text style={S.headerSub} numberOfLines={1}>Create approval for entry/move-in</Text>
-                    </View>
-                </View>
-            </View>
+            <ScreenHeader
+                title="New Request"
+                subtitle="Create approval for entry/move-in"
+                onBack={() => router.back()}
+            />
 
             {/* ── Spacer ───────────────────────────────────────────────── */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />

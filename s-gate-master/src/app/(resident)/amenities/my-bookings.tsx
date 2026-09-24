@@ -3,7 +3,7 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, Animated,
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { AppScreenLayout } from '../../../components/ui/AppScreenLayout';
+import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AnimatedRN, { FadeInDown } from 'react-native-reanimated';
@@ -213,7 +213,7 @@ export default function MyBookingsScreen() {
   };
 
   return (
-    <AppScreenLayout title="My Bookings">
+    <AppScreenLayout scroll={false} title="My Bookings">
       {/* Tab Switcher */}
       <View style={S.tabContainer}>
         <View style={S.tabPill}>

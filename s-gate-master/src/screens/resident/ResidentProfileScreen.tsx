@@ -13,7 +13,7 @@ import {
     Share,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { MaterialCommunityIcons, Feather, Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
@@ -30,6 +30,7 @@ import type {
     ResidentContextsResponse,
     ResidentRequestDetails,
 } from '@/services/profile.service';
+import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { ResidentContextPicker } from '@/components/context/ResidentContextPicker';
 import { ResidentRequestDetailsSheet } from '@/components/context/ResidentRequestDetailsSheet';
@@ -314,20 +315,11 @@ export default function ResidentProfileScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header Bar ──────────────────────────────────────────── */}
-            <View 
-                className="px-5 flex-row items-center justify-between bg-white border-b border-gray-100"
-                style={{ paddingTop: insets.top + 12, paddingBottom: 16 }}
-            >
-                <View className="flex-row items-center gap-3">
-                    <TouchableOpacity onPress={() => router.back()} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                        <Ionicons name="arrow-back" size={24} className="text-gray-700" />
-                    </TouchableOpacity>
-                    <Text className="text-xl font-sora-bold text-gray-900">Profile</Text>
-                </View>
-                <TouchableOpacity onPress={() => Linking.openURL('mailto:support@sgate.app')} className="h-10 w-10 items-center justify-center rounded-full bg-gray-100" hitSlop={8}>
-                    <Feather name="headphones" size={20} className="text-gray-700" />
-                </TouchableOpacity>
-            </View>
+            <ScreenHeader
+                title="Profile"
+                onBack={() => router.back()}
+                rightAction={<HeaderIconButton icon="headphones" accessibilityLabel="Contact support" onPress={() => Linking.openURL('mailto:support@sgate.app')} />}
+            />
 
             {/* ── Content ─────────────────────────────────────────────── */}
             <ScrollView

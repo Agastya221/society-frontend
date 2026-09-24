@@ -1,12 +1,12 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
 
 export default function ExpectDeliveryScreen() {
-    const insets = useSafeAreaInsets();
+
     const router = useRouter();
 
     return (
@@ -14,14 +14,7 @@ export default function ExpectDeliveryScreen() {
             <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
             
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + (Platform.OS === 'ios' ? 4 : 10) }]}>
-                <View style={styles.headerInner}>
-                    <TouchableOpacity style={styles.headerIconBtn} onPress={() => router.back()}>
-                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitleMain}>Expected Delivery</Text>
-                </View>
-            </View>
+            <ScreenHeader title="Expected Delivery" onBack={() => router.back()} />
 
             <View style={styles.center}>
                 <View style={styles.iconCircle}>
@@ -36,30 +29,6 @@ export default function ExpectDeliveryScreen() {
 
 const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: '#FFFFFF' },
-    header: {
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 20,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#F0F0F0',
-    },
-    headerInner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerIconBtn: {
-        width: 32,
-        height: 32,
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-    },
-    headerTitleMain: {
-        flex: 1,
-        fontSize: 20,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        marginLeft: 12,
-    },
     center: { 
         flex: 1, 
         alignItems: 'center', 

@@ -17,7 +17,8 @@ import {
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
@@ -102,7 +103,7 @@ function normalizeRequest(raw: any): OnboardingRequest {
 export default function OnboardingRequestsScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const insets = useSafeAreaInsets();
+
     const [activeTab, setActiveTab]   = useState<StatusTab>('PENDING_APPROVAL');
     const [requests, setRequests]     = useState<OnboardingRequest[]>([]);
     const [loading, setLoading]       = useState(true);
@@ -267,23 +268,19 @@ export default function OnboardingRequestsScreen() {
     return (
         <View style={styles.safe}>
             {/* Header */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                        <MaterialIcons name="arrow-back" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle} numberOfLines={1}>Onboarding Requests</Text>
-                        <Text style={styles.headerSub} numberOfLines={1}>Resident verification & approvals</Text>
-                    </View>
-                    {activeTab === 'PENDING_APPROVAL' && pendingCount > 0 && (
+            <ScreenHeader
+                title="Onboarding Requests"
+                subtitle="Resident verification & approvals"
+                onBack={() => router.back()}
+                rightAction={(
+                    activeTab === 'PENDING_APPROVAL' && pendingCount > 0 && (
                         <View style={styles.liveBadge}>
                             <View style={styles.liveDot} />
                             <Text style={styles.liveText}>{pendingCount} PENDING</Text>
                         </View>
-                    )}
-                </View>
-
+                    )
+                )}
+            >
                 {/* Filter tabs */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                     {TABS.map(tab => (
@@ -294,7 +291,7 @@ export default function OnboardingRequestsScreen() {
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
-            </View>
+            </ScreenHeader>
 
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 

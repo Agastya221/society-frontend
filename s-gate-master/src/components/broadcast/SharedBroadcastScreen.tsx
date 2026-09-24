@@ -2,11 +2,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, Linking, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, FlatList, Linking, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import api from '@/services/api';
 import { AppAlert } from '@/components/ui/AppAlert';
@@ -22,7 +22,7 @@ interface IntercomContact {
 
 export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boolean }) {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const [activeTab, setActiveTab] = useState<'BROADCAST' | 'INTERCOM'>('BROADCAST');
     
     // Broadcast State
@@ -255,14 +255,7 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
     return (
         <View style={styles.safe}>
             {/* Header */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + (Platform.OS === 'ios' ? 4 : 10) }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.headerIconBtn} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={[styles.headerTitleMain, isTab && { marginLeft: 0 }]}>Alerts</Text>
-                </View>
-
+            <ScreenHeader title="Alerts" showBack={!isTab} onBack={() => router.back()}>
                 {/* Segmented Control */}
                 <View style={styles.tabWrapper}>
                     <View style={styles.segmentedContainer}>
@@ -282,7 +275,7 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
                         </TouchableOpacity>
                     </View>
                 </View>
-            </View>
+            </ScreenHeader>
 
             {/* Persistent spacer */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
@@ -296,34 +289,10 @@ const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
 
     // ── Header + Tabs (unified block) ────────────────────────────
-    headerWrapper: {
-        backgroundColor: '#FFF',
-    },
-    headerTop: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingBottom: 16,
-    },
-    headerIconBtn: {
-        width: 32,
-        height: 32,
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-    },
-    headerTitleMain: {
-        flex: 1,
-        fontSize: 20,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        marginLeft: 12,
-    },
 
     // ── Tabs ─────────────────────────────────────────────────────
     tabWrapper: {
-        backgroundColor: '#FFF',
-        paddingHorizontal: 20,
-        paddingBottom: 12,
+        paddingHorizontal: 18,
     },
     segmentedContainer: {
         flexDirection: 'row',

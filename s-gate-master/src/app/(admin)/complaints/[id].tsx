@@ -5,7 +5,7 @@ import { Modal, RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOp
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import { ComplaintStatusBadge } from '../../../components/complaints/ComplaintStatusBadge';
 import { PriorityBadge } from '../../../components/complaints/PriorityBadge';
@@ -18,7 +18,7 @@ const IMAGE_BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
 export default function AdminComplaintDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     
     // Data State
     const [complaint, setComplaint] = useState<Complaint | null>(null);
@@ -147,17 +147,11 @@ export default function AdminComplaintDetailScreen() {
     return (
         <View style={S.root}>
             {/* ── Header ─────────────────────────────────────────────── */}
-            <View style={[S.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <View style={S.headerLeft}>
-                    <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={S.headerTitle}>Admin View</Text>
-                </View>
-                <TouchableOpacity onPress={handleShare} style={S.shareButton}>
-                    <MaterialCommunityIcons name="share-variant-outline" size={20} color={SgateColors.goldDeep} />
-                </TouchableOpacity>
-            </View>
+            <ScreenHeader
+                title="Admin View"
+                onBack={() => router.back()}
+                rightAction={<HeaderIconButton icon="share-2" accessibilityLabel="Share" onPress={handleShare} />}
+            />
 
             <ScrollView 
                 style={S.scroll}

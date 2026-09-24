@@ -17,7 +17,7 @@ import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import * as billingService from '@/services/billingService';
@@ -52,7 +52,7 @@ const FILTER_TABS: FilterTab[] = ['ALL', 'PENDING', 'OVERDUE', 'PAID'];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PaymentsScreen() {
-    const insets = useSafeAreaInsets();
+
     const router = useRouter();
 
     const [dues, setDues]                 = useState<FlatDue[]>([]);
@@ -203,17 +203,11 @@ export default function PaymentsScreen() {
     if (loading) {
         return (
             <View style={styles.safe}>
-                <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                    <View style={styles.headerTop}>
-                        <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                            <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                        </TouchableOpacity>
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.headerTitle} numberOfLines={1}>Finance & Billing</Text>
-                            <Text style={styles.headerSub} numberOfLines={1}>Dues, payments & invoices</Text>
-                        </View>
-                    </View>
-                </View>
+                <ScreenHeader
+                    title="Finance & Billing"
+                    subtitle="Dues, payments & invoices"
+                    onBack={() => router.back()}
+                />
                 <AppLoader />
             </View>
         );
@@ -222,15 +216,11 @@ export default function PaymentsScreen() {
     return (
         <View style={styles.safe}>
             {/* ── Header (matches Emergency Alerts) ─────────────────────── */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle} numberOfLines={1}>Finance & Billing</Text>
-                        <Text style={styles.headerSub} numberOfLines={1}>Dues, payments & invoices</Text>
-                    </View>
+            <ScreenHeader
+                title="Finance & Billing"
+                subtitle="Dues, payments & invoices"
+                onBack={() => router.back()}
+                rightAction={(
                     <View style={styles.headerActions}>
                         <TouchableOpacity style={styles.navActionBtn} onPress={() => setShowGenerateModal(true)}>
                             <MaterialCommunityIcons name="file-plus-outline" size={18} color={SgateColors.goldDeep} />
@@ -239,7 +229,8 @@ export default function PaymentsScreen() {
                             <MaterialCommunityIcons name="alert-outline" size={18} color={SgateColors.red} />
                         </TouchableOpacity>
                     </View>
-                </View>
+                )}
+            >
                 {/* Filter chips */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
                     {FILTER_TABS.map(tab => (
@@ -256,7 +247,7 @@ export default function PaymentsScreen() {
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
-            </View>
+            </ScreenHeader>
 
             {/* Persistent spacer */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />

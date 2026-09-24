@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '../../../services/api';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -27,7 +27,7 @@ interface FlatData {
 export default function FlatDetailsScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const user = useAuthStore(s => s.user);
     const [flat, setFlat] = useState<FlatData | null>(null);
     const [residents, setResidents] = useState<ResidentRecord[]>([]);
@@ -99,18 +99,16 @@ export default function FlatDetailsScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header ─────────────────────────────────────────────────── */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.headerTitle} numberOfLines={1}>Flat {flatNumber}</Text>
-                    <Text style={styles.headerSub} numberOfLines={1}>{flatBlock} Block</Text>
-                </View>
-                <TouchableOpacity style={styles.headerActionBtn}>
-                    <MaterialCommunityIcons name="dots-vertical" size={20} color={SgateColors.t2} />
-                </TouchableOpacity>
-            </View>
+            <ScreenHeader
+                title={`Flat ${flatNumber}`}
+                subtitle={`${flatBlock} Block`}
+                onBack={() => router.back()}
+                rightAction={(
+                    <TouchableOpacity style={styles.headerActionBtn}>
+                        <MaterialCommunityIcons name="dots-vertical" size={20} color={SgateColors.t2} />
+                    </TouchableOpacity>
+                )}
+            />
 
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 

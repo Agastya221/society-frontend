@@ -13,6 +13,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { getAllGatePasses, type GatePass } from '@/services/gatePass';
 
@@ -207,24 +208,12 @@ export default function ApprovalRequestsListScreen() {
     return (
         <View style={S.root}>
             {/* ── Header + Filters (matches Resident Notices screen) ──── */}
-            <View style={[S.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={S.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={S.backButton}>
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={S.headerTitle} numberOfLines={1}>Approval Requests</Text>
-                        <Text style={S.headerSub} numberOfLines={1}>Gate pass & move-in/out approvals</Text>
-                    </View>
-                    <TouchableOpacity
-                        onPress={() => router.push('/(admin)/approval-requests/create' as any)}
-                        accessibilityLabel="Create request"
-                        style={S.headerAction}
-                    >
-                        <MaterialCommunityIcons name="plus" size={18} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                </View>
-
+            <ScreenHeader
+                title="Approval Requests"
+                subtitle="Gate pass & move-in/out approvals"
+                onBack={() => router.back()}
+                rightAction={<HeaderIconButton icon="plus" accessibilityLabel="Create request" onPress={() => router.push('/(admin)/approval-requests/create' as any)} />}
+            >
                 <View style={S.filtersContainer}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filtersScroll}>
                         {FILTERS.map(f => {
@@ -244,7 +233,7 @@ export default function ApprovalRequestsListScreen() {
                         })}
                     </ScrollView>
                 </View>
-            </View>
+            </ScreenHeader>
 
             {/* Persistent spacer — content never touches header */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />

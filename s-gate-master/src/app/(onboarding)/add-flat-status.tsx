@@ -11,6 +11,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
 
 function getParam(value: string | string[] | undefined, fallback = '') {
@@ -50,13 +51,7 @@ export default function AddFlatStatusScreen() {
         <View style={S.root}>
             <StatusBar style="dark" />
 
-            <View style={[S.header, { paddingTop: insets.top + 12 }]}>
-                <TouchableOpacity style={S.backBtn} onPress={goBack} hitSlop={8}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={S.headerTitle}>Flat Request</Text>
-                <View style={S.headerSpacer} />
-            </View>
+            <ScreenHeader title="Flat Request" onBack={goBack} />
 
             <View style={S.content}>
                 <Animated.View entering={FadeInDown.delay(80).springify()} style={S.hero}>

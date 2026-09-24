@@ -17,6 +17,7 @@ import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
@@ -135,17 +136,7 @@ export default function NoticesScreen() {
     return (
         <View style={styles.root}>
             {/* Header */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle} numberOfLines={1}>Notices</Text>
-                        <Text style={styles.headerSub} numberOfLines={1}>Society updates & alerts</Text>
-                    </View>
-                </View>
-            </View>
+            <ScreenHeader title="Notices" subtitle="Society updates & alerts" onBack={() => router.back()} />
 
             {/* Persistent spacer — content never touches header */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />

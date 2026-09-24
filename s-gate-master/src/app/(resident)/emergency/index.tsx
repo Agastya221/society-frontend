@@ -9,8 +9,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '../../../services/api';
@@ -71,7 +71,7 @@ function timeAgo(iso: string): string {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function EmergencyListScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const [emergencies, setEmergencies] = useState<Emergency[]>([]);
     const [isLoading, setIsLoading]     = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -202,22 +202,17 @@ export default function EmergencyListScreen() {
     return (
         <View style={styles.root}>
             {/* Header */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                        <MaterialIcons name="arrow-back" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle}>Emergency Alerts</Text>
-                        <Text style={styles.headerSub}>SOS alerts &amp; incident history</Text>
+            <ScreenHeader
+                title="Emergency Alerts"
+                subtitle="SOS alerts & incident history"
+                onBack={() => router.back()}
+                rightAction={activeCount > 0 ? (
+                    <View style={styles.liveBadge}>
+                        <View style={styles.liveDot} />
+                        <Text style={styles.liveText}>{activeCount} ACTIVE</Text>
                     </View>
-                    {activeCount > 0 && (
-                        <View style={styles.liveBadge}>
-                            <View style={styles.liveDot} />
-                            <Text style={styles.liveText}>{activeCount} ACTIVE</Text>
-                        </View>
-                    )}
-                </View>
+                ) : undefined}
+            >
 
                 {/* Filter tabs */}
                 <View style={styles.filterRow}>
@@ -234,7 +229,7 @@ export default function EmergencyListScreen() {
                         </TouchableOpacity>
                     ))}
                 </View>
-            </View>
+            </ScreenHeader>
 
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
@@ -274,22 +269,6 @@ const styles = StyleSheet.create({
     root: { flex: 1, backgroundColor: SgateColors.bg },
 
     // Header
-    headerWrapper: {
-        backgroundColor: SgateColors.card,
-        paddingBottom: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.02,
-        shadowRadius: 3,
-        elevation: 2,
-        zIndex: 10,
-    },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
-    backButton: { marginRight: 12 },
-    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
     liveBadge: {
         flexDirection: 'row', alignItems: 'center', gap: 4,
         backgroundColor: SgateColors.redBg,
@@ -298,7 +277,7 @@ const styles = StyleSheet.create({
     liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: SgateColors.red },
     liveText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.red, letterSpacing: 0.5 },
 
-    filterRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 8 },
+    filterRow: { flexDirection: 'row', paddingHorizontal: 18, gap: 8 },
     filterTab: {
         paddingHorizontal: 16, paddingVertical: 8,
         borderRadius: 20, backgroundColor: SgateColors.surface,

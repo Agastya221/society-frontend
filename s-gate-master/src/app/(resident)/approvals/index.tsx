@@ -13,6 +13,7 @@ import { ActivityIndicator,
     TextInput,
     TouchableOpacity,
     View } from 'react-native';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -278,15 +279,7 @@ export default function ApprovalsScreen() {
     return (
         <View style={styles.safe}>
             {/* Header — identical to Deliveries screen */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    accessibilityLabel="Go back"
-                >
-                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Visitor Approvals</Text>
-            </View>
+            <ScreenHeader title="Visitor Approvals" onBack={() => router.back()} />
 
             <FlatList
                 data={requests}
@@ -364,24 +357,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: 24,
         gap: 12,
-    },
-
-    // ── Header (matches Deliveries screen exactly) ────────────────────────────
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        backgroundColor: SgateColors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.t1,
-        marginLeft: 12,
-        flex: 1,
     },
 
     // ── List ─────────────────────────────────────────────────────────────────

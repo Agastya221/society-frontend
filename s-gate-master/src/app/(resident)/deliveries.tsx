@@ -8,6 +8,7 @@ FlatList,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -238,16 +239,7 @@ export default function DeliveriesScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header ──────────────────────────────────────────────── */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity 
-                    onPress={() => router.push('/(resident)/home' as any)}
-                    style={styles.backButton}
-                    accessibilityLabel="Go back to Home"
-                >
-                    <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Deliveries</Text>
-            </View>
+            <ScreenHeader title="Deliveries" onBack={() => router.push('/(resident)/home' as any)} />
 
             {/* ── Segmented control ───────────────────────────────────── */}
             <View style={styles.segWrap}>
@@ -343,18 +335,6 @@ const styles = StyleSheet.create({
     },
 
     // ── Header ──────────────────────────────────────────────────────────
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 16,
-        backgroundColor: SgateColors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    },
-    backButton: { width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-
     // ── Segmented control ───────────────────────────────────────────────
     segWrap: {
         paddingHorizontal: 20,

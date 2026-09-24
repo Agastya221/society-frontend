@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 import { getSectionsForRole, getToolsForSection, type ToolRole, type ToolItem } from './toolsConfig';
@@ -39,7 +39,7 @@ function ToolCard({ tool, onPress }: { tool: ToolItem; onPress: () => void }) {
 
 export default function SharedToolsScreen({ role }: SharedToolsScreenProps) {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const [preApproveConfig, setPreApproveConfig] = useState<{ visible: boolean; type?: 'GUEST' | 'CAB' | 'DELIVERY' | 'SERVICE' }>({ visible: false });
 
     const sections = getSectionsForRole(role);
@@ -63,14 +63,7 @@ export default function SharedToolsScreen({ role }: SharedToolsScreenProps) {
     return (
         <View style={styles.root}>
             {/* ── Header ──────────────────────────────────────────────── */}
-            <View style={[styles.headerBar, { paddingTop: insets.top + 12 }]}>
-                <View style={styles.headerLeft}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.headerBackBtn}>
-                        <MaterialCommunityIcons name="arrow-left" size={22} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>All Tools</Text>
-                </View>
-            </View>
+            <ScreenHeader title="All Tools" onBack={() => router.back()} />
 
             {/* ── Content ─────────────────────────────────────────────── */}
             <ScrollView
@@ -117,34 +110,6 @@ const styles = StyleSheet.create({
     },
 
     // Header
-    headerBar: {
-        backgroundColor: SgateColors.card,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingBottom: 13,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerBackBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.t1,
-        marginLeft: 12,
-    },
-
     // Scroll
     scrollContent: {
         padding: 20,

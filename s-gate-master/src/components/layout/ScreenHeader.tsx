@@ -10,6 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 
+const ICON_BUTTON = 40;
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface ScreenHeaderProps {
@@ -31,6 +33,8 @@ export interface ScreenHeaderProps {
      * If not provided, a static subtle border is shown.
      */
     scrollProgress?: SharedValue<number>;
+    /** Optional content rendered inside the header below the title row (filter chips, tabs, search). */
+    children?: React.ReactNode;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -52,6 +56,7 @@ export function ScreenHeader({
     subtitle,
     onBack,
     scrollProgress,
+    children,
 }: ScreenHeaderProps) {
     const insets = useSafeAreaInsets();
     const router = useRouter();
@@ -81,7 +86,7 @@ export function ScreenHeader({
                         accessibilityLabel="Go back"
                         accessibilityRole="button"
                     >
-                        <Feather name="arrow-left" size={24} color={SgateColors.t1} />
+                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
                     </Pressable>
                 ) : (
                     <View style={S.backPlaceholder} />
@@ -100,9 +105,42 @@ export function ScreenHeader({
                 )}
             </View>
 
+            {children ? <View style={S.below}>{children}</View> : null}
+
             {/* Animated bottom border */}
             <Animated.View style={[S.borderLine, borderStyle]} />
         </View>
+    );
+}
+
+// ─── Header icon button ──────────────────────────────────────────────────────
+
+export interface HeaderIconButtonProps {
+    icon: React.ComponentProps<typeof Feather>['name'];
+    onPress: () => void;
+    accessibilityLabel: string;
+    /** Small count badge (rendered in brand gold, like the Home bell). */
+    badge?: number;
+    color?: string;
+}
+
+/** Round 40px icon button with the same ring as the Home header's bell/SOS buttons. */
+export function HeaderIconButton({ icon, onPress, accessibilityLabel, badge, color }: HeaderIconButtonProps) {
+    return (
+        <Pressable
+            onPress={onPress}
+            style={S.iconButton}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            accessibilityLabel={accessibilityLabel}
+            accessibilityRole="button"
+        >
+            <Feather name={icon} size={20} color={color ?? SgateColors.t1} />
+            {badge ? (
+                <View style={S.badge}>
+                    <Text style={S.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+                </View>
+            ) : null}
+        </Pressable>
     );
 }
 
@@ -111,34 +149,70 @@ export function ScreenHeader({
 const S = StyleSheet.create({
     header: {
         backgroundColor: SgateColors.card,
-        paddingBottom: SgateLayout.headerBottomGap,
+        paddingBottom: 12,
     },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: SgateLayout.screenGutter,
+        gap: 10,
     },
-    backButton: {
-        width: SgateLayout.iconButtonSize,
-        height: SgateLayout.iconButtonSize,
-        marginLeft: -(SgateLayout.iconButtonSize - 24) / 2,
+    // Same 40px ring as the Home header's bell button
+    iconButton: {
+        width: ICON_BUTTON,
+        height: ICON_BUTTON,
+        borderRadius: ICON_BUTTON / 2,
+        backgroundColor: SgateColors.card,
+        borderWidth: 1,
+        borderColor: SgateColors.border,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    titleWrap: { flex: 1, minWidth: 0, marginLeft: 4 },
+    backButton: {
+        width: ICON_BUTTON,
+        height: ICON_BUTTON,
+        borderRadius: ICON_BUTTON / 2,
+        backgroundColor: SgateColors.card,
+        borderWidth: 1,
+        borderColor: SgateColors.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    titleWrap: { flex: 1, minWidth: 0 },
+    below: { paddingTop: 12 },
     title: {
-        fontSize: 18,
-        fontFamily: SgateFonts.semibold,
+        fontSize: 20,
+        lineHeight: 26,
+        fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
+        letterSpacing: -0.4,
     },
     subtitle: {
-        marginTop: 2,
+        marginTop: 1,
         fontSize: 12,
+        lineHeight: 16,
         fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
+        color: SgateColors.t2,
     },
     backPlaceholder: {
-        width: SgateLayout.iconButtonSize,
+        width: ICON_BUTTON,
+    },
+    badge: {
+        position: 'absolute',
+        top: -5,
+        right: -3,
+        minWidth: 19,
+        height: 19,
+        borderRadius: 10,
+        paddingHorizontal: 4,
+        backgroundColor: SgateColors.gold,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    badgeText: {
+        fontSize: 10,
+        fontFamily: SgateFonts.bold,
+        color: SgateColors.t1,
     },
     borderLine: {
         position: 'absolute',

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '../../../services/api';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -30,7 +30,7 @@ interface Flat {
 
 export default function FlatsScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const user = useAuthStore(s => s.user);
     const [flats, setFlats] = useState<Flat[]>([]);
     const [search, setSearch] = useState('');
@@ -204,23 +204,12 @@ export default function FlatsScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header (matches Emergency Alerts) ─────────────────────── */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle} numberOfLines={1}>Flats</Text>
-                        <Text style={styles.headerSub} numberOfLines={1}>{flats.length} units across {Object.keys(sections.reduce((a: any, s: any) => ({ ...a, [s.title]: 1 }), {})).length} blocks</Text>
-                    </View>
-                    <TouchableOpacity
-                        onPress={() => { resetForm(); setModalVisible(true); }}
-                        style={styles.addBtn}
-                        activeOpacity={0.8}
-                    >
-                        <MaterialCommunityIcons name="plus" size={18} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                </View>
+            <ScreenHeader
+                title="Flats"
+                subtitle={`${flats.length} units across ${Object.keys(sections.reduce((a: any, s: any) => ({ ...a, [s.title]: 1 }), {})).length} blocks`}
+                onBack={() => router.back()}
+                rightAction={<HeaderIconButton icon="plus" accessibilityLabel="Add" onPress={() => { resetForm(); setModalVisible(true); }} />}
+            >
                 {/* Search */}
                 <View style={styles.searchBar}>
                     <MaterialCommunityIcons name="magnify" size={18} color={SgateColors.t3} />
@@ -237,7 +226,7 @@ export default function FlatsScreen() {
                         </TouchableOpacity>
                     )}
                 </View>
-            </View>
+            </ScreenHeader>
 
             {/* Persistent spacer */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />

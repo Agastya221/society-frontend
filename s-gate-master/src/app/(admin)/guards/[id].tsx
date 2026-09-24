@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import { AppAlert } from '@/components/ui/AppAlert';
@@ -111,12 +112,7 @@ export default function GuardDetailScreen() {
     if (loading) {
         return (
             <View style={styles.root}>
-                <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                    <TouchableOpacity onPress={() => router.back()}>
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Guard Details</Text>
-                </View>
+                <ScreenHeader title="Guard Details" onBack={() => router.back()} />
                 <AppLoader />
             </View>
         );
@@ -125,12 +121,7 @@ export default function GuardDetailScreen() {
     if (!guard) {
         return (
             <View style={styles.root}>
-                <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                    <TouchableOpacity onPress={() => router.back()}>
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Guard Details</Text>
-                </View>
+                <ScreenHeader title="Guard Details" onBack={() => router.back()} />
                 <View style={styles.errorWrap}>
                     <MaterialCommunityIcons name="shield-alert-outline" size={48} color={SgateColors.t4} />
                     <Text style={styles.errorTitle}>Guard not found</Text>
@@ -147,12 +138,7 @@ export default function GuardDetailScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header ─────────────────────────────────────────────── */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Guard Details</Text>
-            </View>
+            <ScreenHeader title="Guard Details" onBack={() => router.back()} />
 
             <ScrollView
                 style={styles.scroll}

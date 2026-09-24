@@ -15,7 +15,7 @@ import {
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
@@ -56,7 +56,7 @@ function pct(votes: number, total: number): number {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function AdminElectionsScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const [polls, setPolls]             = useState<Poll[]>([]);
     const [loading, setLoading]         = useState(true);
     const [refreshing, setRefreshing]   = useState(false);
@@ -268,23 +268,12 @@ export default function AdminElectionsScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header (matches Emergency Alerts) ─────────────────────── */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle} numberOfLines={1}>Polls & Elections</Text>
-                        <Text style={styles.headerSub} numberOfLines={1}>Community voting & decision making</Text>
-                    </View>
-                    <TouchableOpacity
-                        onPress={() => { resetForm(); setCreateVisible(true); }}
-                        style={styles.addBtn}
-                        activeOpacity={0.8}
-                    >
-                        <MaterialCommunityIcons name="plus" size={18} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                </View>
+            <ScreenHeader
+                title="Polls & Elections"
+                subtitle="Community voting & decision making"
+                onBack={() => router.back()}
+                rightAction={<HeaderIconButton icon="plus" accessibilityLabel="Add" onPress={() => { resetForm(); setCreateVisible(true); }} />}
+            >
                 {/* Filter tabs */}
                 <View style={styles.filterRow}>
                     {(['ALL', 'ACTIVE', 'CLOSED'] as const).map((f) => (
@@ -300,7 +289,7 @@ export default function AdminElectionsScreen() {
                         </TouchableOpacity>
                     ))}
                 </View>
-            </View>
+            </ScreenHeader>
 
             {/* Persistent spacer */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />

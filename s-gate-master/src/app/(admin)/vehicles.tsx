@@ -17,8 +17,8 @@ import {
 } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import * as Haptics from 'expo-haptics';
@@ -69,7 +69,7 @@ const VIOLATION_TYPES = [
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function AdminVehiclesScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const [tab, setTab] = useState<'LOOKUP' | 'VIOLATIONS'>('LOOKUP');
 
     // Lookup State
@@ -306,14 +306,7 @@ export default function AdminVehiclesScreen() {
     return (
         <View style={styles.safe}>
             {/* Header */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + (Platform.OS === 'ios' ? 4 : 10) }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.headerIconBtn} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitleMain}>Parking Enforcement</Text>
-                </View>
-
+            <ScreenHeader title="Parking Enforcement" onBack={() => router.back()}>
                 {/* Segmented Control */}
                 <View style={styles.tabWrapper}>
                     <View style={styles.segmentedContainer}>
@@ -333,7 +326,7 @@ export default function AdminVehiclesScreen() {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </View>
+            </ScreenHeader>
 
             {/* Persistent spacer */}
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />

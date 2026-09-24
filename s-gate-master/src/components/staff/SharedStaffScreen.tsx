@@ -9,6 +9,7 @@ import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pre
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
@@ -275,17 +276,12 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
     return (
         <View style={styles.safe}>
             {/* Header + Tabs (single block, no gap) */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                        <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={[styles.headerTitle, isTab && { marginLeft: 0 }]}>Staff</Text>
-                    <TouchableOpacity style={styles.addBtn} onPress={openCreateForm} accessibilityLabel="Add staff">
-                        <MaterialCommunityIcons name="plus" size={18} color="#fff" />
-                    </TouchableOpacity>
-                </View>
-
+            <ScreenHeader
+                title="Staff"
+                showBack={!isTab}
+                onBack={() => router.back()}
+                rightAction={<HeaderIconButton icon="plus" accessibilityLabel="Add staff" onPress={openCreateForm} />}
+            >
                 {/* Segmented Control */}
                 <View style={styles.tabWrapper}>
                     <View style={styles.segmentedContainer}>
@@ -305,7 +301,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                         </TouchableOpacity>
                     </View>
                 </View>
-            </View>
+            </ScreenHeader>
 
             {/* Fixed Search Filter with soft cushion */}
             <View style={styles.fixedSearchWrap}>
@@ -412,31 +408,9 @@ const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
 
     // Header wrapper (contains header row + tabs as one block)
-    headerWrapper: {
-        backgroundColor: SgateColors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.02,
-        shadowRadius: 3,
-        elevation: 2,
-        zIndex: 10,
-    },
-    headerTop: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingBottom: 14,
-    },
-    headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-    addBtn: { width: 36, height: 36, borderRadius: 12, backgroundColor: SgateColors.gold, alignItems: 'center', justifyContent: 'center' },
-
     // ── Tabs ─────────────────────────────────────────────────────
     tabWrapper: {
-        backgroundColor: '#FFF',
-        paddingHorizontal: 20,
-        paddingBottom: 12,
+        paddingHorizontal: 18,
     },
     segmentedContainer: {
         flexDirection: 'row',

@@ -14,7 +14,7 @@ import {
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { approveGatePass, GatePass, getAllGatePasses, rejectGatePass } from '@/services/gatePass';
 
@@ -69,7 +69,7 @@ function timeAgo(iso: string): string {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function GatePassesScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const [passes, setPasses]         = useState<GatePass[]>([]);
     const [isLoading, setIsLoading]   = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -222,23 +222,19 @@ export default function GatePassesScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header ─────────────────────────────────────────────────── */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <View style={styles.headerTop}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backButton} accessibilityLabel="Go back">
-                        <MaterialIcons name="arrow-back" size={24} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle} numberOfLines={1}>Gate Passes</Text>
-                        <Text style={styles.headerSub} numberOfLines={1}>Pass requests & approvals</Text>
-                    </View>
-                    {pendingCount > 0 && (
+            <ScreenHeader
+                title="Gate Passes"
+                subtitle="Pass requests & approvals"
+                onBack={() => router.back()}
+                rightAction={(
+                    pendingCount > 0 && (
                         <View style={styles.liveBadge}>
                             <View style={styles.liveDot} />
                             <Text style={styles.liveText}>{pendingCount} PENDING</Text>
                         </View>
-                    )}
-                </View>
-
+                    )
+                )}
+            >
                 {/* Filter tabs */}
                 <View style={styles.filterRow}>
                     {FILTERS.map((f) => (
@@ -254,7 +250,7 @@ export default function GatePassesScreen() {
                         </TouchableOpacity>
                     ))}
                 </View>
-            </View>
+            </ScreenHeader>
 
             <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 

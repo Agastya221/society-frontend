@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Platform,
+
     ScrollView,
     StyleSheet,
     Text,
@@ -11,7 +11,7 @@ import {
     View,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -30,7 +30,7 @@ const FLAT_ACTIONS = [
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function MyHomeScreen() {
     const router = useRouter();
-    const insets = useSafeAreaInsets();
+
     const { user } = useAuthStore();
     const [showPreApprove, setShowPreApprove] = useState(false);
 
@@ -49,12 +49,7 @@ export default function MyHomeScreen() {
     return (
         <View style={styles.safe}>
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>My Home</Text>
-            </View>
+            <ScreenHeader title="My Home" onBack={() => router.back()} />
 
             {/* Spacer */}
             <View style={styles.spacer} />

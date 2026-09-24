@@ -14,6 +14,7 @@ import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -195,12 +196,7 @@ export default function ResidentsScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header ─────────────────────────────────────────────────── */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Residents</Text>
-            </View>
+            <ScreenHeader title="Residents" onBack={() => router.back()} />
 
             {/* ── Spacer ─────────────────────────────────────────────────── */}
             <View style={styles.spacer} />

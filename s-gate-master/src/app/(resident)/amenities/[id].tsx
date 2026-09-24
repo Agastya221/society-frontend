@@ -6,7 +6,7 @@ import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { Calendar } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppScreenLayout } from '../../../components/ui/AppScreenLayout';
+import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
@@ -187,7 +187,7 @@ export default function AmenityDetailScreen() {
   );
 
   return (
-    <AppScreenLayout title="Details">
+    <AppScreenLayout scroll={false} title="Details">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={S.scrollContent}

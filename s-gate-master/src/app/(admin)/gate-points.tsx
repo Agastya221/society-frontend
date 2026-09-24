@@ -3,7 +3,7 @@ import { useState } from 'react';
 import {
     FlatList,
     Modal,
-    ScrollView,
+
     StyleSheet,
     Switch,
     Text,
@@ -15,6 +15,7 @@ import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 
 interface Gate {
@@ -94,12 +95,7 @@ export default function GatePointsScreen() {
     return (
         <View style={styles.root}>
             {/* ── Header ─────────────────────────────────────────────────── */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Gate Points</Text>
-            </View>
+            <ScreenHeader title="Gate Points" onBack={() => router.back()} />
 
             {/* ── Spacer ─────────────────────────────────────────────────── */}
             <View style={styles.spacerBlock} />

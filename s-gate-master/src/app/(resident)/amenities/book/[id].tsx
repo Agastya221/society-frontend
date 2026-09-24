@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { AppScreenLayout } from '../../../../components/ui/AppScreenLayout';
+import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { AppAlert } from '../../../../components/ui/AppAlert';
 import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
 import api from '../../../../services/api';
@@ -105,7 +105,7 @@ export default function BookAmenityScreen() {
   };
 
   return (
-    <AppScreenLayout title="Confirm Booking">
+    <AppScreenLayout scroll={false} title="Confirm Booking">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.scrollContent}>
         {/* ─── Summary Card ─────────────────────────────────────────── */}
         <View style={S.summaryCard}>

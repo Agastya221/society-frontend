@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { AppScreenLayout } from '../../../components/ui/AppScreenLayout';
+import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -114,13 +114,13 @@ export default function AmenitiesScreen() {
   );
 
   if (loading) return (
-    <AppScreenLayout title="Amenities" rightElement={myBookingsBtn}>
+    <AppScreenLayout scroll={false} title="Amenities" rightElement={myBookingsBtn}>
       <AppLoader />
     </AppScreenLayout>
   );
 
   return (
-    <AppScreenLayout title="Amenities" rightElement={myBookingsBtn}>
+    <AppScreenLayout scroll={false} title="Amenities" rightElement={myBookingsBtn}>
       {/* Grid */}
       <FlatList
         data={amenities}

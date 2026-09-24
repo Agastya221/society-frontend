@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Platform,
+
     ScrollView,
     StyleSheet,
     Switch,
@@ -14,14 +14,14 @@ import {
 } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
 import { SettingRow } from '@/components/ui/SettingRow';
 import { useAuthStore } from '@/store/useAuthStore';
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function SettingsScreen() {
-    const insets = useSafeAreaInsets();
+
     const router = useRouter();
     const { user } = useAuthStore();
 
@@ -54,12 +54,7 @@ export default function SettingsScreen() {
 
     return (
         <View style={[styles.safe]}>            {/* ── Header ──────────────────────────────────────────────────── */}
-            <View style={[styles.header, { paddingTop: insets.top + 16, paddingBottom: 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Society Settings</Text>
-            </View>
+            <ScreenHeader title="Society Settings" onBack={() => router.back()} />
 
             {/* ── Spacer ──────────────────────────────────────────────────── */}
             <View style={styles.spacer} />
@@ -240,7 +235,6 @@ function ToggleRow({ label, sub, icon, value, onValueChange, isLast }: {
     );
 }
 
-
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
@@ -355,7 +349,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         marginBottom: 20,
     },
-
 
     version: { textAlign: 'center', fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 8 },
 });

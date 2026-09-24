@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { getGatePassById, GatePass } from '../../../services/gatePass';
@@ -98,12 +99,7 @@ export default function ApprovalRequestDetailScreen() {
     return (
         <View style={styles.safe}>
             {/* ── Header ─────────────────────────────────────────────── */}
-            <View style={[styles.headerWrapper, { paddingTop: insets.top + 16 }]}>
-                <TouchableOpacity onPress={() => router.back()} accessibilityLabel="Go back">
-                    <MaterialCommunityIcons name="arrow-left" size={24} color={SgateColors.t1} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Request Details</Text>
-            </View>
+            <ScreenHeader title="Request Details" onBack={() => router.back()} />
 
             {/* ── Content ────────────────────────────────────────────── */}
             <ScrollView
