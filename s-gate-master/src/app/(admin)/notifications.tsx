@@ -173,7 +173,7 @@ export default function AdminNotificationsScreen() {
                 <Animated.View entering={FadeInDown.delay(Math.min(index, 12) * 40).springify()}>
                     <TouchableOpacity
                         style={[styles.row, !n.isRead && styles.rowUnread]}
-                        activeOpacity={0.7}
+                        activeOpacity={0.8}
                         onPress={() => handlePress(n)}
                     >
                         <View style={[styles.iconBubble, { backgroundColor: meta.bg }]}>

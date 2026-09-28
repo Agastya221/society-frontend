@@ -16,14 +16,14 @@ export function ListItem({ title, subtitle, rightElement, onPress, className, sh
 
     return (
         <Container
-            className={clsx("flex-row items-center justify-between p-4 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800", className)}
+            className={clsx("flex-row items-center justify-between p-4 bg-white border-b border-zinc-100", className)}
             onPress={onPress}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
         >
             <View className="flex-1 mr-4">
-                <Text className="text-base font-sora-medium text-zinc-900 dark:text-zinc-100">{title}</Text>
+                <Text className="text-base font-sora-medium text-zinc-900">{title}</Text>
                 {subtitle && (
-                    <Text className="font-sora text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">{subtitle}</Text>
+                    <Text className="font-sora text-sm text-zinc-500 mt-0.5">{subtitle}</Text>
                 )}
             </View>
 

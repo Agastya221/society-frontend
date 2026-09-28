@@ -191,7 +191,7 @@ export default function RequestsListScreen() {
                             <TouchableOpacity
                                 onPress={() => router.push(`/(superadmin)/requests/${item.id}`)}
                                 className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 mb-3"
-                                activeOpacity={0.7}
+                                activeOpacity={0.8}
                             >
                                 <View className="flex-row items-start justify-between mb-2">
                                     <View className="flex-1 mr-3">

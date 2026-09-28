@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
-import { SgateColors, SgateRadius } from '../../../../constants/Sgate-theme';
+import { SgateColors, SgateLayout, SgateRadius } from '../../../../constants/Sgate-theme';
 
 // ─── Shimmer Bar ──────────────────────────────────────────────────────────────
 
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     headerSkeleton: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingVertical: 20,
     },
 });

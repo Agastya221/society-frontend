@@ -116,7 +116,7 @@ export function EmergencyOverlay({ emergencyId, onDismiss }: EmergencyOverlayPro
             style={styles.falseAlarmBtn}
             onPress={confirmFalseAlarm}
             disabled={cancelling}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
             <Text style={styles.falseAlarmText}>
               {cancelling ? 'Cancelling…' : 'False Alarm — Cancel Alert'}
@@ -126,7 +126,7 @@ export function EmergencyOverlay({ emergencyId, onDismiss }: EmergencyOverlayPro
           <TouchableOpacity
             style={styles.dismissBtn}
             onPress={onDismiss}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
             <Text style={styles.dismissText}>Dismiss notification</Text>
           </TouchableOpacity>

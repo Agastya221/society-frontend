@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSheetBottomClearance } from '@/hooks/useSheetBottomClearance';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { SgateColors, SgateFonts, SgateLayout, SgateRadius, SgateSurfaces } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
@@ -26,8 +28,10 @@ const TYPE_CARDS: TypeCardCfg[] = [
 ];
 
 export default function AddVehicleScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const sheetClearance = useSheetBottomClearance();
 
   const [vehicleType, setVehicleType] = useState<VehicleType | null>(null);
   const [number, setNumber]           = useState('');
@@ -71,7 +75,7 @@ export default function AddVehicleScreen() {
       <KeyboardAvoidingView style={S.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           style={S.flex}
-          contentContainerStyle={S.content}
+          contentContainerStyle={[S.content, { paddingBottom: scrollBottomPadding }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -146,7 +150,7 @@ export default function AddVehicleScreen() {
 
         </ScrollView>
 
-        <View style={[S.bottomBar, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+        <View style={[S.bottomBar, { paddingBottom: sheetClearance }]}>
           <PrimaryButton
             title={submitting ? 'Submitting…' : 'Submit Registration'}
             onPress={handleSubmit}

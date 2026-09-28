@@ -13,7 +13,8 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
+import EmptyState from '@/components/ui/EmptyState';
+import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { useFlats } from '@/hooks/useOnboardingQueries';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
@@ -61,7 +62,7 @@ const FlatRow = memo(function FlatRow({
         <TouchableOpacity
             onPress={onPress}
             disabled={disabled}
-            activeOpacity={0.6}
+            activeOpacity={0.8}
             style={[
                 styles.flatRow,
                 isSelected && styles.flatRowSelected,
@@ -291,19 +292,11 @@ export default function SelectFlatScreen() {
                     contentContainerStyle={{ paddingBottom: 88 + insets.bottom }}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <View style={styles.emptyIconBox}>
-                                <Feather name="search" size={28} color={SgateColors.t4} />
-                            </View>
-                            <Text style={styles.emptyTitle}>
-                                {search ? 'No matching flats' : 'No flats found'}
-                            </Text>
-                            <Text style={styles.emptyText}>
-                                {search
-                                    ? `No flat number matches "${search}"`
-                                    : "This block doesn't have any flats yet."}
-                            </Text>
-                        </View>
+                        <EmptyState
+                            iconName="magnify"
+                            title={search ? 'No matching flats' : 'No flats found'}
+                            description={search ? `No flat number matches "${search}"` : "This block doesn't have any flats yet."}
+                        />
                     }
                 />
             )}
@@ -346,7 +339,7 @@ const styles = StyleSheet.create({
     // ── Search ──
     searchContainer: {
         backgroundColor: '#FFFFFF',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 12,
         paddingBottom: 10,
         ...SgateShadows.minimal,
@@ -411,7 +404,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        paddingHorizontal: 16,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 20,
         paddingBottom: 8,
     },
@@ -539,33 +532,6 @@ const styles = StyleSheet.create({
     },
 
     // ── Empty ──
-    emptyContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 72,
-        paddingHorizontal: 32,
-    },
-    emptyIconBox: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 16,
-    },
-    emptyTitle: {
-        fontSize: 16,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        marginBottom: 4,
-    },
-    emptyText: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-        textAlign: 'center',
-    },
 
     // ── Bottom ──
     bottomBar: {

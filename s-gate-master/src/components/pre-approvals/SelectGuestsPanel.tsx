@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
 import { FlatList, ScrollView } from 'react-native-gesture-handler';
 import { Feather } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { AppAlert } from '@/components/ui/AppAlert';
 
 type Tab = 'contacts' | 'recent' | 'manual';
@@ -170,7 +170,7 @@ export function SelectGuestsPanel({
                                     const displayName = item.name?.trim() || cleanPhone(phone);
                                     const isSelected = selectedGuests.some(guest => guest.key === contactKey);
                                     return (
-                                        <TouchableOpacity style={S.contactRow} onPress={() => toggleSelection(contactKey, displayName, phone)} activeOpacity={0.7}>
+                                        <TouchableOpacity style={S.contactRow} onPress={() => toggleSelection(contactKey, displayName, phone)} activeOpacity={0.8}>
                                             <View style={S.contactAvatar}>
                                                 <Text style={S.contactInitial}>{displayName[0]?.toUpperCase()}</Text>
                                             </View>
@@ -282,7 +282,7 @@ const S = StyleSheet.create({
         flex: 1,
         paddingTop: 16
     },
-    tabFlex: { flex: 1, paddingHorizontal: 20 },
+    tabFlex: { flex: 1, paddingHorizontal: SgateLayout.screenGutter },
     
     searchBox: { 
         flexDirection: 'row', alignItems: 'center', 

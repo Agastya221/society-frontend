@@ -92,12 +92,15 @@ export const SgateSurfaces = {
     borderColor: SgateColors.border,
     borderRadius: SgateRadius.sm,
   },
+  /**
+   * A sheet's appearance only. How tall it may grow is the sheet container's
+   * job (AnimatedBottomSheetModal caps it against the visible screen), so this
+   * deliberately carries no maxHeight — that clipped content when both applied.
+   */
   sheet: {
     backgroundColor: SgateColors.card,
     borderTopLeftRadius: SgateRadius['2xl'],
     borderTopRightRadius: SgateRadius['2xl'],
-    maxHeight: SgateLayout.sheetMaxHeight,
-    overflow: 'hidden' as const,
   },
 } as const;
 

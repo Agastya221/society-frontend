@@ -42,7 +42,7 @@ export function ComplaintCard({ complaint, onPress, onDelete, isDeleting }: Comp
     };
 
     return (
-        <TouchableOpacity onPress={onPress} activeOpacity={0.97} disabled={isDeleting}>
+        <TouchableOpacity onPress={onPress} activeOpacity={0.8} disabled={isDeleting}>
             <View style={S.card}>
                 {/* Top row: priority + status + delete */}
                 <View style={S.topRow}>

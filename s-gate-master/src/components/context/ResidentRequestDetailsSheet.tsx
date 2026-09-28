@@ -2,8 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
-    Modal,
-    Pressable,
+
     ScrollView,
     StyleSheet,
     Text,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AnimatedBottomSheetModal } from '@/components/ui/AnimatedBottomSheetModal';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import {
     deleteResidentRequest,
@@ -205,143 +205,128 @@ export function ResidentRequestDetailsSheet({
     };
 
     return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-            statusBarTranslucent
-            onRequestClose={onClose}
-        >
-            <View style={S.root}>
-                <Pressable style={S.backdrop} onPress={onClose} />
-                <View style={[S.sheet, { paddingBottom: insets.bottom + 18 }]}>
-                    <View style={S.handle} />
+        <AnimatedBottomSheetModal visible={visible} onClose={onClose}>
 
-                    <View style={S.header}>
-                        <View style={[S.statusIcon, { backgroundColor: meta.bg }]}>
-                            <MaterialCommunityIcons name={meta.icon} size={26} color={meta.color} />
-                        </View>
-                        <View style={S.headerText}>
-                            <Text style={S.title}>{meta.title}</Text>
-                            <Text style={S.subtitle} numberOfLines={1}>
-                                {current.label} - {current.societyName}
-                            </Text>
-                        </View>
-                        <TouchableOpacity style={S.closeBtn} onPress={onClose} hitSlop={8}>
-                            <MaterialCommunityIcons name="close" size={20} color={SgateColors.t3} />
-                        </TouchableOpacity>
-                    </View>
-
-                    {loading ? (
-                        <View style={S.loading}>
-                            <ActivityIndicator size="small" color={SgateColors.gold} />
-                            <Text style={S.loadingText}>Loading request...</Text>
-                        </View>
-                    ) : (
-                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.content}>
-                            <View style={S.messageCard}>
-                                <Text style={[S.statusLabel, { color: meta.color }]}>{meta.label}</Text>
-                                <Text style={S.messageText}>{details?.message || meta.message}</Text>
-                            </View>
-
-                            {reason ? (
-                                <View style={S.reasonCard}>
-                                    <Text style={S.reasonTitle}>
-                                        {current.status === 'REJECTED' ? 'Rejection Reason' : 'Admin Note'}
-                                    </Text>
-                                    <Text style={S.reasonText}>{reason}</Text>
-                                </View>
-                            ) : null}
-
-                            <View style={S.infoCard}>
-                                <InfoRow label="Society" value={current.societyName} />
-                                <InfoRow label="Block / Tower" value={current.blockName} />
-                                <InfoRow label="Flat" value={current.flatNumber} />
-                                <InfoRow
-                                    label="Type"
-                                    value={formatResidentType(current.residentType, current.isLivingHere)}
-                                />
-                                <InfoRow label="Submitted" value={formatDate(current.submittedAt)} />
-                                {details?.reviewedAt ? (
-                                    <InfoRow label="Reviewed" value={formatDate(details.reviewedAt)} />
-                                ) : null}
-                            </View>
-
-                            <View style={S.docsCard}>
-                                <Text style={S.sectionTitle}>Documents</Text>
-                                {details?.documents?.length ? (
-                                    details.documents.map((doc) => (
-                                        <View key={doc.id} style={S.docRow}>
-                                            <View style={S.docIcon}>
-                                                <MaterialCommunityIcons
-                                                    name="file-document-outline"
-                                                    size={18}
-                                                    color={SgateColors.goldDeep}
-                                                />
-                                            </View>
-                                            <View style={S.docText}>
-                                                <Text style={S.docName} numberOfLines={1}>
-                                                    {formatDocType(doc.type)}
-                                                </Text>
-                                                <Text style={S.docMeta} numberOfLines={1}>
-                                                    {doc.fileName || 'Uploaded document'}
-                                                </Text>
-                                            </View>
-                                            {doc.isVerified ? (
-                                                <MaterialCommunityIcons
-                                                    name="check-circle"
-                                                    size={18}
-                                                    color={SgateColors.green}
-                                                />
-                                            ) : null}
-                                        </View>
-                                    ))
-                                ) : (
-                                    <Text style={S.emptyDocs}>No documents available.</Text>
-                                )}
-                            </View>
-                        </ScrollView>
-                    )}
-
-                    <View style={S.actions}>
-                        {showApplyAgain || showResubmit || showContinue ? (
-                            <TouchableOpacity style={S.primaryBtn} onPress={handleApply} activeOpacity={0.82}>
-                                <Text style={S.primaryText}>
-                                    {showApplyAgain
-                                        ? 'Fix & Apply Again'
-                                        : showResubmit
-                                            ? 'Update Documents'
-                                            : 'Continue Application'}
-                                </Text>
-                            </TouchableOpacity>
-                        ) : null}
-
-                        {showApplyAgain || showResubmit || showContinue ? (
-                            <TouchableOpacity style={S.secondaryBtn} onPress={handleEditSelection} activeOpacity={0.78}>
-                                <Text style={S.secondaryText}>Change Block / Flat</Text>
-                            </TouchableOpacity>
-                        ) : null}
-
-                        {canDelete ? (
-                            <TouchableOpacity
-                                style={S.deleteBtn}
-                                onPress={confirmDelete}
-                                activeOpacity={0.78}
-                                disabled={deleting}
-                            >
-                                {deleting ? (
-                                    <ActivityIndicator size="small" color={SgateColors.red} />
-                                ) : (
-                                    <Text style={S.deleteText}>
-                                        {current.status === 'PENDING_APPROVAL' ? 'Withdraw Request' : 'Delete Request'}
-                                    </Text>
-                                )}
-                            </TouchableOpacity>
-                        ) : null}
-                    </View>
+            <View style={S.header}>
+                <View style={[S.statusIcon, { backgroundColor: meta.bg }]}>
+                    <MaterialCommunityIcons name={meta.icon} size={26} color={meta.color} />
+                </View>
+                <View style={S.headerText}>
+                    <Text style={S.title}>{meta.title}</Text>
+                    <Text style={S.subtitle} numberOfLines={1}>
+                        {current.label} - {current.societyName}
+                    </Text>
                 </View>
             </View>
-        </Modal>
+
+            {loading ? (
+                <View style={S.loading}>
+                    <ActivityIndicator size="small" color={SgateColors.gold} />
+                    <Text style={S.loadingText}>Loading request...</Text>
+                </View>
+            ) : (
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.content}>
+                    <View style={S.messageCard}>
+                        <Text style={[S.statusLabel, { color: meta.color }]}>{meta.label}</Text>
+                        <Text style={S.messageText}>{details?.message || meta.message}</Text>
+                    </View>
+
+                    {reason ? (
+                        <View style={S.reasonCard}>
+                            <Text style={S.reasonTitle}>
+                                {current.status === 'REJECTED' ? 'Rejection Reason' : 'Admin Note'}
+                            </Text>
+                            <Text style={S.reasonText}>{reason}</Text>
+                        </View>
+                    ) : null}
+
+                    <View style={S.infoCard}>
+                        <InfoRow label="Society" value={current.societyName} />
+                        <InfoRow label="Block / Tower" value={current.blockName} />
+                        <InfoRow label="Flat" value={current.flatNumber} />
+                        <InfoRow
+                            label="Type"
+                            value={formatResidentType(current.residentType, current.isLivingHere)}
+                        />
+                        <InfoRow label="Submitted" value={formatDate(current.submittedAt)} />
+                        {details?.reviewedAt ? (
+                            <InfoRow label="Reviewed" value={formatDate(details.reviewedAt)} />
+                        ) : null}
+                    </View>
+
+                    <View style={S.docsCard}>
+                        <Text style={S.sectionTitle}>Documents</Text>
+                        {details?.documents?.length ? (
+                            details.documents.map((doc) => (
+                                <View key={doc.id} style={S.docRow}>
+                                    <View style={S.docIcon}>
+                                        <MaterialCommunityIcons
+                                            name="file-document-outline"
+                                            size={18}
+                                            color={SgateColors.goldDeep}
+                                        />
+                                    </View>
+                                    <View style={S.docText}>
+                                        <Text style={S.docName} numberOfLines={1}>
+                                            {formatDocType(doc.type)}
+                                        </Text>
+                                        <Text style={S.docMeta} numberOfLines={1}>
+                                            {doc.fileName || 'Uploaded document'}
+                                        </Text>
+                                    </View>
+                                    {doc.isVerified ? (
+                                        <MaterialCommunityIcons
+                                            name="check-circle"
+                                            size={18}
+                                            color={SgateColors.green}
+                                        />
+                                    ) : null}
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={S.emptyDocs}>No documents available.</Text>
+                        )}
+                    </View>
+                </ScrollView>
+            )}
+
+            <View style={S.actions}>
+                {showApplyAgain || showResubmit || showContinue ? (
+                    <TouchableOpacity style={S.primaryBtn} onPress={handleApply} activeOpacity={0.8}>
+                        <Text style={S.primaryText}>
+                            {showApplyAgain
+                                ? 'Fix & Apply Again'
+                                : showResubmit
+                                    ? 'Update Documents'
+                                    : 'Continue Application'}
+                        </Text>
+                    </TouchableOpacity>
+                ) : null}
+
+                {showApplyAgain || showResubmit || showContinue ? (
+                    <TouchableOpacity style={S.secondaryBtn} onPress={handleEditSelection} activeOpacity={0.8}>
+                        <Text style={S.secondaryText}>Change Block / Flat</Text>
+                    </TouchableOpacity>
+                ) : null}
+
+                {canDelete ? (
+                    <TouchableOpacity
+                        style={S.deleteBtn}
+                        onPress={confirmDelete}
+                        activeOpacity={0.8}
+                        disabled={deleting}
+                    >
+                        {deleting ? (
+                            <ActivityIndicator size="small" color={SgateColors.red} />
+                        ) : (
+                            <Text style={S.deleteText}>
+                                {current.status === 'PENDING_APPROVAL' ? 'Withdraw Request' : 'Delete Request'}
+                            </Text>
+                        )}
+                    </TouchableOpacity>
+                ) : null}
+            </View>
+        </AnimatedBottomSheetModal>
     );
 }
 
@@ -406,14 +391,6 @@ const S = StyleSheet.create({
         fontSize: 12,
         fontFamily: SgateFonts.regular,
         color: SgateColors.t3,
-    },
-    closeBtn: {
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     loading: {
         minHeight: 220,

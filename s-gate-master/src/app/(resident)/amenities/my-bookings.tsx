@@ -7,7 +7,7 @@ import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AnimatedRN, { FadeInDown } from 'react-native-reanimated';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 
@@ -301,7 +301,7 @@ const S = StyleSheet.create({
 
   // Tab Switcher
   tabContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     paddingTop: 14,
     paddingBottom: 8,
   },

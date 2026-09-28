@@ -11,6 +11,7 @@ import {
     View,
 } from 'react-native';
 
+import EmptyState from '@/components/ui/EmptyState';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import type { ResidentContext, ResidentContextRequest } from '@/services/profile.service';
@@ -110,8 +111,9 @@ export function ResidentContextPicker({
                         isDropdown ? [S.dropdownPanel, { top: topOffset }] : S.sheetPanel,
                     ]}
                     showHandle={!isDropdown}
-                    respectBottomInset={!isDropdown}
-                    minimumBottomPadding={isDropdown ? 16 : 22}
+                    // A dropdown floats mid-screen, so it only needs its own padding;
+                    // in sheet mode the surface's default clears the system bars.
+                    bottomClearance={isDropdown ? 16 : undefined}
                 >
                     <View style={S.header}>
                         <View style={S.headerText}>
@@ -133,10 +135,7 @@ export function ResidentContextPicker({
                         showsVerticalScrollIndicator={false}
                     >
                         {contexts.length === 0 && requests.length === 0 && !isLoading ? (
-                            <View style={S.empty}>
-                                <MaterialCommunityIcons name="home-search-outline" size={26} color={SgateColors.t4} />
-                                <Text style={S.emptyText}>No approved homes found yet</Text>
-                            </View>
+                            <EmptyState iconName="home-search-outline" title="No approved homes found yet" />
                         ) : (
                             contexts.map((context) => {
                                 const active =
@@ -148,7 +147,7 @@ export function ResidentContextPicker({
                                     <TouchableOpacity
                                         key={context.membershipId}
                                         style={[S.contextRow, active && S.contextRowActive]}
-                                        activeOpacity={0.75}
+                                        activeOpacity={0.8}
                                         disabled={switching || isLoading}
                                         onPress={() => onSwitch(context)}
                                     >
@@ -185,7 +184,7 @@ export function ResidentContextPicker({
                                 <TouchableOpacity
                                     key={request.requestId}
                                     style={[S.contextRow, S.requestRow]}
-                                    activeOpacity={0.75}
+                                    activeOpacity={0.8}
                                     onPress={() => onRequestPress?.(request)}
                                     disabled={!onRequestPress}
                                 >
@@ -211,7 +210,7 @@ export function ResidentContextPicker({
                             );
                         })}
 
-                        <TouchableOpacity style={S.addRow} activeOpacity={0.75} onPress={onAddAnother}>
+                        <TouchableOpacity style={S.addRow} activeOpacity={0.8} onPress={onAddAnother}>
                             <View style={S.addIcon}>
                                 <MaterialCommunityIcons name="plus" size={20} color={SgateColors.t1} />
                             </View>
@@ -401,16 +400,6 @@ const S = StyleSheet.create({
         marginTop: 2,
         fontSize: 11,
         fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-    },
-    empty: {
-        alignItems: 'center',
-        gap: 8,
-        paddingVertical: 22,
-    },
-    emptyText: {
-        fontSize: 12,
-        fontFamily: SgateFonts.medium,
         color: SgateColors.t3,
     },
 });

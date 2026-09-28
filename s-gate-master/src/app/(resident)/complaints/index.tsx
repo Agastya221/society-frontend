@@ -3,12 +3,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
 import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
 import { Complaint, ComplaintStatus, deleteComplaint, fetchComplaints } from '../../../services/complaints';
 import { AppAlert } from '../../../components/ui/AppAlert';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 
 const FILTERS: { key: ComplaintStatus | 'ALL'; label: string }[] = [
     { key: 'ALL', label: 'All' },
@@ -19,6 +20,7 @@ const FILTERS: { key: ComplaintStatus | 'ALL'; label: string }[] = [
 ];
 
 export default function ComplaintsScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
     const router = useRouter();
     const [filterStatus, setFilterStatus] = useState<ComplaintStatus | 'ALL'>('ALL');
     const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -129,7 +131,7 @@ export default function ComplaintsScreen() {
                             isDeleting={deletingId === item.id}
                         />
                     )}
-                    contentContainerStyle={S.listContent}
+                    contentContainerStyle={[S.listContent, { paddingBottom: scrollBottomPadding }]}
                     refreshControl={
                         <RefreshControl
                             refreshing={isRefreshing}
@@ -164,7 +166,7 @@ export default function ComplaintsScreen() {
 
 const S = StyleSheet.create({
     // Header
-    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12 },
     backBtn: { width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' },
     headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 4 },
     addBtn: {
@@ -179,7 +181,7 @@ const S = StyleSheet.create({
 
     // Filter Chips
     filterContainer: { paddingBottom: 12, paddingTop: 4 },
-    filterScroll: { paddingHorizontal: 20, gap: 8 },
+    filterScroll: { paddingHorizontal: SgateLayout.screenGutter, gap: 8 },
     chip: {
         paddingHorizontal: 18,
         minHeight: 40,
@@ -197,7 +199,7 @@ const S = StyleSheet.create({
     chipTextActive: { color: SgateColors.t1 },
 
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    listContent: { paddingHorizontal: 20, paddingBottom: 40 },
+    listContent: { paddingHorizontal: SgateLayout.screenGutter, paddingBottom: 40 },
 
     // Empty State
     emptyWrap: { alignItems: 'center', paddingTop: 60 },

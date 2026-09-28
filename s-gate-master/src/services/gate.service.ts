@@ -1,7 +1,6 @@
 import api from './api';
 import type {
     CreatePreApprovedPayload,
-    DayOfWeek,
     Entry,
     EntryRequest,
     EntryRequestStatus,
@@ -116,7 +115,7 @@ export const getInvitePassById = async (id: string): Promise<InvitePass> => {
 };
 
 export const revokeInvitePass = async (id: string): Promise<void> => {
-    await api.delete(`/gate/invites/guest/${id}/revoke`);
+    await api.patch(`/gate/invites/guest/${id}/revoke`);
 };
 
 export const deleteInvitePass = async (id: string): Promise<void> => {

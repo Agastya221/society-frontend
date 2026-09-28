@@ -19,7 +19,7 @@ interface SharedToolsScreenProps {
 
 function ToolCard({ tool, onPress }: { tool: ToolItem; onPress: () => void }) {
     return (
-        <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.8}>
             <View style={[styles.iconWrap, { backgroundColor: tool.bg }]}>
                 <MaterialCommunityIcons name={tool.icon} size={26} color={tool.color} />
             </View>

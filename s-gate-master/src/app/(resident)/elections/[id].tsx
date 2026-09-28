@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 
@@ -159,6 +160,7 @@ function SurveyOptionCard({ option, selected, hasVoted, totalVotes, onSelect }: 
 // ── Main Screen ────────────────────────────────────────────────────────────────
 
 export default function ElectionDetailScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -271,7 +273,7 @@ export default function ElectionDetailScreen() {
       <View style={D.headerContainer}>
         <SafeAreaView edges={['top']}>
           <View style={D.header}>
-            <TouchableOpacity onPress={() => router.back()} style={D.backBtn} activeOpacity={0.7}>
+            <TouchableOpacity onPress={() => router.back()} style={D.backBtn} activeOpacity={0.8}>
               <Feather name="arrow-left" size={22} color={SgateColors.t1} />
             </TouchableOpacity>
             <Text style={D.headerTitle} numberOfLines={1}>{item.title}</Text>
@@ -283,7 +285,7 @@ export default function ElectionDetailScreen() {
       {/* Persistent spacer */}
       <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
-      <ScrollView contentContainerStyle={D.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[D.scrollContent, { paddingBottom: scrollBottomPadding }]} showsVerticalScrollIndicator={false}>
         {/* Summary Card */}
         <View style={D.infoCard}>
           <View style={D.infoTopRow}>
@@ -401,7 +403,7 @@ const D = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     paddingVertical: 14,
   },
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
@@ -409,7 +411,7 @@ const D = StyleSheet.create({
   headerSpacer: { width: 36 },
 
   // ── Scroll ──
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 32 },
+  scrollContent: { paddingHorizontal: SgateLayout.screenGutter, paddingBottom: 32 },
 
   // ── Info Card ──
   infoCard: {

@@ -11,11 +11,13 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { StatusPill, type StatusTone } from '@/components/ui/StatusPill';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { approveGatePass, GatePass, getAllGatePasses, rejectGatePass } from '@/services/gatePass';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -37,18 +39,11 @@ function getTypeMeta(type: string) {
     return TYPE_META[type.toLowerCase()] ?? { icon: 'badge' as MIcon, bg: SgateColors.surface, color: SgateColors.t2, label: type.replace(/_/g, ' ') };
 }
 
-const STATUS_CONFIG: Record<string, { bg: string; color: string; label: string }> = {
-    PENDING:  { bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Pending' },
-    APPROVED: { bg: SgateColors.greenBg,  color: '#065f46',            label: 'Approved' },
-    REJECTED: { bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Rejected' },
-    ACTIVE:   { bg: SgateColors.blueBg,   color: SgateColors.blue,     label: 'Active' },
-    USED:     { bg: SgateColors.surface,  color: SgateColors.t3,       label: 'Used' },
-    EXPIRED:  { bg: SgateColors.surface,  color: SgateColors.t4,       label: 'Expired' },
+/** On a gate pass, ACTIVE means "currently in use" rather than "all good". */
+const STATUS_TONES: Record<string, StatusTone> = {
+    ACTIVE: 'info',
+    USED: 'neutral',
 };
-
-function getStatusConfig(status: string) {
-    return STATUS_CONFIG[status] ?? { bg: SgateColors.surface, color: SgateColors.t3, label: status };
-}
 
 const FILTERS = [
     { key: 'ALL',      label: 'All' },
@@ -125,7 +120,6 @@ export default function GatePassesScreen() {
 
     const renderItem = ({ item, index }: { item: GatePass; index: number }) => {
         const meta   = getTypeMeta(item.type);
-        const status = getStatusConfig(item.status);
         const isPending = item.status === 'PENDING';
 
         return (
@@ -139,9 +133,7 @@ export default function GatePassesScreen() {
                         <View style={styles.cardInfo}>
                             <View style={styles.cardTitleRow}>
                                 <Text style={styles.typeLabel}>{meta.label}</Text>
-                                <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-                                    <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
-                                </View>
+                                <StatusPill status={item.status} tone={STATUS_TONES[item.status]} size="sm" />
                             </View>
                             {/* Title */}
                             {!!item.title && (
@@ -199,7 +191,7 @@ export default function GatePassesScreen() {
                             <TouchableOpacity
                                 style={styles.rejectBtn}
                                 onPress={() => setRejectId(item.id)}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                             >
                                 <MaterialIcons name="close" size={14} color={SgateColors.red} />
                                 <Text style={styles.rejectBtnText}>Reject</Text>
@@ -207,7 +199,7 @@ export default function GatePassesScreen() {
                             <TouchableOpacity
                                 style={styles.approveBtn}
                                 onPress={() => handleApprove(item.id)}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                             >
                                 <MaterialIcons name="check" size={14} color={SgateColors.t1} />
                                 <Text style={styles.approveBtnText}>Approve</Text>
@@ -242,7 +234,7 @@ export default function GatePassesScreen() {
                             key={f.key}
                             style={[styles.filterTab, filter === f.key && styles.filterTabActive]}
                             onPress={() => setFilter(f.key)}
-                            activeOpacity={0.75}
+                            activeOpacity={0.8}
                         >
                             <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>
                                 {f.label}
@@ -272,11 +264,11 @@ export default function GatePassesScreen() {
                         />
                     }
                     ListEmptyComponent={
-                        <View style={styles.emptyWrap}>
-                            <MaterialIcons name="badge" size={56} color={SgateColors.t4} />
-                            <Text style={styles.emptyTitle}>No gate passes</Text>
-                            <Text style={styles.emptySub}>Gate pass requests will appear here.</Text>
-                        </View>
+                        <EmptyState
+                            iconName="card-account-details-outline"
+                            title="No gate passes"
+                            description="Gate pass requests will appear here."
+                        />
                     }
                 />
             )}
@@ -305,7 +297,7 @@ export default function GatePassesScreen() {
                             <TouchableOpacity
                                 onPress={() => { setRejectId(null); setRejectReason(''); }}
                                 style={styles.modalCancelBtn}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                             >
                                 <Text style={styles.modalCancelText}>Cancel</Text>
                             </TouchableOpacity>
@@ -317,7 +309,7 @@ export default function GatePassesScreen() {
                                     styles.modalConfirmBtn,
                                     !rejectReason.trim() && styles.modalConfirmBtnDisabled,
                                 ]}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                             >
                                 <Text style={[
                                     styles.modalConfirmText,
@@ -349,7 +341,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, marginBottom: 16 },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
@@ -388,8 +380,6 @@ const styles = StyleSheet.create({
     cardInfo: { flex: 1 },
     cardTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
     typeLabel: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-    statusText: { fontSize: 11, fontFamily: SgateFonts.bold },
     cardTitle: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 2 },
     senderText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
 
@@ -446,14 +436,11 @@ const styles = StyleSheet.create({
     approveBtnText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Empty
-    emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.7 },
-    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 12, marginBottom: 4 },
-    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 
     // Modal
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.48)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,

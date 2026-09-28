@@ -5,9 +5,10 @@ import {
 ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../../constants/Sgate-theme';
 import api from '../../../../services/api';
 import { bookStaff, getStaffOpenSlots, StaffOpenSlot } from '../../../../services/staffDomesticService';
 
@@ -63,6 +64,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
 export default function DailyHelpProfile() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -177,7 +179,7 @@ export default function DailyHelpProfile() {
         </View>
       </SafeAreaView>
 
-      <ScrollView contentContainerStyle={s.content}>
+      <ScrollView contentContainerStyle={[s.content, { paddingBottom: scrollBottomPadding }]}>
         {/* Profile Card */}
         <View style={s.profileCard}>
           <View style={s.profileAvatar}><Text style={s.profileAvatarText}>{helper.name.charAt(0).toUpperCase()}</Text></View>
@@ -299,7 +301,7 @@ export default function DailyHelpProfile() {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
   headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   content: { padding: 16, paddingBottom: 32 },
   profileCard: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 24, marginBottom: 12, alignItems: 'center' },

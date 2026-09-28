@@ -11,6 +11,8 @@ import { FlatList,
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import EmptyState from '@/components/ui/EmptyState';
+import { StatusPill } from '@/components/ui/StatusPill';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import {
     cancelPreApproved,
@@ -22,7 +24,6 @@ import type {
     PreApprovedEntry,
     PreApprovedMode,
     PreApprovedScheduleType,
-    PreApprovedStatus,
     PreApprovedType,
 } from '../../../types/api';
 
@@ -32,13 +33,6 @@ const TYPE_CONFIG: Record<PreApprovedType, { label: string; icon: React.Componen
     CAB:      { label: 'Cab',      icon: 'navigation', color: SgateColors.blue,   bg: SgateColors.blueBg  },
     DELIVERY: { label: 'Delivery', icon: 'package',    color: SgateColors.green,  bg: SgateColors.greenBg },
     HELP:     { label: 'Help',     icon: 'tool',       color: SgateColors.gold,   bg: SgateColors.goldPale },
-};
-
-const STATUS_CONFIG: Record<PreApprovedStatus, { label: string; color: string; bg: string }> = {
-    ACTIVE:    { label: 'Active',    color: SgateColors.green, bg: SgateColors.greenBg },
-    EXPIRED:   { label: 'Expired',   color: SgateColors.t3,    bg: SgateColors.surface  },
-    USED:      { label: 'Used',      color: SgateColors.blue,  bg: SgateColors.blueBg   },
-    CANCELLED: { label: 'Cancelled', color: SgateColors.red,   bg: SgateColors.redBg    },
 };
 
 const DAYS_SHORT: Record<string, string> = {
@@ -142,7 +136,6 @@ export default function PreApprovalsScreen() {
     // ── Render item ──────────────────────────────────────────────────────────
     const renderItem = ({ item }: { item: PreApprovedEntry }) => {
         const typeConf  = TYPE_CONFIG[item.type];
-        const statConf  = STATUS_CONFIG[item.status];
         const isActive  = item.status === 'ACTIVE';
         const isCancelled = item.status === 'CANCELLED';
         const schedInfo = scheduleLabel(item);
@@ -162,9 +155,7 @@ export default function PreApprovalsScreen() {
                             <Text style={styles.cardName} numberOfLines={1}>
                                 {item.meta.visitorName ?? typeConf.label}
                             </Text>
-                            <View style={[styles.statusBadge, { backgroundColor: statConf.bg }]}>
-                                <Text style={[styles.statusText, { color: statConf.color }]}>{statConf.label}</Text>
-                            </View>
+                            <StatusPill status={item.status} size="sm" />
                         </View>
 
                         {/* Type + mode badges */}
@@ -290,19 +281,13 @@ export default function PreApprovalsScreen() {
                 refreshing={refreshing}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
-                    <View style={styles.empty}>
-                        <Feather name="shield" size={52} color={SgateColors.t4} />
-                        <Text style={styles.emptyTitle}>No Pre-Approvals</Text>
-                        <Text style={styles.emptySubtitle}>
-                            Create a pre-approval so cabs, deliveries, or helpers can enter without manual approval.
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.emptyBtn}
-                            onPress={() => setSheetVisible(true)}
-                        >
-                            <Text style={styles.emptyBtnText}>Create Pre-Approval</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <EmptyState
+                        iconName="shield-outline"
+                        title="No Pre-Approvals"
+                        description="Create a pre-approval so cabs, deliveries, or helpers can enter without manual approval."
+                        ctaLabel="Create Pre-Approval"
+                        onCtaPress={() => setSheetVisible(true)}
+                    />
                 }
             />
 
@@ -320,7 +305,7 @@ export default function PreApprovalsScreen() {
                     activeOpacity={1}
                     onPress={() => setMenuEntry(null)}
                 >
-                    <SafeBottomSheetSurface style={styles.actionSheet} showHandle minimumBottomPadding={20}>
+                    <SafeBottomSheetSurface style={styles.actionSheet} showHandle>
                         <Text style={styles.actionSheetTitle} numberOfLines={1}>
                             {menuEntry?.meta.visitorName ?? TYPE_CONFIG[menuEntry?.type ?? 'CAB']?.label}
                         </Text>
@@ -483,16 +468,6 @@ const styles = StyleSheet.create({
         flex: 1,
         marginRight: 8,
     },
-    statusBadge: {
-        borderRadius: 10,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-    },
-    statusText: {
-        fontSize: 10,
-        fontFamily: SgateFonts.bold,
-        letterSpacing: 0.6,
-    },
     badgeRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -533,44 +508,11 @@ const styles = StyleSheet.create({
         textTransform: 'capitalize',
     },
     // ── Empty ────────────────────────────────────────────────────────────────
-    empty: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingTop: 80,
-        paddingHorizontal: 36,
-        gap: 10,
-    },
-    emptyTitle: {
-        fontSize: 18,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        marginTop: 8,
-    },
-    emptySubtitle: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-    emptyBtn: {
-        marginTop: 12,
-        backgroundColor: SgateColors.black,
-        paddingHorizontal: 28,
-        paddingVertical: 13,
-        borderRadius: 14,
-    },
-    emptyBtnText: {
-        fontSize: 14,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.card,
-    },
 
     // ── Modals ───────────────────────────────────────────────────────────────
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.48)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
@@ -581,7 +523,6 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        paddingHorizontal: 20,
     },
     actionSheetTitle: {
         fontSize: 14,

@@ -12,13 +12,15 @@ FlatList,
 
     Image,
 } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
+import { StatusPill } from '@/components/ui/StatusPill';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { AnimatedBottomSheetModal } from '@/components/ui/AnimatedBottomSheetModal';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import {
     cancelPreApproved,
     deleteInvitePass,
@@ -33,10 +35,8 @@ import {
 import { AppAlert } from '../../../components/ui/AppAlert';
 import type {
     InvitePass,
-    InvitePassStatus,
     InvitePassType,
     PreApprovedEntry,
-    PreApprovedStatus,
     PreApprovedType,
 } from '../../../types/api';
 
@@ -48,29 +48,10 @@ const PA_TYPE: Record<PreApprovedType, { label: string; icon: React.ComponentPro
     HELP:     { label: 'Help',     icon: 'tool',       color: SgateColors.gold,  bg: SgateColors.goldPale },
 };
 
-const PA_STATUS: Record<PreApprovedStatus, { label: string; color: string; bg: string }> = {
-    ACTIVE:    { label: 'Active',    color: SgateColors.green, bg: SgateColors.greenBg },
-    EXPIRED:   { label: 'Expired',   color: SgateColors.t3,    bg: SgateColors.surface  },
-    USED:      { label: 'Used',      color: SgateColors.blue,  bg: SgateColors.blueBg   },
-    CANCELLED: { label: 'Cancelled', color: SgateColors.red,   bg: SgateColors.redBg    },
-};
-
 const INV_TYPE: Record<InvitePassType, { label: string; color: string; bg: string }> = {
     QUICK:    { label: 'Quick',    color: SgateColors.blue,  bg: SgateColors.blueBg   },
     FREQUENT: { label: 'Frequent', color: SgateColors.gold,  bg: SgateColors.goldPale },
     PRIVATE:  { label: 'Private',  color: '#9B6DFF',         bg: '#F3EEFF'            },
-};
-
-const INV_STATUS: Record<InvitePassStatus, { label: string; color: string; bg: string }> = {
-    ACTIVE:  { label: 'Active',  color: SgateColors.green, bg: SgateColors.greenBg },
-    REVOKED: { label: 'Revoked', color: SgateColors.red,   bg: SgateColors.redBg   },
-    EXPIRED: { label: 'Expired', color: SgateColors.t3,    bg: SgateColors.surface  },
-};
-
-const PARTY_STATUS: Record<string, { label: string; color: string; bg: string }> = {
-    ACTIVE:    { label: 'Active',    color: SgateColors.green, bg: SgateColors.greenBg },
-    EXPIRED:   { label: 'Expired',   color: SgateColors.t3,    bg: SgateColors.surface  },
-    CANCELLED: { label: 'Cancelled', color: SgateColors.red,   bg: SgateColors.redBg    },
 };
 
 type InviteListItem =
@@ -118,7 +99,7 @@ function SheetActionRow({ icon, label, onPress }: {
     icon: React.ComponentProps<typeof Feather>['name']; label: string; onPress: () => void;
 }) {
     return (
-        <TouchableOpacity style={styles.sheetItem} onPress={onPress} activeOpacity={0.75}>
+        <TouchableOpacity style={styles.sheetItem} onPress={onPress} activeOpacity={0.8}>
             <View style={styles.sheetItemIcon}>
                 <Feather name={icon} size={18} color={SgateColors.red} />
             </View>
@@ -134,6 +115,7 @@ type Tab = typeof TABS[number];
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function PassesScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
     const router = useRouter();
 
     const [activeTab, setActiveTab] = useState<Tab>('Pre-Approvals');
@@ -250,6 +232,10 @@ export default function PassesScreen() {
 
     const handleInvDelete = (invite: InvitePass) => {
         setInvMenuEntry(null);
+        if (invite.status === 'ACTIVE') {
+            AppAlert.show('Revoke first', 'Revoke this active pass before deleting it.');
+            return;
+        }
         AppAlert.show('Delete Invite?', 'This will permanently remove this invite pass.', [
             { text: 'Keep', style: 'cancel' },
             {
@@ -286,7 +272,6 @@ export default function PassesScreen() {
 
     const renderPreApproval = useCallback(({ item, index }: { item: PreApprovedEntry; index: number }) => {
         const tc = PA_TYPE[item.type] ?? PA_TYPE.HELP;
-        const sc = PA_STATUS[item.status] ?? PA_STATUS.ACTIVE;
         const sched = scheduleLabel(item);
         return (
             <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 30).duration(220)} style={styles.card}>
@@ -299,9 +284,7 @@ export default function PassesScreen() {
                             <Text style={styles.cardName} numberOfLines={1}>
                                 {item.meta.visitorName ?? tc.label}
                             </Text>
-                            <View style={[styles.statusBadge, { backgroundColor: sc.bg }]}>
-                                <Text style={[styles.statusText, { color: sc.color }]}>{sc.label}</Text>
-                            </View>
+                            <StatusPill status={item.status} size="sm" />
                         </View>
                         <View style={styles.pillRow}>
                             <View style={[styles.pill, { backgroundColor: tc.bg }]}>
@@ -354,7 +337,6 @@ export default function PassesScreen() {
     }, []);
 
     const renderPartyInvite = useCallback(({ item, index = 0 }: { item: PartyInvite; index?: number }) => {
-        const sc = PARTY_STATUS[item.status] ?? PARTY_STATUS.ACTIVE;
         const filledSlots = item.usedSlots ?? item.slots?.filter(s => s.phone !== null).length ?? 0;
         return (
             <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 30).duration(220)} style={styles.card}>
@@ -365,9 +347,7 @@ export default function PassesScreen() {
                     <View style={styles.cardInfo}>
                         <View style={styles.cardRow}>
                             <Text style={styles.cardName} numberOfLines={1}>{item.venue || 'Party Invite'}</Text>
-                            <View style={[styles.statusBadge, { backgroundColor: sc.bg }]}>
-                                <Text style={[styles.statusText, { color: sc.color }]}>{sc.label}</Text>
-                            </View>
+                            <StatusPill status={item.status} size="sm" />
                         </View>
                         <View style={styles.pillRow}>
                             <View style={[styles.pill, { backgroundColor: '#F3EEFF' }]}>
@@ -399,7 +379,6 @@ export default function PassesScreen() {
 
     const renderInvite = useCallback(({ item, index = 0 }: { item: InvitePass; index?: number }) => {
         const tc = INV_TYPE[item.type] ?? INV_TYPE.QUICK;
-        const sc = INV_STATUS[item.status] ?? INV_STATUS.ACTIVE;
         return (
             <Animated.View entering={FadeInDown.delay(Math.min(index, 6) * 30).duration(220)} style={styles.card}>
                 <View style={styles.cardTop}>
@@ -411,9 +390,7 @@ export default function PassesScreen() {
                             <Text style={styles.cardName} numberOfLines={1}>
                                 {item.visitorName ?? 'Open Invite'}
                             </Text>
-                            <View style={[styles.statusBadge, { backgroundColor: sc.bg }]}>
-                                <Text style={[styles.statusText, { color: sc.color }]}>{sc.label}</Text>
-                            </View>
+                            <StatusPill status={item.status} size="sm" />
                         </View>
                         <View style={styles.pillRow}>
                             <View style={[styles.pill, { backgroundColor: tc.bg }]}>
@@ -518,7 +495,7 @@ export default function PassesScreen() {
                             data={paEntries}
                             keyExtractor={item => item.id}
                             renderItem={renderPreApproval}
-                            contentContainerStyle={styles.listContent}
+                            contentContainerStyle={[styles.listContent, { paddingBottom: scrollBottomPadding }]}
                             showsVerticalScrollIndicator={false}
                             refreshControl={
                                 <RefreshControl
@@ -551,7 +528,7 @@ export default function PassesScreen() {
                                 if (item._kind === 'guest') return renderInvite({ item: item.data, index });
                                 return renderPartyInvite({ item: item.data, index });
                             }}
-                            contentContainerStyle={styles.listContent}
+                            contentContainerStyle={[styles.listContent, { paddingBottom: scrollBottomPadding }]}
                             showsVerticalScrollIndicator={false}
                             refreshControl={
                                 <RefreshControl
@@ -568,7 +545,7 @@ export default function PassesScreen() {
             </View>
 
             {/* ── Pre-Approval action menu ────────────── */}
-            <AnimatedBottomSheetModal visible={!!paMenuEntry} onClose={() => setPaMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20}>
+            <AnimatedBottomSheetModal visible={!!paMenuEntry} onClose={() => setPaMenuEntry(null)}>
                         <Text style={styles.sheetTitle}>
                             {paMenuEntry?.meta.visitorName || (paMenuEntry ? PA_TYPE[paMenuEntry.type]?.label : '') || 'Pre-Approval'}
                         </Text>
@@ -587,7 +564,7 @@ export default function PassesScreen() {
             </AnimatedBottomSheetModal>
 
             {/* ── Invite action menu ─────────────────── */}
-            <AnimatedBottomSheetModal visible={!!invMenuEntry} onClose={() => setInvMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20}>
+            <AnimatedBottomSheetModal visible={!!invMenuEntry} onClose={() => setInvMenuEntry(null)}>
                         <Text style={styles.sheetTitle}>{invMenuEntry?.visitorName ?? 'Guest Pass'}</Text>
                         <Text style={styles.sheetSubtitle}>Manage this guest pass</Text>
 
@@ -603,7 +580,7 @@ export default function PassesScreen() {
             </AnimatedBottomSheetModal>
 
             {/* ── Party action menu ──────────────────── */}
-            <AnimatedBottomSheetModal visible={!!partyMenuEntry} onClose={() => setPartyMenuEntry(null)} surfaceStyle={styles.sheet} minimumBottomPadding={20}>
+            <AnimatedBottomSheetModal visible={!!partyMenuEntry} onClose={() => setPartyMenuEntry(null)}>
                         <Text style={styles.sheetTitle}>{partyMenuEntry?.venue || 'Party Invite'}</Text>
                         <Text style={styles.sheetSubtitle}>Manage this party invite</Text>
 
@@ -632,7 +609,7 @@ const styles = StyleSheet.create({
     },
     tabWrapper: {
         backgroundColor: '#FFF',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 8,
         paddingBottom: 12,
     },
@@ -753,16 +730,6 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
         marginRight: 8,
     },
-    statusBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    statusText: {
-        fontSize: 10,
-        fontFamily: SgateFonts.bold,
-        textTransform: 'uppercase',
-    },
     pillRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -831,9 +798,6 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
         marginTop: 20,
         marginBottom: 12,
-    },
-    sheet: {
-        paddingHorizontal: 24,
     },
     sheetTitle: {
         fontSize: 21,

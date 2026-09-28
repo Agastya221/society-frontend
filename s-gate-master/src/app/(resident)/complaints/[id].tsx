@@ -2,30 +2,17 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Modal, RefreshControl, ScrollView, Share, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ImageCarousel } from '../../../components/ui/ImageCarousel';
 import { Complaint, fetchComplaintDetails } from '../../../services/complaints';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { StatusPill } from '@/components/ui/StatusPill';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 
 const IMAGE_BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
-
-// ─── Status & Priority Configs ──────────────────────────────────────────────
-const STATUS_CFG: Record<string, { bg: string; text: string }> = {
-    OPEN:        { bg: SgateColors.blueBg, text: SgateColors.blue },
-    IN_PROGRESS: { bg: SgateColors.goldPale, text: SgateColors.goldDeep },
-    RESOLVED:    { bg: SgateColors.greenBg, text: SgateColors.green },
-    CLOSED:      { bg: SgateColors.surface, text: SgateColors.t2 },
-};
-
-const PRIORITY_CFG: Record<string, { bg: string; text: string; dot: string }> = {
-    LOW:      { bg: SgateColors.greenBg, text: SgateColors.green, dot: SgateColors.green },
-    MEDIUM:   { bg: SgateColors.goldPale, text: SgateColors.goldDeep, dot: SgateColors.goldDeep },
-    HIGH:     { bg: SgateColors.redBg, text: SgateColors.red, dot: SgateColors.red },
-    CRITICAL: { bg: SgateColors.redBg, text: SgateColors.red, dot: SgateColors.red },
-};
 
 // ─── Detail Row Component ───────────────────────────────────────────────────
 function DetailItem({ icon, label, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string }) {
@@ -44,6 +31,7 @@ function DetailItem({ icon, label, value }: { icon: keyof typeof MaterialCommuni
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
 export default function ComplaintDetailScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
 
@@ -138,9 +126,6 @@ export default function ComplaintDetailScreen() {
         return complaint.reportedBy?.name || 'Unknown';
     };
 
-    const statusCfg = STATUS_CFG[complaint.status] ?? STATUS_CFG.OPEN;
-    const priorityCfg = PRIORITY_CFG[complaint.priority] ?? PRIORITY_CFG.MEDIUM;
-
     return (
         <>
         <ComplaintScreenLayout
@@ -161,7 +146,7 @@ export default function ComplaintDetailScreen() {
             {/* ── Content ─────────────────────────────────────────────────── */}
             <ScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={S.scrollContent}
+                contentContainerStyle={[S.scrollContent, { paddingBottom: scrollBottomPadding }]}
                 showsVerticalScrollIndicator={false}
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
             >
@@ -181,13 +166,8 @@ export default function ComplaintDetailScreen() {
                 <Animated.View entering={FadeInDown.delay(100).springify()}>
                     <Text style={S.complaintTitle}>{complaint.title}</Text>
                     <View style={S.badgeRow}>
-                        <View style={[S.statusBadge, { backgroundColor: statusCfg.bg }]}>
-                            <Text style={[S.statusText, { color: statusCfg.text }]}>{complaint.status.replace('_', ' ')}</Text>
-                        </View>
-                        <View style={[S.priorityBadge, { backgroundColor: priorityCfg.bg }]}>
-                            <View style={[S.priorityDot, { backgroundColor: priorityCfg.dot }]} />
-                            <Text style={[S.priorityText, { color: priorityCfg.text }]}>{complaint.priority}</Text>
-                        </View>
+                        <StatusPill status={complaint.status} uppercase />
+                        <StatusPill status={complaint.priority} uppercase />
                     </View>
                 </Animated.View>
 
@@ -230,7 +210,7 @@ export default function ComplaintDetailScreen() {
         {/* ── Rating Modal ────────────────────────────────────────────────── */}
         <Modal visible={showRatingModal} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowRatingModal(false)}>
             <View style={R.overlay}>
-                <SafeBottomSheetSurface style={R.sheet} showHandle minimumBottomPadding={20}>
+                <SafeBottomSheetSurface style={R.sheet} showHandle>
                     <TouchableOpacity style={R.closeBtn} onPress={() => setShowRatingModal(false)}>
                         <Feather name="x" size={20} color={SgateColors.t3} />
                     </TouchableOpacity>
@@ -275,7 +255,7 @@ const S = StyleSheet.create({
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
 
     // Header
-    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12 },
     backBtn: { width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' },
     headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 4 },
     headerActions: { flexDirection: 'row', gap: 8 },
@@ -286,16 +266,11 @@ const S = StyleSheet.create({
     errorBtn: { marginTop: 20, backgroundColor: SgateColors.gold, borderRadius: 14, paddingHorizontal: 28, paddingVertical: 14 },
     errorBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
-    scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+    scrollContent: { paddingHorizontal: SgateLayout.screenGutter, paddingBottom: 40 },
 
     // Title + Badges
     complaintTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1, lineHeight: 30, marginBottom: 12 },
     badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 20 },
-    statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
-    statusText: { fontSize: 11, fontFamily: SgateFonts.bold, letterSpacing: 0.5 },
-    priorityBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
-    priorityDot: { width: 7, height: 7, borderRadius: 4 },
-    priorityText: { fontSize: 11, fontFamily: SgateFonts.bold, letterSpacing: 0.5 },
 
     // Description
     descCard: {
@@ -323,7 +298,7 @@ const S = StyleSheet.create({
 
 // ─── Rating Modal Styles ────────────────────────────────────────────────────────
 const R = StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
     sheet: { paddingHorizontal: 24 },
     closeBtn: { position: 'absolute', top: 20, right: 20, padding: 4 },
     title: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, textAlign: 'center', marginBottom: 8 },

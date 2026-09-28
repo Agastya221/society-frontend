@@ -10,12 +10,13 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -216,11 +217,11 @@ export default function ResidentsScreen() {
                     </TouchableOpacity>
                 }
                 ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <MaterialCommunityIcons name="account-group-outline" size={48} color={SgateColors.t4} />
-                        <Text style={styles.emptyTitle}>No residents yet</Text>
-                        <Text style={styles.emptySub}>Register the first resident.</Text>
-                    </View>
+                    <EmptyState
+                        iconName="account-group-outline"
+                        title="No residents yet"
+                        description="Register the first resident."
+                    />
                 }
                 renderItem={({ item, index }) => {
                     const flat = flatOptions.find(f => f.id === item.flatId);
@@ -378,7 +379,7 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingVertical: 16,
         backgroundColor: SgateColors.card,
         shadowColor: '#000',
@@ -443,9 +444,6 @@ const styles = StyleSheet.create({
     editBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
 
     // Empty
-    emptyWrap: { alignItems: 'center', paddingVertical: 48 },
-    emptyTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginTop: 10 },
-    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 2 },
 
     // Modal
     modalWrap: { flex: 1, backgroundColor: SgateColors.bg, padding: 24 },

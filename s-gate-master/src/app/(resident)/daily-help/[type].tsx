@@ -1,7 +1,10 @@
 import { Feather } from '@expo/vector-icons';
+import { SgateLayout } from '@/constants/Sgate-theme';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../../services/api';
@@ -41,6 +44,7 @@ function normaliseHelper(raw: any): DailyHelper {
 const FILTERS = ['Inside', 'Newly added', 'Open to work'];
 
 export default function DailyHelpTypeList() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const { type } = useLocalSearchParams<{ type: string }>();
   const [search, setSearch] = useState('');
@@ -84,7 +88,7 @@ export default function DailyHelpTypeList() {
   const typeLabel = TYPE_LABEL_MAP[type] ?? type;
 
   const renderItem = ({ item }: { item: DailyHelper }) => (
-    <TouchableOpacity style={s.card} activeOpacity={0.75}
+    <TouchableOpacity style={s.card} activeOpacity={0.8}
       onPress={() => router.push({ pathname: '/(resident)/daily-help/profile/[id]' as any, params: { id: item.id } })}>
       <View style={s.avatar}>
         {item.isInside && <View style={s.onlineDot} />}
@@ -115,7 +119,7 @@ export default function DailyHelpTypeList() {
         <AppLoader />
       ) : (
         <FlatList data={filtered} keyExtractor={item => item.id} renderItem={renderItem}
-          contentContainerStyle={s.listContent}
+          contentContainerStyle={[s.listContent, { paddingBottom: scrollBottomPadding }]}
           ListHeaderComponent={
             <View>
               <View style={s.searchBar}>
@@ -134,11 +138,11 @@ export default function DailyHelpTypeList() {
             </View>
           }
           ListEmptyComponent={
-            <View style={s.emptyWrap}>
-              <Feather name="users" size={32} color={C.t4} />
-              <Text style={s.emptyTitle}>No staff available</Text>
-              <Text style={s.emptySubtitle}>None found for this category</Text>
-            </View>
+            <EmptyState
+                iconName="account-group-outline"
+                title="No staff available"
+                description="None found for this category"
+            />
           }
         />
       )}
@@ -149,7 +153,7 @@ export default function DailyHelpTypeList() {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.borderSoft },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 14, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.borderSoft },
   headerTitle: { fontSize: 18, fontFamily: F.semiBold, color: C.t1, marginLeft: 12, flex: 1 },
   listContent: { padding: 16, paddingBottom: 40 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.borderSoft, paddingHorizontal: 14, minHeight: 48, gap: 8, marginBottom: 12 },
@@ -170,7 +174,4 @@ const s = StyleSheet.create({
   helperMeta: { fontSize: 12, fontFamily: F.regular, color: C.t3, marginBottom: 5 },
   openBadge: { alignSelf: 'flex-start', backgroundColor: C.goldPale, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2 },
   openBadgeText: { fontSize: 10, fontFamily: F.semiBold, color: C.goldDeep },
-  emptyWrap: { alignItems: 'center', paddingTop: 60, gap: 8 },
-  emptyTitle: { fontSize: 16, fontFamily: F.semiBold, color: C.t2 },
-  emptySubtitle: { fontSize: 13, fontFamily: F.regular, color: C.t3 },
 });

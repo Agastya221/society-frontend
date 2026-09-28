@@ -58,7 +58,7 @@ export function ApprovalCard({
 
       {/* Action buttons */}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.denyBtn} onPress={onDeny} activeOpacity={0.75}>
+        <TouchableOpacity style={styles.denyBtn} onPress={onDeny} activeOpacity={0.8}>
           <Feather name="x" size={14} color={SgateColors.t2} />
           <Text style={styles.denyText}>Deny</Text>
         </TouchableOpacity>

@@ -16,6 +16,7 @@ import Animated, {
     useSharedValue,
     withSpring,
 } from 'react-native-reanimated';
+import EmptyState from '@/components/ui/EmptyState';
 import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { useBlocks } from '@/hooks/useOnboardingQueries';
@@ -48,7 +49,7 @@ const BlockCard = memo(function BlockCard({
                 onPress={onPress}
                 onPressIn={() => { scale.value = withSpring(0.96, { damping: 15, stiffness: 400 }); }}
                 onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 400 }); }}
-                activeOpacity={0.9}
+                activeOpacity={0.8}
                 style={styles.card}
             >
                 <View style={styles.cardRow}>
@@ -141,15 +142,11 @@ export default function SelectBlockScreen() {
                     keyExtractor={keyExtractor}
                     renderItem={renderItem}
                     ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <View style={styles.emptyIconBox}>
-                                <Feather name="layers" size={36} color={SgateColors.t4} />
-                            </View>
-                            <Text style={styles.emptyTitle}>No blocks found</Text>
-                            <Text style={styles.emptySubtitle}>
-                                This society doesn’t have any blocks/towers set up yet.
-                            </Text>
-                        </View>
+                        <EmptyState
+                            iconName="layers"
+                            title="No blocks found"
+                            description="This society doesn’t have any blocks/towers set up yet."
+                        />
                     }
                     contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32 }}
                     showsVerticalScrollIndicator={false}
@@ -224,34 +221,5 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontFamily: SgateFonts.medium,
         color: SgateColors.t2,
-    },
-    emptyContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 64,
-        paddingHorizontal: 32,
-    },
-    emptyIconBox: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 16,
-    },
-    emptyTitle: {
-        fontSize: 17,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        textAlign: 'center',
-        marginBottom: 8,
-    },
-    emptySubtitle: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-        textAlign: 'center',
-        lineHeight: 20,
     },
 });

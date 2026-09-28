@@ -12,11 +12,12 @@ import {
     View,
 } from 'react-native';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Avatar } from '../../components/ui/Avatar';
-import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../constants/Sgate-theme';
 import type { Entry, EntryType } from '../../types/api';
 import { useAuthStore } from '../../store/useAuthStore';
 import * as gateService from '../../services/gate.service';
@@ -263,19 +264,19 @@ export default function SocietyScreen() {
 
     // ── Empty states ─────────────────────────────────────────────────────
     const VisitorsEmpty = useCallback(() => (
-        <View style={S.empty}>
-            <View style={S.emptyIcon}><Feather name="user-check" size={32} color={SgateColors.t3} /></View>
-            <Text style={S.emptyTitle}>{search ? 'No matches' : 'No visitors yet'}</Text>
-            <Text style={S.emptySub}>{search ? 'Try a different search term' : 'Visitor entries will appear here'}</Text>
-        </View>
+        <EmptyState
+            iconName="account-check-outline"
+            title={search ? 'No matches' : 'No visitors yet'}
+            description={search ? 'Try a different search term' : 'Visitor entries will appear here'}
+        />
     ), [search]);
 
     const ResidentsEmpty = useCallback(() => (
-        <View style={S.empty}>
-            <View style={S.emptyIcon}><Feather name="users" size={32} color={SgateColors.t3} /></View>
-            <Text style={S.emptyTitle}>{search ? 'No matching residents' : 'No residents found'}</Text>
-            <Text style={S.emptySub}>Resident directory coming soon</Text>
-        </View>
+        <EmptyState
+            iconName="account-group-outline"
+            title={search ? 'No matching residents' : 'No residents found'}
+            description="Resident directory coming soon"
+        />
     ), [search]);
 
     // ── Search placeholder ───────────────────────────────────────────────
@@ -302,7 +303,7 @@ export default function SocietyScreen() {
                             <TouchableOpacity
                                 key={tab}
                                 style={[S.tabPill, active && S.tabPillActive]}
-                                activeOpacity={0.7}
+                                activeOpacity={0.8}
                                 onPress={() => { setActiveTab(tab); setSearch(''); }}
                             >
                                 <Text style={[S.tabLabel, active && S.tabLabelActive]}>{tab}</Text>
@@ -344,7 +345,7 @@ export default function SocietyScreen() {
                 <TouchableOpacity
                     style={S.searchVehicleBtn}
                     onPress={() => router.push('/(resident)/search-vehicle' as any)}
-                    activeOpacity={0.75}
+                    activeOpacity={0.8}
                 >
                     <Feather name="truck" size={14} color={SgateColors.t2} />
                     <Text style={S.searchVehicleText}>Search Vehicle in Society</Text>
@@ -361,7 +362,7 @@ export default function SocietyScreen() {
                             <TouchableOpacity
                                 key={block}
                                 style={[S.blockPill, active && S.blockPillActive]}
-                                activeOpacity={0.7}
+                                activeOpacity={0.8}
                                 onPress={() => setBlockFilter(block)}
                             >
                                 <Text style={[S.blockLabel, active && S.blockLabelActive]}>
@@ -422,7 +423,7 @@ const S = StyleSheet.create({
 
     // ── Header ──────────────────────────────────────────────────────────
     // ── Tab switcher ────────────────────────────────────────────────────
-    tabWrap: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 4 },
+    tabWrap: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 14, paddingBottom: 4 },
     tabRow: { flexDirection: 'row', backgroundColor: SgateColors.surface, borderRadius: 12, padding: 3 },
     tabPill: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 10, gap: 6 },
     tabPillActive: { backgroundColor: SgateColors.card, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 2, elevation: 2 },
@@ -434,7 +435,7 @@ const S = StyleSheet.create({
     tabBadgeTextActive: { color: SgateColors.black },
 
     // ── Search ──────────────────────────────────────────────────────────
-    searchWrap: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 4 },
+    searchWrap: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 10, paddingBottom: 4 },
     searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderRadius: 12, paddingHorizontal: 12, height: 42, borderWidth: 1.5, borderColor: 'transparent', gap: 8 },
     searchBarFocused: { borderColor: SgateColors.gold, backgroundColor: SgateColors.card },
     searchInput: { flex: 1, fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1, paddingVertical: 0 },
@@ -444,14 +445,14 @@ const S = StyleSheet.create({
     searchVehicleText: { flex: 1, fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
 
     // ── Block filter ────────────────────────────────────────────────────
-    blockWrap: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 10, paddingBottom: 4, gap: 8 },
+    blockWrap: { flexDirection: 'row', paddingHorizontal: SgateLayout.screenGutter, paddingTop: 10, paddingBottom: 4, gap: 8 },
     blockPill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, backgroundColor: SgateColors.surface },
     blockPillActive: { backgroundColor: SgateColors.gold },
     blockLabel: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
     blockLabelActive: { color: SgateColors.t1 },
 
     // ── List ────────────────────────────────────────────────────────────
-    listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 80 },
+    listContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 8, paddingBottom: 80 },
     emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
 
     // ── Visitor row ─────────────────────────────────────────────────────
@@ -478,10 +479,6 @@ const S = StyleSheet.create({
     callBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: SgateColors.greenBg, alignItems: 'center', justifyContent: 'center' },
 
     // ── Empty ───────────────────────────────────────────────────────────
-    empty: { alignItems: 'center', gap: 8 },
-    emptyIcon: { width: 72, height: 72, borderRadius: 36, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-    emptyTitle: { fontSize: 17, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 },
-    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center' },
 
     // ── Footer / Banner ─────────────────────────────────────────────────
     footer: { paddingVertical: 20, alignItems: 'center' },

@@ -13,12 +13,13 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -156,11 +157,11 @@ export default function NoticesScreen() {
                         </TouchableOpacity>
                     }
                 ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <MaterialCommunityIcons name="bell-off-outline" size={48} color={SgateColors.t4} />
-                        <Text style={styles.emptyTitle}>No notices yet</Text>
-                        <Text style={styles.emptySub}>Create the first one.</Text>
-                    </View>
+                    <EmptyState
+                        iconName="bell-off-outline"
+                        title="No notices yet"
+                        description="Create the first one."
+                    />
                 }
                 renderItem={({ item, index }) => {
                     const ts = getTypeStyle(item.type);
@@ -250,7 +251,7 @@ export default function NoticesScreen() {
                                     return (
                                         <TouchableOpacity key={t} onPress={() => setType(t)}
                                             style={[styles.chip, isActive && { backgroundColor: tc.bg, borderColor: tc.text + '30' }]}
-                                            activeOpacity={0.75}>
+                                            activeOpacity={0.8}>
                                             <Text style={[styles.chipText, isActive && { color: tc.text }]}>
                                                 {t.charAt(0) + t.slice(1).toLowerCase()}
                                             </Text>
@@ -270,7 +271,7 @@ export default function NoticesScreen() {
                                     return (
                                         <TouchableOpacity key={p} onPress={() => setPriority(p)}
                                             style={[styles.priorityChip, isActive && { backgroundColor: color + '15', borderColor: color + '40' }]}
-                                            activeOpacity={0.75}>
+                                            activeOpacity={0.8}>
                                             <View style={[styles.priorityChipDot, { backgroundColor: isActive ? color : SgateColors.t4 }]} />
                                             <Text style={[styles.priorityChipText, isActive && { color, fontFamily: SgateFonts.bold }]}>
                                                 {p.charAt(0) + p.slice(1).toLowerCase()}
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
@@ -359,12 +360,9 @@ const styles = StyleSheet.create({
     cardDate: { fontSize: 11, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
 
     // Empty
-    emptyWrap: { alignItems: 'center', paddingVertical: 48 },
-    emptyTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginTop: 10 },
-    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 2 },
 
     // Modal
-    modalWrap: { flex: 1, backgroundColor: SgateColors.card, paddingHorizontal: 20 },
+    modalWrap: { flex: 1, backgroundColor: SgateColors.card, paddingHorizontal: SgateLayout.screenGutter },
     dragHandle: {
         width: 36, height: 4, borderRadius: 2,
         backgroundColor: SgateColors.border,

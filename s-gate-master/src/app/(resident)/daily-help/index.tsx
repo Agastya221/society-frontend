@@ -2,10 +2,11 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../../services/api';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 
 const CARD_H = 104;
 
@@ -37,6 +38,7 @@ const TYPE_LABEL_MAP: Record<string, string> = {
 };
 
 export default function DailyHelpIndex() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const [types, setTypes] = useState<DailyHelpType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,11 +91,11 @@ export default function DailyHelpIndex() {
         </View>
       </SafeAreaView>
       
-      <ScrollView contentContainerStyle={s.content}>
+      <ScrollView contentContainerStyle={[s.content, { paddingBottom: scrollBottomPadding }]}>
         <Text style={s.sectionTitle}>All Daily Helps</Text>
         <View style={s.gridContainer}>
           {types.map(item => (
-            <TouchableOpacity key={item.type} style={s.gridItem} activeOpacity={0.7} onPress={() => navigateType(item.type)}>
+            <TouchableOpacity key={item.type} style={s.gridItem} activeOpacity={0.8} onPress={() => navigateType(item.type)}>
               <View style={s.gridIconCircle}>
                 <MaterialCommunityIcons name={item.icon} size={28} color={C.goldDeep} />
               </View>
@@ -112,7 +114,7 @@ export default function DailyHelpIndex() {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.borderSoft },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 14, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.borderSoft },
   headerTitle: { fontSize: 18, fontFamily: F.semibold, color: C.t1, marginLeft: 12, flex: 1 },
   content: { padding: 16, paddingBottom: 40 },
   

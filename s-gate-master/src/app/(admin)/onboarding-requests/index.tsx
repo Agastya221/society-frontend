@@ -14,12 +14,14 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { StatusPill } from '@/components/ui/StatusPill';
+import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -49,13 +51,6 @@ const TABS: { key: StatusTab; label: string }[] = [
     { key: 'APPROVED',            label: 'Approved' },
     { key: 'REJECTED',            label: 'Rejected' },
 ];
-
-const STATUS_PILL: Record<string, { bg: string; text: string }> = {
-    PENDING_APPROVAL:   { bg: SgateColors.goldPale, text: SgateColors.goldDeep },
-    RESUBMIT_REQUESTED: { bg: SgateColors.goldPale, text: SgateColors.goldDeep },
-    APPROVED:           { bg: SgateColors.greenBg,  text: SgateColors.green },
-    REJECTED:           { bg: SgateColors.redBg,    text: SgateColors.red },
-};
 
 function getParam(value: string | string[] | undefined) {
     return Array.isArray(value) ? value[0] : value;
@@ -286,7 +281,7 @@ export default function OnboardingRequestsScreen() {
                     {TABS.map(tab => (
                         <TouchableOpacity key={tab.key} onPress={() => handleTabChange(tab.key)}
                             style={[styles.filterTab, activeTab === tab.key && styles.filterTabActive]}
-                            activeOpacity={0.75}>
+                            activeOpacity={0.8}>
                             <Text style={[styles.filterText, activeTab === tab.key && styles.filterTextActive]}>{tab.label}</Text>
                         </TouchableOpacity>
                     ))}
@@ -307,20 +302,17 @@ export default function OnboardingRequestsScreen() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh}
                         tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
                     ListEmptyComponent={
-                        <View style={styles.emptyWrap}>
-                            <MaterialIcons name="person-search" size={56} color={SgateColors.t4} />
-                            <Text style={styles.emptyTitle}>No requests</Text>
-                            <Text style={styles.emptySub}>
-                                {activeTab === 'PENDING_APPROVAL' ? 'No pending requests right now.' : `No ${activeTab.toLowerCase().replace(/_/g, ' ')} requests found.`}
-                            </Text>
-                        </View>
+                        <EmptyState
+                            iconName="account-search-outline"
+                            title="No requests"
+                            description={activeTab === 'PENDING_APPROVAL' ? 'No pending requests right now.' : `No ${activeTab.toLowerCase().replace(/_/g, ' ')} requests found.`}
+                        />
                     }
                     renderItem={({ item, index }) => {
-                        const sp = STATUS_PILL[item.status] ?? STATUS_PILL.PENDING_APPROVAL;
                         const initial = (item.user.name || 'R').charAt(0).toUpperCase();
                         return (
                             <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-                                <TouchableOpacity onPress={() => openDetail(item)} activeOpacity={0.75}>
+                                <TouchableOpacity onPress={() => openDetail(item)} activeOpacity={0.8}>
                                     <View style={styles.card}>
                                         <View style={styles.cardTop}>
                                             <View style={styles.cardLeft}>
@@ -341,9 +333,7 @@ export default function OnboardingRequestsScreen() {
                                                 </View>
                                             </View>
                                             <View style={{ alignItems: 'flex-end', gap: 6 }}>
-                                                <View style={[styles.residentTypePill, { backgroundColor: sp.bg }]}>
-                                                    <Text style={[styles.residentTypeText, { color: sp.text }]}>{item.residentType}</Text>
-                                                </View>
+                                                <StatusPill status={item.status} label={item.residentType} size="sm" uppercase />
                                                 <MaterialIcons name="chevron-right" size={20} color={SgateColors.t4} style={{ marginRight: 2 }} />
                                             </View>
                                         </View>
@@ -408,9 +398,7 @@ export default function OnboardingRequestsScreen() {
                                     <View style={styles.modalProfileInfo}>
                                         <Text style={styles.modalProfileName}>{selectedRequest.user.name}</Text>
                                         <Text style={styles.modalProfilePhone}>{selectedRequest.user.phone}</Text>
-                                        <View style={[styles.residentTypePill, { backgroundColor: (STATUS_PILL[selectedRequest.status] ?? STATUS_PILL.PENDING_APPROVAL).bg, alignSelf: 'flex-start', marginTop: 8 }]}>
-                                            <Text style={[styles.residentTypeText, { color: (STATUS_PILL[selectedRequest.status] ?? STATUS_PILL.PENDING_APPROVAL).text }]}>{selectedRequest.residentType}</Text>
-                                        </View>
+                                        <StatusPill status={selectedRequest.status} label={selectedRequest.residentType} size="sm" uppercase />
                                     </View>
                                 </View>
 
@@ -571,7 +559,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, marginBottom: 16 },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
@@ -615,8 +603,6 @@ const styles = StyleSheet.create({
     cardInfo: { flex: 1, justifyContent: 'center' },
     cardName: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 2 },
     cardPhone: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-    residentTypePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-    residentTypeText: { fontSize: 10, fontFamily: SgateFonts.extrabold, letterSpacing: 0.5 },
 
     cardDivider: {
         height: 1,
@@ -630,9 +616,6 @@ const styles = StyleSheet.create({
     metaText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
 
     // Empty
-    emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.7 },
-    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 12, marginBottom: 4 },
-    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 
     // Modal
     modalSafe: { flex: 1, backgroundColor: SgateColors.bg, padding: 24 },

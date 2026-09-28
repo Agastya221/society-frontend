@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icons/icon.png",
     "scheme": "sgate",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.sgate.app",
       "supportsTablet": true,

@@ -13,12 +13,14 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { StatusPill, statusColors } from '@/components/ui/StatusPill';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import * as billingService from '@/services/billingService';
 
@@ -42,10 +44,10 @@ interface FlatDue {
 const DARK_GREEN = '#1A8D5F';
 const DARK_GREEN_BG = '#E8F5EF';
 
-const STATUS_CONFIG: Record<DueStatus, { label: string; color: string; bg: string }> = {
-    PAID:    { label: 'Paid',    color: DARK_GREEN,         bg: DARK_GREEN_BG        },
-    PENDING: { label: 'Pending', color: SgateColors.goldDeep, bg: SgateColors.goldPale },
-    OVERDUE: { label: 'Overdue', color: SgateColors.red,      bg: SgateColors.redBg    },
+const STATUS_LABEL: Record<DueStatus, string> = {
+    PAID: 'Paid',
+    PENDING: 'Pending',
+    OVERDUE: 'Overdue',
 };
 
 const FILTER_TABS: FilterTab[] = ['ALL', 'PENDING', 'OVERDUE', 'PAID'];
@@ -166,18 +168,18 @@ export default function PaymentsScreen() {
     };
 
     const renderDue = ({ item, index }: { item: FlatDue; index: number }) => {
-        const conf = STATUS_CONFIG[item.status];
+        const conf = statusColors(item.status);
         return (
             <Animated.View entering={FadeInDown.delay(index * 40).springify()}>
-                <TouchableOpacity style={styles.card} onPress={() => setSelectedDue(item)} activeOpacity={0.7}>
+                <TouchableOpacity style={styles.card} onPress={() => setSelectedDue(item)} activeOpacity={0.8}>
                     {/* Accent bar */}
-                    <View style={[styles.cardAccent, { backgroundColor: conf.color }]} />
+                    <View style={[styles.cardAccent, { backgroundColor: conf.text }]} />
                     {/* Left: avatar + info */}
                     <View style={styles.cardBody}>
                         <View style={styles.cardLeft}>
                             <View style={[styles.avatarWrap, { backgroundColor: conf.bg }]}>
-                                <Text style={[styles.avatarBlock, { color: conf.color }]}>{item.block}</Text>
-                                <Text style={[styles.avatarFlat, { color: conf.color }]}>{item.flatNumber}</Text>
+                                <Text style={[styles.avatarBlock, { color: conf.text }]}>{item.block}</Text>
+                                <Text style={[styles.avatarFlat, { color: conf.text }]}>{item.flatNumber}</Text>
                             </View>
                             <View style={styles.cardInfo}>
                                 <Text style={styles.residentName} numberOfLines={1}>{item.residentName}</Text>
@@ -189,10 +191,7 @@ export default function PaymentsScreen() {
                         {/* Right: amount + badge */}
                         <View style={styles.cardRight}>
                             <Text style={styles.cardAmount}>₹{item.amount.toLocaleString()}</Text>
-                            <View style={[styles.statusBadge, { backgroundColor: conf.bg }]}>
-                                <View style={[styles.statusDot, { backgroundColor: conf.color }]} />
-                                <Text style={[styles.statusLabel, { color: conf.color }]}>{conf.label}</Text>
-                            </View>
+                            <StatusPill status={item.status} size="sm" />
                         </View>
                     </View>
                 </TouchableOpacity>
@@ -238,10 +237,10 @@ export default function PaymentsScreen() {
                             key={tab}
                             style={[styles.filterTab, activeFilter === tab && styles.filterTabActive]}
                             onPress={() => setActiveFilter(tab)}
-                            activeOpacity={0.75}
+                            activeOpacity={0.8}
                         >
                             <Text style={[styles.filterText, activeFilter === tab && styles.filterTextActive]}>
-                                {tab === 'ALL' ? 'All' : STATUS_CONFIG[tab as DueStatus].label}
+                                {tab === 'ALL' ? 'All' : STATUS_LABEL[tab as DueStatus]}
                                 {tab !== 'ALL' && ` (${dues.filter(d => d.status === tab).length})`}
                             </Text>
                         </TouchableOpacity>
@@ -279,18 +278,18 @@ export default function PaymentsScreen() {
                     </Animated.View>
                 }
                 ListEmptyComponent={
-                    <View style={styles.empty}>
-                        <MaterialCommunityIcons name="credit-card-outline" size={48} color={SgateColors.t4} />
-                        <Text style={styles.emptyTitle}>No Records</Text>
-                        <Text style={styles.emptySubtitle}>No dues found for the selected filter.</Text>
-                    </View>
+                    <EmptyState
+                        iconName="credit-card-outline"
+                        title="No Records"
+                        description="No dues found for the selected filter."
+                    />
                 }
             />
 
             {/* ── Detail Modal ─────────────────────────────────────────────── */}
             <Modal visible={!!selectedDue} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setSelectedDue(null)}>
                 <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setSelectedDue(null)}>
-                    <SafeBottomSheetSurface style={styles.detailSheet} showHandle minimumBottomPadding={24}>
+                    <SafeBottomSheetSurface showHandle>
                         {selectedDue && (
                             <>
                                 <View style={styles.detailHeader}>
@@ -298,11 +297,7 @@ export default function PaymentsScreen() {
                                         <Text style={styles.detailFlat}>{selectedDue.block}-{selectedDue.flatNumber}</Text>
                                         <Text style={styles.detailName}>{selectedDue.residentName}</Text>
                                     </View>
-                                    <View style={[styles.badge, { backgroundColor: STATUS_CONFIG[selectedDue.status].bg }]}>
-                                        <Text style={[styles.badgeText, { color: STATUS_CONFIG[selectedDue.status].color }]}>
-                                            {STATUS_CONFIG[selectedDue.status].label}
-                                        </Text>
-                                    </View>
+                                    <StatusPill status={selectedDue.status} />
                                 </View>
 
                                 <View style={styles.detailRows}>
@@ -452,7 +447,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, marginBottom: 16 },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
@@ -518,27 +513,12 @@ const styles = StyleSheet.create({
     cardMeta: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
     cardRight: { alignItems: 'flex-end', gap: 8 },
     cardAmount: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    statusBadge: {
-        flexDirection: 'row', alignItems: 'center', gap: 5,
-        borderRadius: 10, paddingHorizontal: 9, paddingVertical: 4,
-    },
-    statusDot: { width: 6, height: 6, borderRadius: 3 },
-    statusLabel: { fontSize: 11, fontFamily: SgateFonts.bold },
-    badge: { borderRadius: 10, paddingHorizontal: 9, paddingVertical: 5 },
-    badgeText: { fontSize: 11, fontFamily: SgateFonts.bold },
 
-    empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60, gap: 10 },
-    emptyTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 8 },
-    emptySubtitle: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
-
-    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    detailSheet: {
-        paddingHorizontal: 24,
-    },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
     detailHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 },
     detailFlat: { fontSize: 22, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, letterSpacing: -0.5 },
     detailName: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
-    detailRows: { backgroundColor: SgateColors.bg, borderRadius: 16, paddingHorizontal: 16, marginBottom: 16 },
+    detailRows: { backgroundColor: SgateColors.bg, borderRadius: 16, paddingHorizontal: SgateLayout.screenGutter, marginBottom: 16 },
     detailRow: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingVertical: 12,
@@ -562,7 +542,7 @@ const styles = StyleSheet.create({
         backgroundColor: SgateColors.surface,
         alignItems: 'center', justifyContent: 'center',
     },
-    overlayCenter: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 20 },
+    overlayCenter: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', alignItems: 'center', justifyContent: 'center', padding: 20 },
     dialogBox: {
         backgroundColor: SgateColors.card,
         borderRadius: 28,

@@ -16,7 +16,7 @@ import Animated, {
     useSharedValue,
     withSpring,
 } from 'react-native-reanimated';
-import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import type { ResidentType } from '@/types/onboarding.types';
@@ -55,7 +55,7 @@ function RoleCard({
                     onPress={onPress}
                     onPressIn={() => { scale.value = withSpring(0.95, { damping: 15, stiffness: 400 }); }}
                     onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 400 }); }}
-                    activeOpacity={0.9}
+                    activeOpacity={0.8}
                     style={[styles.roleCard, isSelected && styles.roleCardActive]}
                 >
                     {/* Selection indicator */}
@@ -123,7 +123,7 @@ function LivingOptionCard({
                     onPress={onPress}
                     onPressIn={() => { scale.value = withSpring(0.97, { damping: 15, stiffness: 400 }); }}
                     onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 400 }); }}
-                    activeOpacity={0.85}
+                    activeOpacity={0.8}
                     style={[styles.livingCard, isSelected && styles.livingCardActive]}
                 >
                     <View style={[styles.livingIconBox, isSelected && styles.livingIconBoxActive]}>
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 28,
         paddingBottom: 16,
     },

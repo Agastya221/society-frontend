@@ -52,7 +52,7 @@ function Tile({
       <TouchableOpacity
         style={styles.tile}
         onPress={onRetry}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
       >
         <View style={styles.tileContent}>
           <Text style={styles.tileTitle}>{title}</Text>
@@ -70,7 +70,7 @@ function Tile({
   }
 
   return (
-    <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.tileContent}>
         <Text style={styles.tileTitle}>{title}</Text>
         <Text style={styles.tileSubtitle} numberOfLines={1}>
@@ -127,7 +127,7 @@ export function HouseholdGrid({
         </View>
         <TouchableOpacity
           onPress={() => onNavigate("household")}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
         >
           <View style={styles.manageBtn}>
             <Text style={styles.manageText}>Manage</Text>

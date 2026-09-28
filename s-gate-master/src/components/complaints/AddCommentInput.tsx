@@ -1,3 +1,4 @@
+import { SgateColors } from '@/constants/Sgate-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { TextInput, TouchableOpacity, View } from 'react-native';
@@ -16,11 +17,11 @@ export function AddCommentInput({ onSend }: AddCommentInputProps) {
     };
 
     return (
-        <View className="flex-row items-end gap-2 p-3 bg-white dark:bg-zinc-900 border-t border-gray-100 dark:border-zinc-800">
+        <View className="flex-row items-end gap-2 p-3 bg-white border-t border-gray-100">
             <TextInput
-                className="font-sora flex-1 bg-gray-100 dark:bg-zinc-800 rounded-2xl px-4 py-3 min-h-[44px] max-h-24 text-gray-900 dark:text-white"
+                className="font-sora flex-1 bg-gray-100 rounded-2xl px-4 py-3 min-h-[44px] max-h-24 text-gray-900"
                 placeholder="Write a comment..."
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={SgateColors.t3}
                 multiline
                 value={message}
                 onChangeText={setMessage}
@@ -31,7 +32,7 @@ export function AddCommentInput({ onSend }: AddCommentInputProps) {
                 className={`h-11 w-11 rounded-full items-center justify-center ${
                     message.trim() 
                         ? 'bg-indigo-600' 
-                        : 'bg-gray-200 dark:bg-zinc-700'
+                        : 'bg-gray-200'
                 }`}
             >
                 <Ionicons 

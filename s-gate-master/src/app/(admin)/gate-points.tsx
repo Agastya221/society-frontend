@@ -11,12 +11,13 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 
 interface Gate {
     id: string;
@@ -115,11 +116,11 @@ export default function GatePointsScreen() {
                     </TouchableOpacity>
                 }
                 ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <MaterialCommunityIcons name="map-marker-outline" size={48} color={SgateColors.t4} />
-                        <Text style={styles.emptyTitle}>No gate points</Text>
-                        <Text style={styles.emptySub}>Add your first gate entry point.</Text>
-                    </View>
+                    <EmptyState
+                        iconName="map-marker-outline"
+                        title="No gate points"
+                        description="Add your first gate entry point."
+                    />
                 }
                 renderItem={({ item, index }) => {
                     const guardCount = getGuardCount(item.id);
@@ -202,7 +203,7 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingVertical: 16,
         backgroundColor: SgateColors.card,
         shadowColor: '#000',
@@ -257,14 +258,11 @@ const styles = StyleSheet.create({
     actionBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
 
     // Empty
-    emptyWrap: { alignItems: 'center', paddingVertical: 48 },
-    emptyTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginTop: 10 },
-    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 2 },
 
     // Modal
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.48)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,

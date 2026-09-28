@@ -143,7 +143,7 @@ export default function EmergencySentScreen() {
 
                 <TouchableOpacity
                     onPress={() => router.push('/(resident)/emergency' as any)}
-                    activeOpacity={0.7}
+                    activeOpacity={0.8}
                     className="py-2 items-center"
                 >
                     <Text className="text-white/80 font-sora-bold text-sm underline">VIEW ALERT HISTORY</Text>

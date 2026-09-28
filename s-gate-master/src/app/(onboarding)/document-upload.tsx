@@ -12,7 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import { DocumentUploadCard } from '@/components/onboarding/DocumentUploadCard';
@@ -199,7 +199,7 @@ export default function DocumentUploadScreen() {
                                     styles.idChip,
                                     selectedIdType === id.type && styles.idChipActive,
                                 ]}
-                                activeOpacity={0.7}
+                                activeOpacity={0.8}
                             >
                                 <Text
                                     style={[
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 16,
         paddingBottom: 16,
     },

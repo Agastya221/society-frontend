@@ -26,7 +26,7 @@ export function FloatingSOSButton({ role, bottomOffset = 20 }: FloatingSOSButton
         <TouchableOpacity
             style={[styles.sosFab, { bottom: insets.bottom + bottomOffset }]}
             onPress={handlePress}
-            activeOpacity={0.85}
+            activeOpacity={0.8}
         >
             <Ionicons name="alert-circle" size={22} color="#FFFFFF" />
             <Text style={styles.sosFabText}>SOS</Text>

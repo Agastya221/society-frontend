@@ -11,9 +11,10 @@ import {
     Text,
     View,
 } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts, SgateRadius, SgateShadows } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateRadius, SgateShadows } from '@/constants/Sgate-theme';
 import api from '../../../services/api';
 
 const C = SgateColors;
@@ -170,6 +171,7 @@ function CategoryHeader({ type, count }: { type: string; count: number }) {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function StaffScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
     const router = useRouter();
     const [staff, setStaff] = useState<StaffMember[]>([]);
     const [loading, setLoading] = useState(true);
@@ -243,7 +245,7 @@ export default function StaffScreen() {
                     )}
                     ItemSeparatorComponent={() => <View style={styles.cardSeparator} />}
                     SectionSeparatorComponent={() => <View style={styles.sectionSeparator} />}
-                    contentContainerStyle={styles.scrollContent}
+                    contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollBottomPadding }]}
                     showsVerticalScrollIndicator={false}
                     stickySectionHeadersEnabled={false}
                     refreshControl={
@@ -281,7 +283,7 @@ const styles = StyleSheet.create({
     header: {
         minHeight: 58,
         paddingVertical: 10,
-        paddingHorizontal: 16,
+        paddingHorizontal: SgateLayout.screenGutter,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,

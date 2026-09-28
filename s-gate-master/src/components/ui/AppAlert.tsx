@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../constants/Sgate-theme';
 
 interface AlertButton {
     text: string;
@@ -147,7 +147,7 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
                                             state.buttons.length <= 2 && index > 0 && { marginLeft: 10 },
                                         ]}
                                         onPress={() => handleButtonPress(btn.onPress)}
-                                        activeOpacity={0.7}
+                                        activeOpacity={0.8}
                                     >
                                         <Text style={[
                                             styles.buttonText,
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     content: {
-        paddingHorizontal: 24,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingBottom: 24,
         alignItems: 'center',
     },

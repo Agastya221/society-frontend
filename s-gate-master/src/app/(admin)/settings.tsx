@@ -15,7 +15,7 @@ import {
 import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import { SettingRow } from '@/components/ui/SettingRow';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
 
     spacer: { height: 6 },
     scroll: { flex: 1 },
-    scrollContent: { paddingTop: 14, paddingHorizontal: 20 },
+    scrollContent: { paddingTop: 14, paddingHorizontal: SgateLayout.screenGutter },
 
     sectionLabel: {
         ...SgateTypography.microLabel,

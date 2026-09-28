@@ -19,7 +19,7 @@ export function EmergencyBanner({ emergency }: EmergencyBannerProps) {
             className="absolute top-0 left-0 right-0 z-50 px-4 pt-[50px] pb-4 bg-red-600 shadow-xl"
         >
             <TouchableOpacity 
-                activeOpacity={0.9}
+                activeOpacity={0.8}
                 onPress={() => router.push(`/(resident)/emergency/${emergency.id}` as any)}
                 className="flex-row items-center justify-between"
             >

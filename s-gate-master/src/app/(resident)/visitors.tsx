@@ -1,3 +1,4 @@
+import { SgateColors } from '@/constants/Sgate-theme';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -260,7 +261,7 @@ export default function VisitorsScreen() {
                     <TextInput
                         className="flex-1 text-[15px] font-sora-medium text-gray-900 h-full py-0"
                         placeholder="Search by name or flat…"
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={SgateColors.t3}
                         value={search}
                         onChangeText={setSearch}
                         onFocus={() => setSearchFocused(true)}

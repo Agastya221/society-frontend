@@ -18,6 +18,7 @@ import {
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSheetBottomClearance } from '@/hooks/useSheetBottomClearance';
 import { AppAlert } from '../../components/ui/AppAlert';
 import { Avatar } from '../../components/ui/Avatar';
 import api from '../../services/api';
@@ -121,6 +122,7 @@ function EmptyCard({ icon, label, onAdd, comingSoon }: { icon: React.ReactNode; 
 export default function HouseholdScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const sheetClearance = useSheetBottomClearance();
     const { user } = useAuthStore();
     const { profile } = useProfileStore();
 
@@ -378,7 +380,7 @@ export default function HouseholdScreen() {
             {/* Member Detail Pop-up */}
             <Modal visible={!!detailMember} transparent animationType="fade" onRequestClose={() => setDetailMember(null)}>
                 <TouchableWithoutFeedback onPress={() => setDetailMember(null)}>
-                    <View className="flex-1 bg-black/60 items-center justify-center px-6">
+                    <View className="flex-1 bg-black/50 items-center justify-center px-6">
                         <TouchableWithoutFeedback onPress={() => {}}>
                             <Animated.View entering={FadeIn.duration(300)} className="bg-white w-full rounded-[40px] overflow-hidden">
                                 <View className="flex-row justify-between p-6 pb-0">
@@ -408,7 +410,7 @@ export default function HouseholdScreen() {
             {/* Vehicle Detail Pop-up */}
             <Modal visible={!!detailVehicle} transparent animationType="fade" onRequestClose={() => setDetailVehicle(null)}>
                 <TouchableWithoutFeedback onPress={() => setDetailVehicle(null)}>
-                    <View className="flex-1 bg-black/60 items-center justify-center px-6">
+                    <View className="flex-1 bg-black/50 items-center justify-center px-6">
                         <TouchableWithoutFeedback onPress={() => {}}>
                             <Animated.View entering={FadeIn.duration(300)} className="bg-white w-full rounded-[40px] overflow-hidden">
                         <View className="flex-row justify-between p-6 pb-0">
@@ -462,9 +464,9 @@ export default function HouseholdScreen() {
             {/* Family Invite Modal - Redesigned to match screenshot */}
             <Modal visible={inviteVisible} transparent animationType="fade" onRequestClose={() => setInviteVisible(false)}>
                 <TouchableWithoutFeedback onPress={() => setInviteVisible(false)}>
-                    <View className="flex-1 justify-end bg-black/40">
+                    <View className="flex-1 justify-end bg-black/50">
                         <TouchableWithoutFeedback onPress={() => {}}>
-                            <View className="bg-white rounded-t-[40px] p-6 shadow-2xl" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
+                            <View className="bg-white rounded-t-[40px] p-6 shadow-2xl" style={{ paddingBottom: sheetClearance }}>
                                 <View className="flex-row justify-between items-center mb-6">
                             <Text className="text-2xl font-sora-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Invite Family Member</Text>
                             <TouchableOpacity onPress={() => setInviteVisible(false)} className="p-2 bg-gray-100 rounded-full">
@@ -476,7 +478,7 @@ export default function HouseholdScreen() {
                         <TextInput 
                             className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 mb-5 font-sora-medium text-gray-900 text-[15px]" 
                             placeholder="e.g. Anjali Sharma" 
-                            placeholderTextColor="#9ca3af"
+                            placeholderTextColor={SgateColors.t3}
                             value={inviteName} 
                             onChangeText={setInviteName} 
                         />
@@ -485,7 +487,7 @@ export default function HouseholdScreen() {
                         <TextInput 
                             className="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 mb-6 font-sora-medium text-gray-900 text-[15px]" 
                             placeholder="10-digit mobile" 
-                            placeholderTextColor="#9ca3af"
+                            placeholderTextColor={SgateColors.t3}
                             keyboardType="phone-pad"
                             maxLength={10}
                             value={invitePhone} 
@@ -533,9 +535,9 @@ export default function HouseholdScreen() {
             {/* Add Vehicle Modal - Ported from add.tsx and matching screenshot */}
             <Modal visible={addVehicleVisible} transparent animationType="fade" onRequestClose={() => setAddVehicleVisible(false)}>
                 <TouchableWithoutFeedback onPress={() => setAddVehicleVisible(false)}>
-                    <View className="flex-1 justify-end bg-black/40">
+                    <View className="flex-1 justify-end bg-black/50">
                         <TouchableWithoutFeedback onPress={() => {}}>
-                            <View className="bg-white rounded-t-[40px] p-6 shadow-2xl" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
+                            <View className="bg-white rounded-t-[40px] p-6 shadow-2xl" style={{ paddingBottom: sheetClearance }}>
                                 <View className="flex-row justify-between items-center mb-6">
                             <Text className="text-2xl font-sora-bold text-gray-900" style={{ fontFamily: 'Sora-Bold' }}>Add Vehicle</Text>
                             <TouchableOpacity onPress={() => setAddVehicleVisible(false)} className="p-2 bg-gray-100 rounded-full">
@@ -572,7 +574,7 @@ export default function HouseholdScreen() {
                                 <TextInput
                                     className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 mb-5 font-sora-medium text-gray-900 text-[15px]"
                                     placeholder="e.g. MH01AB1234"
-                                    placeholderTextColor="#9ca3af"
+                                    placeholderTextColor={SgateColors.t3}
                                     autoCapitalize="characters"
                                     value={newVehicleNumber}
                                     onChangeText={setNewVehicleNumber}
@@ -582,7 +584,7 @@ export default function HouseholdScreen() {
                                 <TextInput
                                     className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 mb-5 font-sora-medium text-gray-900 text-[15px]"
                                     placeholder="e.g. Honda City"
-                                    placeholderTextColor="#9ca3af"
+                                    placeholderTextColor={SgateColors.t3}
                                     autoCapitalize="words"
                                     value={newVehicleModel}
                                     onChangeText={setNewVehicleModel}
@@ -592,7 +594,7 @@ export default function HouseholdScreen() {
                                 <TextInput
                                     className="bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 font-sora-medium text-gray-900 text-[15px]"
                                     placeholder="e.g. Matte Black"
-                                    placeholderTextColor="#9ca3af"
+                                    placeholderTextColor={SgateColors.t3}
                                     autoCapitalize="words"
                                     value={newVehicleColor}
                                     onChangeText={setNewVehicleColor}

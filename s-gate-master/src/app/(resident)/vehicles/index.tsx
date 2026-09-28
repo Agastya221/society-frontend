@@ -13,7 +13,8 @@ import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppAlert } from '../../../components/ui/AppAlert';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import EmptyState from '@/components/ui/EmptyState';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -93,7 +94,7 @@ function VehicleCard({ vehicle, index, onDelete }: { vehicle: Vehicle; index: nu
 
   return (
     <Animated.View entering={FadeInDown.delay(index * 80).springify()}>
-      <TouchableOpacity style={S.card} activeOpacity={0.97}>
+      <TouchableOpacity style={S.card} activeOpacity={0.8}>
         {/* Top row: icon + plate + menu */}
         <View style={S.cardTopRow}>
           <View style={S.typeIconBubble}>
@@ -224,23 +225,15 @@ export default function MyVehiclesScreen() {
       {loading ? (
         <AppLoader />
       ) : vehicles.length === 0 ? (
-        <View style={S.emptyContainer}>
-          <View style={S.emptyIconCircle}>
-            <MaterialCommunityIcons name="car-outline" size={36} color={SgateColors.goldDeep} />
-          </View>
-          <Text style={S.emptyTitle}>No vehicles added</Text>
-          <Text style={S.emptySubtitle}>
-            Add your vehicle for smoother gate entry and society sticker assignment
-          </Text>
-          <TouchableOpacity
-            style={S.emptyAddBtn}
-            onPress={() => router.push('/(resident)/vehicles/add' as any)}
-            activeOpacity={0.85}
-          >
-            <Feather name="plus" size={18} color={SgateColors.t1} />
-            <Text style={S.emptyAddBtnText}>Add Vehicle</Text>
-          </TouchableOpacity>
-        </View>
+        <EmptyState
+          iconName="car-outline"
+          iconBg={SgateColors.goldPale}
+          iconColor={SgateColors.goldDeep}
+          title="No vehicles added"
+          description="Add your vehicle for smoother gate entry and society sticker assignment"
+          ctaLabel="Add Vehicle"
+          onCtaPress={() => router.push('/(resident)/vehicles/add' as any)}
+        />
       ) : (
         <>
           <FlatList
@@ -265,7 +258,7 @@ export default function MyVehiclesScreen() {
           <TouchableOpacity
             style={S.fab}
             onPress={() => router.push('/(resident)/vehicles/add' as any)}
-            activeOpacity={0.85}
+            activeOpacity={0.8}
           >
             <Feather name="plus" size={24} color={SgateColors.t1} />
           </TouchableOpacity>
@@ -292,7 +285,7 @@ const S = StyleSheet.create({
   headerInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     paddingVertical: 12,
   },
   backBtn: {
@@ -325,7 +318,7 @@ const S = StyleSheet.create({
 
   // ── List ──────────────────────────────────────────────────────────────
   listContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     paddingTop: 16,
     paddingBottom: 100,
   },
@@ -453,49 +446,6 @@ const S = StyleSheet.create({
   },
 
   // ── Empty State ───────────────────────────────────────────────────────
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: SgateColors.goldPale,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontFamily: SgateFonts.bold,
-    fontSize: 18,
-    color: SgateColors.t1,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontFamily: SgateFonts.regular,
-    fontSize: 13,
-    color: SgateColors.t3,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 28,
-  },
-  emptyAddBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: SgateColors.gold,
-    borderRadius: 14,
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-  },
-  emptyAddBtnText: {
-    fontFamily: SgateFonts.bold,
-    fontSize: 15,
-    color: SgateColors.t1,
-  },
 
   // ── FAB ───────────────────────────────────────────────────────────────
   fab: {

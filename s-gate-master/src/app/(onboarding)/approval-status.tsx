@@ -19,7 +19,8 @@ import Animated, {
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
-import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
+import { AppLoader } from '@/components/ui/AppLoader';
+import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useOnboardingStatus } from '@/hooks/useOnboardingQueries';
 import type { OnboardingStatusType } from '@/types/onboarding.types';
@@ -168,7 +169,7 @@ export default function ApprovalStatusScreen() {
         return (
             <View style={[styles.root, styles.centerContent]}>
                 <StatusBar style="dark" />
-                <ActivityIndicator size="large" color={SgateColors.gold} />
+                <AppLoader />
             </View>
         );
     }
@@ -336,13 +337,13 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 24,
+        paddingHorizontal: SgateLayout.screenGutter,
     },
     content: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 24,
+        paddingHorizontal: SgateLayout.screenGutter,
     },
     iconCircle: {
         width: 96,

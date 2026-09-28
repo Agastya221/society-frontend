@@ -1,15 +1,17 @@
+import { SgateColors } from '@/constants/Sgate-theme';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Modal,
+
     ScrollView,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AnimatedBottomSheetModal } from '@/components/ui/AnimatedBottomSheetModal';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -286,52 +288,45 @@ export default function RequestDetailScreen() {
             )}
 
             {/* Reject Modal */}
-            <Modal visible={rejectVisible} transparent animationType="fade">
-                <View className="flex-1 bg-black/50 justify-end">
-                    <View className="bg-white rounded-t-3xl p-6 pb-10">
-                        <View className="flex-row items-center justify-between mb-4">
-                            <Text className="text-xl font-sora-bold text-slate-900">Reject Registration</Text>
-                            <TouchableOpacity onPress={() => setRejectVisible(false)}>
-                                <Feather name="x" size={24} color="#94a3b8" />
-                            </TouchableOpacity>
-                        </View>
-                        <Text className="font-sora text-slate-500 text-sm mb-4">
-                            Rejecting “{request.societyName}”
-                        </Text>
-                        <Text className="text-slate-700 font-sora-medium text-sm mb-2">Reason for rejection *</Text>
-                        <TextInput
-                            className="font-sora bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 mb-4"
-                            multiline
-                            numberOfLines={4}
-                            textAlignVertical="top"
-                            style={{ minHeight: 100 }}
-                            placeholder="Explain why this registration is being rejected..."
-                            placeholderTextColor="#94a3b8"
-                            value={rejectReason}
-                            onChangeText={setRejectReason}
-                        />
-                        <TouchableOpacity
-                            onPress={handleRejectSubmit}
-                            disabled={!rejectReason.trim() || actionLoading}
-                            className={`rounded-xl py-3.5 items-center flex-row justify-center gap-2 ${
-                                rejectReason.trim() && !actionLoading ? 'bg-red-600' : 'bg-slate-200'
-                            }`}
-                            activeOpacity={0.8}
-                        >
-                            {actionLoading ? (
-                                <ActivityIndicator size="small" color="#fff" />
-                            ) : (
-                                <>
-                                    <Feather name="x-circle" size={18} color={rejectReason.trim() ? '#fff' : '#94a3b8'} />
-                                    <Text className={`font-sora-bold text-base ${rejectReason.trim() ? 'text-white' : 'text-slate-400'}`}>
-                                        Reject Registration
-                                    </Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    </View>
+            <AnimatedBottomSheetModal visible={rejectVisible} onClose={() => setRejectVisible(false)}>
+                <View className="flex-row items-center justify-between mb-4">
+                    <Text className="text-xl font-sora-bold text-slate-900">Reject Registration</Text>
                 </View>
-            </Modal>
+                <Text className="font-sora text-slate-500 text-sm mb-4">
+                    Rejecting “{request.societyName}”
+                </Text>
+                <Text className="text-slate-700 font-sora-medium text-sm mb-2">Reason for rejection *</Text>
+                <TextInput
+                    className="font-sora bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 mb-4"
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    style={{ minHeight: 100 }}
+                    placeholder="Explain why this registration is being rejected..."
+                    placeholderTextColor={SgateColors.t3}
+                    value={rejectReason}
+                    onChangeText={setRejectReason}
+                />
+                <TouchableOpacity
+                    onPress={handleRejectSubmit}
+                    disabled={!rejectReason.trim() || actionLoading}
+                    className={`rounded-xl py-3.5 items-center flex-row justify-center gap-2 ${
+                        rejectReason.trim() && !actionLoading ? 'bg-red-600' : 'bg-slate-200'
+                    }`}
+                    activeOpacity={0.8}
+                >
+                    {actionLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                        <>
+                            <Feather name="x-circle" size={18} color={rejectReason.trim() ? '#fff' : '#94a3b8'} />
+                            <Text className={`font-sora-bold text-base ${rejectReason.trim() ? 'text-white' : 'text-slate-400'}`}>
+                                Reject Registration
+                            </Text>
+                        </>
+                    )}
+                </TouchableOpacity>
+            </AnimatedBottomSheetModal>
         </SafeAreaView>
     );
 }

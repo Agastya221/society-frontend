@@ -13,8 +13,10 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import EmptyState from '@/components/ui/EmptyState';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { getAllGatePasses, type GatePass } from '@/services/gatePass';
 
 // ─── Filter tabs ──────────────────────────────────────────────────────────────
@@ -66,6 +68,7 @@ function formatDate(iso: string): string {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function ApprovalRequestsListScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
@@ -106,7 +109,7 @@ export default function ApprovalRequestsListScreen() {
                 <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
                     <TouchableOpacity
                         style={S.card}
-                        activeOpacity={0.7}
+                        activeOpacity={0.8}
                         onPress={() => router.push(`/(admin)/approval-requests/${item.id}` as any)}
                     >
                         {/* Icon + Info */}
@@ -163,7 +166,7 @@ export default function ApprovalRequestsListScreen() {
                                 <TouchableOpacity
                                     style={S.actionSecondary}
                                     onPress={() => {/* Cancel logic */}}
-                                    activeOpacity={0.75}
+                                    activeOpacity={0.8}
                                 >
                                     <MaterialCommunityIcons name="close" size={14} color={SgateColors.t2} />
                                     <Text style={S.actionSecondaryText}>Cancel</Text>
@@ -171,7 +174,7 @@ export default function ApprovalRequestsListScreen() {
                                 <TouchableOpacity
                                     style={S.actionPrimary}
                                     onPress={() => router.push(`/(admin)/approval-requests/${item.id}` as any)}
-                                    activeOpacity={0.75}
+                                    activeOpacity={0.8}
                                 >
                                     <MaterialCommunityIcons name="eye-outline" size={14} color={SgateColors.t1} />
                                     <Text style={S.actionPrimaryText}>View Details</Text>
@@ -193,13 +196,11 @@ export default function ApprovalRequestsListScreen() {
 
     const ListEmpty = useCallback(
         () => (
-            <View style={S.emptyWrap}>
-                <View style={S.emptyIcon}>
-                    <MaterialCommunityIcons name="inbox" size={40} color={SgateColors.t4} />
-                </View>
-                <Text style={S.emptyTitle}>All caught up</Text>
-                <Text style={S.emptySub}>No {emptyLabel} requests at the moment</Text>
-            </View>
+            <EmptyState
+                iconName="inbox"
+                title="All caught up"
+                description={`No ${emptyLabel} requests at the moment`}
+            />
         ),
         [emptyLabel],
     );
@@ -223,7 +224,7 @@ export default function ApprovalRequestsListScreen() {
                                     key={f}
                                     style={[S.chip, active && S.chipActive]}
                                     onPress={() => setFilter(f)}
-                                    activeOpacity={0.7}
+                                    activeOpacity={0.8}
                                 >
                                     <Text style={[S.chipText, active && S.chipTextActive]}>
                                         {FILTER_LABELS[f]}
@@ -247,7 +248,7 @@ export default function ApprovalRequestsListScreen() {
                 contentContainerStyle={[
                     S.listContent,
                     filteredRequests.length === 0 && S.listContentEmpty,
-                    { paddingBottom: 80 + insets.bottom },
+                    { paddingBottom: scrollBottomPadding },
                 ]}
                 showsVerticalScrollIndicator={false}
                 refreshing={refreshing}
@@ -275,7 +276,7 @@ const S = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, marginBottom: 16 },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
@@ -291,7 +292,7 @@ const S = StyleSheet.create({
 
     filtersContainer: { paddingLeft: 20 },
     filtersScroll: { flexDirection: 'row', gap: 10, paddingRight: 20 },
-    chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface },
+    chip: { paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface },
     chipActive: { backgroundColor: SgateColors.gold },
     chipText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
     chipTextActive: { color: SgateColors.t1, fontFamily: SgateFonts.bold },
@@ -428,29 +429,4 @@ const S = StyleSheet.create({
     },
 
     // ── Empty state ──────────────────────────────────────────────────────
-    emptyWrap: {
-        alignItems: 'center',
-        gap: 8,
-        paddingVertical: 40,
-    },
-    emptyIcon: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-    },
-    emptyTitle: {
-        fontSize: 18,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-    },
-    emptySub: {
-        fontSize: 14,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-        textAlign: 'center',
-    },
 });

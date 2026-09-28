@@ -45,7 +45,7 @@ export function ProfileQrModal({ visible, onClose, user }: ProfileQrModalProps) 
             transparent={true}
             onRequestClose={onClose}
         >
-            <View className="flex-1 bg-black/60 justify-center items-center px-6">
+            <View className="flex-1 bg-black/50 justify-center items-center px-6">
                 {/* Click outside to close */}
                 <TouchableOpacity 
                     className="absolute inset-0" 
@@ -59,7 +59,7 @@ export function ProfileQrModal({ visible, onClose, user }: ProfileQrModalProps) 
                     <TouchableOpacity 
                         className="absolute top-4 right-4 p-2 bg-white rounded-full z-10" 
                         onPress={onClose}
-                        activeOpacity={0.7}
+                        activeOpacity={0.8}
                     >
                         <Feather name="x" size={20} color="#374151" />
                     </TouchableOpacity>

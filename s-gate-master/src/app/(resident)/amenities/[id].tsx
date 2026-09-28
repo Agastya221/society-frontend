@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Modal,
 } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { Calendar } from 'react-native-calendars';
@@ -9,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 
 const AMENITY_THEMES: { keywords: string[]; icon: string; colorBg: string; colorIcon: string }[] = [
@@ -114,6 +115,7 @@ function DateStripItem({ item, isSelected, onPress }: { item: DateItem; isSelect
 }
 
 export default function AmenityDetailScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -190,7 +192,7 @@ export default function AmenityDetailScreen() {
     <AppScreenLayout scroll={false} title="Details">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={S.scrollContent}
+        contentContainerStyle={[S.scrollContent, { paddingBottom: scrollBottomPadding }]}
       >
         {/* Premium Profile Header */}
         <View style={S.profileHeader}>
@@ -228,7 +230,7 @@ export default function AmenityDetailScreen() {
 
           {/* Rules */}
           <TouchableOpacity
-            activeOpacity={0.7}
+            activeOpacity={0.8}
             style={S.rulesToggleRow}
             onPress={() => setShowRules((v) => !v)}
           >
@@ -257,7 +259,7 @@ export default function AmenityDetailScreen() {
           {/* Calendar Date Picker */}
           <TouchableOpacity
             style={S.calendarTrigger}
-            activeOpacity={0.75}
+            activeOpacity={0.8}
             onPress={() => setShowCalendar(true)}
           >
             <Feather name="calendar" size={16} color={SgateColors.goldDeep} />
@@ -288,7 +290,6 @@ export default function AmenityDetailScreen() {
                 onTouchEnd={(e) => e.stopPropagation()}
                 onStartShouldSetResponder={() => true}
                 showHandle
-                minimumBottomPadding={20}
               >
                 <Text style={S.calendarSheetTitle}>Select a Date</Text>
 
@@ -356,7 +357,7 @@ export default function AmenityDetailScreen() {
                   <TouchableOpacity
                     key={slot.id}
                     disabled={!slot.isBookable}
-                    activeOpacity={0.75}
+                    activeOpacity={0.8}
                     style={[S.slotChip, chipStyle]}
                     onPress={() => setSelectedSlot(slot)}
                   >
@@ -520,7 +521,7 @@ const S = StyleSheet.create({
 
   // Slots section
   slotsSection: {
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     marginTop: 20,
   },
   slotsSectionTitle: {
@@ -558,7 +559,7 @@ const S = StyleSheet.create({
   // Calendar Modal
   calendarOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.48)',
     justifyContent: 'flex-end',
   },
   calendarSheet: {

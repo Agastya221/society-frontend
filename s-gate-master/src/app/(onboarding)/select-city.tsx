@@ -1,3 +1,4 @@
+import { SgateColors } from '@/constants/Sgate-theme';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
     View,
@@ -14,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import EmptyState from '@/components/ui/EmptyState';
 import { SgateFonts } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import {
@@ -112,7 +114,7 @@ const CityListRow = React.memo(function CityListRow({
     return (
         <TouchableOpacity
             onPress={onPress}
-            activeOpacity={0.4}
+            activeOpacity={0.8}
             style={styles.listRow}
         >
             <Text style={styles.listRowText}>{city.name}</Text>
@@ -220,7 +222,7 @@ export default function SelectCityScreen() {
                                 ref={inputRef}
                                 style={styles.searchInput}
                                 placeholder="Search city..."
-                                placeholderTextColor="#BBBBBB"
+                                placeholderTextColor={SgateColors.t3}
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
                                 autoCorrect={false}
@@ -263,10 +265,7 @@ export default function SelectCityScreen() {
                 contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <Feather name="map-pin" size={28} color="#D0D0D0" />
-                        <Text style={styles.emptyText}>No cities found</Text>
-                    </View>
+                    <EmptyState iconName="map-marker-outline" title="No cities found" />
                 }
             />
         </View>
@@ -388,14 +387,4 @@ const styles = StyleSheet.create({
     },
 
     // ── Empty ──
-    emptyWrap: {
-        paddingVertical: 60,
-        alignItems: 'center',
-        gap: 8,
-    },
-    emptyText: {
-        fontSize: 14,
-        fontFamily: SgateFonts.regular,
-        color: '#AAAAAA',
-    },
 });

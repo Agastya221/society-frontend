@@ -11,10 +11,11 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import api from '../../../services/api';
 import { useAuthStore } from '../../../store/useAuthStore';
 
@@ -245,13 +246,11 @@ export default function FlatsScreen() {
                     </View>
                 )}
                 ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <View style={styles.emptyIcon}>
-                            <MaterialCommunityIcons name="home-group" size={36} color={SgateColors.t4} />
-                        </View>
-                        <Text style={styles.emptyTitle}>No flats found</Text>
-                        <Text style={styles.emptySub}>Add flats to manage your society.</Text>
-                    </View>
+                    <EmptyState
+                        iconName="home-group"
+                        title="No flats found"
+                        description="Add flats to manage your society."
+                    />
                 }
                 renderItem={({ item, index }) => {
                     // Show max 3 chars in the avatar to prevent overflow
@@ -270,7 +269,7 @@ export default function FlatsScreen() {
                                     { text: 'Delete', style: 'destructive', onPress: () => handleDelete(item.id) },
                                 ]);
                             }}
-                            activeOpacity={0.7}
+                            activeOpacity={0.8}
                         >
                             <View style={styles.avatarCircle}>
                                 <Text style={styles.avatarText}>{avatarLabel}</Text>
@@ -372,7 +371,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 14 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, marginBottom: 14 },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
@@ -400,7 +399,7 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
     },
 
-    listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100, flexGrow: 1 },
+    listContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 8, paddingBottom: 100, flexGrow: 1 },
 
     // Section header
     sectionHeader: {
@@ -450,20 +449,11 @@ const styles = StyleSheet.create({
     blockTagText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.t3 },
 
     // Empty
-    emptyWrap: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40 },
-    emptyIcon: {
-        width: 72, height: 72, borderRadius: 24,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center', justifyContent: 'center',
-        marginBottom: 16,
-    },
-    emptyTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
-    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
 
     // Modal
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.48)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,

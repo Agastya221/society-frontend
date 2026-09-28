@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { createGatePass } from '@/services/gatePass';
 import { AppAlert } from '@/components/ui/AppAlert';
 
@@ -120,7 +120,7 @@ export default function CreateApprovalRequestScreen() {
                                 key={t}
                                 onPress={() => setType(t)}
                                 style={[S.typeChip, active && S.typeChipActive]}
-                                activeOpacity={0.7}
+                                activeOpacity={0.8}
                             >
                                 <Text style={[S.typeChipText, active && S.typeChipTextActive]}>
                                     {t.replace('_', ' ')}
@@ -142,7 +142,7 @@ export default function CreateApprovalRequestScreen() {
                                 key={flat.id}
                                 onPress={() => setFlatNumber(flat.flatNumber)}
                                 style={[S.flatItem, active && S.flatItemActive]}
-                                activeOpacity={0.7}
+                                activeOpacity={0.8}
                             >
                                 <Text style={[S.flatText, active && S.flatTextActive]}>
                                     {flat.block}-{flat.flatNumber} ({flat.ownerName})
@@ -238,14 +238,14 @@ const S = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
 
     // Scroll
     scroll: { flex: 1 },
-    scrollContent: { paddingHorizontal: 20, paddingTop: 16 },
+    scrollContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 16 },
 
     // Info banner
     infoBanner: {

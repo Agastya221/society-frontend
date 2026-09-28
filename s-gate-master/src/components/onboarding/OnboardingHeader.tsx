@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 import { StepIndicator } from './StepIndicator';
 
 interface OnboardingHeaderProps {
@@ -83,7 +83,7 @@ export function OnboardingHeader({
 const styles = StyleSheet.create({
     container: {
         backgroundColor: '#FFFFFF',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingBottom: 14,
         ...SgateShadows.minimal,
     },

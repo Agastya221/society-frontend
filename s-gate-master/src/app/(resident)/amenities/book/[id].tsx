@@ -10,9 +10,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { AppAlert } from '../../../../components/ui/AppAlert';
-import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../../constants/Sgate-theme';
 import api from '../../../../services/api';
 import { useAuthStore } from '../../../../store/useAuthStore';
 
@@ -54,6 +55,7 @@ function formatReadableDate(dateStr: string): string {
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
 export default function BookAmenityScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const { user } = useAuthStore();
   const { id, slotId, slotTime, date, amenityName, maxCapacity, rules: rulesParam } =
@@ -106,7 +108,7 @@ export default function BookAmenityScreen() {
 
   return (
     <AppScreenLayout scroll={false} title="Confirm Booking">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[S.scrollContent, { paddingBottom: scrollBottomPadding }]}>
         {/* ─── Summary Card ─────────────────────────────────────────── */}
         <View style={S.summaryCard}>
           <Text style={S.summaryCardLabel}>Booking Summary</Text>
@@ -160,7 +162,7 @@ export default function BookAmenityScreen() {
               purposeFocused && S.purposeInputFocused,
             ]}
             placeholder="e.g. Morning workout, Family swim…"
-            placeholderTextColor="#999999"
+            placeholderTextColor={SgateColors.t3}
             value={purpose}
             onChangeText={setPurpose}
             onFocus={() => setPurposeFocused(true)}
@@ -173,7 +175,7 @@ export default function BookAmenityScreen() {
         {/* ─── Rules Card ───────────────────────────────────────────── */}
         {rules.length > 0 && (
           <View style={S.rulesCard}>
-            <TouchableOpacity activeOpacity={0.7} style={S.rulesToggleRow} onPress={() => setShowRules(v => !v)}>
+            <TouchableOpacity activeOpacity={0.8} style={S.rulesToggleRow} onPress={() => setShowRules(v => !v)}>
               <MaterialCommunityIcons name="shield-check-outline" size={16} color={SgateColors.goldDeep} />
               <Text style={S.rulesToggleLabel}>Rules & Guidelines</Text>
               <View style={{ flex: 1 }} />
@@ -199,7 +201,7 @@ export default function BookAmenityScreen() {
         {/* ─── Confirm Button ───────────────────────────────────────── */}
         <Animated.View style={[S.buttonContainer, { transform: [{ scale: btnScale }] }]}>
           <TouchableOpacity
-            activeOpacity={0.85}
+            activeOpacity={0.8}
             style={S.confirmButton}
             onPress={handleConfirm}
             disabled={submitting}
@@ -218,7 +220,7 @@ export default function BookAmenityScreen() {
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
   scrollContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     paddingBottom: 44,
   },
 

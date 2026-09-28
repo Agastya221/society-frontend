@@ -12,10 +12,12 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts} from '@/constants/Sgate-theme';
+import { StatusPill, type StatusTone } from '@/components/ui/StatusPill';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { FloatingSOSButton } from '@/components/ui/FloatingSOSButton';
 import api from '@/services/api';
@@ -52,12 +54,13 @@ const TYPE_META: Record<string, { icon: React.ComponentProps<typeof MaterialIcon
     OTHER:         { icon: 'more-horiz',            bg: SgateColors.surface,  color: SgateColors.t2,       label: 'Other' },
 };
 
-const STATUS_CONFIG: Record<EmergencyStatus, { bg: string; color: string; label: string }> = {
-    TRIGGERED:    { bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Active' },
-    ACTIVE:       { bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Active' },
-    ACKNOWLEDGED: { bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Acknowledged' },
-    RESOLVED:     { bg: SgateColors.greenBg,  color: '#065f46',    label: 'Resolved' },
-    FALSE_ALARM:  { bg: SgateColors.surface,  color: SgateColors.t3,       label: 'False Alarm' },
+/**
+ * An ACTIVE emergency is an alarm still going off, so it reads as danger here —
+ * the opposite of an ACTIVE pass. TRIGGERED is shown to residents as "Active".
+ */
+const STATUS_PROPS: Record<string, { tone?: StatusTone; label?: string }> = {
+    TRIGGERED: { tone: 'danger', label: 'Active' },
+    ACTIVE: { tone: 'danger' },
 };
 
 function timeAgo(iso: string): string {
@@ -156,7 +159,6 @@ export default function AdminEmergenciesScreen() {
 
     const renderItem = ({ item, index }: { item: Emergency; index: number }) => {
         const meta   = TYPE_META[item.type] ?? TYPE_META.OTHER;
-        const status = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.TRIGGERED;
         const isActive = item.status === 'TRIGGERED' || item.status === 'ACTIVE';
         const isAcknowledged = item.status === 'ACKNOWLEDGED';
 
@@ -174,9 +176,7 @@ export default function AdminEmergenciesScreen() {
                         <View style={styles.cardInfo}>
                             <View style={styles.cardTitleRow}>
                                 <Text style={styles.typeLabel}>{meta.label}</Text>
-                                <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-                                    <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
-                                </View>
+                                <StatusPill status={item.status} size="sm" {...(STATUS_PROPS[item.status] ?? {})} />
                             </View>
                             <Text style={styles.senderText} numberOfLines={1}>
                                 {senderName}
@@ -214,7 +214,7 @@ export default function AdminEmergenciesScreen() {
                                 <TouchableOpacity
                                     style={styles.ackBtn}
                                     onPress={() => handleAcknowledge(item.id)}
-                                    activeOpacity={0.75}
+                                    activeOpacity={0.8}
                                 >
                                     <MaterialIcons name="visibility" size={14} color={SgateColors.goldDeep} />
                                     <Text style={styles.ackBtnText}>Acknowledge</Text>
@@ -223,7 +223,7 @@ export default function AdminEmergenciesScreen() {
                             <TouchableOpacity
                                 style={styles.resolveBtn}
                                 onPress={() => { setResolveTarget(item); setResolveNote(''); }}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                             >
                                 <MaterialIcons name="check" size={14} color="#065f46" />
                                 <Text style={styles.resolveBtnText}>Mark Resolved</Text>
@@ -258,7 +258,7 @@ export default function AdminEmergenciesScreen() {
                             key={f.key}
                             style={[styles.filterTab, filter === f.key && styles.filterTabActive]}
                             onPress={() => setFilter(f.key)}
-                            activeOpacity={0.75}
+                            activeOpacity={0.8}
                         >
                             <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>
                                 {f.label}
@@ -283,11 +283,7 @@ export default function AdminEmergenciesScreen() {
                     refreshing={refreshing}
                     onRefresh={onRefresh}
                     ListEmptyComponent={
-                        <View style={styles.emptyWrap}>
-                            <MaterialIcons name="shield" size={56} color={SgateColors.t4} />
-                            <Text style={styles.emptyTitle}>No emergencies</Text>
-                            <Text style={styles.emptySub}>Society is safe.</Text>
-                        </View>
+                        <EmptyState iconName="shield-outline" title="No emergencies" description="Society is safe." />
                     }
                 />
             )}
@@ -361,7 +357,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, marginBottom: 16 },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub:   { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
@@ -381,7 +377,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     filterTab: {
-        paddingHorizontal: 16, paddingVertical: 8,
+        paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 8,
         borderRadius: 20, backgroundColor: SgateColors.surface,
     },
     filterTabActive: { backgroundColor: SgateColors.gold },
@@ -405,8 +401,6 @@ const styles = StyleSheet.create({
     cardInfo: { flex: 1 },
     cardTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
     typeLabel: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-    statusText: { fontSize: 11, fontFamily: SgateFonts.bold },
     senderText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2, marginBottom: 2 },
     timeText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
 
@@ -440,12 +434,8 @@ const styles = StyleSheet.create({
     },
     resolveBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: '#065f46' },
 
-    emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.7 },
-    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 12, marginBottom: 4 },
-    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
-
     modalOverlay: {
-        flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.48)',
         justifyContent: 'center', alignItems: 'center', padding: 24,
     },
     modalCard: {

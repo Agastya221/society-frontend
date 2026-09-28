@@ -19,7 +19,8 @@ import Animated, {
     SharedValue,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import EmptyState from '@/components/ui/EmptyState';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 
 const welcomeBg = require('@/assets/mygate-style-bg.png');
 
@@ -69,13 +70,13 @@ function PassContent({
 }) {
     // Build address parts exactly like MyGate example
     const addressLine1 = `${flatInfo || ''}${flatInfo && societyInfo?.name ? ', ' : ''}${societyInfo?.name || ''}`;
-    
+
     // Create the smaller grey text below
     const addrSub: string[] = [];
     if (societyInfo?.address) addrSub.push(societyInfo.address);
     if (societyInfo?.city) addrSub.push(societyInfo.city);
     const addrSubLine = addrSub.join(', ');
-    
+
     const isPrivate = pass.type === 'PRIVATE';
 
     return (
@@ -106,7 +107,7 @@ function PassContent({
             {/* ── QR Code ── */}
             <View style={S.qrWrap}>
                 {pass.code ? (
-                    <QRCode value={pass.code} size={QR_SIZE} color="#111" backgroundColor="transparent" />
+                    <QRCode value={pass.code} size={QR_SIZE} color="#111" backgroundColor={SgateColors.card} />
                 ) : (
                     <View style={{ width: QR_SIZE, height: QR_SIZE, backgroundColor: '#EEE', borderRadius: 8 }} />
                 )}
@@ -145,7 +146,7 @@ function PassContent({
 
             {/* Empty space pushes buttons/welcome img down naturally if needed */}
             <View style={{ flex: 1, minHeight: 40 }} />
-            
+
             {/* ── Share button ── */}
             <TouchableOpacity style={S.shareYellowBtn} onPress={onShare} activeOpacity={0.8}>
                 <Feather name="share" size={16} color="#3C3226" />
@@ -275,10 +276,7 @@ export function QRCarousel({ passes, hostName = 'You', flatInfo, societyInfo, on
 
     if (!passes || passes.length === 0) {
         return (
-            <View style={S.emptyWrap}>
-                <Feather name="alert-circle" size={28} color={SgateColors.t4} />
-                <Text style={S.emptyText}>No passes generated</Text>
-            </View>
+            <EmptyState iconName="alert-circle-outline" title="No passes generated" />
         );
     }
 
@@ -336,11 +334,11 @@ export function QRCarousel({ passes, hostName = 'You', flatInfo, societyInfo, on
                     </View>
                 </View>
             )}
-            
+
             {/* Global Done Button stays at bottom for both */}
             {onDone && (
                 <View style={S.doneWrap}>
-                    <TouchableOpacity style={S.doneBtn} onPress={onDone} activeOpacity={0.85}>
+                    <TouchableOpacity style={S.doneBtn} onPress={onDone} activeOpacity={0.8}>
                         <Text style={S.doneText}>Done</Text>
                     </TouchableOpacity>
                 </View>
@@ -359,9 +357,9 @@ const S = StyleSheet.create({
     },
     bgImage: {
         resizeMode: 'cover',
-        // By default it fills the container. 
+        // By default it fills the container.
     },
-    
+
     scrollRoot: {
         flex: 1,
     },
@@ -372,7 +370,7 @@ const S = StyleSheet.create({
 
     passContentWrapper: {
         alignItems: 'center',
-        paddingHorizontal: 24,
+        paddingHorizontal: SgateLayout.screenGutter,
         flex: 1, // Let it stretch to allow pushing the buttons down
     },
 
@@ -445,6 +443,10 @@ const S = StyleSheet.create({
     qrWrap: {
         alignItems: 'center',
         justifyContent: 'center',
+        alignSelf: 'center',
+        padding: 12,
+        borderRadius: 12,
+        backgroundColor: SgateColors.card,
         marginBottom: 16,
     },
 
@@ -549,7 +551,7 @@ const S = StyleSheet.create({
 
     // Done Wrap
     doneWrap: {
-        paddingHorizontal: 24, 
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingBottom: 20,
         paddingTop: 8,
         backgroundColor: 'transparent',
@@ -582,16 +584,4 @@ const S = StyleSheet.create({
     },
 
     // Empty
-    emptyWrap: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-        backgroundColor: '#FFFFFF',
-    },
-    emptyText: {
-        fontSize: 14,
-        fontFamily: SgateFonts.medium,
-        color: '#999',
-    },
 });

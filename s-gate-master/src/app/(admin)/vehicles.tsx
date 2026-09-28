@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
-    KeyboardAvoidingView,
+
     Modal,
     Platform,
     ScrollView,
@@ -15,11 +15,13 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AnimatedBottomSheetModal } from '@/components/ui/AnimatedBottomSheetModal';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
-import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
+
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import * as Haptics from 'expo-haptics';
 
@@ -388,68 +390,64 @@ export default function AdminVehiclesScreen() {
                     onRefresh={fetchViolations}
                     ListEmptyComponent={
                         !loadingVios ? (
-                            <View style={styles.emptyWrap}>
-                                <MaterialCommunityIcons name="check-circle-outline" size={48} color={SgateColors.t4} />
-                                <Text style={styles.emptyTitle}>All Clear</Text>
-                                <Text style={styles.emptySub}>No active parking violations.</Text>
-                            </View>
+                            <EmptyState
+                                iconName="check-circle-outline"
+                                title="All Clear"
+                                description="No active parking violations."
+                            />
                         ) : null
                     }
                 />
             )}
 
             {/* Issue Violation Modal */}
-            <Modal visible={!!issueTarget} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setIssueTarget(null)}>
-                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-                    <SafeBottomSheetSurface style={styles.modalContent} showHandle minimumBottomPadding={20}>
-                        <Text style={styles.modalTitle}>Issue Violation</Text>
-                        <Text style={styles.modalSub}>
-                            Target: {typeof issueTarget === 'string' ? issueTarget : issueTarget?.plateNumber}
-                        </Text>
-                        
-                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                            <Text style={styles.fieldLabel}>Violation Type</Text>
-                            <View style={styles.tagsContainer}>
-                                {VIOLATION_TYPES.map(vt => (
-                                    <TouchableOpacity key={vt} style={[styles.tag, vType === vt && styles.tagActive]} onPress={() => setVType(vt)}>
-                                        <Text style={[styles.tagText, vType === vt && styles.tagTextActive]}>{vt.replace('_', ' ')}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
+            <AnimatedBottomSheetModal visible={!!issueTarget} onClose={() => setIssueTarget(null)}>
+                <Text style={styles.modalTitle}>Issue Violation</Text>
+                <Text style={styles.modalSub}>
+                    Target: {typeof issueTarget === 'string' ? issueTarget : issueTarget?.plateNumber}
+                </Text>
 
-                            <Text style={styles.fieldLabel}>Description (Optional)</Text>
-                            <TextInput
-                                style={styles.inputArea}
-                                placeholder="Details..."
-                                placeholderTextColor={SgateColors.t4}
-                                value={vDesc}
-                                onChangeText={setVDesc}
-                                multiline
-                            />
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                    <Text style={styles.fieldLabel}>Violation Type</Text>
+                    <View style={styles.tagsContainer}>
+                        {VIOLATION_TYPES.map(vt => (
+                            <TouchableOpacity key={vt} style={[styles.tag, vType === vt && styles.tagActive]} onPress={() => setVType(vt)}>
+                                <Text style={[styles.tagText, vType === vt && styles.tagTextActive]}>{vt.replace('_', ' ')}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
 
-                            <View style={styles.rowFields}>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.fieldLabel}>Penalty (INR)</Text>
-                                    <TextInput style={styles.input} keyboardType="numeric" value={vPenalty} onChangeText={setVPenalty} />
-                                </View>
-                                <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                                    <Text style={styles.fieldLabel}>Add to Invoice</Text>
-                                    <Switch value={vInvoice} onValueChange={setVInvoice} trackColor={{ true: SgateColors.green }} />
-                                </View>
-                            </View>
+                    <Text style={styles.fieldLabel}>Description (Optional)</Text>
+                    <TextInput
+                        style={styles.inputArea}
+                        placeholder="Details..."
+                        placeholderTextColor={SgateColors.t4}
+                        value={vDesc}
+                        onChangeText={setVDesc}
+                        multiline
+                    />
 
-                            <View style={styles.modalBtnRow}>
-                                <TouchableOpacity style={styles.modalCancel} onPress={() => setIssueTarget(null)}>
-                                    <Text style={styles.modalCancelTxt}>Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.modalSubmit} onPress={submitViolation} disabled={submitting}>
-                                    {submitting ? <ActivityIndicator color={SgateColors.card} /> : <Text style={styles.modalSubmitTxt}>Confirm Issue</Text>}
-                                </TouchableOpacity>
-                            </View>
-                        </ScrollView>
-                    </SafeBottomSheetSurface>
-                </KeyboardAvoidingView>
-            </Modal>
+                    <View style={styles.rowFields}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.fieldLabel}>Penalty (INR)</Text>
+                            <TextInput style={styles.input} keyboardType="numeric" value={vPenalty} onChangeText={setVPenalty} />
+                        </View>
+                        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                            <Text style={styles.fieldLabel}>Add to Invoice</Text>
+                            <Switch value={vInvoice} onValueChange={setVInvoice} trackColor={{ true: SgateColors.green }} />
+                        </View>
+                    </View>
+
+                    <View style={styles.modalBtnRow}>
+                        <TouchableOpacity style={styles.modalCancel} onPress={() => setIssueTarget(null)}>
+                            <Text style={styles.modalCancelTxt}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalSubmit} onPress={submitViolation} disabled={submitting}>
+                            {submitting ? <ActivityIndicator color={SgateColors.card} /> : <Text style={styles.modalSubmitTxt}>Confirm Issue</Text>}
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </AnimatedBottomSheetModal>
 
             {/* Resolve/Dismiss Modal */}
             <Modal visible={!!resolveTarget} transparent animationType="fade">
@@ -489,7 +487,7 @@ const styles = StyleSheet.create({
     headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingBottom: 16,
     },
     headerIconBtn: {
@@ -509,7 +507,7 @@ const styles = StyleSheet.create({
     // ── Tabs ─────────────────────────────────────────────────────
     tabWrapper: {
         backgroundColor: SgateColors.card,
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingBottom: 12,
     },
     segmentedContainer: {
@@ -588,7 +586,7 @@ const styles = StyleSheet.create({
     issueUnknownBtn: { backgroundColor: SgateColors.gold, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
     issueUnknownText: { color: SgateColors.card, fontSize: 14, fontFamily: SgateFonts.bold },
 
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
     modalContent: { paddingHorizontal: 28, maxHeight: '80%', shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 10 },
     smallModal: { backgroundColor: SgateColors.card, margin: 24, padding: 28, borderRadius: 32, marginBottom: 'auto', marginTop: 'auto', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 30, elevation: 20 },
     modalTitle: { fontSize: 22, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, marginBottom: 8 },

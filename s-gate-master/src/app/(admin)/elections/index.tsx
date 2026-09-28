@@ -12,11 +12,12 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -245,7 +246,7 @@ export default function AdminElectionsScreen() {
                             <TouchableOpacity
                                 style={styles.closeBtn}
                                 onPress={() => handleClosePoll(item)}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                             >
                                 <MaterialCommunityIcons name="lock-outline" size={15} color={SgateColors.t2} />
                                 <Text style={styles.closeBtnText}>Close Poll</Text>
@@ -254,7 +255,7 @@ export default function AdminElectionsScreen() {
                         <TouchableOpacity
                             style={styles.deleteBtn}
                             onPress={() => handleDeletePoll(item)}
-                            activeOpacity={0.75}
+                            activeOpacity={0.8}
                         >
                             <MaterialCommunityIcons name="trash-can-outline" size={15} color={SgateColors.red} />
                             <Text style={styles.deleteBtnText}>Delete</Text>
@@ -281,7 +282,7 @@ export default function AdminElectionsScreen() {
                             key={f}
                             style={[styles.filterTab, filter === f && styles.filterTabActive]}
                             onPress={() => setFilter(f)}
-                            activeOpacity={0.75}
+                            activeOpacity={0.8}
                         >
                             <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
                                 {f === 'ALL' ? 'All' : f === 'ACTIVE' ? 'Active' : 'Closed'}
@@ -306,11 +307,7 @@ export default function AdminElectionsScreen() {
                     refreshing={refreshing}
                     onRefresh={onRefresh}
                     ListEmptyComponent={
-                        <View style={styles.emptyWrap}>
-                            <MaterialCommunityIcons name="poll" size={56} color={SgateColors.t4} />
-                            <Text style={styles.emptyTitle}>No polls yet</Text>
-                            <Text style={styles.emptySub}>Create the first one.</Text>
-                        </View>
+                        <EmptyState iconName="poll" title="No polls yet" description="Create the first one." />
                     }
                 />
             )}
@@ -431,7 +428,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, marginBottom: 16 },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
@@ -439,10 +436,10 @@ const styles = StyleSheet.create({
 
     filterRow: {
         flexDirection: 'row',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         gap: 8,
     },
-    filterTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface },
+    filterTab: { paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 8, borderRadius: 20, backgroundColor: SgateColors.surface },
     filterTabActive: { backgroundColor: SgateColors.gold },
     filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
     filterTextActive: { color: SgateColors.t1 },
@@ -540,10 +537,6 @@ const styles = StyleSheet.create({
         borderColor: SgateColors.red + '15',
     },
     deleteBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.red },
-
-    emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.7 },
-    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 12, marginBottom: 4 },
-    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 
     // Create modal
     createModalWrap: { flex: 1, backgroundColor: SgateColors.bg, padding: 24 },

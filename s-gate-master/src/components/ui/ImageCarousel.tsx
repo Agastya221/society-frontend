@@ -27,7 +27,7 @@ export function ImageCarousel({ images, height = 256, resizeMode = 'cover' }: Im
 
     if (images.length === 1) {
         return (
-            <View className="w-full overflow-hidden rounded-xl bg-gray-100 dark:bg-zinc-800" style={{ height }}>
+            <View className="w-full overflow-hidden rounded-xl bg-gray-100" style={{ height }}>
                 <Image
                     source={{ uri: images[0] }}
                     style={{ width: '100%', height: '100%' }}
@@ -38,8 +38,8 @@ export function ImageCarousel({ images, height = 256, resizeMode = 'cover' }: Im
     }
 
     return (
-        <View 
-            className="w-full overflow-hidden rounded-xl bg-gray-100 dark:bg-zinc-800 relative" 
+        <View
+            className="w-full overflow-hidden rounded-xl bg-gray-100 relative"
             style={{ height }}
             onLayout={onLayout}
         >

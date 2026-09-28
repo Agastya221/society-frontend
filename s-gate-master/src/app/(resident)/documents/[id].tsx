@@ -1,11 +1,12 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet,
   Share, ScrollView, ActivityIndicator, StatusBar, Platform } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import { File, Paths } from 'expo-file-system';
@@ -51,6 +52,7 @@ function FileIcon({ ft }: { ft: string }) {
 }
 
 export default function DocumentDetailScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [doc, setDoc] = useState<Doc | null>(null);
@@ -166,7 +168,7 @@ export default function DocumentDetailScreen() {
         </SafeAreaView>
       </View>
 
-      <ScrollView contentContainerStyle={S.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[S.scroll, { paddingBottom: scrollBottomPadding }]} showsVerticalScrollIndicator={false}>
         <View style={S.centerArea}>
           <View style={S.mainCard}>
             <FileIcon ft={doc.fileType} />
@@ -190,7 +192,7 @@ export default function DocumentDetailScreen() {
           </View>
         </View>
         <View style={S.btns}>
-          <TouchableOpacity style={S.primary} onPress={handleOpen} activeOpacity={0.85}>
+          <TouchableOpacity style={S.primary} onPress={handleOpen} activeOpacity={0.8}>
             {opening
               ? <ActivityIndicator size="small" color={SgateColors.t1} />
               : <>
@@ -199,7 +201,7 @@ export default function DocumentDetailScreen() {
                 </>
             }
           </TouchableOpacity>
-          <TouchableOpacity style={S.secondary} onPress={handleShare} activeOpacity={0.85}>
+          <TouchableOpacity style={S.secondary} onPress={handleShare} activeOpacity={0.8}>
             <Feather name="share-2" size={16} color={SgateColors.t2} />
             <Text style={S.secondaryText}>Share</Text>
           </TouchableOpacity>
@@ -224,7 +226,7 @@ const S = StyleSheet.create({
   headerInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     paddingVertical: 12,
   },
   backBtn: {

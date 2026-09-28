@@ -2,10 +2,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import api from '../../../services/api';
 import { useAuthStore } from '../../../store/useAuthStore';
 
@@ -179,13 +180,11 @@ export default function FlatDetailsScreen() {
 
                     <View style={styles.sectionCard}>
                         {residents.length === 0 ? (
-                            <View style={styles.emptyBlock}>
-                                <View style={styles.emptyIconWrap}>
-                                    <MaterialCommunityIcons name="account-off-outline" size={28} color={SgateColors.t4} />
-                                </View>
-                                <Text style={styles.emptyTitle}>No residents yet</Text>
-                                <Text style={styles.emptySub}>Invite residents to this flat to get started.</Text>
-                            </View>
+                            <EmptyState
+                                iconName="account-off-outline"
+                                title="No residents yet"
+                                description="Invite residents to this flat to get started."
+                            />
                         ) : (
                             residents.map((resident, index) => (
                                 <View
@@ -238,7 +237,7 @@ const styles = StyleSheet.create({
     headerWrapper: {
         backgroundColor: SgateColors.card,
         paddingBottom: 20,
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(0,0,0,0.05)',
         shadowColor: '#000',
@@ -340,15 +339,6 @@ const styles = StyleSheet.create({
     residentSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
 
     // Empty
-    emptyBlock: { alignItems: 'center', paddingVertical: 20 },
-    emptyIconWrap: {
-        width: 56, height: 56, borderRadius: 18,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center', justifyContent: 'center',
-        marginBottom: 12,
-    },
-    emptyTitle: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t2, marginBottom: 4 },
-    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
 
     // Buttons
     primaryBtn: {

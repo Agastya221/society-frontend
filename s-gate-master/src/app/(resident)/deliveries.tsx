@@ -14,7 +14,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 
-import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../constants/Sgate-theme';
 import type { Entry } from '../../types/api';
 import * as gateService from '../../services/gate.service';
 
@@ -251,7 +251,7 @@ export default function DeliveriesScreen() {
                             <TouchableOpacity
                                 key={tab}
                                 style={[styles.segPill, active && styles.segPillActive]}
-                                activeOpacity={0.7}
+                                activeOpacity={0.8}
                                 onPress={() => setActiveTab(tab)}
                             >
                                 <Text
@@ -306,7 +306,7 @@ export default function DeliveriesScreen() {
             {/* ── FAB ─────────────────────────────────────────────────── */}
             <TouchableOpacity
                 style={[styles.fab, { bottom: 24 + insets.bottom }]}
-                activeOpacity={0.85}
+                activeOpacity={0.8}
                 onPress={() => setSheetVisible(true)}
             >
                 <Feather name="plus" size={24} color={SgateColors.black} />
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     // ── Header ──────────────────────────────────────────────────────────
     // ── Segmented control ───────────────────────────────────────────────
     segWrap: {
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 16,
         paddingBottom: 8,
     },
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
 
     // ── List ────────────────────────────────────────────────────────────
     listContent: {
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 8,
         paddingBottom: 100,
     },

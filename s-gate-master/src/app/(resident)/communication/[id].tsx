@@ -5,7 +5,7 @@ import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 
@@ -321,7 +321,7 @@ const S = StyleSheet.create({
   flex1: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   notFoundText: { fontFamily: SgateFonts.medium, fontSize: 15, color: SgateColors.t3 },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
   headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   list: { flex: 1, backgroundColor: SgateColors.bg },
   postHeader: { backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft, padding: 16, marginBottom: 8 },
@@ -340,7 +340,7 @@ const S = StyleSheet.create({
   statsText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
   likeBtn: { flexDirection: 'row', alignItems: 'center' },
   likedText: { color: SgateColors.red },
-  sectionHeader: { fontFamily: SgateFonts.bold, fontSize: 15, color: SgateColors.t1, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: SgateColors.bg },
+  sectionHeader: { fontFamily: SgateFonts.bold, fontSize: 15, color: SgateColors.t1, paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12, backgroundColor: SgateColors.bg },
   commentItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft, backgroundColor: SgateColors.card },
   commentItemAdmin: { backgroundColor: '#FFFBFB' },
   commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },

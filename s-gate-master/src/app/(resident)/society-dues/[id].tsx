@@ -15,7 +15,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -408,7 +408,7 @@ export default function SocietyDueDetailScreen() {
         <View style={styles.bottomActions}>
           <TouchableOpacity
             style={styles.downloadBtn}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
             onPress={generateAndShareReceipt}
             disabled={downloading}
           >
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
   headerInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     paddingVertical: 12,
   },
   backBtn: {
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 20 },
+  scrollContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 20 },
   statusStrip: {
     flexDirection: 'row',
     alignItems: 'center',
