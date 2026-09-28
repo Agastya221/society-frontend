@@ -24,7 +24,7 @@ import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { createInvitePass, createPartyInvite, addPartyGuest, removePartyGuest, DELIVERY_COMPANIES, createPreApproved } from '@/services/gate.service';
-import type { HelpCategory } from '@/types/api';
+import type { CreatePreApprovedPayload, HelpCategory } from '@/types/api';
 import type { PartyInvite, PartySlot } from '@/services/gate.service';
 import { useAuthStore } from '@/store/useAuthStore';
 import { QRCarousel, type QRPassData } from './QRCarousel';
@@ -1646,7 +1646,33 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                 return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
             };
 
-            let result: { id: string };
+            let result: { id: string } | null;
+
+            /**
+             * The backend does not create a second active entry of the same
+             * type/mode for a flat: it answers 200 with a DUPLICATE_EXISTS
+             * warning and no entry. That used to be treated as success, so the
+             * user saw "Pass Created!" for a pass that didn't exist. Ask, and
+             * only create when they confirm.
+             */
+            const createEntry = async (payload: CreatePreApprovedPayload): Promise<{ id: string } | null> => {
+                const res = await createPreApproved(payload);
+                if (!('warning' in res)) return res;
+                const proceed = await new Promise<boolean>(resolve => {
+                    AppAlert.show(
+                        'Similar pass already active',
+                        'Your flat already has an active pass like this one. Create another one anyway?',
+                        [
+                            { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+                            { text: 'Create anyway', onPress: () => resolve(true) },
+                        ],
+                        { cancelable: false },
+                    );
+                });
+                if (!proceed) return null;
+                const retry = await createPreApproved({ ...payload, skipDuplicateCheck: true });
+                return 'warning' in retry ? null : retry;
+            };
 
             if (inviteType === 'GUEST') {
                 const w = tab === 'once' ? buildOnceWindow() : buildFreqWindow();
@@ -1664,7 +1690,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                 if (digs.length < 4) { AppAlert.show('Required', 'Enter the last 4 digits of the vehicle number for gate verification.'); setSubmitting(false); return; }
                 if (tab === 'once') {
                     const w = buildOnceWindow(true);
-                    result = await createPreApproved({
+                    result = await createEntry({
                         type: 'CAB',
                         mode: safeMode ? 'SAFE' : 'NORMAL',
                         scheduleType: 'ONCE',
@@ -1672,10 +1698,10 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         startTime: new Date(w.validFrom).toTimeString().slice(0, 5),
                         endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
                         vehicleLast4Digits: digs,
-                    }) as { id: string };
+                    });
                 } else {
                     const w = buildFreqWindow();
-                    result = await createPreApproved({
+                    result = await createEntry({
                         type: 'CAB',
                         mode: safeMode ? 'SAFE' : 'NORMAL',
                         scheduleType: 'RECURRING',
@@ -1686,13 +1712,13 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         timeTo: parseTime(timeUntil),
                         entriesPerDay: maxUses < 0 ? 10 : maxUses,
                         vehicleLast4Digits: digs,
-                    }) as { id: string };
+                    });
                 }
 
             } else if (inviteType === 'DELIVERY') {
                 if (tab === 'once') {
                     const w = buildOnceWindow(true);
-                    result = await createPreApproved({
+                    result = await createEntry({
                         type: 'DELIVERY',
                         mode: surpriseDelivery ? 'SURPRISE' : 'NORMAL',
                         scheduleType: 'ONCE',
@@ -1701,11 +1727,11 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
                         companyName: company || undefined,
                         isSurprise: surpriseDelivery,
-                    }) as { id: string };
+                    });
                 } else {
                     if (!company) { AppAlert.show('Required', 'Select a delivery company.'); setSubmitting(false); return; }
                     const w = buildFreqWindow();
-                    result = await createPreApproved({
+                    result = await createEntry({
                         type: 'DELIVERY',
                         mode: 'NORMAL',
                         scheduleType: 'RECURRING',
@@ -1716,7 +1742,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         timeTo: parseTime(timeUntil),
                         entriesPerDay: maxUses < 0 ? 10 : maxUses,
                         companyName: company,
-                    }) as { id: string };
+                    });
                 }
 
             } else {
@@ -1724,7 +1750,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                 if (!serviceCategory) { AppAlert.show('Required', 'Please select a service category.'); setSubmitting(false); return; }
                 if (tab === 'once') {
                     const w = buildOnceWindow();
-                    result = await createPreApproved({
+                    result = await createEntry({
                         type: 'HELP',
                         mode: 'NORMAL',
                         scheduleType: 'ONCE',
@@ -1732,10 +1758,10 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         startTime: new Date(w.validFrom).toTimeString().slice(0, 5),
                         endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
                         category: serviceCategory,
-                    }) as { id: string };
+                    });
                 } else {
                     const w = buildFreqWindow();
-                    result = await createPreApproved({
+                    result = await createEntry({
                         type: 'HELP',
                         mode: 'NORMAL',
                         scheduleType: 'RECURRING',
@@ -1746,10 +1772,11 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         timeTo: parseTime(timeUntil),
                         entriesPerDay: maxUses < 0 ? 10 : maxUses,
                         category: serviceCategory,
-                    }) as { id: string };
+                    });
                 }
             }
 
+            if (!result) return; // user kept the existing pass
             completedResult.current = { type: inviteType, id: result.id };
             showSuccess();
         } catch (err: any) {
