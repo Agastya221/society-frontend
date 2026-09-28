@@ -9,10 +9,12 @@ interface StepHeaderProps {
     subtitle?: string;
     onBack?: () => void;
     right?: React.ReactNode;
+    /** Text and icon colour on a coloured header (dark party themes). */
+    tint?: string;
 }
 
 /** The title row every step opens with — one definition, so steps can't drift. */
-export function StepHeader({ title, subtitle, onBack, right }: StepHeaderProps) {
+export function StepHeader({ title, subtitle, onBack, right, tint }: StepHeaderProps) {
     return (
         <View style={S.row}>
             {onBack ? (
@@ -23,13 +25,13 @@ export function StepHeader({ title, subtitle, onBack, right }: StepHeaderProps) 
                     accessibilityRole="button"
                     accessibilityLabel="Go back"
                 >
-                    <Feather name="arrow-left" size={22} color={SgateColors.t2} />
+                    <Feather name="arrow-left" size={22} color={tint ?? SgateColors.t2} />
                 </TouchableOpacity>
             ) : null}
 
             <View style={S.text}>
-                <Text style={S.title} numberOfLines={1}>{title}</Text>
-                {subtitle ? <Text style={S.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
+                <Text style={[S.title, tint ? { color: tint } : null]} numberOfLines={1}>{title}</Text>
+                {subtitle ? <Text style={[S.subtitle, tint ? { color: tint, opacity: 0.75 } : null]} numberOfLines={1}>{subtitle}</Text> : null}
             </View>
 
             {right}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext, useEffect } from 'react';
 import {
     View,
     Text,
@@ -21,6 +21,8 @@ import Animated, {
 import { Feather } from '@expo/vector-icons';
 import EmptyState from '@/components/ui/EmptyState';
 import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
+
+import { SheetMeasureContext } from './sheet/SheetShell';
 
 const welcomeBg = require('@/assets/mygate-style-bg.png');
 
@@ -268,7 +270,17 @@ function PaginationDots({ total, scrollX }: { total: number; scrollX: SharedValu
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
+/** The colour along the top edge of `welcomeBg`, sampled from the image. */
+const ARTWORK_TOP = '#F3ECDA';
+
 export function QRCarousel({ passes, hostName = 'You', flatInfo, societyInfo, onDone }: QRCarouselProps) {
+    // Match the sheet's handle strip to the top of the artwork, so there is no
+    // white band above it. A no-op outside the pre-approval sheet.
+    const host = useContext(SheetMeasureContext);
+    useEffect(() => {
+        host?.reportChrome(ARTWORK_TOP);
+    }, [host]);
+
     const scrollX = useSharedValue(0);
     const onScroll = useAnimatedScrollHandler({
         onScroll: (e) => { scrollX.value = e.contentOffset.x; },

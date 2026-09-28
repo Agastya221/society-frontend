@@ -17,6 +17,7 @@ import {
     View,
     Modal,
     Keyboard,
+    Linking,
 } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
 
@@ -857,7 +858,7 @@ const PARTY_THEMES = [
         bgImage: require('../../../assets/images/party_room_bg.jpg'),
         headerBg: '#F5EFE8', headlineColor: '#8B6300', dark: false,
         chipBorder: '#E8564A', chipBg: '#FFE8E2',
-        ctaBg: '#F5C800', ctaText: '#1A1A1A',
+        ctaBg: SgateColors.gold, ctaText: SgateColors.t1,
         overlayBg: 'rgba(255,252,240,0.72)',
     },
     {
@@ -897,7 +898,7 @@ const PARTY_THEMES = [
         bgImage: require('../../../assets/images/theme_birthday_bg.jpg'),
         headerBg: '#FFFBEB', headlineColor: '#92400E', dark: false,
         chipBorder: '#F59E0B', chipBg: '#FEF3C7',
-        ctaBg: '#F59E0B', ctaText: '#1A1A1A',
+        ctaBg: '#F59E0B', ctaText: SgateColors.t1,
         overlayBg: 'rgba(255,251,235,0.72)',
     },
 ];
@@ -931,31 +932,26 @@ function PartyGroupThemePanel({ onBack, onNext }: {
         <SheetShell
             height="fill"
             bottomClearance={sheetClearance}
+            chromeColor={theme.headerBg}
             contentContainerStyle={{ flexGrow: 1, backgroundColor: theme.headerBg }}
             footerStyle={{ backgroundColor: theme.headerBg }}
-            header={<View style={[PT.header, { backgroundColor: theme.headerBg, paddingTop: 28 }]}>
-                <TouchableOpacity
-                    style={PT.headerBack}
-                    onPress={onBack}
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                >
-                    <Feather
-                        name="arrow-left"
-                        size={22}
-                        color={theme.dark ? '#FFFFFF' : SgateColors.t1}
+            header={
+                <View style={{ backgroundColor: theme.headerBg }}>
+                    <StepHeader
+                        title="Party/Group Invite"
+                        onBack={onBack}
+                        tint={theme.dark ? SgateColors.card : undefined}
                     />
-                </TouchableOpacity>
-                <Text style={[PT.headerTitle, theme.dark && { color: '#FFFFFF' }]}>
-                    Party/Group Invite
-                </Text>
-            </View>}
-            footer={<TouchableOpacity
-                style={[PT.nextBtn, { backgroundColor: theme.ctaBg }]}
-                onPress={() => onNext({ theme: selectedTheme, note })}
-                activeOpacity={0.8}
-            >
-                <Text style={[PT.nextBtnText, { color: theme.ctaText }]}>Next</Text>
-            </TouchableOpacity>}
+                </View>
+            }
+            footer={
+                <PrimaryAction
+                    label="Next"
+                    onPress={() => onNext({ theme: selectedTheme, note })}
+                    color={theme.ctaBg}
+                    textColor={theme.ctaText}
+                />
+            }
         >
 
             {/* ── Full-bleed illustration area ─────────────────────── */}
@@ -996,12 +992,9 @@ function PartyGroupThemePanel({ onBack, onNext }: {
                         maxLength={120}
                     />
 
-                    {/* Theme chips */}
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={PT.chipRow}
-                    >
+                    {/* Theme chips — one row of equal cells spanning the gutter,
+                        so the last one is never clipped at the edge. */}
+                    <View style={PT.chipRow}>
                         {PARTY_THEMES.map((t, i) => (
                             <TouchableOpacity
                                 key={i}
@@ -1024,7 +1017,7 @@ function PartyGroupThemePanel({ onBack, onNext }: {
                                 <Text style={PT.chipEmoji}>{t.emoji}</Text>
                             </TouchableOpacity>
                         ))}
-                    </ScrollView>
+                    </View>
                 </View>
 
             </View>
@@ -1033,23 +1026,8 @@ function PartyGroupThemePanel({ onBack, onNext }: {
 }
 
 const PT = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: SgateLayout.screenGutter,
-        paddingTop: 14,
-        paddingBottom: 10,
-    },
-    headerBack: {
-        marginRight: 12,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.t1,
-    },
     overlayCard: {
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 20,
         paddingBottom: 16,
         gap: 14,
@@ -1090,12 +1068,13 @@ const PT = StyleSheet.create({
         color: '#E2E8F0',
     },
     chipRow: {
-        gap: 10,
+        flexDirection: 'row',
+        gap: 8,
         paddingVertical: 4,
     },
     chip: {
-        width: 54,
-        height: 54,
+        flex: 1,
+        aspectRatio: 1,
         borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
@@ -1110,21 +1089,6 @@ const PT = StyleSheet.create({
         bottom: 20,
         left: 20,
         right: 20,
-    },
-    nextBtn: {
-        borderRadius: 50,
-        height: 54,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 6,
-    },
-    nextBtnText: {
-        fontSize: 18,
-        fontFamily: SgateFonts.bold,
     },
     // legacy stubs (used nowhere — kept for PT reference safety)
     heroBanner: { height: 0 },
@@ -1177,20 +1141,16 @@ function PartyGroupFormPanel({ theme, note, onBack, onSubmit, submitting = false
         <SheetShell
             height="fit"
             bottomClearance={sheetClearance}
-            header={<View style={S.tabHeader}>
-                <TouchableOpacity onPress={onBack} style={S.backBtn} hitSlop={{ top:12,bottom:12,left:12,right:12 }}>
-                    <Feather name="arrow-left" size={22} color={SgateColors.t2} />
-                </TouchableOpacity>
-                <Text style={S.panelTitle}>Party/Group Invite</Text>
-            </View>}
+            header={<StepHeader title="Party/Group Invite" subtitle="When, where and how many" onBack={onBack} />}
             contentContainerStyle={{ paddingHorizontal: SgateLayout.screenGutter, paddingBottom: 16 }}
             footer={<PrimaryAction label="Create Invite" onPress={handle} loading={submitting} />}
         >
                 {/* Mini theme banner */}
                 <View style={S.partyMiniHeader}>
                     <Text style={S.partyMiniEmoji}>{THEME_ILLUSTRATIONS[theme]}</Text>
-                    <TouchableOpacity onPress={onBack}>
-                        <Text style={S.partyCustomizeLink}>✏️ Customise</Text>
+                    <TouchableOpacity onPress={onBack} style={S.inlineLink} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <Feather name="edit-2" size={14} color={SgateColors.goldDeep} />
+                        <Text style={S.partyCustomizeLink}>Customise</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -1227,7 +1187,7 @@ function PartyGroupFormPanel({ theme, note, onBack, onSubmit, submitting = false
                 />
 
                 <Text style={S.fieldLabel}>How many guests are you expecting? (max 50)*</Text>
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                <View style={S.partyCountRow}>
                     {PARTY_GUEST_COUNTS.map(n => (
                         <TouchableOpacity
                             key={n}
@@ -1239,7 +1199,7 @@ function PartyGroupFormPanel({ theme, note, onBack, onSubmit, submitting = false
                         </TouchableOpacity>
                     ))}
                     <TextInput
-                        style={[S.partyCountChip, maxGuests === -1 && S.partyCountChipActive, { flex: 1, fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1 }]}
+                        style={[S.partyCountChip, S.partyCountCustom, maxGuests === -1 && S.partyCountChipActive]}
                         keyboardType="number-pad"
                         placeholder="Custom"
                         placeholderTextColor={SgateColors.t4}
@@ -1281,7 +1241,6 @@ function PartyGroupFormPanel({ theme, note, onBack, onSubmit, submitting = false
 
 /** The same emoji the theme picker shows, so the chosen theme is what comes back. */
 const THEME_ILLUSTRATIONS = PARTY_THEMES.map(t => t.emoji);
-const THEME_BGSRC = ['#F3EDE3', '#EDF0FF', '#FFF0F3', '#EDF8F8', '#F5F5F5', '#FFF3E0'];
 
 function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: () => void }) {
     const sheetClearance = useSheetBottomClearance();
@@ -1292,6 +1251,7 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
     const [adding, setAdding]     = useState(false);
     const [removing, setRemoving] = useState<string | null>(null);
 
+    const bannerColor = PARTY_THEMES[invite.theme]?.headerBg ?? SgateColors.surface;
     const usedSlots  = guests.length;
     const totalSlots = invite.maxGuests;
 
@@ -1345,10 +1305,11 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
         <SheetShell
             height="fill"
             bottomClearance={sheetClearance}
+            chromeColor={bannerColor}
             footer={<PrimaryAction label="Done" onPress={onClose} />}
         >
             {/* Theme illustration banner */}
-            <View style={[S.partySuccessBanner, { backgroundColor: THEME_BGSRC[invite.theme] }]}>
+            <View style={[S.partySuccessBanner, { backgroundColor: bannerColor }]}>
                 <Text style={S.partySuccessEmoji}>{THEME_ILLUSTRATIONS[invite.theme]}</Text>
             </View>
 
@@ -1361,18 +1322,18 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
                 {invite.venue ? <Text style={S.partyMetaVenue}>{invite.venue}</Text> : null}
 
                 <TouchableOpacity style={S.editInviteRow} onPress={() => AppAlert.show('Edit Invite', 'Coming soon!')}>
-                    <Feather name="edit-2" size={14} color={SgateColors.blue} />
+                    <Feather name="edit-2" size={14} color={SgateColors.goldDeep} />
                     <Text style={S.editInviteText}>Edit Invite</Text>
                 </TouchableOpacity>
             </View>
 
             {/* Share CTA */}
-            <View style={{ paddingHorizontal: 20, marginBottom: 10 }}>
+            <View style={S.partySection}>
                 <Text style={S.partyShareHint}>
                     Share this link with all guests, and they can generate their own entry codes.
                 </Text>
                 <TouchableOpacity style={S.partyShareBtn} onPress={handleShare} activeOpacity={0.8}>
-                    <Feather name="link" size={18} color="#000" />
+                    <Feather name="link" size={18} color={SgateColors.goldDeep} />
                     <Text style={S.partyShareBtnText}>Share invite link</Text>
                 </TouchableOpacity>
             </View>
@@ -1387,7 +1348,7 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
                 )}
             </View>
 
-            <View style={{ paddingHorizontal: 16, paddingBottom: 40 }}>
+            <View style={[S.partySection, { paddingBottom: 24 }]}>
                 {/* Inline add form */}
                 {showAdd && (
                     <View style={S.partyAddForm}>
@@ -1419,7 +1380,8 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
                 )}
 
                 {guests.map(g => (
-                    <View key={g.code} style={S.partyGuestCard}>
+                    <View key={g.code}>
+                    <View style={S.partyGuestCard}>
                         {/* Avatar circle */}
                         <View style={S.partyGuestAvatar}>
                             <Text style={S.partyGuestAvatarText}>{(g.name ?? 'G')[0].toUpperCase()}</Text>
@@ -1435,7 +1397,7 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
                                 <TouchableOpacity
                                     onPress={() => Share.share({ message: `Your entry code: ${g.code}` })}
                                 >
-                                    <Feather name="share" size={18} color={SgateColors.blue} />
+                                    <Feather name="share" size={18} color={SgateColors.goldDeep} />
                                 </TouchableOpacity>
                             </View>
                             {g.addedByResident && (
@@ -1446,10 +1408,9 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
                             )}
                         </View>
                     </View>
-                ))}
 
-                {guests.length > 0 && guests.map(g => (
-                    <View key={`actions-${g.code}`} style={S.partyGuestActions}>
+                    {/* This guest's actions, directly under their card. */}
+                    <View style={S.partyGuestActions}>
                         <TouchableOpacity
                             style={S.partyGuestAction}
                             onPress={() => handleRemove(g.code)}
@@ -1461,11 +1422,13 @@ function PartySuccessPanel({ invite, onClose }: { invite: PartyInvite; onClose: 
                         <View style={S.partyGuestActionDivider} />
                         <TouchableOpacity
                             style={S.partyGuestAction}
-                            onPress={() => AppAlert.show('Call', `Calling ${g.phone}…`)}
+                            onPress={() => { if (g.phone) Linking.openURL(`tel:${g.phone}`); }}
+                            disabled={!g.phone}
                         >
                             <Feather name="phone" size={15} color={SgateColors.t2} />
                             <Text style={S.partyGuestActionText}>Call</Text>
                         </TouchableOpacity>
+                    </View>
                     </View>
                 ))}
             </View>
@@ -2142,15 +2105,21 @@ const S = StyleSheet.create({
     partyMiniHeader: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingVertical: 12,
-        backgroundColor: '#F3EDE3', borderRadius: 14,
+        backgroundColor: SgateColors.surface, borderRadius: 14,
         paddingHorizontal: SgateLayout.screenGutter, marginTop: 12, marginBottom: 4,
     },
     partyMiniEmoji: { fontSize: 36 },
-    partyCustomizeLink: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.blue },
+    partyCustomizeLink: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.goldDeep },
+    partyCountRow: { flexDirection: 'row', gap: 8, marginTop: 4 },
+    /** Equal cells: the counts line up with each other and the fields above. */
     partyCountChip: {
-        paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12,
+        flex: 1, height: SgateLayout.controlHeight, borderRadius: 12,
         borderWidth: 1.5, borderColor: SgateColors.border,
         backgroundColor: SgateColors.card, alignItems: 'center', justifyContent: 'center',
+    },
+    partyCountCustom: {
+        flex: 1.6, paddingHorizontal: 14, textAlign: 'center',
+        fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1,
     },
     partyCountChipActive: { borderColor: SgateColors.goldDeep, backgroundColor: SgateColors.goldPale },
     partyCountText: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
@@ -2579,7 +2548,7 @@ const S = StyleSheet.create({
     },
     partySuccessEmoji: { fontSize: 100 },
     partyMetaCard: {
-        marginHorizontal: 20, marginTop: -20,
+        marginHorizontal: SgateLayout.screenGutter, marginTop: -20,
         backgroundColor: SgateColors.card,
         borderRadius: 18, padding: 18,
         elevation: 4, shadowColor: '#000', shadowOpacity: 0.10,
@@ -2603,19 +2572,24 @@ const S = StyleSheet.create({
         paddingTop: 8,
     },
     editInviteText: {
-        fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.blue,
+        fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.goldDeep,
     },
     partyShareHint: {
         fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3,
         textAlign: 'center', marginBottom: 14, lineHeight: 20,
     },
+    partySection: { paddingHorizontal: SgateLayout.screenGutter, marginBottom: 10 },
+    /**
+     * Same shape as the footer's Done (PrimaryAction), in the secondary
+     * treatment — two identical gold buttons would compete.
+     */
     partyShareBtn: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-        backgroundColor: '#FDE12A', borderRadius: 14,
+        backgroundColor: SgateColors.goldPale, borderRadius: 16,
         height: 54,
     },
     partyShareBtnText: {
-        fontSize: 16, fontFamily: SgateFonts.bold, color: '#000',
+        fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.goldDeep,
     },
     partyGuestListHeader: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -2625,8 +2599,9 @@ const S = StyleSheet.create({
         fontSize: 17, fontFamily: SgateFonts.extrabold, color: SgateColors.t1,
     },
     partyAddGuestLink: {
-        fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.blue,
+        fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.goldDeep,
     },
+    inlineLink: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     partyEmptyState: {
         backgroundColor: SgateColors.surface, borderRadius: 14,
         padding: 24, alignItems: 'center',

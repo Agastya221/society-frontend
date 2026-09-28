@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SgateColors, SgateRadius } from '@/constants/Sgate-theme';
 
-import { SheetMeasureContext, type StepHeight } from './SheetShell';
+import { SheetMeasureContext, type SheetHost, type StepHeight } from './SheetShell';
 import { StepTransition, type StepDirection } from './StepTransition';
 
 const ENTER_SPRING = { damping: 22, stiffness: 200, mass: 0.8 };
@@ -131,6 +131,23 @@ export function StepSheet({ visible, onClose, height, stepKey, direction = 'forw
             ? current
             : { step, height: next }));
     }, []);
+
+    /** Handle-strip colour, tagged by step for the same reason as the height. */
+    const [chrome, setChrome] = useState<{ step: string; color: string | null } | null>(null);
+    const reportChrome = useCallback((color: string | null) => {
+        const step = stepKeyRef.current;
+        setChrome(current => (current && current.step === step && current.color === color
+            ? current
+            : { step, color }));
+    }, []);
+    const host = useMemo<SheetHost>(() => ({ reportHeight, reportChrome }), [reportHeight, reportChrome]);
+
+    const chromeColor = (chrome && chrome.step === stepKey && chrome.color) || SgateColors.card;
+    const chromeValue = useSharedValue<string>(SgateColors.card);
+    useEffect(() => {
+        chromeValue.value = withTiming(chromeColor, { duration: 220 });
+    }, [chromeColor, chromeValue]);
+    const chromeStyle = useAnimatedStyle(() => ({ backgroundColor: chromeValue.value }));
 
     const finishClose = useCallback(() => {
         closingRef.current = false;
@@ -252,7 +269,7 @@ export function StepSheet({ visible, onClose, height, stepKey, direction = 'forw
             <View style={S.keyboardWrap} pointerEvents="box-none">
                 <Animated.View style={[S.sheet, { maxHeight }, sheetStyle]}>
                         <View style={S.measureFill}>
-                            <SheetMeasureContext.Provider value={reportHeight}>
+                            <SheetMeasureContext.Provider value={host}>
                                 <StepTransition stepKey={stepKey} direction={direction} stretch>
                                     {children}
                                 </StepTransition>
@@ -265,9 +282,9 @@ export function StepSheet({ visible, onClose, height, stepKey, direction = 'forw
                         gesture lives here so scrolling a form or the QR
                         carousel cannot accidentally close the sheet. */}
                     <GestureDetector gesture={pan}>
-                        <View style={S.dragRegion}>
+                        <Animated.View style={[S.dragRegion, chromeStyle]}>
                             <View style={S.handle} />
-                        </View>
+                        </Animated.View>
                     </GestureDetector>
                 </Animated.View>
             </View>

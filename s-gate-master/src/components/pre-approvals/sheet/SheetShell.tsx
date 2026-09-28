@@ -30,13 +30,29 @@ export interface SheetShellProps {
     contentContainerStyle?: StyleProp<ViewStyle>;
     scrollRef?: React.Ref<ScrollView>;
     onScroll?: React.ComponentProps<typeof ScrollView>['onScroll'];
+    /**
+     * Colour of the step's top edge when it isn't the card colour (artwork
+     * steps). The sheet paints its handle strip to match, so there is no
+     * white band above a full-bleed header.
+     */
+    chromeColor?: string;
+}
+
+export interface SheetHost {
+    /** The height the step would like: header + body content + footer. */
+    reportHeight: (height: number) => void;
+    /**
+     * The colour the step's top edge starts with, so the sheet's handle strip
+     * can match it. `null` for the default card colour.
+     */
+    reportChrome: (color: string | null) => void;
 }
 
 /**
- * How a step tells the sheet the height it would like. The sheet provides it;
- * a step that is fading out gets `null`, so only the incoming step is heard.
+ * How a step talks to the sheet it is in. The sheet provides it; a step that
+ * is fading out gets `null`, so only the incoming step is heard.
  */
-export const SheetMeasureContext = createContext<((height: number) => void) | null>(null);
+export const SheetMeasureContext = createContext<SheetHost | null>(null);
 
 /**
  * The anatomy every step in the pre-approval sheet is built from.
@@ -62,8 +78,10 @@ export function SheetShell({
     contentContainerStyle,
     scrollRef,
     onScroll,
+    chromeColor,
 }: SheetShellProps) {
-    const report = useContext(SheetMeasureContext);
+    const host = useContext(SheetMeasureContext);
+    const report = host?.reportHeight;
     const parts = useRef<{ top: number | null; body: number | null; bottom: number | null }>({
         top: null,
         body: null,
@@ -85,6 +103,10 @@ export function SheetShell({
 
     // A step that starts leaving and comes back gets a fresh reporter.
     useEffect(flush, [report]);
+
+    useEffect(() => {
+        host?.reportChrome(chromeColor ?? null);
+    }, [host, chromeColor]);
 
     return (
         <View style={S.root}>
