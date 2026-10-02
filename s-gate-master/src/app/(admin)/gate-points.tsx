@@ -125,7 +125,7 @@ export default function GatePointsScreen() {
                 renderItem={({ item, index }) => {
                     const guardCount = getGuardCount(item.id);
                     return (
-                        <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+                        <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}>
                             <View style={styles.card}>
                                 <View style={styles.cardTop}>
                                     <View style={[styles.iconBubble, { backgroundColor: item.active ? SgateColors.greenBg : SgateColors.surface }]}>

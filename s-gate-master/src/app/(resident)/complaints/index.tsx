@@ -2,10 +2,10 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
+import { ScreenHeader, HeaderIconButton } from '@/components/layout/ScreenHeader';
 import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
 import { Complaint, ComplaintStatus, deleteComplaint, fetchComplaints } from '../../../services/complaints';
 import { AppAlert } from '../../../components/ui/AppAlert';
@@ -30,7 +30,6 @@ export default function ComplaintsScreen() {
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
     const loadComplaints = async (isRefresh = false) => {
-        if (!isRefresh) setIsLoading(true);
         setError('');
         try {
             const data = await fetchComplaints();
@@ -73,42 +72,39 @@ export default function ComplaintsScreen() {
         : [];
 
     return (
-        <ComplaintScreenLayout
-            headerContent={
-                <View>
-                    <View style={S.headerInner}>
-                        <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                        </TouchableOpacity>
-                        <Text style={S.headerTitle}>Complaints</Text>
-                        <TouchableOpacity
-                            style={S.addBtn}
-                            onPress={() => router.push('/(resident)/complaints/create')}
-                        >
-                            <Feather name="plus" size={20} color={SgateColors.t1} />
-                        </TouchableOpacity>
-                    </View>
-                    {/* ── Filter Chips ──────────────────────────────────────────── */}
-                    <View style={S.filterContainer}>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterScroll}>
-                            {FILTERS.map(f => {
-                                const active = filterStatus === f.key;
-                                return (
-                                    <TouchableOpacity
-                                        key={f.key}
-                                        style={[S.chip, active && S.chipActive]}
-                                        onPress={() => setFilterStatus(f.key)}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Text style={[S.chipText, active && S.chipTextActive]}>{f.label}</Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
-                    </View>
-                </View>
-            }
-        >
+        <View style={S.root}>
+            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+            <ScreenHeader
+                title="Complaints"
+                rightAction={
+                    <HeaderIconButton
+                        icon="plus"
+                        onPress={() => router.push('/(resident)/complaints/create')}
+                        accessibilityLabel="Create complaint"
+                    />
+                }
+            >
+                {/* ── Filter Chips ──────────────────────────────────────────── */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.filterScroll}>
+                    {FILTERS.map(f => {
+                        const active = filterStatus === f.key;
+                        return (
+                            <TouchableOpacity
+                                key={f.key}
+                                style={[S.chip, active && S.chipActive]}
+                                onPress={() => setFilterStatus(f.key)}
+                                activeOpacity={0.8}
+                            >
+                                <Text style={[S.chipText, active && S.chipTextActive]}>{f.label}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
+            </ScreenHeader>
+
+            <View style={S.spacer} />
+
+            <View style={S.contentWrapper}>
             {/* ── Error Banner ────────────────────────────────────────────── */}
             {error ? (
                 <View style={S.errorBanner}>
@@ -160,27 +156,21 @@ export default function ComplaintsScreen() {
                     }
                 />
             )}
-        </ComplaintScreenLayout>
+            </View>
+        </View>
     );
 }
 
 const S = StyleSheet.create({
-    // Header
-    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12 },
-    backBtn: { width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 4 },
-    addBtn: {
-        width: 44, height: 44, borderRadius: 22,
-        backgroundColor: SgateColors.goldPale,
-        alignItems: 'center', justifyContent: 'center',
-    },
+    root: { flex: 1, backgroundColor: SgateColors.bg },
+    spacer: { height: 6 },
+    contentWrapper: { flex: 1 },
 
     // Error
     errorBanner: { backgroundColor: SgateColors.redBg, paddingHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
     errorText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.red, textAlign: 'center' },
 
     // Filter Chips
-    filterContainer: { paddingBottom: 12, paddingTop: 4 },
     filterScroll: { paddingHorizontal: SgateLayout.screenGutter, gap: 8 },
     chip: {
         paddingHorizontal: 18,
@@ -198,7 +188,6 @@ const S = StyleSheet.create({
     chipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
     chipTextActive: { color: SgateColors.t1 },
 
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     listContent: { paddingHorizontal: SgateLayout.screenGutter, paddingBottom: 40 },
 
     // Empty State

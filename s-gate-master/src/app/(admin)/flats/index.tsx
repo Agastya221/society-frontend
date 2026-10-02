@@ -58,7 +58,6 @@ export default function FlatsScreen() {
             );
             const blocks: { id: string; name: string }[] =
                 blocksRes.data?.data ?? [];
-            console.log('[Flats] Blocks received:', blocks.length, JSON.stringify(blocks.slice(0, 3)));
 
             const allFlats: Flat[] = [];
             await Promise.all(
@@ -68,7 +67,6 @@ export default function FlatsScreen() {
                             `/resident/onboarding/societies/${societyId}/blocks/${block.id}/flats`
                         );
                         const rawFlats = flatsRes.data?.data ?? [];
-                        console.log(`[Flats] Block "${block.name}" (${block.id}) raw flats:`, rawFlats.length, JSON.stringify(rawFlats.slice(0, 3)));
                         const blockFlats = rawFlats.map(
                             (f: any) => ({
                                 id: f.id,
@@ -86,7 +84,6 @@ export default function FlatsScreen() {
                     }
                 })
             );
-            console.log('[Flats] Total flats loaded:', allFlats.length, 'Sample:', JSON.stringify(allFlats.slice(0, 2)));
             setFlats(allFlats);
         } catch (err) {
             console.error('[Flats] Failed to fetch blocks:', err);
@@ -253,10 +250,9 @@ export default function FlatsScreen() {
                     />
                 }
                 renderItem={({ item, index }) => {
-                    // Show max 3 chars in the avatar to prevent overflow
-                    const avatarLabel = (item.number || '—').length > 3
-                        ? (item.number || '—').slice(0, 3)
-                        : (item.number || '—');
+                    // Full flat number, shrunk to fit: cutting to 3 characters
+                    // made A101-A104 all read "A10".
+                    const avatarLabel = item.number || '—';
                     return (
                     <Animated.View entering={FadeInDown.delay(Math.min(index, 15) * 40).springify()}>
                         <TouchableOpacity
@@ -272,7 +268,7 @@ export default function FlatsScreen() {
                             activeOpacity={0.8}
                         >
                             <View style={styles.avatarCircle}>
-                                <Text style={styles.avatarText}>{avatarLabel}</Text>
+                                <Text style={styles.avatarText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{avatarLabel}</Text>
                             </View>
                             <View style={styles.cardInfo}>
                                 <Text style={styles.cardTitle} numberOfLines={1}>Flat {item.number || '—'}</Text>
@@ -437,7 +433,7 @@ const styles = StyleSheet.create({
         backgroundColor: SgateColors.gold,
         alignItems: 'center', justifyContent: 'center',
     },
-    avatarText: { fontSize: 13, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 },
+    avatarText: { fontSize: 13, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, paddingHorizontal: 4 },
     cardInfo: { flex: 1 },
     cardTitle: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 2 },
     cardSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },

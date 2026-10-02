@@ -81,6 +81,18 @@ describe('useAuthStore (s-gate-master)', () => {
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith('requiresOnboarding', 'true');
     });
 
+    it('normalizes flat.flatNumber from the API into flat.number', async () => {
+      const apiUser = { ...mockUser, flat: { flatNumber: 'A-101', block: { name: 'A' } } } as unknown as User;
+      await useAuthStore.getState().login(ACCESS_TOKEN, REFRESH_TOKEN, apiUser, 'RESIDENT', false, null);
+      expect(useAuthStore.getState().user?.flat).toEqual({ number: 'A-101', flatNumber: 'A-101', block: { name: 'A' } });
+    });
+
+    it('keeps an existing flat.number untouched', async () => {
+      const u = { ...mockUser, flat: { number: 'B-2', flatNumber: 'IGNORED' } } as User;
+      await useAuthStore.getState().login(ACCESS_TOKEN, REFRESH_TOKEN, u, 'RESIDENT', false, null);
+      expect(useAuthStore.getState().user?.flat?.number).toBe('B-2');
+    });
+
     it('throws "Failed to save authentication data" when SecureStore fails', async () => {
       (SecureStore.setItemAsync as jest.Mock).mockRejectedValue(new Error('disk full'));
       await expect(
@@ -164,6 +176,21 @@ describe('useAuthStore (s-gate-master)', () => {
       expect(s.role).toBe(mockUser.role);
       expect(s.isAuthenticated).toBe(true);
       expect(s.isLoading).toBe(false);
+    });
+
+    it('normalizes a persisted user that only has flat.flatNumber', async () => {
+      const stored = { ...mockUser, flat: { flatNumber: 'C-303' } };
+      (SecureStore.getItemAsync as jest.Mock)
+        .mockResolvedValueOnce(ACCESS_TOKEN)
+        .mockResolvedValueOnce(REFRESH_TOKEN)
+        .mockResolvedValueOnce(JSON.stringify(stored))
+        .mockResolvedValueOnce('RESIDENT')
+        .mockResolvedValueOnce('false')
+        .mockResolvedValueOnce('')
+        .mockResolvedValueOnce('[]');
+
+      await useAuthStore.getState().loadToken();
+      expect(useAuthStore.getState().user?.flat?.number).toBe('C-303');
     });
 
     it('sets isLoading false with no stored tokens', async () => {

@@ -123,7 +123,7 @@ export default function EmergencyListScreen() {
         const flatName = item.sender?.flat || item.flat?.flatNumber || item.flat?.number;
 
         return (
-            <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}>
                 <View style={[styles.card, isActive && styles.cardActive]}>
                     {/* Top row */}
                     <View style={styles.cardTop}>

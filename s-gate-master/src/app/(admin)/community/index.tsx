@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -127,7 +127,14 @@ export default function AdminCommunityScreen() {
         }
     };
 
-    useFocusEffect(useCallback(() => { setLoading(true); fetchPosts(); }, [activeCategory]));
+    // Spinner only when the list itself changes (first load or a new category);
+    // coming back to the screen refreshes in place.
+    const loadedCategory = useRef<string | null>(null);
+    useFocusEffect(useCallback(() => {
+        if (loadedCategory.current !== activeCategory) setLoading(true);
+        loadedCategory.current = activeCategory;
+        fetchPosts();
+    }, [activeCategory]));
     const onRefresh = () => { setRefreshing(true); fetchPosts(true); };
 
     const handlePin = async (post: CommunityPost) => {
@@ -197,7 +204,7 @@ export default function AdminCommunityScreen() {
     const renderItem = ({ item, index }: { item: CommunityPost; index: number }) => {
         const cfg = CATEGORY_CFG[item.category] ?? CATEGORY_CFG.GENERAL;
         return (
-            <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                 <View style={styles.card}>
                     <View style={styles.cardTopRow}>
                         {item.isPinned && (

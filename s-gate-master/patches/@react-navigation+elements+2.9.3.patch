@@ -1,0 +1,28 @@
+diff --git a/node_modules/@react-navigation/elements/lib/module/Screen.js b/node_modules/@react-navigation/elements/lib/module/Screen.js
+index 8689e62..738cca1 100644
+--- a/node_modules/@react-navigation/elements/lib/module/Screen.js
++++ b/node_modules/@react-navigation/elements/lib/module/Screen.js
+@@ -35,6 +35,9 @@ export function Screen(props) {
+     });
+   }, [route.name]);
+   return /*#__PURE__*/_jsxs(Background, {
++    // Fade the scene as one layer, so Android elevation shadows fade with it
++    // instead of lingering as dark outlines during tab transitions.
++    needsOffscreenAlphaCompositing: true,
+     "aria-hidden": !focused,
+     style: [styles.container, style]
+     // On Fabric we need to disable collapsing for the background to ensure
+diff --git a/node_modules/@react-navigation/elements/src/Screen.tsx b/node_modules/@react-navigation/elements/src/Screen.tsx
+index 1ed2b99..369bdbd 100644
+--- a/node_modules/@react-navigation/elements/src/Screen.tsx
++++ b/node_modules/@react-navigation/elements/src/Screen.tsx
+@@ -74,6 +74,9 @@ export function Screen(props: Props) {
+       // On Fabric we need to disable collapsing for the background to ensure
+       // that we won't render unnecessary views due to the view flattening.
+       collapsable={false}
++      // Fade the scene as one layer, so Android elevation shadows fade with it
++      // instead of lingering as dark outlines during tab transitions.
++      needsOffscreenAlphaCompositing
+     >
+       {headerShown ? (
+         <NavigationContext.Provider value={navigation}>

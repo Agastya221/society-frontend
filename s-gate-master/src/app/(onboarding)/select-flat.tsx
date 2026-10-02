@@ -9,13 +9,13 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import EmptyState from '@/components/ui/EmptyState';
 import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useOnboardingNext } from '@/hooks/useOnboardingNext';
 import { useFlats } from '@/hooks/useOnboardingQueries';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import { SkeletonList } from '@/components/lists/AppFlashList';
@@ -23,15 +23,22 @@ import type { Flat } from '@/types/onboarding.types';
 
 // ─── Status color helper ──────────────────────────────────────────────────────
 
+// Go by who actually holds the flat. `isOccupied` alone can be stale (seeded
+// flats are marked occupied with no owner or tenant), which labelled empty
+// flats "Occupied".
+function isTakenFlat(flat: Flat) {
+    return flat.hasTenant || (flat.isOccupied && flat.hasOwner);
+}
+
 function getStatusColor(flat: Flat) {
-    if (flat.isOccupied) return SgateColors.red;
+    if (isTakenFlat(flat)) return SgateColors.red;
     if (flat.hasOwner) return SgateColors.gold;
     if (flat.canApply) return SgateColors.green;
     return SgateColors.t4;
 }
 
 function getStatusLabel(flat: Flat) {
-    if (flat.isOccupied) return 'Occupied';
+    if (isTakenFlat(flat)) return 'Occupied';
     if (flat.hasOwner) return 'Has Owner';
     if (flat.canApply) return 'Available';
     return '';
@@ -135,12 +142,12 @@ function FloorHeader({ floor, count }: { floor: string; count: number }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function SelectFlatScreen() {
-    const router = useRouter();
     const insets = useSafeAreaInsets();
     const selectedSociety = useOnboardingStore((s) => s.selectedSociety);
     const selectedBlock = useOnboardingStore((s) => s.selectedBlock);
     const selectedFlat = useOnboardingStore((s) => s.selectedFlat);
     const setFlat = useOnboardingStore((s) => s.setFlat);
+    const goNext = useOnboardingNext();
 
     const [search, setSearch] = useState('');
     const [isFocused, setIsFocused] = useState(false);
@@ -184,6 +191,9 @@ export default function SelectFlatScreen() {
     const handleSelectFlat = useCallback(
         (flat: Flat) => {
             if (!flat.canApply) return;
+            // Re-tapping the selected flat keeps resident type/docs (setFlat
+            // wipes downstream).
+            if (useOnboardingStore.getState().selectedFlat?.id === flat.id) return;
             setFlat(flat);
         },
         [setFlat]
@@ -191,7 +201,7 @@ export default function SelectFlatScreen() {
 
     const handleContinue = () => {
         if (!selectedFlat) return;
-        router.push('/(onboarding)/resident-type');
+        goNext('/(onboarding)/resident-type');
     };
 
     const canContinue = !!selectedFlat;

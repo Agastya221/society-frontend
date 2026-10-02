@@ -217,7 +217,7 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.listContent}
                 renderItem={({ item, index }) => (
-                    <Animated.View entering={FadeInDown.delay(index * 40).springify()}>
+                    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 40).springify()}>
                         <TouchableOpacity style={styles.contactCard} activeOpacity={0.8}>
                             <Avatar name={item.name} size={44} color={item.isGuard ? SgateColors.blue : SgateColors.gold} />
                             <View style={styles.contactMid}>

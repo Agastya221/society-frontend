@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
 import { FlatList,
@@ -10,7 +10,7 @@ import { FlatList,
     View } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader, HeaderIconButton } from '@/components/layout/ScreenHeader';
 import EmptyState from '@/components/ui/EmptyState';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
@@ -52,7 +52,6 @@ function scheduleLabel(entry: PreApprovedEntry): string {
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function PreApprovalsScreen() {
-    const router = useRouter();
     const [entries, setEntries] = useState<PreApprovedEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -217,29 +216,17 @@ export default function PreApprovalsScreen() {
     // ── Loading / error ──────────────────────────────────────────────────────
     if (loading) {
         return (
-            <SafeAreaView style={styles.safe} edges={['top']}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Pre-Approvals</Text>
-                    
-                </View>
+            <View style={styles.safe}>
+                <ScreenHeader title="Pre-Approvals" />
                 <AppLoader />
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (error && entries.length === 0) {
         return (
-            <SafeAreaView style={styles.safe} edges={['top']}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Pre-Approvals</Text>
-                    
-                </View>
+            <View style={styles.safe}>
+                <ScreenHeader title="Pre-Approvals" />
                 <View style={styles.centered}>
                     <Feather name="wifi-off" size={40} color={SgateColors.t4} />
                     <Text style={styles.errorText}>{error}</Text>
@@ -250,27 +237,22 @@ export default function PreApprovalsScreen() {
                         <Text style={styles.retryBtnText}>Retry</Text>
                     </TouchableOpacity>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
         <View style={styles.safe}>
-            {/* Header */}
-            <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Pre-Approvals</Text>
-                    <TouchableOpacity
-                        style={styles.addBtn}
+            <ScreenHeader
+                title="Pre-Approvals"
+                rightAction={
+                    <HeaderIconButton
+                        icon="plus"
                         onPress={() => setSheetVisible(true)}
-                    >
-                        <Feather name="plus" size={20} color={SgateColors.card} />
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+                        accessibilityLabel="Create pre-approval"
+                    />
+                }
+            />
 
             <FlatList
                 data={entries}
@@ -374,31 +356,6 @@ export default function PreApprovalsScreen() {
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
 
-    header: {
-        backgroundColor: SgateColors.card,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 13,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-    addBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: SgateColors.black,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
 
     centered: {
         flex: 1,

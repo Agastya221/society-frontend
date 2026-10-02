@@ -22,6 +22,8 @@ import { WorkspaceSwitchButton } from '@/components/ui/WorkspaceSwitchButton';
 import { SgateColors, SgateFonts, SgateLayout, SgateRadius } from '@/constants/Sgate-theme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useGateStore } from '@/store/useGateStore';
+import { useNotificationStore } from '@/store/useNotificationStore';
 import { useProfileStore } from '@/store/useProfileStore';
 import * as profileService from '@/services/profile.service';
 import type {
@@ -231,6 +233,9 @@ export default function ResidentProfileScreen() {
         setSwitchingContextId(context.membershipId);
         try {
             const result = await profileService.switchResidentContext(context.membershipId);
+            // The old flat's gate requests and badges must not carry over.
+            useGateStore.getState().reset();
+            useNotificationStore.getState().reset();
             await login(
                 result.accessToken,
                 result.refreshToken,
@@ -238,6 +243,7 @@ export default function ResidentProfileScreen() {
                 result.appType,
                 false,
                 null,
+                result.contexts?.contexts,
             );
             setContextsData(result.contexts);
             useProfileStore.getState().invalidate();
@@ -389,7 +395,7 @@ export default function ResidentProfileScreen() {
                 <View style={styles.card}>
                     <SettingRow
                         icon="bell-outline"
-                        title="Notification Preferences"
+                        title="Notifications"
                         onPress={() => safePush(router, `${routePrefix}/notifications`)}
                     />
                     <SettingRow

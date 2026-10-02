@@ -11,7 +11,7 @@ FlatList,
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader, HeaderIconButton } from '@/components/layout/ScreenHeader';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import EmptyState from '@/components/ui/EmptyState';
 import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
@@ -93,7 +93,7 @@ function VehicleCard({ vehicle, index, onDelete }: { vehicle: Vehicle; index: nu
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 80).springify()}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 80).springify()}>
       <TouchableOpacity style={S.card} activeOpacity={0.8}>
         {/* Top row: icon + plate + menu */}
         <View style={S.cardTopRow}>
@@ -198,28 +198,16 @@ export default function MyVehiclesScreen() {
     <View style={S.root}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
-      {/* ── Header (edge-to-edge) ─────────────────────────────────────── */}
-      <View style={S.headerBg}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.headerInner}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={S.backBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle}>My Vehicles</Text>
-            <TouchableOpacity
-              style={S.headerAddBtn}
-              onPress={() => router.push('/(resident)/vehicles/add' as any)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="plus" size={18} color={SgateColors.goldDeep} />
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </View>
+      <ScreenHeader
+        title="My Vehicles"
+        rightAction={
+          <HeaderIconButton
+            icon="plus"
+            onPress={() => router.push('/(resident)/vehicles/add' as any)}
+            accessibilityLabel="Add vehicle"
+          />
+        }
+      />
 
       {/* ── Content ───────────────────────────────────────────────────── */}
       {loading ? (
@@ -276,45 +264,7 @@ const S = StyleSheet.create({
     backgroundColor: SgateColors.bg,
   },
 
-  // ── Header ────────────────────────────────────────────────────────────
-  headerBg: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.04)',
-  },
-  headerInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SgateLayout.screenGutter,
-    paddingVertical: 12,
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t1,
-    marginLeft: 12,
-  },
-  headerAddBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: SgateColors.goldPale,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
 
   // ── List ──────────────────────────────────────────────────────────────
   listContent: {

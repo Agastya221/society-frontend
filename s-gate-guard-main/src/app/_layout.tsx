@@ -1,6 +1,6 @@
 import { useAuthStore } from '@/store/useAuthStore';
 import * as Notifications from 'expo-notifications';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, Platform, View } from 'react-native';
@@ -22,7 +22,6 @@ Notifications.setNotificationHandler({
 
 export default function RootLayout() {
   const router = useRouter();
-  const segments = useSegments();
   const { isAuthenticated, isLoading, loadToken } = useAuthStore();
 
   // Load stored token on app launch
@@ -61,20 +60,9 @@ export default function RootLayout() {
     return () => sub.remove();
   }, [router]);
 
-  // Handle authentication-based navigation
-  useEffect(() => {
-    if (isLoading) return;
-
-    const inAuthGroup = segments[0] === 'auth';
-
-    if (!isAuthenticated && !inAuthGroup) {
-      // Redirect to auth screen if not authenticated
-      router.replace('/auth');
-    } else if (isAuthenticated && inAuthGroup) {
-      // Redirect to home if already authenticated
-      router.replace('/');
-    }
-  }, [isAuthenticated, segments, isLoading, router]);
+  // Auth routing is declarative (Stack.Protected below): signed-out users only
+  // ever mount /auth, so the dashboard never renders (or fires API calls)
+  // before the redirect, and nothing navigates before the navigator mounts.
 
   // Show loading screen while checking authentication
   if (isLoading) {
@@ -96,7 +84,10 @@ export default function RootLayout() {
         headerShadowVisible: false,
         headerTitleStyle: { fontFamily: GuardFonts.semibold, fontWeight: '700', fontSize: 17 },
       }}>
-        <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Protected guard={!isAuthenticated}>
+          <Stack.Screen name="auth" options={{ headerShown: false }} />
+        </Stack.Protected>
+        <Stack.Protected guard={isAuthenticated}>
         <Stack.Screen name="index" />
         <Stack.Screen 
           name="new-entry" 
@@ -128,6 +119,13 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen
+          name="pre-approved"
+          options={{
+            headerShown: true,
+            title: 'Pre-approved Passes',
+          }}
+        />
+        <Stack.Screen
           name="scan-verify"
           options={{ headerShown: false }}
         />
@@ -146,8 +144,9 @@ export default function RootLayout() {
           options={{ 
             headerShown: true,
             title: 'My Profile',
-          }} 
+          }}
         />
+        </Stack.Protected>
       </Stack>
       <StatusBar style="dark" backgroundColor={GuardColors.card} />
     </>

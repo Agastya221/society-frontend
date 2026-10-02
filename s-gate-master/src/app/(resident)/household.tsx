@@ -277,7 +277,7 @@ export default function HouseholdScreen() {
                     <SectionHeader title="My Family" onAdd={() => setInviteVisible(true)} />
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.horizontalContent}>
                         {family.map((member, idx) => (
-                            <Animated.View key={member.id} entering={FadeInRight.delay(idx * 100).springify()}>
+                            <Animated.View key={member.id} entering={FadeInRight.delay(Math.min(idx, 8) * 100).springify()}>
                                 <Pressable
                                     style={S.personCard}
                                     onPress={() => setDetailMember(member)}
@@ -338,7 +338,7 @@ export default function HouseholdScreen() {
                             const sc = VEHICLE_STATUS[v.status] ?? VEHICLE_STATUS.PENDING;
                             const isBike = v.vehicleType.toUpperCase() === 'BIKE';
                             return (
-                                <Animated.View key={v.id} entering={FadeInRight.delay(idx * 100).springify()}>
+                                <Animated.View key={v.id} entering={FadeInRight.delay(Math.min(idx, 8) * 100).springify()}>
                                     <Pressable
                                         style={S.personCard}
                                         onPress={() => setDetailVehicle(v)} 

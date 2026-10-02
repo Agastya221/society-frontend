@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, StyleSheet,
   Switch, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
@@ -9,6 +8,8 @@ import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-t
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 // ─── Types — match exact backend PostCategory enum values ────────────────────
 type PostCategory =
   | 'GENERAL' | 'ANNOUNCEMENT' | 'QUESTION' | 'ISSUE'
@@ -36,7 +37,7 @@ const CATEGORIES: PostCategory[] = [
 ];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
-export default function CreatePostScreen() {
+function CreatePostScreen() {
     const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const [category, setCategory]               = useState<PostCategory | null>(null);
@@ -70,20 +71,18 @@ export default function CreatePostScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Post</Text>
-        <TouchableOpacity onPress={handlePost} disabled={isPostDisabled} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          {submitting
-            ? <ActivityIndicator size="small" color={SgateColors.blue} />
-            : <Text style={[styles.postButton, isPostDisabled && styles.postButtonDisabled]}>Post</Text>
-          }
-        </TouchableOpacity>
-      </View>
+    <View style={styles.safeArea}>
+      <ScreenHeader
+        title="New Post"
+        rightAction={
+          <TouchableOpacity onPress={handlePost} disabled={isPostDisabled} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            {submitting
+              ? <ActivityIndicator size="small" color={SgateColors.blue} />
+              : <Text style={[styles.postButton, isPostDisabled && styles.postButtonDisabled]}>Post</Text>
+            }
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollBottomPadding }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
@@ -172,7 +171,7 @@ export default function CreatePostScreen() {
           />
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -180,8 +179,6 @@ export default function CreatePostScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: SgateColors.card },
   flex1: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft, paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   postButton: { fontFamily: SgateFonts.semibold, fontSize: 15, color: SgateColors.blue },
   postButtonDisabled: { color: SgateColors.t4 },
   scrollView: { flex: 1, backgroundColor: SgateColors.bg },
@@ -206,3 +203,5 @@ const styles = StyleSheet.create({
   anonymousTitle: { fontFamily: SgateFonts.semibold, fontSize: 14, color: SgateColors.t1 },
   anonymousSubtitle: { fontFamily: SgateFonts.regular, fontSize: 12, color: SgateColors.t3, marginTop: 2 },
 });
+
+export default withResetOnBlur(CreatePostScreen);

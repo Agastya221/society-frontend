@@ -440,7 +440,7 @@ export default function SharedProfileScreen({ role }: SharedProfileScreenProps) 
                 <View style={styles.card}>
                     <SettingRow
                         icon="bell-outline"
-                        title="Notification Preferences"
+                        title="Notifications"
                         onPress={() => safePush(router, `${routePrefix}/notifications`)}
                     />
                     <SettingRow

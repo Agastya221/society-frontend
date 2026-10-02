@@ -180,7 +180,7 @@ export default function ApprovalsScreen() {
         const isUrgent  = secsLeft < 60 && !isExpired;
 
         return (
-            <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}>
                 <View style={[styles.requestCard, isPending && styles.requestCardActive]}>
                     {/* Top: photo + info */}
                     <View style={styles.requestTop}>

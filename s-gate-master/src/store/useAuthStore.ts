@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { User } from '../types/auth';
 import type { ResidentContext } from '../services/profile.service';
+import { normalizeUser } from '@/utils/normalizeUser';
 import {
     getActiveContextForRole,
     getAdminContexts,
@@ -110,6 +111,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         onboardingStatus?: string | null,
         contexts?: ResidentContext[],
     ) => {
+        user = normalizeUser(user);
         try {
             await SecureStore.setItemAsync(TOKEN_KEY, accessToken);
             await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, refreshToken);
@@ -281,7 +283,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             ]);
 
             if (accessToken && userJson) {
-                const user = JSON.parse(userJson) as User;
+                const user = normalizeUser(JSON.parse(userJson) as User);
                 const userContexts = contextsJson ? (JSON.parse(contextsJson) as ResidentContext[]) : [];
                 const residentId = selectedResidentContextId
                     ?? getResidentContexts(userContexts).find((context) => context.isActiveContext)?.membershipId

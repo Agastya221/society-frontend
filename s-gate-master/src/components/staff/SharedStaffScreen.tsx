@@ -172,7 +172,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
     };
 
     const renderStaffCard = ({ item, index }: { item: StaffMember; index: number }) => (
-        <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+        <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
             <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={() => openEditForm(item)} disabled={item.source !== 'DOMESTIC'}>
                 <View style={styles.cardHeader}>
                     <Avatar name={item.name} photoUrl={item.photoUrl} size={46} />
@@ -231,7 +231,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
         const statusBg = record?.status === 'PRESENT' ? SgateColors.greenBg : record?.status === 'HALF_DAY' ? SgateColors.goldPale : SgateColors.redBg;
 
         return (
-            <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                 <View style={styles.card}>
                     <View style={styles.cardHeader}>
                         <Avatar name={item.name} photoUrl={item.photoUrl} size={42} />

@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, StatusBar } from 'react-native';
 import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -160,7 +160,7 @@ function DueCard({ item, index, onPress }: { item: DueItem; index: number; onPre
   const badge = BADGE_CFG[item.status] ?? BADGE_CFG.PENDING;
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}>
       <TouchableOpacity style={S.dueCard} onPress={onPress} activeOpacity={0.8}>
         <View style={S.dueCardRow}>
           <View style={{ flex: 1 }}>
@@ -201,7 +201,7 @@ function SocietyDueCard({ item, index }: { item: SocietyDueItem; index: number }
   const badge = BADGE_CFG[item.status] ?? BADGE_CFG.PENDING;
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
       <View style={S.societyDueCard}>
         <View style={{ flex: 1 }}>
           <View style={S.dueTitleRow}>
@@ -397,10 +397,17 @@ export default function DuesScreen({ role }: DuesScreenProps) {
       </View>
 
       {/* ── Pay Button ────────────────────────────────────────────────── */}
-      <TouchableOpacity style={S.payBtn} onPress={handlePayOutstanding} activeOpacity={0.8}>
-        <Text style={S.payBtnText}>Pay Outstanding</Text>
-        <Feather name="arrow-right" size={20} color={SgateColors.t1} />
-      </TouchableOpacity>
+      {dues.some(d => d.status !== 'PAID') ? (
+        <TouchableOpacity style={S.payBtn} onPress={handlePayOutstanding} activeOpacity={0.8}>
+          <Text style={S.payBtnText}>Pay Outstanding</Text>
+          <Feather name="arrow-right" size={20} color={SgateColors.t1} />
+        </TouchableOpacity>
+      ) : (
+        <View style={S.paidUp}>
+          <Feather name="check-circle" size={18} color={SgateColors.green} />
+          <Text style={S.paidUpText}>All dues cleared</Text>
+        </View>
+      )}
 
       {role === 'admin' && adminSummary && (
         <View style={S.collectionBlock}>
@@ -504,17 +511,7 @@ export default function DuesScreen({ role }: DuesScreenProps) {
     <View style={S.root}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
-      {/* ── Header ────────────────────────────────────────────────────── */}
-      <View style={S.headerBg}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.headerInner}>
-            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle}>{TITLE}</Text>
-          </View>
-        </SafeAreaView>
-      </View>
+      <ScreenHeader title={TITLE} />
 
       {loading ? (
         <AppLoader />
@@ -550,10 +547,6 @@ const S = StyleSheet.create({
   root: { flex: 1, backgroundColor: SgateColors.bg },
 
   // Header
-  headerBg: { backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12 },
-  backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
-  headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
 
   listContent: { paddingBottom: 40 },
   listHeader: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 28, paddingBottom: 8 },
@@ -592,6 +585,12 @@ const S = StyleSheet.create({
     marginBottom: 32,
   },
   payBtnText: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+  paidUp: {
+    backgroundColor: SgateColors.greenBg, borderRadius: 16, height: 54,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    marginBottom: 32,
+  },
+  paidUpText: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.green },
 
   // Section Title
   sectionTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 14 },

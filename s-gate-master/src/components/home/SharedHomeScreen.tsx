@@ -1,4 +1,5 @@
 import * as Haptics from 'expo-haptics';
+import { useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -37,6 +38,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useGateStore } from '@/store/useGateStore';
 import { useNotificationStore } from '@/store/useNotificationStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useProfileStore } from '@/store/useProfileStore';
 import { buildOnboardingDraftFromRequest } from '@/utils/onboardingRequestDraft';
 
 import ActivityCard from './ActivityCard';
@@ -118,10 +120,13 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
     const startRequestCorrectionFlow = useOnboardingStore((s) => s.startRequestCorrectionFlow);
 
     const isAdmin = role === 'admin';
+    const queryClient = useQueryClient();
 
     const pendingRequests = useGateStore((state) => state.pendingRequests);
     const entries = useGateStore((state) => state.entries);
-    const gateLoading = useGateStore((state) => state.isLoading);
+    // Skeletons only until the first fetch lands: refetching on focus must not
+    // blank cards that already have content.
+    const gateLoading = useGateStore((state) => state.isLoading && !state.hasLoaded);
     const fetchPendingRequests = useGateStore((state) => state.fetchPendingRequests);
     const fetchEntries = useGateStore((state) => state.fetchEntries);
     const approveRequest = useGateStore((state) => state.approveRequest);
@@ -223,6 +228,9 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                         kind: 'delivery',
                     },
                 ]);
+            } else {
+                // Nothing expected any more: drop a stale "delivery arriving" card.
+                setSocietyUpdates((current) => current.filter((update) => update.kind !== 'delivery'));
             }
         } else {
             setDeliveryCount(null);
@@ -386,6 +394,12 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         setSwitchingContextId(context.membershipId);
         try {
             const result = await switchResidentContext(context.membershipId);
+            // Drop the old flat's data first, so nothing from it (waiting
+            // visitors, badges, updates) shows under the new flat.
+            useGateStore.getState().reset();
+            useProfileStore.getState().reset();
+            useNotificationStore.getState().reset();
+            setSocietyUpdates([]);
             await login(
                 result.accessToken,
                 result.refreshToken,
@@ -393,7 +407,10 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                 result.appType,
                 false,
                 null,
+                // Fresh contexts, so the new flat is the one marked active.
+                result.contexts?.contexts,
             );
+            queryClient.invalidateQueries();
             setContextsData(result.contexts);
             setShowContextSheet(false);
 
@@ -426,6 +443,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         fetchAdminData,
         isAdmin,
         router,
+        queryClient,
     ]);
 
     const handleAddAnotherHome = useCallback(() => {
@@ -594,7 +612,7 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
                         {pendingSocietyPasses.map((pass, index) => (
                             <Animated.View
                                 key={pass.id}
-                                entering={FadeInDown.delay(index * 60).springify()}
+                                entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}
                                 exiting={
                                     exitDir[pass.id] === 'right'
                                         ? FadeOutRight.duration(260)

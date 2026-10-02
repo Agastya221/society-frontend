@@ -219,10 +219,10 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
     onDecline: (id: string) => void;
 }) {
     return (
-        <Animated.View entering={FadeInDown.delay(index * 50).duration(220)} style={styles.waitingCard}>
+        <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).duration(220)} style={styles.waitingCard}>
             <Avatar name={request.visitorName} size={50} />
             <View style={styles.visitorCopy}>
-                <Text style={styles.visitorName} numberOfLines={1}>{request.visitorName}</Text>
+                <Text style={styles.visitorName} numberOfLines={1}>{request.visitorName || 'Visitor'}</Text>
                 <Text style={styles.visitorType}>{formatVisitorType(request.type)} • {request.gate ?? 'Gate 1'}</Text>
                 <View style={styles.waitingTime}>
                     <MaterialCommunityIcons name="clock-outline" size={15} color={ResidentHomeColors.danger} />

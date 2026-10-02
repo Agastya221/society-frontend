@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useState } from 'react';
@@ -15,7 +15,7 @@ import {
 import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
@@ -150,7 +150,7 @@ function AdminDocCard({ doc, index }: { doc: SocietyDocument; index: number }) {
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={styles.docCard}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()} style={styles.docCard}>
       <FileIconBubble fileType={doc.fileType} />
       <View style={styles.docContent}>
         <Text style={styles.docName} numberOfLines={2}>{doc.name}</Text>
@@ -207,7 +207,7 @@ function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: numb
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={styles.docCard}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()} style={styles.docCard}>
       <FileIconBubble fileType={doc.fileType} />
       <View style={styles.docContent}>
         <Text style={styles.docName} numberOfLines={2}>{doc.name}</Text>
@@ -248,7 +248,6 @@ function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: numb
 // ─── Screen ─────────────────────────────────────────────────────────────────
 
 export default function DocumentsScreen() {
-  const router = useRouter();
   const [adminDocs, setAdminDocs] = useState<SocietyDocument[]>([]);
   const [myDocs, setMyDocs] = useState<SocietyDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -287,22 +286,7 @@ export default function DocumentsScreen() {
     <View style={styles.root}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
-      {/* ── Header (edge-to-edge) ─────────────────────────────────────── */}
-      <View style={styles.headerBg}>
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerInner}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={styles.backBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Documents</Text>
-            <View style={{ width: 22 }} />
-          </View>
-        </SafeAreaView>
-      </View>
+      <ScreenHeader title="Documents" />
 
       {/* ── Content ───────────────────────────────────────────────────── */}
       {loading ? (
@@ -372,30 +356,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Header ────────────────────────────────────────────────────────────
-  headerBg: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.04)',
-  },
-  headerInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SgateLayout.screenGutter,
-    paddingVertical: 12,
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t1,
-    marginLeft: 12,
-  },
 
   center: {
     flex: 1,

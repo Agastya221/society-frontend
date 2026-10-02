@@ -189,7 +189,7 @@ export default function SocietyScreen() {
     const visitorRows = useMemo<VisitorListRow[]>(() => {
         const q = search.toLowerCase().trim();
         const filtered = q
-            ? entries.filter(e => e.visitorName.toLowerCase().includes(q) || (e.flat?.number ?? '').toLowerCase().includes(q))
+            ? entries.filter(e => (e.visitorName ?? '').toLowerCase().includes(q) || (e.flat?.number ?? '').toLowerCase().includes(q))
             : entries;
         const result: VisitorListRow[] = [];
         let lastDate = '';
@@ -218,7 +218,7 @@ export default function SocietyScreen() {
                     <Avatar name={e.visitorName} size={42} />
                     <View style={S.visitorBody}>
                         <View style={S.visitorTop}>
-                            <Text style={S.visitorName} numberOfLines={1}>{e.visitorName}</Text>
+                            <Text style={S.visitorName} numberOfLines={1}>{e.visitorName || 'Visitor'}</Text>
                             <Text style={S.visitorTime}>{timeOnly(e.createdAt)}</Text>
                         </View>
                         <View style={S.visitorBottom}>

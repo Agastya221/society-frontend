@@ -37,6 +37,7 @@ export default function ProfileScreen() {
     const { logout } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<GuardProfile | null>(null);
+    const [reloadKey, setReloadKey] = useState(0);
 
     // Fetch latest profile from API
     useEffect(() => {
@@ -57,12 +58,12 @@ export default function ProfileScreen() {
                 });
             })
             .catch((err) => {
-                console.error('Failed to fetch profile', err);
+                console.warn('Failed to fetch profile', err?.message);
             })
             .finally(() => {
                 setLoading(false);
             });
-    }, []);
+    }, [reloadKey]);
 
     const handleLogout = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -118,8 +119,12 @@ export default function ProfileScreen() {
             <View style={styles.centered}>
                 <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
                 <Text style={styles.errorText}>Could not load profile</Text>
+                {/* A network blip shouldn't push the guard toward logging out — offer a retry first. */}
+                <Pressable onPress={() => { setLoading(true); setReloadKey((k) => k + 1); }} style={styles.retryButton}>
+                    <Text style={styles.retryButtonText}>Try again</Text>
+                </Pressable>
                 <Pressable onPress={handleLogout} style={styles.logoutButtonSmall}>
-                    <Text style={styles.logoutButtonText}>Return to Login</Text>
+                    <Text style={styles.logoutButtonText}>Log Out</Text>
                 </Pressable>
             </View>
         );
@@ -418,6 +423,17 @@ const styles = StyleSheet.create({
         marginTop: 12,
         borderWidth: 1.5,
         borderColor: '#FEE2E2',
+    },
+    retryButton: {
+        backgroundColor: GuardColors.gold,
+        borderRadius: 12,
+        padding: 14,
+        paddingHorizontal: 32,
+    },
+    retryButtonText: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: GuardColors.black,
     },
     logoutButtonSmall: {
         backgroundColor: '#FEF2F2',

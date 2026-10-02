@@ -4,7 +4,7 @@ import {
 import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -104,7 +104,7 @@ function ElectionCard({ item, index }: { item: ElectionItem; index: number }) {
   const badgeLabel = isElection ? 'Election' : 'Survey';
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}>
       <TouchableOpacity
         activeOpacity={0.8}
         style={S.card}
@@ -158,7 +158,6 @@ function ElectionCard({ item, index }: { item: ElectionItem; index: number }) {
 // ── Screen ────────────────────────────────────────────────────────────────────
 export default function ElectionsScreen() {
     const scrollBottomPadding = useScrollBottomPadding();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>('ACTIVE');
   const [items, setItems] = useState<ElectionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -198,18 +197,7 @@ export default function ElectionsScreen() {
 
   return (
     <View style={S.root}>
-      {/* Header — bg extends behind status bar */}
-      <View style={S.headerContainer}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.header}>
-            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} activeOpacity={0.8}>
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle}>Elections & Surveys</Text>
-            <View style={S.headerSpacer} />
-          </View>
-        </SafeAreaView>
-
+      <ScreenHeader title="Elections & Surveys">
         <View style={S.tabRow}>
           {(['ACTIVE', 'COMPLETED'] as Tab[]).map(tab => (
             <TouchableOpacity key={tab} activeOpacity={0.8}
@@ -221,7 +209,7 @@ export default function ElectionsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </ScreenHeader>
 
       {/* Persistent spacer */}
       <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
@@ -251,22 +239,7 @@ export default function ElectionsScreen() {
 const S = StyleSheet.create({
   root: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerContainer: {
-    backgroundColor: SgateColors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.04)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 2,
-    zIndex: 10,
-  },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 14 },
-  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginLeft: 8, flex: 1 },
-  headerSpacer: { width: 36 },
-  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: SgateLayout.screenGutter, paddingBottom: 16 },
+  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: SgateLayout.screenGutter },
   tabBtn: { borderRadius: 20, paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 8 },
   tabBtnActive: { backgroundColor: SgateColors.gold },
   tabBtnInactive: { backgroundColor: SgateColors.bg },

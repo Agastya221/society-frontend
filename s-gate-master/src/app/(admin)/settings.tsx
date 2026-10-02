@@ -1,8 +1,10 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
-
+    KeyboardAvoidingView,
+    Platform,
     ScrollView,
     StyleSheet,
     Switch,
@@ -18,48 +20,107 @@ import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import { SettingRow } from '@/components/ui/SettingRow';
 import { useAuthStore } from '@/store/useAuthStore';
+import { getSocietySettings, updateSocietySettings, type SocietySettings } from '@/services/settings.service';
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function SettingsScreen() {
 
     const router = useRouter();
     const { user } = useAuthStore();
+    // The admin's active society, for when the profile carries no society.
+    const adminContext = useAuthStore(state =>
+        state.userContexts.find(c => c.membershipId === state.selectedAdminContextId));
 
-    // Maintenance config
-    const [monthlyFee, setMonthlyFee]         = useState('2500');
-    const [dueDayOfMonth, setDueDayOfMonth]   = useState('10');
-    const [gracePeriod, setGracePeriod]       = useState('5');
+    // Maintenance config: empty until loaded, never made-up numbers.
+    const [monthlyFee, setMonthlyFee]         = useState('');
+    const [dueDayOfMonth, setDueDayOfMonth]   = useState('');
+    const [gracePeriod, setGracePeriod]       = useState('');
     const [saving, setSaving]                 = useState(false);
+    const [server, setServer]                 = useState<SocietySettings | null>(null);
+    /** null while loading; false when the server has no settings API yet. */
+    const [available, setAvailable]           = useState<boolean | null>(null);
 
     // Auto-approval toggles
     const [autoStaff, setAutoStaff]           = useState(false);
-    const [autoDelivery, setAutoDelivery]     = useState(true);
+    const [autoDelivery, setAutoDelivery]     = useState(false);
     const [autoCab, setAutoCab]               = useState(false);
 
-    const societyName    = user?.society?.name    ?? 'Your Society';
-    const societyAddress = user?.society?.address ?? '—';
-    const societyCity    = user?.society?.city    ?? '';
+    const applySettings = (data: SocietySettings) => {
+        setServer(data);
+        setMonthlyFee(data.maintenance.monthlyFee != null ? String(data.maintenance.monthlyFee) : '');
+        setDueDayOfMonth(String(data.maintenance.dueDayOfMonth));
+        setGracePeriod(String(data.maintenance.gracePeriodDays));
+        setAutoStaff(data.autoApproval.domesticStaff);
+        setAutoDelivery(data.autoApproval.delivery);
+        setAutoCab(data.autoApproval.cab);
+    };
+
+    useFocusEffect(useCallback(() => {
+        let active = true;
+        getSocietySettings()
+            .then(data => { if (active) { applySettings(data); setAvailable(true); } })
+            .catch(() => { if (active) setAvailable(false); });
+        return () => { active = false; };
+    }, []));
+
+    const societyName    = server?.society.name    ?? user?.society?.name    ?? adminContext?.societyName ?? '—';
+    const societyAddress = server?.society.address ?? user?.society?.address ?? '—';
+    const societyCity    = server?.society.city    ?? user?.society?.city    ?? adminContext?.societyCity ?? '';
+
+    const save = async (update: Parameters<typeof updateSocietySettings>[0], successMessage?: string) => {
+        if (!available) {
+            AppAlert.show('Not available yet', 'Saving society settings needs a server update. Nothing was changed.');
+            return false;
+        }
+        try {
+            applySettings(await updateSocietySettings(update));
+            if (successMessage) AppAlert.show('Saved', successMessage);
+            return true;
+        } catch (err: any) {
+            AppAlert.show('Could not save', err?.response?.data?.message || 'Please try again.');
+            return false;
+        }
+    };
 
     const handleSave = async () => {
-        if (!monthlyFee.trim() || isNaN(Number(monthlyFee))) {
+        const fee = Number(monthlyFee);
+        const due = Number(dueDayOfMonth);
+        const grace = Number(gracePeriod);
+        if (!monthlyFee.trim() || !Number.isFinite(fee) || fee <= 0) {
             AppAlert.show('Invalid Fee', 'Please enter a valid monthly fee.');
             return;
         }
+        if (!Number.isInteger(due) || due < 1 || due > 28) {
+            AppAlert.show('Invalid Due Day', 'Due day must be between 1 and 28, so it exists in every month.');
+            return;
+        }
+        if (!Number.isInteger(grace) || grace < 0 || grace > 30) {
+            AppAlert.show('Invalid Grace Period', 'Grace period must be between 0 and 30 days.');
+            return;
+        }
         setSaving(true);
-        // TODO: PATCH /admin/society/settings when API is available
-        await new Promise(r => setTimeout(r, 800));
+        await save({ maintenance: { monthlyFee: fee, dueDayOfMonth: due, gracePeriodDays: grace } },
+            'Society settings updated successfully.');
         setSaving(false);
-        AppAlert.show('Saved', 'Society settings updated successfully.');
+    };
+
+    /** Flip a toggle right away, and roll it back if the server refuses. */
+    const toggle = (key: keyof SocietySettings['autoApproval'], next: boolean, set: (v: boolean) => void) => {
+        set(next);
+        save({ autoApproval: { [key]: next } }).then(ok => { if (!ok) set(!next); });
     };
 
     return (
-        <View style={[styles.safe]}>            {/* ── Header ──────────────────────────────────────────────────── */}
+        <View style={[styles.safe]}>
+            {/* ── Header ──────────────────────────────────────────────────── */}
             <ScreenHeader title="Society Settings" onBack={() => router.back()} />
 
             {/* ── Spacer ──────────────────────────────────────────────────── */}
             <View style={styles.spacer} />
 
-            <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            {/* Edge-to-edge Android no longer resizes for the keyboard; without this, Save sat under it. */}
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
                 {/* ── Society Information ──────────────────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(0).springify()}>
@@ -119,25 +180,27 @@ export default function SettingsScreen() {
                             sub="Daily helpers bypass manual approval"
                             icon="account-outline"
                             value={autoStaff}
-                            onValueChange={setAutoStaff}
+                            onValueChange={v => toggle('domesticStaff', v, setAutoStaff)}
                         />
                         <ToggleRow
                             label="Auto-approve delivery agents"
                             sub="Amazon, Swiggy, Zomato etc."
                             icon="package-variant"
                             value={autoDelivery}
-                            onValueChange={setAutoDelivery}
+                            onValueChange={v => toggle('delivery', v, setAutoDelivery)}
                         />
                         <ToggleRow
                             label="Auto-approve registered cabs"
                             sub="Ola, Uber & other cab services"
                             icon="car-outline"
                             value={autoCab}
-                            onValueChange={setAutoCab}
+                            onValueChange={v => toggle('cab', v, setAutoCab)}
                             isLast
                         />
                     </View>
-                    <Text style={styles.hint}>Auto-approval settings will sync with the backend when available.</Text>
+                    {available === false && (
+                        <Text style={styles.hint}>These settings can&apos;t be saved until the server is updated.</Text>
+                    )}
                 </Animated.View>
 
                 {/* ── Gate Points ───────────────────────────────────────────── */}
@@ -177,6 +240,7 @@ export default function SettingsScreen() {
                 <Text style={styles.version}>Version 1.0.0 (Build 124)</Text>
                 <View style={{ height: 40 }} />
             </ScrollView>
+            </KeyboardAvoidingView>
         </View>
     );
 }

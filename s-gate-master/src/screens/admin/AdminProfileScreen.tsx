@@ -310,7 +310,7 @@ export default function AdminProfileScreen() {
                 <View style={styles.card}>
                     <SettingRow
                         icon="bell-outline"
-                        title="Notification Preferences"
+                        title="Notifications"
                         onPress={() => safePush(router, `${routePrefix}/notifications`)}
                     />
                     <SettingRow

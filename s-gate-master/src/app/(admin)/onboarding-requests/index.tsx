@@ -5,7 +5,9 @@ import {
     ActivityIndicator,
     FlatList,
     Image,
+    KeyboardAvoidingView,
     Modal,
+    Platform,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -23,6 +25,8 @@ import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
+import { useAuthStore } from '@/store/useAuthStore';
+import { documentTypeLabel } from '@/utils/documentLabels';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface RequestDocument {
@@ -37,7 +41,7 @@ interface OnboardingRequest {
     status: string;
     documents: RequestDocument[];
     documentsCount: number;
-    user: { name: string; phone: string; photoUrl?: string };
+    user: { id?: string; name: string; phone: string; photoUrl?: string };
     flat: { number: string; block: { name: string } };
     createdAt: string;
     submittedAt?: string;
@@ -81,6 +85,7 @@ function normalizeRequest(raw: any): OnboardingRequest {
         documents,
         documentsCount: raw.documentsCount ?? raw._count?.documents ?? documents.length,
         user: {
+            id: resident.id,
             name: resident.name?.trim() || 'Unknown Resident',
             phone: resident.phone || 'No phone provided',
             photoUrl: resident.photoUrl || resident.profilePic || resident.avatar || undefined,
@@ -97,6 +102,7 @@ function normalizeRequest(raw: any): OnboardingRequest {
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function OnboardingRequestsScreen() {
     const router = useRouter();
+    const currentUserId = useAuthStore(state => state.user?.id);
     const params = useLocalSearchParams();
 
     const [activeTab, setActiveTab]   = useState<StatusTab>('PENDING_APPROVAL');
@@ -112,6 +118,7 @@ export default function OnboardingRequestsScreen() {
     // Reject / Resubmit
     const [actionType, setActionType]           = useState<'reject' | 'resubmit' | null>(null);
     const [reason, setReason]                   = useState('');
+    const detailScrollRef = useRef<ScrollView>(null);
     const [actionSubmitting, setActionSubmitting] = useState(false);
     const [selectedDocsForResubmit, setSelectedDocsForResubmit] = useState<string[]>([]);
 
@@ -256,7 +263,7 @@ export default function OnboardingRequestsScreen() {
         try { return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); }
         catch { return dateStr; }
     };
-    const formatDocType = (type: string) => type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const formatDocType = documentTypeLabel;
 
     const pendingCount = requests.length;
 
@@ -311,7 +318,7 @@ export default function OnboardingRequestsScreen() {
                     renderItem={({ item, index }) => {
                         const initial = (item.user.name || 'R').charAt(0).toUpperCase();
                         return (
-                            <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                                 <TouchableOpacity onPress={() => openDetail(item)} activeOpacity={0.8}>
                                     <View style={styles.card}>
                                         <View style={styles.cardTop}>
@@ -363,7 +370,7 @@ export default function OnboardingRequestsScreen() {
             )}
 
             {/* ── Detail Modal ────────────────────────────────────────────── */}
-            <Modal visible={detailVisible} animationType="slide" presentationStyle="pageSheet">
+            <Modal visible={detailVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setDetailVisible(false)}>
                 <SafeAreaView edges={['top']} style={styles.modalSafe}>
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>Request Details</Text>
@@ -373,7 +380,9 @@ export default function OnboardingRequestsScreen() {
                     </View>
 
                     {selectedRequest && (
-                        <ScrollView showsVerticalScrollIndicator={false}>
+                        // The reason box sits at the bottom; keep it and its buttons above the keyboard.
+                        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+                        <ScrollView ref={detailScrollRef} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                             {/* Resident info */}
                             <Text style={styles.sectionLabel}>RESIDENT</Text>
                             <View style={styles.detailProfileCard}>
@@ -459,7 +468,13 @@ export default function OnboardingRequestsScreen() {
                             </View>
 
                             {/* Actions - only for pending */}
-                            {selectedRequest.status === 'PENDING_APPROVAL' && !actionType && (
+                            {/* An admin can't review their own request (the server refuses it too). */}
+                            {selectedRequest.status === 'PENDING_APPROVAL' && !!currentUserId && selectedRequest.user.id === currentUserId && (
+                                <Text style={styles.ownRequestNote}>
+                                    This is your own request. Another admin or the super admin must review it.
+                                </Text>
+                            )}
+                            {selectedRequest.status === 'PENDING_APPROVAL' && !actionType && selectedRequest.user.id !== currentUserId && (
                                 <View style={styles.actionBtns}>
                                     <TouchableOpacity style={styles.approveBtn} onPress={() => handleApprove(selectedRequest)}>
                                         <Text style={styles.approveBtnText}>Approve</Text>
@@ -488,7 +503,8 @@ export default function OnboardingRequestsScreen() {
                                     )}
                                     <TextInput style={styles.reasonInput} multiline textAlignVertical="top"
                                         placeholder={actionType === 'reject' ? 'Why is this request being rejected?' : 'What needs to be corrected?'}
-                                        value={reason} onChangeText={setReason} placeholderTextColor={SgateColors.t4} />
+                                        value={reason} onChangeText={setReason} placeholderTextColor={SgateColors.t4}
+                                        onFocus={() => setTimeout(() => detailScrollRef.current?.scrollToEnd({ animated: true }), 250)} />
                                     <View style={styles.reasonBtnRow}>
                                         <TouchableOpacity style={styles.reasonCancelBtn} onPress={() => setActionType(null)}>
                                             <Text style={styles.reasonCancelText}>Cancel</Text>
@@ -504,6 +520,7 @@ export default function OnboardingRequestsScreen() {
                             )}
                             <View style={{ height: 40 }} />
                         </ScrollView>
+                        </KeyboardAvoidingView>
                     )}
                 </SafeAreaView>
             </Modal>
@@ -543,6 +560,16 @@ const s2 = StyleSheet.create({
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+    ownRequestNote: {
+        marginTop: 8,
+        padding: 14,
+        borderRadius: 14,
+        backgroundColor: SgateColors.goldPale,
+        fontSize: 13,
+        lineHeight: 19,
+        fontFamily: SgateFonts.medium,
+        color: SgateColors.t2,
+    },
     safe: { flex: 1, backgroundColor: SgateColors.bg },
     centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 

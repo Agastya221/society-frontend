@@ -8,6 +8,8 @@ interface GateState {
     entries: Entry[];
     invitePasses: InvitePass[];
     isLoading: boolean;
+    /** True once the first fetch has settled; screens show skeletons only before that. */
+    hasLoaded: boolean;
 
     // ── Actions ────────────────────────────────────────────────────────────
     fetchPendingRequests: () => Promise<void>;
@@ -23,6 +25,7 @@ export const useGateStore = create<GateState>((set, get) => ({
     entries: [],
     invitePasses: [],
     isLoading: false,
+    hasLoaded: false,
 
     reset: () =>
         set({
@@ -30,6 +33,7 @@ export const useGateStore = create<GateState>((set, get) => ({
             entries: [],
             invitePasses: [],
             isLoading: false,
+            hasLoaded: false,
         }),
 
     fetchPendingRequests: async () => {
@@ -42,7 +46,7 @@ export const useGateStore = create<GateState>((set, get) => ({
         } catch (err) {
             console.error('fetchPendingRequests failed:', err);
         } finally {
-            set({ isLoading: false });
+            set({ isLoading: false, hasLoaded: true });
         }
     },
 
@@ -54,7 +58,7 @@ export const useGateStore = create<GateState>((set, get) => ({
         } catch (err) {
             console.error('fetchEntries failed:', err);
         } finally {
-            set({ isLoading: false });
+            set({ isLoading: false, hasLoaded: true });
         }
     },
 

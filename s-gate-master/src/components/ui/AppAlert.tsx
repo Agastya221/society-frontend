@@ -107,7 +107,12 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
                 visible={state.visible}
                 animationType="fade"
                 onRequestClose={() => {
-                    if (isCancelable) hide();
+                    if (!isCancelable) return;
+                    // Android back answers the alert the way Cancel (or a lone OK) would,
+                    // so flows like "Submitted → go back" still run their follow-up.
+                    const dismissButton = state.buttons.find(b => b.style === 'cancel')
+                        ?? (state.buttons.length === 1 ? state.buttons[0] : undefined);
+                    handleButtonPress(dismissButton?.onPress);
                 }}
             >
                 <View style={styles.overlay}>
@@ -149,7 +154,7 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
                                         onPress={() => handleButtonPress(btn.onPress)}
                                         activeOpacity={0.8}
                                     >
-                                        <Text style={[
+                                        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[
                                             styles.buttonText,
                                             isPrimary && styles.primaryButtonText,
                                             isDestructive && styles.destructiveButtonText,
@@ -252,6 +257,8 @@ const styles = StyleSheet.create({
     buttonText: {
         fontSize: 15,
         fontFamily: SgateFonts.bold,
+        textAlign: 'center',
+        paddingHorizontal: 8,
     },
     primaryButtonText: {
         color: SgateColors.t1,

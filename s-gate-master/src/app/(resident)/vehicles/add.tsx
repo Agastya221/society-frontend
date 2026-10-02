@@ -11,6 +11,7 @@ import { AppAlert } from '../../../components/ui/AppAlert';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 import { ScreenHeader } from '../../../components/ui/ScreenHeader';
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
 // ─── Type card config ─────────────────────────────────────────────────────────
 
 type VehicleType = 'Car' | 'Bike' | 'Other';
@@ -27,7 +28,7 @@ const TYPE_CARDS: TypeCardCfg[] = [
   { type: 'Other', iconName: 'view-grid-plus', label: 'Other' },
 ];
 
-export default function AddVehicleScreen() {
+function AddVehicleScreen() {
     const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -187,3 +188,5 @@ const S = StyleSheet.create({
   infoStrong: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
   bottomBar: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 12, borderTopWidth: 1, borderTopColor: SgateColors.borderSoft, backgroundColor: SgateColors.card },
 });
+
+export default withResetOnBlur(AddVehicleScreen);

@@ -256,7 +256,7 @@ export default function AdminVehiclesScreen() {
     const renderViolation = ({ item, index }: { item: Violation; index: number }) => {
         const isOpen = item.status === 'OPEN' || item.status === 'NOTIFIED';
         return (
-            <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                 <View style={styles.card}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                         <View style={styles.platePill}>
@@ -450,7 +450,7 @@ export default function AdminVehiclesScreen() {
             </AnimatedBottomSheetModal>
 
             {/* Resolve/Dismiss Modal */}
-            <Modal visible={!!resolveTarget} transparent animationType="fade">
+            <Modal visible={!!resolveTarget} transparent animationType="fade" onRequestClose={() => setResolveTarget(null)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.smallModal}>
                         <Text style={styles.modalTitle}>{resolveTarget?.type === 'RESOLVED' ? 'Mark Resolved' : 'Dismiss Violation'}</Text>

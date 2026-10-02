@@ -170,7 +170,7 @@ export default function PaymentsScreen() {
     const renderDue = ({ item, index }: { item: FlatDue; index: number }) => {
         const conf = statusColors(item.status);
         return (
-            <Animated.View entering={FadeInDown.delay(index * 40).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 40).springify()}>
                 <TouchableOpacity style={styles.card} onPress={() => setSelectedDue(item)} activeOpacity={0.8}>
                     {/* Accent bar */}
                     <View style={[styles.cardAccent, { backgroundColor: conf.text }]} />

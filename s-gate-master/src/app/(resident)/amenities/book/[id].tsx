@@ -15,8 +15,9 @@ import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { AppAlert } from '../../../../components/ui/AppAlert';
 import { SgateColors, SgateFonts, SgateLayout } from '../../../../constants/Sgate-theme';
 import api from '../../../../services/api';
-import { useAuthStore } from '../../../../store/useAuthStore';
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
+import { useActiveFlatLabel } from '@/hooks/useActiveFlatLabel';
 // ─── Amenity theme (consistent with index + detail screens) ────────────────────
 const AMENITY_THEMES: { keywords: string[]; icon: string; bg: string; color: string }[] = [
   { keywords: ['swim', 'pool'], icon: 'pool', bg: '#DBEEFF', color: '#1A7FD4' },
@@ -54,10 +55,9 @@ function formatReadableDate(dateStr: string): string {
 }
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
-export default function BookAmenityScreen() {
+function BookAmenityScreen() {
     const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
-  const { user } = useAuthStore();
   const { id, slotId, slotTime, date, amenityName, maxCapacity, rules: rulesParam } =
     useLocalSearchParams<{
       id: string; slotId: string; slotTime: string; date: string;
@@ -75,7 +75,7 @@ export default function BookAmenityScreen() {
   const theme = resolveTheme(name);
   const capacity = parseInt(maxCapacity ?? '1', 10) || 1;
   const rules: string[] = (() => { try { return JSON.parse(rulesParam ?? '[]'); } catch { return []; } })();
-  const flatLabel = user?.flat ? `${user.flat.block?.name ? user.flat.block.name + ' ' : ''}${user.flat.number}` : '—';
+  const flatLabel = useActiveFlatLabel() ?? '—';
   const readableDate = date ? formatReadableDate(date) : '';
 
   const handleConfirm = async () => {
@@ -97,7 +97,10 @@ export default function BookAmenityScreen() {
       AppAlert.show(
         'Booking Confirmed!',
         'Your slot has been booked.',
-        [{ text: 'OK', onPress: () => router.push('/(resident)/amenities' as any) }],
+        // Back, not push: pushing left this confirm screen in history, so back
+        // could return to it and book again. The detail screen refreshes the
+        // date's slots on focus, so the just-booked slot shows as taken.
+        [{ text: 'OK', onPress: () => router.back() }],
       );
     } catch (err: any) {
       AppAlert.show('Failed', err?.response?.data?.message ?? 'Could not confirm booking. Try again.');
@@ -422,3 +425,5 @@ const S = StyleSheet.create({
     color: '#111111',
   },
 });
+
+export default withResetOnBlur(BookAmenityScreen);

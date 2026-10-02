@@ -56,7 +56,7 @@ function AmenityCard({ item, index }: { item: Amenity; index: number }) {
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(index * 60).springify()}
+      entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}
       style={S.cardWrapper}
     >
       <TouchableOpacity
@@ -68,7 +68,7 @@ function AmenityCard({ item, index }: { item: Amenity; index: number }) {
           <MaterialCommunityIcons name={item.icon as any} size={26} color={item.colorIcon} />
         </View>
 
-        <Text style={S.cardName} numberOfLines={1}>
+        <Text style={S.cardName} numberOfLines={2}>
           {item.name}
         </Text>
 
@@ -177,6 +177,9 @@ const S = StyleSheet.create({
   },
   cardName: {
     fontSize: 15,
+    lineHeight: 20,
+    // Room for two lines on every card, so cards in a row stay the same height.
+    minHeight: 40,
     fontFamily: SgateFonts.bold,
     color: SgateColors.t1, // Restored theme text color
     marginTop: 16,

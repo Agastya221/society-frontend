@@ -29,8 +29,8 @@ export default function HeroCard({
 
     // Dynamic states resolving
     let eyebrow = "You're all set!";
-    let title = "Everything looks\ngood today.";
-    let pillText = "Society is running smoothly";
+    let title = "Everything looks good today.";
+    let pillText = "Running smoothly";
     let isActionable = false;
     let targetRoute = '';
 
@@ -99,7 +99,9 @@ export default function HeroCard({
                     >
                         <View style={styles.copy}>
                             <Text style={styles.eyebrow}>{eyebrow}</Text>
-                            <Text style={styles.title} numberOfLines={2}>
+                            {/* The copy column sets the line breaks: a hard-coded break
+                                plus a narrow column cut this to "Everything looks…". */}
+                            <Text style={styles.title} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.8}>
                                 {title}
                             </Text>
                             <View style={styles.statusPill}>
@@ -110,7 +112,7 @@ export default function HeroCard({
                                         color="#FFFFFF"
                                     />
                                 </View>
-                                <Text style={styles.statusText}>{pillText}</Text>
+                                <Text style={styles.statusText} numberOfLines={1}>{pillText}</Text>
                                 {isActionable && (
                                     <MaterialCommunityIcons
                                         name="chevron-right"
@@ -215,6 +217,8 @@ const styles = StyleSheet.create({
     statusPill: {
         marginTop: 18,
         alignSelf: 'flex-start',
+        // Stay inside the copy column instead of running under the illustration.
+        maxWidth: '100%',
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
@@ -236,6 +240,7 @@ const styles = StyleSheet.create({
         backgroundColor: SgateColors.goldDeep,
     },
     statusText: {
+        flexShrink: 1,
         fontSize: 12,
         fontFamily: SgateFonts.semibold,
         color: SgateColors.t2,

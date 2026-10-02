@@ -170,7 +170,7 @@ export default function GuardsScreen() {
                     renderItem={({ item, index }) => {
                         const initial = item.name.charAt(0).toUpperCase();
                         return (
-                            <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+                            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}>
                                 <TouchableOpacity
                                     style={styles.card}
                                     activeOpacity={0.8}
@@ -242,8 +242,8 @@ export default function GuardsScreen() {
             )}
 
             {/* ── Add Guard Modal ─────────────────────────────────────────── */}
-            <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet">
-                <View style={[styles.modalWrap, { paddingBottom: insets.bottom }]}>
+            <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalVisible(false)}>
+                <View style={[styles.modalWrap, { paddingTop: insets.top + 16, paddingBottom: insets.bottom }]}>
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>New Guard</Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>

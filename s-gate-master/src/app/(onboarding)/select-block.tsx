@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import Animated, {
     FadeInDown,
@@ -19,6 +18,7 @@ import Animated, {
 import EmptyState from '@/components/ui/EmptyState';
 import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useOnboardingNext } from '@/hooks/useOnboardingNext';
 import { useBlocks } from '@/hooks/useOnboardingQueries';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import { SkeletonList } from '@/components/lists/AppFlashList';
@@ -42,7 +42,7 @@ const BlockCard = memo(function BlockCard({
 
     return (
         <Animated.View
-            entering={FadeInDown.delay(index * 80).springify()}
+            entering={FadeInDown.delay(Math.min(index, 8) * 80).springify()}
             style={animStyle}
         >
             <TouchableOpacity
@@ -90,9 +90,9 @@ const BlockCard = memo(function BlockCard({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function SelectBlockScreen() {
-    const router = useRouter();
     const selectedSociety = useOnboardingStore((s) => s.selectedSociety);
     const setBlock = useOnboardingStore((s) => s.setBlock);
+    const goNext = useOnboardingNext();
 
     const {
         data: blocks,
@@ -104,10 +104,13 @@ export default function SelectBlockScreen() {
 
     const handleSelectBlock = useCallback(
         (block: Block) => {
-            setBlock(block);
-            router.push('/(onboarding)/select-flat');
+            // Re-picking the same block keeps flat/docs (setBlock wipes downstream).
+            if (useOnboardingStore.getState().selectedBlock?.id !== block.id) {
+                setBlock(block);
+            }
+            goNext('/(onboarding)/select-flat');
         },
-        [setBlock, router]
+        [setBlock, goNext]
     );
 
     const renderItem = useCallback(

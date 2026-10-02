@@ -1,6 +1,6 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { FlatList, Linking, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
@@ -75,8 +75,11 @@ export default function CategoryContacts() {
   const [contacts, setContacts] = useState<LocalContact[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Spinner only for a new category; coming back refreshes in place.
+  const loadedCategory = useRef<string | null>(null);
   const fetchContacts = async () => {
-    setLoading(true);
+    if (loadedCategory.current !== category) setLoading(true);
+    loadedCategory.current = category ?? null;
     try {
       const res = await api.get('/resident/local-directory', { params: { category } });
       const raw = res.data?.data ?? res.data;

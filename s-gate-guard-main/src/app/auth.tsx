@@ -2,7 +2,7 @@
 import { OTPWidget } from '@msg91comm/sendotp-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GuardBrandMark } from '@/components/GuardBrandMark';
 import { GuardColors, GuardFonts, GuardRadius } from '@/constants/theme';
@@ -24,6 +24,16 @@ export default function AuthScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => { OTPWidget.initializeWidget(MSG91_WIDGET_ID, MSG91_TOKEN_AUTH); }, []);
+  // Android back on the OTP step returns to the phone step instead of closing the app.
+  useEffect(() => {
+    if (screen !== 'otp') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (isLoading) return true;
+      setScreen('phone'); setOtp(''); setError('');
+      return true;
+    });
+    return () => sub.remove();
+  }, [screen, isLoading]);
   useEffect(() => {
     if (countdown <= 0) { if (timerRef.current) clearInterval(timerRef.current); return; }
     timerRef.current = setInterval(() => setCountdown((value) => {

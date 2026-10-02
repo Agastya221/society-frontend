@@ -105,7 +105,7 @@ export default function ResidentHomeDashboard({
                 <AllServicesCard onPress={() => onNavigate('/(resident)/all-tools')} />
                 <SocietyUpdatesSection
                     updates={displayedUpdates}
-                    onViewAll={() => onNavigate('/(resident)/society')}
+                    onViewAll={() => onNavigate('/(resident)/notices')}
                 />
             </ScrollView>
         </View>

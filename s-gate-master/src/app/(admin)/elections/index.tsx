@@ -178,7 +178,7 @@ export default function AdminElectionsScreen() {
     const renderPoll = ({ item, index }: { item: Poll; index: number }) => {
         const topOption = [...item.options].sort((a, b) => b.voteCount - a.voteCount)[0];
         return (
-            <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}>
                 <View style={styles.card}>
                     {/* Header row: status + time */}
                     <View style={styles.cardHeader}>

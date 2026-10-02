@@ -2,6 +2,7 @@ import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
     BackHandler,
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -46,8 +47,9 @@ interface AnimatedBottomSheetModalProps {
     surfaceStyle?: StyleProp<ViewStyle>;
     showHandle?: boolean;
     /**
-     * Lift the sheet above the keyboard. Only needed on iOS — Android's
-     * `adjustResize` (see AndroidManifest) already resizes the window.
+     * Lift the sheet above the keyboard. Needed on Android too: with
+     * edge-to-edge on, `adjustResize` no longer resizes the window, so the
+     * keyboard covered inputs and Save buttons in sheets.
      * @default true
      */
     avoidKeyboard?: boolean;
@@ -79,9 +81,16 @@ export function AnimatedBottomSheetModal({
     const insideTabNavigator = useContext(BottomTabBarHeightContext) != null;
 
     const [mounted, setMounted] = useState(visible);
+    /**
+     * Height of the area the sheet is laid out in. Inside a tab screen that
+     * ends above the tab bar, so capping by the window height let a tall sheet
+     * run up under the status bar.
+     */
+    const [rootHeight, setRootHeight] = useState(0);
+    /** Keyboard height while it is open, so a tall sheet still fits above it. */
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [sheetHeight, setSheetHeight] = useState(0);
     const [contentHeight, setContentHeight] = useState(0);
-    const [displayedChildren, setDisplayedChildren] = useState(children);
 
     const sheetY = useSharedValue(1000);
     const backdropOpacity = useSharedValue(0);
@@ -89,11 +98,17 @@ export function AnimatedBottomSheetModal({
     const openedRef = useRef(false);
     const isClosingRef = useRef(false);
     const onCloseRef = useRef(onClose);
-    const childrenRef = useRef(children);
+    /**
+     * What the sheet showed while it was open. While visible the sheet renders
+     * its live children (inputs and handlers must see current state); once the
+     * parent hides it, this keeps the content stable through the exit, so
+     * clearing the selected item cannot shrink the sheet before it leaves.
+     */
+    const openChildrenRef = useRef(children);
     const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     onCloseRef.current = onClose;
-    childrenRef.current = children;
+    if (visible) openChildrenRef.current = children;
 
     /**
      * Space below the sheet's content.
@@ -108,7 +123,7 @@ export function AnimatedBottomSheetModal({
         : insets.bottom + SgateLayout.screenGutter;
 
     /** Hard cap against the real visible area rather than a percentage of a shifted box. */
-    const maxSheetHeight = Math.max(240, windowHeight - insets.top - TOP_BREATHING_ROOM);
+    const maxSheetHeight = Math.max(240, (rootHeight || windowHeight) - insets.top - TOP_BREATHING_ROOM - keyboardHeight);
 
     /**
      * Room the content itself may occupy, once the handle and bottom clearance
@@ -155,13 +170,10 @@ export function AnimatedBottomSheetModal({
         closeTimerRef.current = setTimeout(finishInternalClose, 280);
     }, [backdropOpacity, clearCloseTimer, finishInternalClose, sheetY, travelDistance]);
 
-    // Snapshot children only when opening. They remain stable during exit, so
-    // clearing the selected item cannot shrink the sheet before it leaves.
     useEffect(() => {
         clearCloseTimer();
 
         if (visible) {
-            setDisplayedChildren(childrenRef.current);
             setSheetHeight(0);
             setContentHeight(0);
             openedRef.current = false;
@@ -185,7 +197,7 @@ export function AnimatedBottomSheetModal({
         }, 280);
 
         return clearCloseTimer;
-    // Children are intentionally read through a ref only on visibility change.
+    // Only a change of visibility should open or close the sheet.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [visible]);
 
@@ -203,6 +215,13 @@ export function AnimatedBottomSheetModal({
 
         return () => cancelAnimationFrame(frame);
     }, [backdropOpacity, mounted, sheetHeight, sheetY, travelDistance, visible]);
+
+    useEffect(() => {
+        if (!mounted || !avoidKeyboard) return;
+        const show = Keyboard.addListener('keyboardDidShow', e => setKeyboardHeight(e.endCoordinates.height));
+        const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+        return () => { show.remove(); hide.remove(); };
+    }, [avoidKeyboard, mounted]);
 
     useEffect(() => {
         if (!mounted) return;
@@ -252,7 +271,7 @@ export function AnimatedBottomSheetModal({
 
     const measuredContent = (
         <View onLayout={handleContentLayout}>
-            {displayedChildren}
+            {visible ? children : openChildrenRef.current}
         </View>
     );
 
@@ -268,7 +287,14 @@ export function AnimatedBottomSheetModal({
     ) : measuredContent;
 
     return (
-        <View style={styles.root} pointerEvents="box-none">
+        <View
+            style={styles.root}
+            pointerEvents="box-none"
+            onLayout={e => {
+                const h = Math.round(e.nativeEvent.layout.height);
+                setRootHeight(current => (current === h ? current : h));
+            }}
+        >
             <Animated.View style={[styles.backdrop, backdropStyle]}>
                 <Pressable
                     style={StyleSheet.absoluteFill}
@@ -280,7 +306,7 @@ export function AnimatedBottomSheetModal({
 
             <KeyboardAvoidingView
                 style={styles.keyboardWrap}
-                behavior={avoidKeyboard && Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={avoidKeyboard ? 'padding' : undefined}
                 pointerEvents="box-none"
             >
                 <GestureDetector gesture={panGesture}>

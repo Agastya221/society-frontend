@@ -3,15 +3,16 @@ import { View, Text, TouchableOpacity, StyleSheet,
   Share, ScrollView, ActivityIndicator, StatusBar, Platform } from 'react-native';
 import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader, HeaderIconButton } from '@/components/layout/ScreenHeader';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
 const CATEGORY_LABELS: Record<string, string> = {
   RULES_AND_BYLAWS: 'Rules & Regulations', MEETING_MINUTES: 'Minutes of Meeting',
   FINANCIAL: 'Financial Report', CIRCULAR: 'Circular', MAINTENANCE: 'Maintenance',
@@ -51,7 +52,7 @@ function FileIcon({ ft }: { ft: string }) {
   );
 }
 
-export default function DocumentDetailScreen() {
+function DocumentDetailScreen() {
     const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -110,17 +111,7 @@ export default function DocumentDetailScreen() {
   if (loading) return (
     <View style={S.root}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <View style={S.headerBg}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.headerInner}>
-            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle}>Document</Text>
-            <View style={{ width: 22 }} />
-          </View>
-        </SafeAreaView>
-      </View>
+      <ScreenHeader title="Document" />
       <AppLoader />
     </View>
   );
@@ -128,17 +119,7 @@ export default function DocumentDetailScreen() {
   if (!doc) return (
     <View style={S.root}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <View style={S.headerBg}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.headerInner}>
-            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle}>Document</Text>
-            <View style={{ width: 22 }} />
-          </View>
-        </SafeAreaView>
-      </View>
+      <ScreenHeader title="Document" />
       <View style={S.center}>
         <View style={S.emptyIconCircle}>
           <Feather name="file" size={28} color={SgateColors.goldDeep} />
@@ -153,20 +134,10 @@ export default function DocumentDetailScreen() {
     <View style={S.root}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
-      {/* ── Header (edge-to-edge) ─────────────────────────────────────── */}
-      <View style={S.headerBg}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.headerInner}>
-            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle} numberOfLines={1}>{doc.name}</Text>
-            <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Feather name="share-2" size={20} color={SgateColors.t1} />
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </View>
+      <ScreenHeader
+        title={doc.name}
+        rightAction={<HeaderIconButton icon="share-2" onPress={handleShare} accessibilityLabel="Share document" />}
+      />
 
       <ScrollView contentContainerStyle={[S.scroll, { paddingBottom: scrollBottomPadding }]} showsVerticalScrollIndicator={false}>
         <View style={S.centerArea}>
@@ -217,31 +188,6 @@ const S = StyleSheet.create({
     backgroundColor: SgateColors.bg,
   },
 
-  // ── Header ────────────────────────────────────────────────────────────
-  headerBg: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.04)',
-  },
-  headerInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SgateLayout.screenGutter,
-    paddingVertical: 12,
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t1,
-    marginLeft: 12,
-    flex: 1,
-  },
 
   center: {
     flex: 1,
@@ -391,3 +337,5 @@ const S = StyleSheet.create({
     marginBottom: 8,
   },
 });
+
+export default withResetOnBlur(DocumentDetailScreen);

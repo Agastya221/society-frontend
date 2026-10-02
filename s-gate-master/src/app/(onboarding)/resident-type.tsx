@@ -7,7 +7,6 @@ import {
     ScrollView,
 } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -18,6 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useOnboardingNext } from '@/hooks/useOnboardingNext';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import type { ResidentType } from '@/types/onboarding.types';
 
@@ -31,6 +31,7 @@ function RoleCard({
     isSelected,
     onPress,
     delay = 0,
+    disabled = false,
 }: {
     icon: React.ReactNode;
     title: string;
@@ -39,6 +40,7 @@ function RoleCard({
     isSelected: boolean;
     onPress: () => void;
     delay?: number;
+    disabled?: boolean;
 }) {
     const scale = useSharedValue(1);
     const animStyle = useAnimatedStyle(() => ({
@@ -53,10 +55,11 @@ function RoleCard({
             <Animated.View style={[animStyle, { flex: 1 }]}>
                 <TouchableOpacity
                     onPress={onPress}
+                    disabled={disabled}
                     onPressIn={() => { scale.value = withSpring(0.95, { damping: 15, stiffness: 400 }); }}
                     onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 400 }); }}
                     activeOpacity={0.8}
-                    style={[styles.roleCard, isSelected && styles.roleCardActive]}
+                    style={[styles.roleCard, isSelected && styles.roleCardActive, disabled && styles.roleCardDisabled]}
                 >
                     {/* Selection indicator */}
                     {isSelected && (
@@ -147,28 +150,35 @@ function LivingOptionCard({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function ResidentTypeScreen() {
-    const router = useRouter();
     const insets = useSafeAreaInsets();
     const selectedFlat = useOnboardingStore((s) => s.selectedFlat);
     const residentType = useOnboardingStore((s) => s.residentType);
     const isLivingHere = useOnboardingStore((s) => s.isLivingHere);
     const setResidentType = useOnboardingStore((s) => s.setResidentType);
     const setIsLivingHere = useOnboardingStore((s) => s.setIsLivingHere);
+    const goNext = useOnboardingNext();
 
     const handleTypeSelect = useCallback(
         (type: ResidentType) => {
+            // Re-tapping the current type keeps uploaded docs (setResidentType
+            // clears them).
+            if (useOnboardingStore.getState().residentType === type) return;
             setResidentType(type);
         },
         [setResidentType]
     );
 
+    // The backend only accepts tenants for a flat with an approved owner, so
+    // say so here rather than after the documents are uploaded.
+    const tenantBlocked = selectedFlat ? !selectedFlat.hasOwner : false;
+
     const canContinue =
-        residentType === 'TENANT' ||
+        (residentType === 'TENANT' && !tenantBlocked) ||
         (residentType === 'OWNER' && isLivingHere !== null);
 
     const handleContinue = () => {
         if (!canContinue) return;
-        router.push('/(onboarding)/document-upload');
+        goNext('/(onboarding)/document-upload');
     };
 
     return (
@@ -228,8 +238,14 @@ export default function ResidentTypeScreen() {
                         isSelected={residentType === 'TENANT'}
                         onPress={() => handleTypeSelect('TENANT')}
                         delay={180}
+                        disabled={tenantBlocked}
                     />
                 </View>
+                {tenantBlocked && (
+                    <Text style={styles.tenantNote}>
+                        Tenants can join once the flat&apos;s owner is approved in S-Gate.
+                    </Text>
+                )}
 
                 {/* Owner Sub-question */}
                 {residentType === 'OWNER' && (
@@ -313,6 +329,14 @@ export default function ResidentTypeScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+    roleCardDisabled: { opacity: 0.45 },
+    tenantNote: {
+        marginTop: 12,
+        fontSize: 13,
+        lineHeight: 18,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t3,
+    },
     root: {
         flex: 1,
         backgroundColor: SgateColors.bg,

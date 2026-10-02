@@ -39,33 +39,10 @@ export default function AdminComplaintsScreen() {
 
     // Fetch complaints from API
     const loadComplaints = async (isRefresh = false) => {
-        if (!isRefresh) {
-            setIsLoading(true);
-        }
         setError('');
 
         try {
-            console.log('📥 [ADMIN] Fetching complaints...');
             const data = await fetchComplaints();
-            
-            console.log('✅ [ADMIN] Fetched complaints count:', data.length);
-            console.log('📋 [ADMIN] Full complaints data:', JSON.stringify(data, null, 2));
-            
-            // Log each complaint individually for easier reading
-            data.forEach((complaint, index) => {
-                console.log(`\n📝 [ADMIN] Complaint ${index + 1}:`, {
-                    id: complaint.id,
-                    title: complaint.title,
-                    status: complaint.status,
-                    priority: complaint.priority,
-                    category: complaint.category,
-                    reportedBy: complaint.reportedBy?.name || 'Anonymous',
-                    flat: complaint.flat?.flatNumber || 'N/A',
-                    images: complaint.images || [],
-                    createdAt: complaint.createdAt,
-                });
-            });
-            
             setComplaints(data);
         } catch (err: any) {
             console.error('❌ [ADMIN] Failed to fetch complaints:', err);

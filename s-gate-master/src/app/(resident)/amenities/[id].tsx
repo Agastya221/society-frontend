@@ -128,39 +128,74 @@ export default function AmenityDetailScreen() {
   const [showCalendar, setShowCalendar] = useState(false);
   const dates = buildDates();
 
-  useFocusEffect(useCallback(() => {
-    (async () => {
-      try {
-        const res = await api.get(`/resident/amenities/${id}`);
-        const raw = res.data?.data ?? res.data;
-        const theme = resolveTheme(raw.name ?? '');
-        setAmenity({
-          id: raw.id, name: raw.name ?? '', timing: raw.timings ?? raw.timing ?? '',
-          maxCapacity: raw.maxCapacity ?? 0, slotDurationHours: raw.slotDurationHours ?? 1,
-          rules: raw.rules ?? [], slots: [],
-          icon: theme.icon, colorBg: theme.colorBg, colorIcon: theme.colorIcon,
-        });
-      } catch { /* shown below */ } finally { setLoading(false); }
-    })();
-  }, [id]));
+  // Read inside the focus effect without making it re-run on every selection.
+  const selection = useRef({ amenityId: null as string | null, date: null as string | null, slotId: null as string | null });
+  selection.current = { amenityId: amenity?.id ?? null, date: selectedDate, slotId: selectedSlot?.id ?? null };
 
-  const handleDateSelect = async (key: string) => {
-    setSelectedDate(key);
-    setSelectedSlot(null);
-    if (!amenity) return;
+  /** Fetch a date's slots. Returns them so callers can re-check a selection. */
+  const loadSlots = useCallback(async (key: string): Promise<TimeSlot[] | null> => {
     setSlotsLoading(true);
     try {
       const res = await api.get(`/resident/amenities/${id}/slots`, { params: { date: key } });
       const rawSlots: any[] = res.data?.data ?? res.data ?? [];
-      setAmenity(a => a ? { ...a, slots: rawSlots.map(s => ({
+      const slots: TimeSlot[] = rawSlots.map(s => ({
         id: s.id,
         label: s.label ?? `${s.startTime} – ${s.endTime}`,
         startTime: s.startTime,
         endTime: s.endTime,
         status: (s.status ?? 'AVAILABLE') as TimeSlot['status'],
         isBookable: s.isBookable ?? s.status === 'AVAILABLE',
-      })) } : a);
-    } catch { /* silently fail */ } finally { setSlotsLoading(false); }
+      }));
+      setAmenity(a => a ? { ...a, slots } : a);
+      return slots;
+    } catch {
+      return null;
+    } finally {
+      setSlotsLoading(false);
+    }
+  }, [id]);
+
+  useFocusEffect(useCallback(() => {
+    const prev = selection.current;
+    const sameAmenity = prev.amenityId === id;
+    if (!sameAmenity) {
+      // Another amenity: never show the previous one's details or selection.
+      setAmenity(null);
+      setLoading(true);
+      setSelectedDate(null);
+      setSelectedSlot(null);
+    }
+    (async () => {
+      try {
+        const res = await api.get(`/resident/amenities/${id}`);
+        const raw = res.data?.data ?? res.data;
+        const theme = resolveTheme(raw.name ?? '');
+        setAmenity(a => ({
+          id: raw.id, name: raw.name ?? '', timing: raw.timings ?? raw.timing ?? '',
+          maxCapacity: raw.maxCapacity ?? raw.capacity ?? 0, slotDurationHours: raw.slotDurationHours ?? 1,
+          rules: raw.rules ?? [],
+          // Keep the grid on screen while it refreshes below.
+          slots: a && a.id === raw.id ? a.slots : [],
+          icon: theme.icon, colorBg: theme.colorBg, colorIcon: theme.colorIcon,
+        }));
+      } catch { /* shown below */ } finally { setLoading(false); }
+
+      // Coming back (e.g. from booking): availability may have changed, so
+      // refresh the chosen date and drop a slot that is no longer free.
+      if (sameAmenity && prev.date) {
+        const slots = await loadSlots(prev.date);
+        if (slots && prev.slotId && !slots.some(sl => sl.id === prev.slotId && sl.isBookable)) {
+          setSelectedSlot(null);
+        }
+      }
+    })();
+  }, [id, loadSlots]));
+
+  const handleDateSelect = async (key: string) => {
+    setSelectedDate(key);
+    setSelectedSlot(null);
+    if (!amenity) return;
+    await loadSlots(key);
   };
 
   const handleBookSlot = () => {
@@ -643,14 +678,18 @@ const S = StyleSheet.create({
   },
 
   // Slot grid
+  // Two equal columns, so the pills line up whatever the label length.
   slotGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    justifyContent: 'space-between',
+    rowGap: 10,
   },
   slotChip: {
+    width: '48.5%',
+    alignItems: 'center',
     borderRadius: 100, // Modern pill shape
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     borderWidth: 1,
   },

@@ -258,3 +258,29 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
         return 7;
     },
 }));
+
+// ─── Review Readiness ─────────────────────────────────────────────────────────
+
+const ID_PROOF_TYPES = ['AADHAR_CARD', 'PAN_CARD', 'PASSPORT', 'DRIVING_LICENSE', 'VOTER_ID'];
+
+/**
+ * True when every KYC step is still filled in, i.e. the user can jump straight
+ * back to Review & Submit after editing one step from there. Mirrors the
+ * per-step Continue rules (document rules match document-upload.tsx).
+ */
+export function isReadyForReview(state: OnboardingState): boolean {
+    const {
+        selectedSociety,
+        selectedBlock,
+        selectedFlat,
+        residentType,
+        isLivingHere,
+        uploadedDocuments,
+    } = state;
+    if (!selectedSociety || !selectedBlock || !selectedFlat || !residentType) return false;
+    if (residentType === 'OWNER' && isLivingHere === null) return false;
+    const primaryDoc = residentType === 'OWNER' ? 'OWNERSHIP_PROOF' : 'TENANT_AGREEMENT';
+    const hasPrimaryDoc = uploadedDocuments.some((d) => d.type === primaryDoc);
+    const hasIdProof = uploadedDocuments.some((d) => ID_PROOF_TYPES.includes(d.type));
+    return hasPrimaryDoc && hasIdProof;
+}

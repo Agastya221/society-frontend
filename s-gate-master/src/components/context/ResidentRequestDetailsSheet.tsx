@@ -20,6 +20,7 @@ import {
     type ResidentRequestDetails,
 } from '@/services/profile.service';
 import { AppAlert } from '@/components/ui/AppAlert';
+import { documentTypeLabel } from '@/utils/documentLabels';
 
 const BRAND_YELLOW = '#FFD60A';
 const BRAND_YELLOW_BG = '#FFFBE6';
@@ -105,7 +106,7 @@ function formatResidentType(type?: string | null, isLivingHere?: boolean) {
 }
 
 function formatDocType(type: string) {
-    return type.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+    return documentTypeLabel(type);
 }
 
 export function ResidentRequestDetailsSheet({
@@ -228,7 +229,9 @@ export function ResidentRequestDetailsSheet({
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={S.content}>
                     <View style={S.messageCard}>
                         <Text style={[S.statusLabel, { color: meta.color }]}>{meta.label}</Text>
-                        <Text style={S.messageText}>{details?.message || meta.message}</Text>
+                        {/* The server's message repeats the reason ("Rejected: …"), which has
+                            its own card below, so use the plain status line then. */}
+                        <Text style={S.messageText}>{reason ? meta.message : (details?.message || meta.message)}</Text>
                     </View>
 
                     {reason ? (

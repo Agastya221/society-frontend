@@ -10,12 +10,12 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import EmptyState from '@/components/ui/EmptyState';
 import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useOnboardingNext } from '@/hooks/useOnboardingNext';
 import { useSocieties } from '@/hooks/useOnboardingQueries';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import { SkeletonList } from '@/components/lists/AppFlashList';
@@ -33,7 +33,7 @@ const SocietyCard = memo(function SocietyCard({
     index: number;
 }) {
     return (
-        <Animated.View entering={FadeInDown.delay(index * 60).duration(400).springify()}>
+        <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).duration(400).springify()}>
             <TouchableOpacity
                 onPress={onPress}
                 style={styles.card}
@@ -111,9 +111,9 @@ function NoSocietiesFound() {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function SocietySearchScreen() {
-    const router = useRouter();
     const selectedCity = useOnboardingStore((s) => s.selectedCity);
     const setSociety = useOnboardingStore((s) => s.setSociety);
+    const goNext = useOnboardingNext();
 
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -145,10 +145,14 @@ export default function SocietySearchScreen() {
 
     const handleSelectSociety = useCallback(
         (society: Society) => {
-            setSociety(society);
-            router.push('/(onboarding)/select-block');
+            // Re-picking the same society keeps block/flat/docs (setSociety
+            // wipes everything downstream).
+            if (useOnboardingStore.getState().selectedSociety?.id !== society.id) {
+                setSociety(society);
+            }
+            goNext('/(onboarding)/select-block');
         },
-        [setSociety, router]
+        [setSociety, goNext]
     );
 
     const renderItem = useCallback(

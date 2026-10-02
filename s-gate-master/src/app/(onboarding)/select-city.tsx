@@ -18,6 +18,8 @@ import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withTiming } from '
 import EmptyState from '@/components/ui/EmptyState';
 import { SgateFonts } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { AppAlert } from '@/components/ui/AppAlert';
 import {
     getFeaturedCities,
     getAllCities,
@@ -177,7 +179,21 @@ export default function SelectCityScreen() {
             router.replace(destination as any);
             return;
         }
-        router.back();
+        if (router.canGoBack()) {
+            router.back();
+            return;
+        }
+        // First-time KYC: select-city is the root of the flow (reached via
+        // replace), so there is nothing to go back to and /login would bounce
+        // straight back here while authenticated. Offer to sign out instead.
+        AppAlert.show(
+            'Exit setup?',
+            'You need to finish adding your flat to use S-Gate. Your progress is saved — sign out now and continue later?',
+            [
+                { text: 'STAY', style: 'cancel' },
+                { text: 'SIGN OUT', style: 'destructive', onPress: () => { useAuthStore.getState().logout(); } },
+            ]
+        );
     };
 
     const renderItem = useCallback(

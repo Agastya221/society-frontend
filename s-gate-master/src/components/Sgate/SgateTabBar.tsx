@@ -70,6 +70,9 @@ export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProp
         {visibleRoutes.map((route, idx) => {
           const { options } = descriptors[route.key];
           const isFocused = focusedVisibleIndex === idx;
+          // Sub-screens (Amenities, Daily Help…) highlight Home, but Home isn't
+          // actually showing, so a tap on it must still navigate.
+          const isCurrentRoute = matchedVisibleIndex === idx;
           const baseName = getBaseName(route.name);
 
           // Use explicit label map — never fall back to raw route name
@@ -81,7 +84,7 @@ export function SgateTabBar({ state, descriptors, navigation }: BottomTabBarProp
               target: route.key,
               canPreventDefault: true,
             });
-            if (!isFocused && !event.defaultPrevented) {
+            if (!isCurrentRoute && !event.defaultPrevented) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               navigation.navigate(route.name, route.params);
             }

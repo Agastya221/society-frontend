@@ -4,7 +4,7 @@ import { ScreenEmpty, ScreenLoading } from '@/components/ScreenState';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -128,9 +128,9 @@ export default function TodayEntriesScreen() {
         [entries, filter]
     );
 
-    // Refresh every time screen is focused (resets everything)
+    // Refresh every time the screen is focused; the spinner only shows on the first
+    // load so returning to this screen doesn't blank the list.
     useFocusEffect(useCallback(() => {
-        setLoading(true);
         fetchEntries();
     }, [fetchEntries]));
 
@@ -140,7 +140,10 @@ export default function TodayEntriesScreen() {
         setFilter(f);
     };
 
+    const checkoutBusy = useRef(false);
     const handleCheckOut = useCallback(async (id: string) => {
+        if (checkoutBusy.current) return; // double tap / second card while one is in flight
+        checkoutBusy.current = true;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setCheckingOut(id);
         try {
@@ -153,10 +156,12 @@ export default function TodayEntriesScreen() {
             );
         } catch (err: any) {
             Alert.alert('Error', err?.response?.data?.message ?? 'Failed to check out. Please try again.');
+            fetchEntries();
         } finally {
+            checkoutBusy.current = false;
             setCheckingOut(null);
         }
-    }, []);
+    }, [fetchEntries]);
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -193,14 +198,14 @@ export default function TodayEntriesScreen() {
 
             {loading ? (
                 <ScreenLoading label="Loading gate activity…" />
-            ) : visibleEntries.length === 0 ? (
-                <ScreenEmpty icon="calendar-outline" title="No entries yet" message="Today’s matching gate activity will appear here." />
             ) : (
+                // Empty state lives inside the list so pull-to-refresh still works with no entries.
                 <FlatList
                     data={visibleEntries}
                     keyExtractor={(item) => `${item.recordKind}:${item.id}`}
                     renderItem={renderEntry}
-                    contentContainerStyle={styles.listContent}
+                    ListEmptyComponent={<ScreenEmpty icon="calendar-outline" title="No entries yet" message="Today’s matching gate activity will appear here." />}
+                    contentContainerStyle={[styles.listContent, visibleEntries.length === 0 && styles.listEmpty]}
                     showsVerticalScrollIndicator={false}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={GuardColors.goldDeep} />}
                 />
@@ -346,6 +351,7 @@ const styles = StyleSheet.create({
     filterText: { fontSize: 13, fontWeight: '700', color: '#4B5563' },
     filterTextActive: { color: '#FFFFFF' },
     listContent: { padding: 20, paddingBottom: 40 },
+    listEmpty: { flexGrow: 1 },
     card: { backgroundColor: GuardColors.card, borderRadius: 18, padding: 16, marginBottom: 12, borderLeftWidth: 3, borderWidth: 1, borderColor: GuardColors.border },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
     cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 12 },
@@ -356,14 +362,14 @@ const styles = StyleSheet.create({
     statusBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1 },
     statusDot: { width: 6, height: 6, borderRadius: 3 },
     statusText: { fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
-    timeSection: { backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14, marginBottom: 16 },
+    timeSection: { backgroundColor: '#F9FAFB', borderRadius: 12, padding: 14, paddingBottom: 4 },
     timeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 8 },
     timeLabel: { fontSize: 14, fontWeight: '600', color: '#6B7280', width: 90 },
     timeValue: { fontSize: 14, fontWeight: '800', color: '#1F2937' },
-    durationBanner: { marginTop: 4, backgroundColor: GuardColors.goldPale, borderRadius: 8, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
+    durationBanner: { marginTop: 4, marginBottom: 10, backgroundColor: GuardColors.goldPale, borderRadius: 8, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8 },
     durationText: { fontSize: 13, fontWeight: '600', color: GuardColors.t2 },
     durationValue: { fontWeight: '900', color: GuardColors.t1 },
-    checkOutButton: { backgroundColor: GuardColors.red, borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+    checkOutButton: { marginTop: 16, backgroundColor: GuardColors.red, borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
     checkOutButtonPressed: { backgroundColor: '#B91C1C', transform: [{ scale: 0.97 }] },
     checkOutButtonText: { fontSize: 15, fontWeight: '800', color: '#FFFFFF' },
 });

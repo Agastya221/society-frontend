@@ -72,8 +72,9 @@ export default function NoticesScreen() {
 
     const fetchNotices = async () => {
         try {
-            const res = await api.get('/community/notices', { params: { page: 1, limit: 50 } });
-            const raw = res.data?.data ?? res.data?.notices ?? res.data ?? [];
+            const res = await api.get('/community/notices', { params: { page: 1, limit: 50, includeExpired: true } });
+            // The API nests the list: { data: { notices: [...] } }.
+            const raw = res.data?.data?.notices ?? res.data?.data ?? res.data?.notices ?? [];
             const data: Notice[] = Array.isArray(raw) ? raw : [];
             data.sort((a, b) => {
                 if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
@@ -166,7 +167,7 @@ export default function NoticesScreen() {
                 renderItem={({ item, index }) => {
                     const ts = getTypeStyle(item.type);
                     return (
-                        <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                        <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                             <View style={styles.card}>
                                 {/* Top: type pill + pinned + priority + actions */}
                                 <View style={styles.cardTopRow}>

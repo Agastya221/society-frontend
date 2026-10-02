@@ -1,6 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
-import { router } from 'expo-router';
 
 const BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
 
@@ -60,7 +59,6 @@ api.interceptors.response.use(
             if (!refreshToken) {
                 isRefreshing = false;
                 await logout();
-                router.replace('/login');
                 return Promise.reject(error);
             }
 
@@ -75,7 +73,6 @@ api.interceptors.response.use(
             } catch (refreshError) {
                 drainQueue(null, refreshError);
                 await logout();
-                router.replace('/login');
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;

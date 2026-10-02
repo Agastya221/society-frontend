@@ -5,7 +5,7 @@ import { Modal, RefreshControl, ScrollView, Share, StatusBar, StyleSheet, Text, 
 import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
-import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
+import { ScreenHeader, HeaderIconButton } from '@/components/layout/ScreenHeader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ImageCarousel } from '../../../components/ui/ImageCarousel';
 import { Complaint, fetchComplaintDetails } from '../../../services/complaints';
@@ -96,6 +96,7 @@ export default function ComplaintDetailScreen() {
         return (
             <View style={S.root}>
                 <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+                <ScreenHeader title="Complaint Details" />
                 <AppLoader />
             </View>
         );
@@ -106,6 +107,7 @@ export default function ComplaintDetailScreen() {
         return (
             <View style={S.root}>
                 <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+                <ScreenHeader title="Complaint Details" />
                 <View style={S.center}>
                     <MaterialCommunityIcons name="alert-circle-outline" size={48} color={SgateColors.red} />
                     <Text style={S.errorText}>{error || 'Complaint not found'}</Text>
@@ -128,21 +130,17 @@ export default function ComplaintDetailScreen() {
 
     return (
         <>
-        <ComplaintScreenLayout
-            headerContent={
-                <View style={S.headerInner}>
-                    <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={S.headerTitle}>Complaint Details</Text>
-                    <View style={S.headerActions}>
-                        <TouchableOpacity onPress={handleShare} style={S.headerIconBtn}>
-                            <MaterialCommunityIcons name="share-variant-outline" size={20} color={SgateColors.t2} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            }
-        >
+        <View style={S.root}>
+            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+            <ScreenHeader
+                title="Complaint Details"
+                rightAction={
+                    <HeaderIconButton icon="share-2" onPress={handleShare} accessibilityLabel="Share complaint" />
+                }
+            />
+
+            <View style={S.spacer} />
+
             {/* ── Content ─────────────────────────────────────────────────── */}
             <ScrollView
                 style={{ flex: 1 }}
@@ -205,7 +203,7 @@ export default function ComplaintDetailScreen() {
                     ) : null}
                 </Animated.View>
             </ScrollView>
-        </ComplaintScreenLayout>
+        </View>
 
         {/* ── Rating Modal ────────────────────────────────────────────────── */}
         <Modal visible={showRatingModal} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowRatingModal(false)}>
@@ -253,13 +251,7 @@ export default function ComplaintDetailScreen() {
 const S = StyleSheet.create({
     root: { flex: 1, backgroundColor: SgateColors.bg },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-
-    // Header
-    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12 },
-    backBtn: { width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 4 },
-    headerActions: { flexDirection: 'row', gap: 8 },
-    headerIconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
+    spacer: { height: 6 },
 
     // Error
     errorText: { fontSize: 15, fontFamily: SgateFonts.medium, color: SgateColors.red, marginTop: 12, textAlign: 'center' },

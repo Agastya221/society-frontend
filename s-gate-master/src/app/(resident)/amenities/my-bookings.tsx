@@ -41,6 +41,19 @@ function resolveAmenityTheme(name: string) {
 }
 
 // ─── Normalise API response ────────────────────────────────────────────────────
+/** "06:00" → "6:00 AM", matching the slot labels on the amenity screen. Other text passes through. */
+function to12h(value: string): string {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!m) return value;
+  const h = Number(m[1]);
+  return `${h % 12 || 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+function rangeLabel(start?: string, end?: string): string | null {
+  if (!start) return null;
+  return end ? `${to12h(start)} – ${to12h(end)}` : to12h(start);
+}
+
 function normalise(raw: any): MyBooking {
   const rawDate = raw.date ?? raw.bookingDate ?? raw.slotDate ?? '';
   const date = rawDate.split('T')[0];
@@ -50,8 +63,8 @@ function normalise(raw: any): MyBooking {
     raw.timeSlot ??
     slot.label ??
     slot.time ??
-    (slot.startTime ? `${slot.startTime}${slot.endTime ? ` – ${slot.endTime}` : ''}` : null) ??
-    (raw.startTime ? `${raw.startTime}${raw.endTime ? ` – ${raw.endTime}` : ''}` : null) ??
+    rangeLabel(slot.startTime, slot.endTime) ??
+    rangeLabel(raw.startTime, raw.endTime) ??
     '';
 
   const amenityName = raw.amenity?.name ?? raw.amenityName ?? '';
@@ -115,7 +128,7 @@ function BookingCard({ booking, index, onCancel }: { booking: MyBooking; index: 
   };
 
   return (
-    <AnimatedRN.View entering={FadeInDown.delay(index * 70).springify()}>
+    <AnimatedRN.View entering={FadeInDown.delay(Math.min(index, 8) * 70).springify()}>
       <View style={S.card}>
         {/* Top row: Icon + Title + Status */}
         <View style={S.cardTopRow}>
@@ -186,7 +199,6 @@ export default function MyBookingsScreen() {
   };
 
   useFocusEffect(useCallback(() => {
-    setLoading(true);
     (async () => {
       try {
         const res = await api.get('/resident/amenities/my-bookings');

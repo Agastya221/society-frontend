@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
 Animated, Dimensions, FlatList,
     Modal, PanResponder, Pressable, ScrollView, StyleSheet,
@@ -23,6 +23,8 @@ interface Notice {
     content: string;
     type: 'GENERAL' | 'ALERT' | 'EVENT' | 'MAINTENANCE';
     isPinned: boolean;
+    /** Urgent by type (urgent/emergency) or by priority (high/critical). */
+    isUrgent: boolean;
     createdAt: string;
     expiresAt?: string;
     author?: string;
@@ -56,6 +58,7 @@ function normaliseNotice(raw: any): Notice {
         title:     raw.title ?? '',
         content:   raw.content ?? raw.description ?? '',
         type:      TYPE_MAP[raw.type] ?? 'GENERAL',
+        isUrgent:  TYPE_MAP[raw.type] === 'ALERT' || raw.priority === 'HIGH' || raw.priority === 'CRITICAL',
         isPinned:  raw.isPinned ?? false,
         createdAt: raw.publishAt ?? raw.createdAt ?? new Date().toISOString(),
         expiresAt: raw.expiresAt ?? undefined,
@@ -75,12 +78,14 @@ function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () =>
     const backdropO = useRef(new Animated.Value(0)).current;
     const scrollY   = useRef(0);
 
-    useCallback(() => {
+    // Open once on mount. (Starting it during render restarted the spring on
+    // every re-render, snapping the sheet back while it was dragged or closing.)
+    useEffect(() => {
         Animated.parallel([
             Animated.spring(sheetY, { toValue: 0, damping: 24, stiffness: 220, useNativeDriver: true }),
             Animated.timing(backdropO, { toValue: 1, duration: 220, useNativeDriver: true }),
         ]).start();
-    }, [])();
+    }, [backdropO, sheetY]);
 
     const close = () => {
         Animated.parallel([
@@ -227,6 +232,7 @@ export default function NoticesScreen() {
     const filteredNotices = notices.filter(n => {
         if (filter === 'ALL') return true;
         if (filter === 'PINNED') return n.isPinned;
+        if (filter === 'ALERT') return n.isUrgent;
         return n.type === filter;
     });
 
@@ -249,7 +255,7 @@ export default function NoticesScreen() {
             >
                 <View style={S.cardHeader}>
                     <View style={S.headerLeft}>
-                        {item.isPinned && <Feather name="paperclip" size={12} color={SgateColors.t2} style={S.pinIcon} />}
+                        {item.isPinned && <Feather name="bookmark" size={12} color={SgateColors.t2} style={S.pinIcon} />}
                         <View style={[S.tagBadge, { backgroundColor: cfg.bg }]}>
                             <Text style={[S.tagText, { color: cfg.text }]}>{cfg.label}</Text>
                         </View>

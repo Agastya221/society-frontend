@@ -10,6 +10,7 @@ import { ScreenHeader } from "../../../../components/ui/ScreenHeader";
 import api from "../../../../services/api";
 import { AppAlert } from '../../../../components/ui/AppAlert';
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Contact {
   id: string;
@@ -76,7 +77,7 @@ function normalise(raw: any): Contact {
 }
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
-export default function ContactProfile() {
+function ContactProfile() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -286,3 +287,5 @@ const styles = StyleSheet.create({
   
   emptyTitle: { fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
 });
+
+export default withResetOnBlur(ContactProfile);

@@ -29,6 +29,7 @@ interface ExpectedDelivery {
     id: string;
     company: string;
     expectedDate: string;
+    windowLabel?: string;
     trackingId?: string;
 }
 
@@ -126,7 +127,7 @@ export default function DeliveriesScreen() {
             if (activeTab === 'Expected') {
                 const d = item as ExpectedDelivery;
                 return (
-                    <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                         <View style={styles.card}>
                             <View style={[styles.iconBubble, { backgroundColor: '#E8F0FE' }]}>
                                 <Feather name="package" size={20} color="#3B82F6" />
@@ -134,7 +135,7 @@ export default function DeliveriesScreen() {
                             <View style={styles.cardBody}>
                                 <Text style={styles.cardTitle}>{d.company}</Text>
                                 <Text style={styles.cardSub}>
-                                    Expected {formatDate(d.expectedDate)}
+                                    {d.windowLabel ?? `Expected ${formatDate(d.expectedDate)}`}
                                 </Text>
                                 {d.trackingId ? (
                                     <Text style={styles.trackingId}>
@@ -153,7 +154,7 @@ export default function DeliveriesScreen() {
             if (activeTab === 'Collected') {
                 const e = item as Entry;
                 return (
-                    <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                         <View style={styles.card}>
                             <View style={[styles.iconBubble, { backgroundColor: SgateColors.greenBg }]}>
                                 <Feather name="check-circle" size={20} color={SgateColors.green} />
@@ -177,7 +178,7 @@ export default function DeliveriesScreen() {
             // At Gate
             const e = item as Entry;
             return (
-                <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                     <View style={styles.card}>
                         <View style={[styles.iconBubble, { backgroundColor: SgateColors.goldPale }]}>
                             <Feather name="package" size={20} color={SgateColors.gold} />

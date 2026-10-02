@@ -106,7 +106,7 @@ export default function ApprovalRequestsListScreen() {
             const type   = typeStyle(item.type);
 
             return (
-                <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                     <TouchableOpacity
                         style={S.card}
                         activeOpacity={0.8}

@@ -1,6 +1,6 @@
 import { Colors } from '../src/constants/theme';
 import { useAuth } from '../src/store/auth';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { useEffect, useRef } from 'react';
@@ -21,15 +21,12 @@ Notifications.setNotificationHandler({
 export default function Layout() {
   const { ready, token, hydrate } = useAuth();
   const router = useRouter();
-  const segments = useSegments();
   const registeredTokenRef = useRef<string | null>(null);
   useEffect(() => { hydrate(); }, [hydrate]);
-  useEffect(() => {
-    if (!ready) return;
-    const login = segments[0] === 'login';
-    if (!token && !login) router.replace('/login');
-    if (token && login) router.replace('/');
-  }, [ready, token, segments, router]);
+  // Auth routing is declarative via Stack.Protected below. The old effect called
+  // router.replace() before the navigator was ready ("Attempted to navigate before
+  // mounting the Root Layout") and left the home screen under /login after sign-out,
+  // so Android back from the login screen bounced into a protected screen.
 
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
@@ -68,5 +65,5 @@ export default function Layout() {
     return () => { cancelled = true; };
   }, [ready, token]);
   if (!ready) return <View style={{ flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={Colors.gold} /></View>;
-  return <SafeAreaProvider><Stack screenOptions={{ animation: 'none', headerShadowVisible: false, contentStyle: { backgroundColor: Colors.bg }, headerTitleStyle: { fontWeight: '800' } }}><Stack.Screen name="index" options={{ headerShown: false }} /><Stack.Screen name="login" options={{ headerShown: false }} /><Stack.Screen name="pass" options={{ title: 'My Gate Pass' }} /><Stack.Screen name="schedule" options={{ title: 'My Schedule' }} /><Stack.Screen name="bookings" options={{ title: 'Work Requests' }} /><Stack.Screen name="profile" options={{ title: 'My Profile' }} /></Stack><StatusBar style="dark" /></SafeAreaProvider>;
+  return <SafeAreaProvider><Stack screenOptions={{ animation: 'none', headerShadowVisible: false, contentStyle: { backgroundColor: Colors.bg }, headerTitleStyle: { fontWeight: '800' } }}><Stack.Protected guard={!token}><Stack.Screen name="login" options={{ headerShown: false }} /></Stack.Protected><Stack.Protected guard={!!token}><Stack.Screen name="index" options={{ headerShown: false }} /><Stack.Screen name="pass" options={{ title: 'My Gate Pass' }} /><Stack.Screen name="schedule" options={{ title: 'My Schedule' }} /><Stack.Screen name="bookings" options={{ title: 'Work Requests' }} /><Stack.Screen name="profile" options={{ title: 'My Profile' }} /></Stack.Protected></Stack><StatusBar style="dark" /></SafeAreaProvider>;
 }

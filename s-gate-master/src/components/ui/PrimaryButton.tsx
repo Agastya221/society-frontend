@@ -27,6 +27,10 @@ export function PrimaryButton({
 
   return (
     <Pressable
+      // Android keeps the background a rippled view was first drawn with, so a
+      // button that starts disabled would stay grey once enabled. A new key per
+      // state gives it a fresh native view with the right colour.
+      key={`${variant}-${isDisabled ? 'off' : 'on'}`}
       accessibilityRole="button"
       android_ripple={{ color: 'rgba(13,15,20,0.10)' }}
       style={[

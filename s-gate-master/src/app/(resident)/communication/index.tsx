@@ -4,7 +4,7 @@ import {
 import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -84,7 +84,7 @@ function normalisePost(raw: any): CommunityPost {
 function PostCard({ item, index, onPress, onLike }: { item: CommunityPost; index: number; onPress: () => void; onLike: () => void }) {
   const cfg = CATEGORY_CFG[item.category] ?? CATEGORY_CFG.GENERAL;
   return (
-    <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
       <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
         <View style={styles.cardTopRow}>
           {item.isPinned && <Feather name="bookmark" size={14} color={SgateColors.goldDeep} style={styles.pinIcon} />}
@@ -172,16 +172,17 @@ export default function CommunicationScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Community</Text>
-        <TouchableOpacity onPress={() => router.push('/(resident)/communication/create' as any)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="edit" size={20} color={SgateColors.t1} />
-        </TouchableOpacity>
-      </View>
+    <View style={styles.safeArea}>
+      <ScreenHeader
+        title="Community"
+        rightAction={(
+          <HeaderIconButton
+            icon="edit"
+            accessibilityLabel="New post"
+            onPress={() => router.push('/(resident)/communication/create' as any)}
+          />
+        )}
+      />
 
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContent}>
@@ -223,15 +224,13 @@ export default function CommunicationScreen() {
           }
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: SgateColors.card },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   filterContainer: { backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
   filterContent: { paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 8 },
   chip: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, marginRight: 8 },

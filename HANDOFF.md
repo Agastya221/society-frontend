@@ -4,6 +4,56 @@
 Parts 1–4 are committed; Parts 5–8 and the pre-approval sheet rebuild are
 **uncommitted** in the working tree.
 
+## 2–3 Oct 2026 — full-app device QA pass (frontend uncommitted; backend committed `e2d8d2a`)
+
+Tested on a Pixel 6a (main app) and the `Medium_Phone` emulator (Guard, Staff),
+logged in as 6202923165 with the 989898 bypass OTP; data in the dev Neon DB.
+`tsc` clean, jest 61/61. Frontend changes are on `ui-consistency-preapproval`,
+uncommitted. A backup diff is in the session scratchpad `backup/`.
+
+**Cross-cutting fixes (main app)**
+- Dark "shadow" on back: Android drew card elevation shadows at full darkness
+  while a tab scene faded. Fixed with `needsOffscreenAlphaCompositing` on the
+  scene container. The change is a node_modules edit, saved as
+  `patches/@react-navigation+elements+2.9.3.patch` (patch-package runs on postinstall).
+- `AnimatedBottomSheetModal` froze its children at open (lost Profile edits,
+  dead super-admin Reject); now live while visible. Its height is now capped by
+  the measured container, not the window, so it can't run under the status bar
+  inside tab screens.
+- `PrimaryButton` stayed grey after enabling (Android ripple keeps first bg) →
+  keyed by state. `AppAlert` hardware back now runs Cancel / the lone button.
+- Every resident route is a hidden tab that stays mounted, so forms kept old
+  values and details flashed the previous item. `withResetOnBlur` remounts
+  form/leaf-detail screens after leaving.
+- Lists no longer drop to a full-screen loader on refocus; stagger delays
+  capped at 8 rows; `useGateStore.hasLoaded` stops Home skeleton flicker.
+- `normalizeUser` maps the API's `flat.flatNumber` → `flat.number` (fixed QR
+  "undefined", 70% completion stuck); `useActiveFlatLabel` for flat labels.
+- Root layout let "Add Flat" (add-membership) through role routing; it was
+  bounced for every user before.
+
+**Fake features made real or honest**
+- Admin Society Settings now load/save via `GET/PATCH /admin/society/settings`
+  (new backend endpoint; nothing consumes the values yet).
+- Admin Residents "Register/Edit" only edited local state; replaced with an
+  explanation + link to Onboarding requests (no admin create-resident API).
+
+**Guard / Staff (see git diff)**: Stack.Protected auth routing, passcode
+verification via `/guard/verify-code` + manual entry, visitor name on new
+entry, double-tap guards, cancel-request flow, typed staff check-in, staff
+schedule day codes, session/logout handling, a pre-approved (cab/delivery)
+lookup screen (`s-gate-guard-main/src/app/pre-approved.tsx`).
+
+**Still open**
+- Push notifications: no `google-services.json` in any app.
+- `Flat.isOccupied` stale on 64 flats: repair script
+  `E:\society-gate-backend\scripts\repair-flat-occupancy.ts` (dry-run default);
+  billing + gate flat search still read the stored column.
+- Vehicles start ACTIVE although the app says "pending approval"; the admin
+  app has no vehicle-approval screen.
+- Settings values (maintenance fee, auto-approval) aren't used by billing or
+  the gate yet.
+
 ### Codex continuation
 
 - Found a definite QR dismissal path: three caller screens close the sheet in

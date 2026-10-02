@@ -10,7 +10,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    BackHandler,
     Image,
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
@@ -46,6 +48,7 @@ export default function Login() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [countdown, setCountdown] = useState(0);
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
 
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const otpInputRef = useRef<TextInput>(null);
@@ -53,6 +56,26 @@ export default function Login() {
     // ── MSG91 init ────────────────────────────────────────────────────────────
     useEffect(() => {
         OTPWidget.initializeWidget(MSG91_WIDGET_ID, MSG91_TOKEN_AUTH);
+    }, []);
+
+    const backToPhone = () => { setScreen('phone'); setOtp(''); setError(''); };
+
+    // ── Android back: OTP step returns to phone entry instead of leaving the app
+    useEffect(() => {
+        if (screen !== 'otp') return;
+        const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+            backToPhone();
+            return true;
+        });
+        return () => sub.remove();
+    }, [screen]);
+
+    // ── Keyboard visibility: the footer is hidden while typing so the form
+    // card + Send OTP / Verify button fit in the space above the keyboard.
+    useEffect(() => {
+        const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+        const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+        return () => { show.remove(); hide.remove(); };
     }, []);
 
     // ── Countdown timer ───────────────────────────────────────────────────────
@@ -193,8 +216,11 @@ export default function Login() {
             <StatusBar style="dark" />
             <KeyboardAvoidingView
                 style={S.root}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                // Android is edge-to-edge (app.json edgeToEdgeEnabled), so the
+                // manifest's adjustResize no longer shrinks the window — the
+                // KAV must do it. 'height' matches the app's other forms.
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={0}
             >
                 <View style={[S.innerWrap, { paddingTop: insets.top + 16 }]}>
                     {screen === 'phone'
@@ -209,19 +235,21 @@ export default function Login() {
                             isLoading={isLoading} countdown={countdown}
                             inputRef={otpInputRef}
                             onVerify={handleVerifyOtp} onResend={handleResendOtp}
-                            onBack={() => { setScreen('phone'); setOtp(''); setError(''); }}
+                            onBack={backToPhone}
                         />
                     }
 
-                    {/* Footer */}
-                    <View style={[S.footer, { paddingBottom: insets.bottom + 16 }]}>
-                        <View style={S.featuresRow}>
-                            <FeaturePill icon="shield" label="SECURE" />
-                            <FeaturePill icon="user" label="RESIDENT" />
-                            <FeaturePill icon="headphones" label="ASSIST" />
+                    {/* Footer (hidden while the keyboard is up) */}
+                    {!keyboardVisible && (
+                        <View style={[S.footer, { paddingBottom: insets.bottom + 16 }]}>
+                            <View style={S.featuresRow}>
+                                <FeaturePill icon="shield" label="SECURE" />
+                                <FeaturePill icon="user" label="RESIDENT" />
+                                <FeaturePill icon="headphones" label="ASSIST" />
+                            </View>
+                            <Text style={S.footerText}>POWERED BY S-GATE TECHNOLOGY © 2026</Text>
                         </View>
-                        <Text style={S.footerText}>POWERED BY S-GATE TECHNOLOGY © 2026</Text>
-                    </View>
+                    )}
                 </View>
             </KeyboardAvoidingView>
         </View>

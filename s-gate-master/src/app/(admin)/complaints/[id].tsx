@@ -149,7 +149,7 @@ export default function AdminComplaintDetailScreen() {
         <View style={S.root}>
             {/* ── Header ─────────────────────────────────────────────── */}
             <ScreenHeader
-                title="Admin View"
+                title="Complaint Details"
                 onBack={() => router.back()}
                 rightAction={<HeaderIconButton icon="share-2" accessibilityLabel="Share" onPress={handleShare} />}
             />
@@ -165,7 +165,7 @@ export default function AdminComplaintDetailScreen() {
                     <View style={S.titleRow}>
                         <View style={{ flex: 1 }}>
                             <Text style={S.categoryLabel}>
-                                {complaint.category} • {complaint.ticketNumber || 'NO ID'}
+                                {complaint.category}{complaint.ticketNumber ? ` • ${complaint.ticketNumber}` : ''}
                             </Text>
                             <Text style={S.titleText}>{complaint.title}</Text>
                         </View>
@@ -261,7 +261,7 @@ export default function AdminComplaintDetailScreen() {
             </ScrollView>
 
             {/* STATUS MODAL */}
-            <Modal visible={showStatusModal} transparent animationType="fade">
+            <Modal visible={showStatusModal} transparent animationType="fade" onRequestClose={() => setShowStatusModal(false)}>
                 <View style={S.modalOverlay}>
                     <View style={S.modalCard}>
                         <Text style={S.modalTitle}>Update Status</Text>

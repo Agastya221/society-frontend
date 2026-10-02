@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts, SgateLayout, SgateRadius, SgateShadows } from '@/constants/Sgate-theme';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { SgateColors, SgateFonts, SgateRadius, SgateShadows } from '@/constants/Sgate-theme';
 import api from '../../../services/api';
 
 const C = SgateColors;
@@ -30,7 +30,9 @@ interface StaffMember {
     photoUrl?: string;
     isVerified: boolean;
     overallRating?: number;
-    status: 'INSIDE' | 'OUTSIDE';
+    status?: 'INSIDE' | 'OUTSIDE';
+    /** Set by the backend on gate check-in, cleared on check-out. */
+    isCurrentlyWorking?: boolean;
     lastCheckIn?: string;
 }
 
@@ -90,7 +92,8 @@ function getTypeIcon(type: string): React.ComponentProps<typeof MaterialCommunit
 // ─── Staff Card ───────────────────────────────────────────────────────────────
 
 function StaffCard({ item, onOpen }: { item: StaffMember; onOpen: () => void }) {
-    const isInside = item.status === 'INSIDE';
+    // The API has no `status`; presence is `isCurrentlyWorking` (see the backend check-in/out).
+    const isInside = item.status ? item.status === 'INSIDE' : !!item.isCurrentlyWorking;
     const theme = getTypeTheme(item.staffType);
     const initials = item.name
         .split(' ')
@@ -219,16 +222,10 @@ export default function StaffScreen() {
 
     return (
         <View style={styles.root}>
-            {/* Header */}
-            <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
-                <View style={styles.header}>
-                    <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn} android_ripple={{ color: C.border }}>
-                        <Ionicons name="arrow-back" size={22} color={C.t1} />
-                    </Pressable>
-                    <Text style={styles.headerTitle}>My House Help</Text>
-                    <Text style={styles.totalText}>{staff.length} total</Text>
-                </View>
-            </SafeAreaView>
+            <ScreenHeader
+                title="My House Help"
+                rightAction={<Text style={styles.totalText}>{staff.length} total</Text>}
+            />
 
             {loading ? (
                 <AppLoader />
@@ -277,35 +274,8 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: C.bg,
     },
-    headerSafeArea: { backgroundColor: C.card },
 
     // Header
-    header: {
-        minHeight: 58,
-        paddingVertical: 10,
-        paddingHorizontal: SgateLayout.screenGutter,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        backgroundColor: C.card,
-        borderBottomWidth: 1,
-        borderBottomColor: C.borderSoft,
-    },
-    backBtn: {
-        height: 38,
-        width: 38,
-        borderRadius: 19,
-        backgroundColor: C.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    backBtnPressed: { opacity: 0.65 },
-    headerTitle: {
-        flex: 1,
-        fontSize: 18,
-        fontFamily: F.bold,
-        color: C.t1,
-    },
     totalText: { fontSize: 12, fontFamily: F.semibold, color: C.goldDeep, backgroundColor: C.goldPale, paddingHorizontal: 10, paddingVertical: 6, borderRadius: SgateRadius.full },
 
     // Scroll
@@ -356,7 +326,6 @@ const styles = StyleSheet.create({
         ...SgateShadows.minimal,
     },
     profileButton: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
-    cardPressed: { opacity: 0.78, transform: [{ scale: 0.995 }] },
     avatarWrapper: {
         position: 'relative',
     },
@@ -417,7 +386,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    callButtonPressed: { opacity: 0.65 },
 
     // Empty / loading
     centered: {

@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, Modal, Text, TouchableOpacity, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useActiveFlatLabel } from '@/hooks/useActiveFlatLabel';
 import type { User } from '../../../../types/api';
 
 interface ProfileQrModalProps {
@@ -23,6 +24,7 @@ function formatGateId(id: string): string {
 }
 
 export function ProfileQrModal({ visible, onClose, user }: ProfileQrModalProps) {
+    const activeFlat = useActiveFlatLabel();
     if (!user) return null;
 
     const name = user.name || 'Resident';
@@ -30,7 +32,7 @@ export function ProfileQrModal({ visible, onClose, user }: ProfileQrModalProps) 
     const gateId = formatGateId(user.id);
     const hasPhoto = !!user.photoUrl;
 
-    const flatInfo = user.flat ? `${user.flat.number}, ${user.flat.block?.name || 'Block'}` : 'Flat Details Pending';
+    const flatInfo = activeFlat ?? 'Flat Details Pending';
     const roleMap: Record<string, string> = {
         OWNER: 'Residing Owner',
         TENANT: 'Residing Tenant',

@@ -76,7 +76,7 @@ export default function ActivityCard({ entries, isLoading, onSeeAll }: ActivityC
                                     <Avatar name={entry.visitorName} size={36} />
                                     <View style={styles.info}>
                                         <Text style={styles.name} numberOfLines={1}>
-                                            {entry.visitorName}
+                                            {entry.visitorName || 'Visitor'}
                                         </Text>
                                         <Text style={styles.time}>{timeAgo(entry.createdAt)}</Text>
                                     </View>

@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -11,7 +11,7 @@ import {
     View,
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import api from '@/services/api';
 
 interface RegistrationRequest {
@@ -63,8 +63,11 @@ export default function RequestsListScreen() {
         }, [activeTab])
     );
 
+    // Spinner only when the tab changes; coming back refreshes in place.
+    const loadedTab = useRef<StatusTab | null>(null);
     const loadInitial = async (tab: StatusTab) => {
-        setLoading(true);
+        if (loadedTab.current !== tab) setLoading(true);
+        loadedTab.current = tab;
         setPage(1);
         setHasMore(true);
         try {
@@ -126,21 +129,10 @@ export default function RequestsListScreen() {
     const getStatusStyle = (status: string) => STATUS_STYLE[status] ?? { bg: 'bg-slate-100', text: 'text-slate-700' };
 
     return (
-        <SafeAreaView edges={['top']} className="flex-1 bg-slate-50">
-            {/* Header */}
-            <View className="bg-white px-5 pt-4 pb-3 border-b border-slate-100">
-                <View className="flex-row items-center gap-3 mb-4">
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        className="w-10 h-10 bg-slate-100 rounded-xl items-center justify-center"
-                    >
-                        <Feather name="arrow-left" size={20} color="#374151" />
-                    </TouchableOpacity>
-                    <Text className="text-xl font-sora-bold text-slate-900">All Requests</Text>
-                </View>
-
+        <View className="flex-1 bg-slate-50">
+            <ScreenHeader title="All Requests">
                 {/* Tabs */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 20 }}>
                     {TABS.map((tab) => (
                         <TouchableOpacity
                             key={tab.key}
@@ -159,7 +151,7 @@ export default function RequestsListScreen() {
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
-            </View>
+            </ScreenHeader>
 
             {loading ? (
                 <AppLoader />
@@ -232,6 +224,6 @@ export default function RequestsListScreen() {
                     }}
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 }

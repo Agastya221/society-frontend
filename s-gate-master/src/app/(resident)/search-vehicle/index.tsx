@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Linking, FlatList, Modal, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
@@ -44,7 +44,6 @@ const VIOLATION_TYPES = [
 // ─── Screen ────────────────────────────────────────────────────────────────────
 export default function SearchVehicleScreen() {
     const scrollBottomPadding = useScrollBottomPadding();
-  const router = useRouter();
   const [tab, setTab] = useState<'LOOKUP' | 'MY_REPORTS'>('LOOKUP');
 
   // Lookup State
@@ -145,7 +144,7 @@ export default function SearchVehicleScreen() {
   const renderComplaint = ({ item, index }: { item: Complaint, index: number }) => {
     const isOpen = item.status === 'OPEN' || item.status === 'NOTIFIED';
     return (
-      <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={S.complaintCard}>
+      <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()} style={S.complaintCard}>
         <View style={S.complaintHeader}>
           <Text style={S.complaintPlate}>{item.vehicleNumber}</Text>
           <View style={[S.cStatusBadge, !isOpen && { backgroundColor: SgateColors.surface }]}>
@@ -163,16 +162,7 @@ export default function SearchVehicleScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
       {/* ── Header + Tabs (one visual block) ────────────────────────────── */}
-      <View style={S.headerBg}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.headerInner}>
-            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle}>Parking & Vehicles</Text>
-            <View style={{ width: 22 }} />
-          </View>
-        </SafeAreaView>
+      <ScreenHeader title="Parking & Vehicles">
 
         {/* ── Premium Segmented Control ─────────────────────────────────── */}
         <View style={S.segmentContainer}>
@@ -195,7 +185,7 @@ export default function SearchVehicleScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </ScreenHeader>
 
       {/* Fixed spacing between header block and content */}
       <View style={{ height: 14 }} />
@@ -353,14 +343,9 @@ export default function SearchVehicleScreen() {
 const S = StyleSheet.create({
   root: { flex: 1, backgroundColor: SgateColors.bg },
 
-  // Header
-  headerBg: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
-  headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12 },
-  backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
-  headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
 
   // Premium Segmented Control
-  segmentContainer: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 6, paddingBottom: 14 },
+  segmentContainer: { paddingHorizontal: SgateLayout.screenGutter },
   segmentTrack: { flexDirection: 'row', backgroundColor: '#F4F4F5', borderRadius: 16, padding: 4 },
   segmentItem: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -429,8 +414,6 @@ const S = StyleSheet.create({
   // Empty
 
   // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
-  modalContent: { paddingHorizontal: 24, maxHeight: '80%' },
   modalTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
   modalSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 20 },
   fieldLabel: { fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginBottom: 8, marginTop: 16, textTransform: 'uppercase' },

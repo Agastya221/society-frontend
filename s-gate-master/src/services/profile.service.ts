@@ -1,6 +1,7 @@
 import api from './api';
 import type { FamilyMember, FamilyRole, User } from '../types/api';
 import type { User as AuthUser } from '../types/auth';
+import { normalizeUser } from '@/utils/normalizeUser';
 
 // ─── Resident Contexts ───────────────────────────────────────────────────────
 
@@ -136,7 +137,7 @@ export const deleteResidentRequest = async (
 
 export const getProfile = async (): Promise<User> => {
     const res = await api.get('/auth/resident-app/profile');
-    return res.data.data;
+    return normalizeUser(res.data.data);
 };
 
 export interface UpdateProfilePayload {
@@ -147,7 +148,7 @@ export interface UpdateProfilePayload {
 
 export const updateProfile = async (data: UpdateProfilePayload): Promise<User> => {
     const res = await api.patch('/auth/resident-app/profile', data);
-    return res.data.data;
+    return normalizeUser(res.data.data);
 };
 
 // ─── Family ───────────────────────────────────────────────────────────────────
