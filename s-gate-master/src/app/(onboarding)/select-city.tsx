@@ -313,9 +313,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
     },
+    // Same rounded-square button as OnboardingHeader on the later steps.
     headerIconBtn: {
-        width: 40,
-        height: 40,
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: SgateColors.bg,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
         alignItems: 'center',
         justifyContent: 'center',
     },

@@ -32,7 +32,7 @@ function resolveTheme(name: string) {
   return match ?? { icon: 'home', colorBg: SgateColors.goldPale, colorIcon: SgateColors.goldDeep };
 }
 
-interface TimeSlot { id: string; label: string; startTime: string; endTime: string; status: 'AVAILABLE' | 'BOOKED' | 'PAST'; isBookable: boolean; }
+interface TimeSlot { id: string; label: string; startTime: string; endTime: string; status: 'AVAILABLE' | 'BOOKED' | 'PAST'; isBookable: boolean; /** Booked by this flat (sent by newer servers). */ bookedByMe?: boolean; }
 interface Amenity { id: string; name: string; timing: string; maxCapacity: number; slotDurationHours: number; rules: string[]; icon: string; colorBg: string; colorIcon: string; slots: TimeSlot[]; }
 
 const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
@@ -145,6 +145,7 @@ export default function AmenityDetailScreen() {
         endTime: s.endTime,
         status: (s.status ?? 'AVAILABLE') as TimeSlot['status'],
         isBookable: s.isBookable ?? s.status === 'AVAILABLE',
+        bookedByMe: s.bookedByMe === true,
       }));
       setAmenity(a => a ? { ...a, slots } : a);
       return slots;
@@ -378,12 +379,14 @@ export default function AmenityDetailScreen() {
               {amenity.slots.map((slot) => {
                 const isSelected = selectedSlot?.id === slot.id;
                 const chipStyle =
-                  slot.status === 'BOOKED' ? S.slotChipBooked
+                  slot.bookedByMe          ? S.slotChipMine
+                  : slot.status === 'BOOKED' ? S.slotChipBooked
                   : slot.status === 'PAST'  ? S.slotChipPast
                   : isSelected              ? S.slotChipSelected
                   :                           S.slotChipAvailable;
                 const textStyle =
-                  slot.status === 'BOOKED' ? S.slotTimeBooked
+                  slot.bookedByMe          ? S.slotTimeMine
+                  : slot.status === 'BOOKED' ? S.slotTimeBooked
                   : slot.status === 'PAST'  ? S.slotTimePast
                   : isSelected              ? S.slotTimeSelected
                   :                           S.slotTimeDefault;
@@ -398,7 +401,9 @@ export default function AmenityDetailScreen() {
                   >
                     <Text style={textStyle}>{slot.label}</Text>
                     {slot.status === 'BOOKED' && (
-                      <Text style={S.slotStatusLabel}>Booked</Text>
+                      <Text style={[S.slotStatusLabel, slot.bookedByMe && S.slotStatusMine]}>
+                        {slot.bookedByMe ? 'Your booking' : 'Booked'}
+                      </Text>
                     )}
                     {slot.status === 'PAST' && (
                       <Text style={S.slotStatusLabel}>Past</Text>
@@ -699,6 +704,19 @@ const S = StyleSheet.create({
     borderColor: 'transparent',
   },
   // BOOKED & PAST — greyed out
+  // Booked by this flat: show it as theirs, not as someone else's taken slot.
+  slotChipMine: {
+    backgroundColor: SgateColors.greenBg,
+    borderColor: SgateColors.green,
+  },
+  slotTimeMine: {
+    fontSize: 13,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.green,
+  },
+  slotStatusMine: {
+    color: SgateColors.green,
+  },
   slotChipBooked: {
     backgroundColor: SgateColors.surface,
     borderColor: 'transparent',

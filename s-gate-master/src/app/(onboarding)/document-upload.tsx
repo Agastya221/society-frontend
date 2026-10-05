@@ -19,6 +19,7 @@ import { DocumentUploadCard } from '@/components/onboarding/DocumentUploadCard';
 import { uploadImage } from '@/services/uploadService';
 import { AppAlert } from '@/components/ui/AppAlert';
 import type { DocumentType, UploadedDocument } from '@/types/onboarding.types';
+import { documentTypeLabel } from '@/utils/documentLabels';
 
 // ─── Document Config ──────────────────────────────────────────────────────────
 
@@ -88,6 +89,18 @@ export default function DocumentUploadScreen() {
                 // Validate file size (10MB max)
                 if (asset.size && asset.size > 10 * 1024 * 1024) {
                     AppAlert.show('File Too Large', 'Maximum file size is 10 MB.');
+                    return;
+                }
+
+                // One file can't prove two things (e.g. ownership and ID).
+                const duplicate = useOnboardingStore.getState().uploadedDocuments.find(
+                    (d) => d.type !== docType && d.fileName === (asset.name || 'document') && d.fileSize === (asset.size || 0)
+                );
+                if (duplicate) {
+                    AppAlert.show(
+                        'Same file used twice',
+                        `This file is already uploaded as ${documentTypeLabel(duplicate.type)}. Please choose a different document.`
+                    );
                     return;
                 }
 

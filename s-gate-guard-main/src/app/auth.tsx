@@ -12,6 +12,8 @@ import { useAuthStore } from '@/store/useAuthStore';
 
 type Screen = 'phone' | 'otp';
 
+const NOT_A_GUARD = 'This app is for security guards. Use the S-Gate app.';
+
 export default function AuthScreen() {
   const login = useAuthStore((state) => state.login);
   const [screen, setScreen] = useState<Screen>('phone');
@@ -80,10 +82,12 @@ export default function AuthScreen() {
       const backend = await api.post('/api/v1/auth/guard-app/otp/verify', { widgetToken });
       const data = backend.data?.data;
       if (!data?.accessToken || !data?.user) { setError('Authentication failed. Contact your administrator.'); return; }
-      if (data.user.role !== 'GUARD' && data.user.role !== 'SUPER_ADMIN') { setError('This app is available only to security staff.'); return; }
+      if (data.user.role !== 'GUARD') { setError(NOT_A_GUARD); return; }
       await login(data.accessToken, data.refreshToken, data.user);
     } catch (caught: any) {
       const message = caught?.response?.data?.message || caught?.message || 'Verification failed.';
+      // The server rejects non-guard accounts with 403 "...for guards only."
+      if (caught?.response?.status === 403 && /guards only/i.test(message)) { setError(NOT_A_GUARD); return; }
       setError(message);
       if (message.toLowerCase().includes('no guard') || message.includes('404')) {
         Alert.alert('Guard account not found', 'Ask your society administrator to register this mobile number.', [{ text: 'OK', onPress: () => setScreen('phone') }]);

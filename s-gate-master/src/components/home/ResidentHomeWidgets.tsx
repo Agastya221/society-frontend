@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React from 'react';
 import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { SgateFonts } from '@/constants/Sgate-theme';
@@ -219,7 +219,14 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
     onDecline: (id: string) => void;
 }) {
     return (
-        <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).duration(220)} style={styles.waitingCard}>
+        // Fade out on Allow/Decline (the card used to vanish in one frame) and let
+        // the remaining cards slide up into place.
+        <Animated.View
+            entering={FadeInDown.delay(Math.min(index, 8) * 50).duration(220)}
+            exiting={FadeOut.duration(200)}
+            layout={LinearTransition.duration(220)}
+            style={styles.waitingCard}
+        >
             <Avatar name={request.visitorName} size={50} />
             <View style={styles.visitorCopy}>
                 <Text style={styles.visitorName} numberOfLines={1}>{request.visitorName || 'Visitor'}</Text>

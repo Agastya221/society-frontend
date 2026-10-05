@@ -1,3 +1,6 @@
+import {
+    ListedPass, Match, PassCard, PassReasonRow, ReasonRowData, StatusBanner, passStyles, reasonRows, conflictTitle, windowLabel,
+} from '@/components/PreApprovedPass';
 import { GuardColors, GuardRadius } from '@/constants/theme';
 import api from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,57 +35,13 @@ const TYPES: { type: PassType; label: string; icon: keyof typeof Ionicons.glyphM
 
 interface FlatResult { id: string; flatNumber: string; block?: { name: string }; residents?: { name: string }[] }
 
-interface Schedule {
-    date?: string | null; startTime?: string | null; endTime?: string | null;
-    validFrom?: string | null; validUntil?: string | null; daysOfWeek?: string[];
-    timeFrom?: string | null; timeTo?: string | null;
-}
-
-interface Match {
-    allowed: boolean;
-    entryId?: string;
-    type?: string;
-    mode?: string;
-    displayLabel?: string;
-    isPrivate: boolean;
-    flatNumber?: string;
-    residentName?: string;
-    reason?: string;
-    message?: string;
-    matches?: Match[];
-}
-
-interface ListedPass {
-    id: string; type: string; mode: string; scheduleType: string; displayLabel: string;
-    isPrivate: boolean; flatNumber?: string; residentName?: string; visitorName?: string | null;
-    schedule?: Schedule | null;
-}
-
+// `message` / per-pass `reasons` are additive on the validate response; when the
+// backend doesn't send them the screen falls back to its own copy and the active list.
 type Phase =
     | { kind: 'form' }
-    | { kind: 'result'; matches: Match[] }
-    | { kind: 'denied'; message: string; related: ListedPass[] }
+    | { kind: 'result'; matches: Match[]; message?: string }
+    | { kind: 'denied'; message: string; rows: ReasonRowData[]; title?: string }
     | { kind: 'allowed'; match: Match };
-
-const IST_MS = 330 * 60 * 1000;
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/** Schedule dates come back as midnight of the pass day (UTC); shifting to IST keeps that calendar day. */
-function istDay(iso: string): string {
-    const d = new Date(new Date(iso).getTime() + IST_MS);
-    return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
-}
-
-function windowLabel(s?: Schedule | null): string | null {
-    if (!s) return null;
-    if (s.date && s.startTime && s.endTime) return `${istDay(s.date)} · ${s.startTime} – ${s.endTime}`;
-    if (s.timeFrom && s.timeTo) {
-        const days = s.daysOfWeek?.length ? s.daysOfWeek.map((d) => d.charAt(0) + d.slice(1, 3).toLowerCase()).join(', ') : 'Daily';
-        const until = s.validUntil ? ` · until ${istDay(s.validUntil)}` : '';
-        return `${days} · ${s.timeFrom} – ${s.timeTo}${until}`;
-    }
-    return null;
-}
 
 function flatLabel(f: FlatResult): string {
     if (f.flatNumber === 'OFFICE') return 'Admin Office';
@@ -164,7 +123,9 @@ export default function PreApprovedScreen() {
             // to show each pass's window. Failing that list is not fatal.
             const [res, list] = await Promise.all([
                 api.post('/api/v1/guard/pre-approved/validate', body),
-                api.get(`/api/v1/guard/pre-approved?type=${type}&limit=100`).catch(() => null),
+                // flatId narrows the list on backends that support it; older ones ignore it,
+                // so the flat filter below still applies.
+                api.get(`/api/v1/guard/pre-approved?type=${type}&limit=100${byVehicle ? '' : `&flatId=${selectedFlat!.id}`}`).catch(() => null),
             ]);
             const listed: ListedPass[] = list?.data?.data?.entries ?? [];
             setWindows(Object.fromEntries(listed.map((p) => [p.id, p])));
@@ -173,17 +134,31 @@ export default function PreApprovedScreen() {
             if (result.allowed) {
                 const matches = result.matches?.length ? result.matches : [result];
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                setPhase({ kind: 'result', matches });
+                setPhase({ kind: 'result', matches, message: result.message?.trim() || undefined });
             } else {
-                const related = byVehicle
-                    ? []
-                    : listed.filter((p) => !p.isPrivate && p.flatNumber === selectedFlat!.flatNumber);
+                const byId = Object.fromEntries(listed.map((p) => [p.id, p]));
+                // Per-pass reasons first; any other pass for the flat they don't cover keeps the old "Not now" row.
+                const rows = reasonRows(result.reasons, byId);
+                const covered = new Set((result.reasons ?? []).map((r) => r.entryId).filter(Boolean));
+                if (!byVehicle) {
+                    for (const p of listed) {
+                        // Match by flatId when the server sends it (flat numbers repeat across blocks).
+                        const sameFlat = p.flatId ? p.flatId === selectedFlat!.id : p.flatNumber === selectedFlat!.flatNumber;
+                        if (p.isPrivate || !sameFlat || covered.has(p.id)) continue;
+                        rows.push({
+                            key: p.id,
+                            title: `${p.displayLabel}${p.visitorName ? ` · ${p.visitorName}` : ''}`,
+                            detail: windowLabel(p.schedule) ?? 'No time window',
+                            tag: 'Not now',
+                        });
+                    }
+                }
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                setPhase({ kind: 'denied', message: result.message ?? 'No valid pass found', related });
+                setPhase({ kind: 'denied', message: result.message?.trim() || 'No valid pass found', rows });
             }
         } catch (err: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            setPhase({ kind: 'denied', message: errorMessage(err, 'Could not check the pass'), related: [] });
+            setPhase({ kind: 'denied', message: errorMessage(err, 'Could not check the pass'), rows: [] });
         } finally {
             busyRef.current = false;
             setChecking(false);
@@ -200,7 +175,7 @@ export default function PreApprovedScreen() {
             setPhase({ kind: 'allowed', match });
         } catch (err: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            setPhase({ kind: 'denied', message: errorMessage(err, 'Could not record the entry'), related: [] });
+            setPhase({ kind: 'denied', title: conflictTitle(err), message: errorMessage(err, 'Could not record the entry'), rows: [] });
         } finally {
             busyRef.current = false;
             setAllowingId(null);
@@ -221,17 +196,17 @@ export default function PreApprovedScreen() {
                 {phase.kind === 'result' && (
                     <>
                         <StatusBanner ok title={phase.matches.length > 1 ? `${phase.matches.length} valid passes` : 'Valid pass'}
-                            text={phase.matches.length > 1 ? 'Confirm with the visitor, then allow the right one.' : 'Pre-approved by the resident.'} />
+                            text={phase.message ?? (phase.matches.length > 1 ? 'Confirm with the visitor, then allow the right one.' : 'Pre-approved by the resident.')} />
                         {phase.matches.map((m) => (
                             <PassCard key={m.entryId} match={m} schedule={m.entryId ? windows[m.entryId]?.schedule : null}
                                 visitorName={m.entryId ? windows[m.entryId]?.visitorName : null}>
                                 <Pressable
-                                    style={[S.allowBtn, !!allowingId && S.btnDisabled]}
+                                    style={[passStyles.allowBtn, !!allowingId && S.btnDisabled]}
                                     onPress={() => handleAllow(m)}
                                     disabled={!!allowingId}
                                 >
                                     {allowingId === m.entryId ? <ActivityIndicator color="#fff" /> : (
-                                        <><Ionicons name="checkmark-circle" size={20} color="#fff" /><Text style={S.allowText}>Allow entry</Text></>
+                                        <><Ionicons name="checkmark-circle" size={20} color="#fff" /><Text style={passStyles.allowText}>Allow entry</Text></>
                                     )}
                                 </Pressable>
                             </PassCard>
@@ -249,20 +224,11 @@ export default function PreApprovedScreen() {
 
                 {phase.kind === 'denied' && (
                     <>
-                        <StatusBanner ok={false} title="No valid pass" text={phase.message} />
-                        {phase.related.length > 0 && (
+                        <StatusBanner ok={false} title={phase.title ?? 'No valid pass'} text={phase.message} />
+                        {phase.rows.length > 0 && (
                             <>
                                 <Text style={S.sectionLabel}>OTHER PASSES FOR THIS FLAT</Text>
-                                {phase.related.map((p) => (
-                                    <View key={p.id} style={S.relatedRow}>
-                                        <Ionicons name="time-outline" size={18} color={GuardColors.t3} />
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={S.relatedTitle}>{p.displayLabel}{p.visitorName ? ` · ${p.visitorName}` : ''}</Text>
-                                            <Text style={S.relatedSub}>{windowLabel(p.schedule) ?? 'No time window'}</Text>
-                                        </View>
-                                        <Text style={S.relatedTag}>Not now</Text>
-                                    </View>
-                                ))}
+                                {phase.rows.map(({ key, ...row }) => <PassReasonRow key={key} {...row} />)}
                             </>
                         )}
                         <Pressable style={S.secondaryBtn} onPress={() => router.replace('/new-entry')}>
@@ -386,49 +352,6 @@ export default function PreApprovedScreen() {
     );
 }
 
-function StatusBanner({ ok, title, text }: { ok: boolean; title: string; text: string }) {
-    return (
-        <View style={[S.banner, ok ? S.bannerOk : S.bannerBad]}>
-            <View style={[S.bannerIcon, { backgroundColor: ok ? GuardColors.green : GuardColors.red }]}>
-                <Ionicons name={ok ? 'checkmark' : 'close'} size={30} color="#fff" />
-            </View>
-            <Text style={[S.bannerTitle, { color: ok ? GuardColors.green : GuardColors.red }]}>{title}</Text>
-            <Text style={S.bannerText}>{text}</Text>
-        </View>
-    );
-}
-
-function PassCard({ match, schedule, visitorName, children }: {
-    match: Match; schedule?: Schedule | null; visitorName?: string | null; children?: React.ReactNode;
-}) {
-    const window = windowLabel(schedule);
-    const rows: [keyof typeof Ionicons.glyphMap, string, string][] = [];
-    if (visitorName && !match.displayLabel?.includes(visitorName)) rows.push(['person-outline', 'Visitor', visitorName]);
-    if (match.isPrivate) rows.push(['eye-off-outline', 'Flat', 'Hidden (private pickup)']);
-    else if (match.flatNumber) rows.push(['home-outline', 'Flat', match.flatNumber]);
-    if (match.residentName) rows.push(['person-circle-outline', 'Resident', match.residentName]);
-    if (window) rows.push(['time-outline', 'Valid', window]);
-
-    return (
-        <View style={S.passCard}>
-            <View style={S.passHead}>
-                <View style={S.passIcon}>
-                    <Ionicons name={match.type === 'CAB' ? 'car' : match.type === 'HELP' ? 'construct' : 'cube'} size={20} color={GuardColors.black} />
-                </View>
-                <Text style={S.passTitle} numberOfLines={2}>{match.displayLabel ?? 'Pre-approved entry'}</Text>
-            </View>
-            {rows.map(([icon, label, value]) => (
-                <View key={label} style={S.passRow}>
-                    <Ionicons name={icon} size={16} color={GuardColors.t3} />
-                    <Text style={S.passLabel}>{label}</Text>
-                    <Text style={S.passValue} numberOfLines={2}>{value}</Text>
-                </View>
-            ))}
-            {children}
-        </View>
-    );
-}
-
 const S = StyleSheet.create({
     root: { flex: 1, backgroundColor: GuardColors.bg },
     scroll: { padding: 20 },
@@ -465,26 +388,4 @@ const S = StyleSheet.create({
     btnDisabled: { opacity: 0.45 },
     secondaryBtn: { marginTop: 14, height: 52, borderRadius: GuardRadius.md, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
     secondaryText: { fontSize: 15, fontWeight: '800', color: GuardColors.t1 },
-
-    banner: { borderRadius: GuardRadius.lg, borderWidth: 1, padding: 20, alignItems: 'center', marginBottom: 16 },
-    bannerOk: { backgroundColor: GuardColors.greenBg, borderColor: '#BDEFD9' },
-    bannerBad: { backgroundColor: GuardColors.redBg, borderColor: '#F3CECE' },
-    bannerIcon: { width: 54, height: 54, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-    bannerTitle: { fontSize: 22, fontWeight: '900', letterSpacing: -0.4 },
-    bannerText: { marginTop: 4, fontSize: 13, lineHeight: 18, fontWeight: '600', color: GuardColors.t2, textAlign: 'center' },
-
-    passCard: { backgroundColor: GuardColors.card, borderRadius: GuardRadius.lg, borderWidth: 1, borderColor: GuardColors.borderSoft, padding: 16, marginBottom: 12, gap: 8 },
-    passHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4 },
-    passIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center' },
-    passTitle: { flex: 1, fontSize: 17, fontWeight: '900', color: GuardColors.t1 },
-    passRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: GuardColors.bg, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
-    passLabel: { fontSize: 13, fontWeight: '600', color: GuardColors.t3, width: 72 },
-    passValue: { flex: 1, fontSize: 14, fontWeight: '700', color: GuardColors.t1, textAlign: 'right' },
-    allowBtn: { marginTop: 6, height: 52, borderRadius: GuardRadius.md, backgroundColor: GuardColors.green, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-    allowText: { fontSize: 16, fontWeight: '800', color: '#fff' },
-
-    relatedRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: GuardColors.card, borderRadius: 14, borderWidth: 1, borderColor: GuardColors.borderSoft, padding: 14, marginBottom: 8 },
-    relatedTitle: { fontSize: 14, fontWeight: '800', color: GuardColors.t1 },
-    relatedSub: { marginTop: 2, fontSize: 12, fontWeight: '600', color: GuardColors.t3 },
-    relatedTag: { fontSize: 11, fontWeight: '800', color: GuardColors.red, backgroundColor: GuardColors.redBg, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, overflow: 'hidden' },
 });
