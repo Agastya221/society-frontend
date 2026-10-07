@@ -1,8 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React from 'react';
+import React, { useRef } from 'react';
 import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import Animated, { FadeInDown, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { SgateFonts } from '@/constants/Sgate-theme';
@@ -212,20 +212,47 @@ export function WaitingAtGateSection({
     );
 }
 
+/** Space below each waiting card, kept inside its wrapper so it collapses too. */
+const CARD_GAP = 8;
+
 function VisitorRequestCard({ request, index, onAllow, onDecline }: {
     request: EntryRequest;
     index: number;
     onAllow: (id: string) => void;
     onDecline: (id: string) => void;
 }) {
+    // On Allow/Decline the card fades and shrinks its own height before it is
+    // removed, so everything below glides up. (An exit animation alone drops the
+    // card out of the layout at once: the content below jumped up and
+    // overlapped it while it faded.)
+    const height = useSharedValue(-1);
+    const opacity = useSharedValue(1);
+    const leaving = useRef(false);
+
+    const collapseThen = (action: (id: string) => void) => {
+        if (leaving.current) return;
+        leaving.current = true;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        if (height.value <= 0) { action(request.id); return; }
+        const ease = Easing.out(Easing.cubic);
+        opacity.value = withTiming(0, { duration: 160, easing: ease });
+        height.value = withTiming(0, { duration: 240, easing: ease }, finished => {
+            if (finished) runOnJS(action)(request.id);
+        });
+    };
+
+    const collapseStyle = useAnimatedStyle(() => (
+        height.value < 0 ? { opacity: opacity.value } : { opacity: opacity.value, height: height.value }
+    ));
+
     return (
-        // Fade out on Allow/Decline (the card used to vanish in one frame) and let
-        // the remaining cards slide up into place.
         <Animated.View
             entering={FadeInDown.delay(Math.min(index, 8) * 50).duration(220)}
-            exiting={FadeOut.duration(200)}
-            layout={LinearTransition.duration(220)}
+            style={[styles.waitingCardWrap, collapseStyle]}
+        >
+        <View
             style={styles.waitingCard}
+            onLayout={e => { if (!leaving.current) height.value = e.nativeEvent.layout.height + CARD_GAP; }}
         >
             <Avatar name={request.visitorName} size={50} />
             <View style={styles.visitorCopy}>
@@ -240,7 +267,7 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
                 <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel="Decline visitor"
-                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onDecline(request.id); }}
+                    onPress={() => collapseThen(onDecline)}
                     activeOpacity={0.72}
                     style={styles.declineButton}
                 >
@@ -249,13 +276,14 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
                 <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel="Allow visitor"
-                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onAllow(request.id); }}
+                    onPress={() => collapseThen(onAllow)}
                     activeOpacity={0.72}
                     style={styles.allowButton}
                 >
                     <Text style={styles.allowText}>Allow</Text>
                 </TouchableOpacity>
             </View>
+        </View>
         </Animated.View>
     );
 }
@@ -424,6 +452,7 @@ const styles = StyleSheet.create({
     liveLabel: { flexDirection: 'row', alignItems: 'center', gap: 7 },
     liveDot: { width: 11, height: 11, borderRadius: 6, backgroundColor: '#10C979' },
     liveText: { fontSize: 12, fontFamily: SgateFonts.medium, color: ResidentHomeColors.green },
+    waitingCardWrap: { overflow: 'hidden', paddingBottom: CARD_GAP },
     waitingCard: { minHeight: 78, borderRadius: ResidentHomeRadius.largeCard, paddingHorizontal: ResidentHomeSpacing.md, paddingVertical: ResidentHomeSpacing.xs, backgroundColor: ResidentHomeColors.card, borderWidth: 1, borderColor: ResidentHomeColors.border, flexDirection: 'row', alignItems: 'center', gap: ResidentHomeSpacing.sm },
     loadingCard: { paddingHorizontal: 20 },
     loadingCircle: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#F0F1F4' },
