@@ -11,10 +11,12 @@ FlatList,
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader, HeaderIconButton } from '@/components/layout/ScreenHeader';
 import { AppAlert } from '../../../components/ui/AppAlert';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import EmptyState from '@/components/ui/EmptyState';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { normaliseVehicleStatus } from '../../../services/vehicles.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +32,7 @@ interface Vehicle {
   parkingSlot?: string;
   stickerNumber?: string;
   lastSeen?: string;
+  rejectionNote?: string;
 }
 
 function normaliseVehicle(raw: any): Vehicle {
@@ -39,10 +42,11 @@ function normaliseVehicle(raw: any): Vehicle {
     vehicleType: raw.vehicleType ?? raw.type ?? 'Other',
     model: raw.model ?? '',
     color: raw.color ?? '',
-    status: raw.status ?? 'PENDING',
+    status: normaliseVehicleStatus(raw.status),
     parkingSlot: raw.parkingSlot ?? undefined,
     stickerNumber: raw.stickerNumber ?? undefined,
     lastSeen: raw.lastSeen ?? undefined,
+    rejectionNote: raw.rejectionNote ?? raw.reason ?? undefined,
   };
 }
 
@@ -73,6 +77,12 @@ function VehicleCard({ vehicle, index, onDelete }: { vehicle: Vehicle; index: nu
   const statusCfg = getStatusCfg(vehicle.status);
   const typeIcon = getTypeIcon(vehicle.vehicleType);
   const stickerIssued = !!vehicle.stickerNumber;
+  // Only an approved vehicle gets a sticker; say what is actually holding it up.
+  const sticker = vehicle.status === 'ACTIVE'
+    ? { icon: stickerIssued ? 'check-circle' as const : 'clock' as const, color: stickerIssued ? SgateColors.green : SgateColors.t3, text: 'Sticker: ' + (stickerIssued ? vehicle.stickerNumber : 'Pending') }
+    : vehicle.status === 'PENDING'
+      ? { icon: 'clock' as const, color: SgateColors.t3, text: 'Awaiting admin approval' }
+      : { icon: 'x-circle' as const, color: SgateColors.red, text: 'Not approved' };
 
   const handleMenuPress = () => {
     AppAlert.show(
@@ -92,8 +102,8 @@ function VehicleCard({ vehicle, index, onDelete }: { vehicle: Vehicle; index: nu
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 80).springify()}>
-      <TouchableOpacity style={S.card} activeOpacity={0.97}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 80).springify()}>
+      <TouchableOpacity style={S.card} activeOpacity={0.8}>
         {/* Top row: icon + plate + menu */}
         <View style={S.cardTopRow}>
           <View style={S.typeIconBubble}>
@@ -135,16 +145,21 @@ function VehicleCard({ vehicle, index, onDelete }: { vehicle: Vehicle; index: nu
           </View>
           <View style={{ flex: 1 }} />
           <View style={S.stickerRow}>
-            <Feather
-              name={stickerIssued ? 'check-circle' : 'clock'}
-              size={13}
-              color={stickerIssued ? SgateColors.green : SgateColors.t4}
-            />
-            <Text style={[S.stickerText, { color: stickerIssued ? SgateColors.green : SgateColors.t3 }]}>
-              {'Sticker: ' + (stickerIssued ? vehicle.stickerNumber : 'Pending')}
-            </Text>
+            <Feather name={sticker.icon} size={13} color={sticker.color} />
+            <Text style={[S.stickerText, { color: sticker.color }]}>{sticker.text}</Text>
           </View>
         </View>
+
+        {vehicle.status === 'REJECTED' ? (
+          <View style={S.rejectNote}>
+            <Feather name="info" size={13} color={SgateColors.red} />
+            <Text style={S.rejectNoteText}>
+              {vehicle.rejectionNote
+                ? `Reason: ${vehicle.rejectionNote}`
+                : 'Rejected by the society admin. Contact them, or delete and register it again with the correct details.'}
+            </Text>
+          </View>
+        ) : null}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -175,8 +190,8 @@ export default function MyVehiclesScreen() {
       const list: any[] = Array.isArray(raw) ? raw : raw?.vehicles ?? [];
       setVehicles(list.map(normaliseVehicle));
     } catch (err) {
+      // Keep the vehicles already on screen; a failed refetch shouldn't empty the list.
       console.error('Failed to fetch vehicles:', err);
-      setVehicles([]);
     } finally {
       setLoading(false);
     }
@@ -188,7 +203,7 @@ export default function MyVehiclesScreen() {
     try {
       await api.delete(`/resident/vehicles/${id}`);
       setVehicles(vs => vs.filter(v => v.id !== id));
-    } catch (err) {
+    } catch {
       AppAlert.show('Error', 'Could not delete vehicle. Please try again.');
     }
   };
@@ -197,50 +212,30 @@ export default function MyVehiclesScreen() {
     <View style={S.root}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
-      {/* ── Header (edge-to-edge) ─────────────────────────────────────── */}
-      <View style={S.headerBg}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.headerInner}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={S.backBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle}>My Vehicles</Text>
-            <TouchableOpacity
-              style={S.headerAddBtn}
-              onPress={() => router.push('/(resident)/vehicles/add' as any)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="plus" size={18} color={SgateColors.goldDeep} />
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </View>
+      <ScreenHeader
+        title="My Vehicles"
+        rightAction={
+          <HeaderIconButton
+            icon="plus"
+            onPress={() => router.push('/(resident)/vehicles/add' as any)}
+            accessibilityLabel="Add vehicle"
+          />
+        }
+      />
 
       {/* ── Content ───────────────────────────────────────────────────── */}
       {loading ? (
         <AppLoader />
       ) : vehicles.length === 0 ? (
-        <View style={S.emptyContainer}>
-          <View style={S.emptyIconCircle}>
-            <MaterialCommunityIcons name="car-outline" size={36} color={SgateColors.goldDeep} />
-          </View>
-          <Text style={S.emptyTitle}>No vehicles added</Text>
-          <Text style={S.emptySubtitle}>
-            Add your vehicle for smoother gate entry and society sticker assignment
-          </Text>
-          <TouchableOpacity
-            style={S.emptyAddBtn}
-            onPress={() => router.push('/(resident)/vehicles/add' as any)}
-            activeOpacity={0.85}
-          >
-            <Feather name="plus" size={18} color={SgateColors.t1} />
-            <Text style={S.emptyAddBtnText}>Add Vehicle</Text>
-          </TouchableOpacity>
-        </View>
+        <EmptyState
+          iconName="car-outline"
+          iconBg={SgateColors.goldPale}
+          iconColor={SgateColors.goldDeep}
+          title="No vehicles added"
+          description="Add your vehicle for smoother gate entry and society sticker assignment"
+          ctaLabel="Add Vehicle"
+          onCtaPress={() => router.push('/(resident)/vehicles/add' as any)}
+        />
       ) : (
         <>
           <FlatList
@@ -265,7 +260,7 @@ export default function MyVehiclesScreen() {
           <TouchableOpacity
             style={S.fab}
             onPress={() => router.push('/(resident)/vehicles/add' as any)}
-            activeOpacity={0.85}
+            activeOpacity={0.8}
           >
             <Feather name="plus" size={24} color={SgateColors.t1} />
           </TouchableOpacity>
@@ -283,49 +278,11 @@ const S = StyleSheet.create({
     backgroundColor: SgateColors.bg,
   },
 
-  // ── Header ────────────────────────────────────────────────────────────
-  headerBg: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.04)',
-  },
-  headerInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t1,
-    marginLeft: 12,
-  },
-  headerAddBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: SgateColors.goldPale,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
 
   // ── List ──────────────────────────────────────────────────────────────
   listContent: {
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     paddingTop: 16,
     paddingBottom: 100,
   },
@@ -438,6 +395,25 @@ const S = StyleSheet.create({
     fontSize: 12,
   },
 
+  rejectNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 12,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: SgateColors.redBg,
+    borderWidth: 1,
+    borderColor: SgateColors.redBorder,
+  },
+  rejectNoteText: {
+    flex: 1,
+    fontFamily: SgateFonts.regular,
+    fontSize: 12,
+    lineHeight: 17,
+    color: SgateColors.t2,
+  },
+
   // ── Helper Section ────────────────────────────────────────────────────
   helperSection: {
     flexDirection: 'row',
@@ -453,49 +429,6 @@ const S = StyleSheet.create({
   },
 
   // ── Empty State ───────────────────────────────────────────────────────
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: SgateColors.goldPale,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontFamily: SgateFonts.bold,
-    fontSize: 18,
-    color: SgateColors.t1,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontFamily: SgateFonts.regular,
-    fontSize: 13,
-    color: SgateColors.t3,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 28,
-  },
-  emptyAddBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: SgateColors.gold,
-    borderRadius: 14,
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-  },
-  emptyAddBtnText: {
-    fontFamily: SgateFonts.bold,
-    fontSize: 15,
-    color: SgateColors.t1,
-  },
 
   // ── FAB ───────────────────────────────────────────────────────────────
   fab: {

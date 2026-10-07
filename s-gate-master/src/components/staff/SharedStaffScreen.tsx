@@ -1,3 +1,4 @@
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -8,11 +9,12 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSheetBottomClearance } from '@/hooks/useSheetBottomClearance';
 
 import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { AppAlert } from '@/components/ui/AppAlert';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { createDomesticStaff, DomesticStaffRole, getStaffAttendance, getStaffList, StaffAttendance, StaffMember, updateDomesticStaff } from '@/services/staffService';
 import { uploadImage } from '@/services/uploadService';
 
@@ -38,6 +40,7 @@ const formatTime = (iso?: string) => {
 export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }) {
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const sheetClearance = useSheetBottomClearance();
     const [activeTab, setActiveTab] = useState<'DIRECTORY' | 'ATTENDANCE'>('DIRECTORY');
     const [searchQuery, setSearchQuery] = useState('');
     const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -169,8 +172,8 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
     };
 
     const renderStaffCard = ({ item, index }: { item: StaffMember; index: number }) => (
-        <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-            <TouchableOpacity style={styles.card} activeOpacity={0.97} onPress={() => openEditForm(item)} disabled={item.source !== 'DOMESTIC'}>
+        <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
+            <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={() => openEditForm(item)} disabled={item.source !== 'DOMESTIC'}>
                 <View style={styles.cardHeader}>
                     <Avatar name={item.name} photoUrl={item.photoUrl} size={46} />
                     <View style={styles.cardInfo}>
@@ -228,7 +231,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
         const statusBg = record?.status === 'PRESENT' ? SgateColors.greenBg : record?.status === 'HALF_DAY' ? SgateColors.goldPale : SgateColors.redBg;
 
         return (
-            <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                 <View style={styles.card}>
                     <View style={styles.cardHeader}>
                         <Avatar name={item.name} photoUrl={item.photoUrl} size={42} />
@@ -334,10 +337,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                     showsVerticalScrollIndicator={false}
                     renderItem={activeTab === 'DIRECTORY' ? renderStaffCard : renderAttendanceCard}
                     ListEmptyComponent={
-                        <View style={styles.empty}>
-                            <MaterialCommunityIcons name="account-group-outline" size={40} color={SgateColors.t4} />
-                            <Text style={styles.emptyText}>No staff records found</Text>
-                        </View>
+                        <EmptyState iconName="account-group-outline" title="No staff records found" />
                     }
                 />
             )}
@@ -345,7 +345,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
             <Modal visible={formVisible} animationType="fade" transparent onRequestClose={closeForm}>
                 <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={closeForm} />
-                    <View style={[styles.formSheet, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+                    <View style={[styles.formSheet, { paddingBottom: sheetClearance }]}>
                         <View style={styles.sheetHandle} />
                         <View style={styles.formHeader}>
                             <View>
@@ -438,14 +438,14 @@ const styles = StyleSheet.create({
     },
 
     fixedSearchWrap: {
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 12,
         paddingBottom: 6,
         backgroundColor: SgateColors.bg,
         zIndex: 5,
     },
 
-    list: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100 },
+    list: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 8, paddingBottom: 100 },
     
     // Search Box
     searchWrap: {
@@ -500,13 +500,11 @@ const styles = StyleSheet.create({
     timeValue: { fontSize: 15, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 },
 
     loader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    empty: { alignItems: 'center', paddingTop: 60 },
-    emptyText: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t3, marginTop: 12 },
 
     modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(13,15,20,0.45)' },
     formSheet: { maxHeight: '92%', backgroundColor: SgateColors.card, borderTopLeftRadius: 26, borderTopRightRadius: 26 },
     sheetHandle: { width: 42, height: 4, borderRadius: 2, backgroundColor: SgateColors.borderSoft, alignSelf: 'center', marginTop: 10 },
-    formHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+    formHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SgateLayout.screenGutter, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
     formTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     formSubtitle: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
     closeButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },

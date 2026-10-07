@@ -128,6 +128,22 @@ describe('useAuthStore (s-gate-guard)', () => {
       expect(s.isLoading).toBe(false);
     });
 
+    it('clears a stored non-guard session instead of restoring it', async () => {
+      (SecureStore.getItemAsync as jest.Mock)
+        .mockResolvedValueOnce(ACCESS_TOKEN)
+        .mockResolvedValueOnce(REFRESH_TOKEN)
+        .mockResolvedValueOnce(JSON.stringify({ ...mockGuardUser, role: 'SUPER_ADMIN' }));
+
+      await useAuthStore.getState().loadToken();
+      const s = useAuthStore.getState();
+      expect(s.isAuthenticated).toBe(false);
+      expect(s.user).toBeNull();
+      expect(s.isLoading).toBe(false);
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('accessToken');
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('refreshToken');
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('auth_user');
+    });
+
     it('stays unauthenticated when no tokens stored', async () => {
       (SecureStore.getItemAsync as jest.Mock).mockResolvedValue(null);
       await useAuthStore.getState().loadToken();

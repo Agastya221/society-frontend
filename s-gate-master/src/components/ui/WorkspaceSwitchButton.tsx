@@ -115,7 +115,7 @@ export function WorkspaceSwitchButton({ variant = 'header' }: WorkspaceSwitchBut
       <>
         <TouchableOpacity
           style={styles.profileRow}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
           onPress={handleSwitch}
           disabled={switchingWorkspace}
         >
@@ -164,7 +164,7 @@ export function WorkspaceSwitchButton({ variant = 'header' }: WorkspaceSwitchBut
     <>
       <TouchableOpacity
         style={styles.headerButton}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
         onPress={handleSwitch}
         disabled={switchingWorkspace}
       >

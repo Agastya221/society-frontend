@@ -2,11 +2,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AnimatedBottomSheetModal } from '@/components/ui/AnimatedBottomSheetModal';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
+
 import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import { ComplaintStatusBadge } from '../../../components/complaints/ComplaintStatusBadge';
 import { PriorityBadge } from '../../../components/complaints/PriorityBadge';
 import { ImageCarousel } from '../../../components/ui/ImageCarousel';
@@ -19,17 +20,17 @@ export default function AdminComplaintDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
 
-    
+
     // Data State
     const [complaint, setComplaint] = useState<Complaint | null>(null);
     const [staffList, setStaffList] = useState<StaffMember[]>([]);
-    
+
     // UI State
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [error, setError] = useState('');
-    
+
     // Modals
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -84,10 +85,10 @@ export default function AdminComplaintDetailScreen() {
 
     const handleUpdateStatus = async (newStatus: ComplaintStatus) => {
         if (!complaint) return;
-        
+
         setIsUpdating(true);
         try {
-           const updated = await updateComplaint(complaint.id, { 
+           const updated = await updateComplaint(complaint.id, {
                status: newStatus,
                resolution: newStatus === 'RESOLVED' ? resolutionNote : undefined
            });
@@ -148,12 +149,12 @@ export default function AdminComplaintDetailScreen() {
         <View style={S.root}>
             {/* ── Header ─────────────────────────────────────────────── */}
             <ScreenHeader
-                title="Admin View"
+                title="Complaint Details"
                 onBack={() => router.back()}
                 rightAction={<HeaderIconButton icon="share-2" accessibilityLabel="Share" onPress={handleShare} />}
             />
 
-            <ScrollView 
+            <ScrollView
                 style={S.scroll}
                 contentContainerStyle={{ paddingBottom: 100 }}
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
@@ -164,7 +165,7 @@ export default function AdminComplaintDetailScreen() {
                     <View style={S.titleRow}>
                         <View style={{ flex: 1 }}>
                             <Text style={S.categoryLabel}>
-                                {complaint.category} • {complaint.ticketNumber || 'NO ID'}
+                                {complaint.category}{complaint.ticketNumber ? ` • ${complaint.ticketNumber}` : ''}
                             </Text>
                             <Text style={S.titleText}>{complaint.title}</Text>
                         </View>
@@ -203,7 +204,7 @@ export default function AdminComplaintDetailScreen() {
                             <TouchableOpacity
                                 style={S.actionBtn}
                                 onPress={() => setShowStatusModal(true)}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                             >
                                 <MaterialCommunityIcons name="sync" size={16} color={SgateColors.t1} />
                                 <Text style={S.actionBtnText}>Update Status</Text>
@@ -211,7 +212,7 @@ export default function AdminComplaintDetailScreen() {
                             <TouchableOpacity
                                 style={S.actionBtn}
                                 onPress={() => setShowAssignModal(true)}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                             >
                                 <MaterialCommunityIcons name="account-plus-outline" size={16} color={SgateColors.t1} />
                                 <Text style={S.actionBtnText}>Assign Staff</Text>
@@ -239,7 +240,7 @@ export default function AdminComplaintDetailScreen() {
                     {/* Details Card */}
                     <View style={S.card}>
                         <Text style={S.cardSectionTitle}>Ticket Information</Text>
-                        
+
                         <InfoRow label="Reported By" value={getReportedByText()} />
                         {!complaint.isAnonymous && complaint.reportedBy?.phone && (
                             <InfoRow label="" value={complaint.reportedBy.phone} small />
@@ -260,20 +261,20 @@ export default function AdminComplaintDetailScreen() {
             </ScrollView>
 
             {/* STATUS MODAL */}
-            <Modal visible={showStatusModal} transparent animationType="fade">
+            <Modal visible={showStatusModal} transparent animationType="fade" onRequestClose={() => setShowStatusModal(false)}>
                 <View style={S.modalOverlay}>
                     <View style={S.modalCard}>
                         <Text style={S.modalTitle}>Update Status</Text>
-                        
+
                         <View style={{ gap: 10 }}>
                             {(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as ComplaintStatus[]).map((status) => {
                                 const isActive = complaint.status === status;
                                 return (
-                                    <TouchableOpacity 
+                                    <TouchableOpacity
                                         key={status}
                                         onPress={() => handleUpdateStatus(status)}
                                         style={[S.statusOption, isActive && S.statusOptionActive]}
-                                        activeOpacity={0.75}
+                                        activeOpacity={0.8}
                                     >
                                         <Text style={[S.statusOptionText, isActive && S.statusOptionTextActive]}>
                                             {status.replace('_', ' ')}
@@ -292,49 +293,42 @@ export default function AdminComplaintDetailScreen() {
             </Modal>
 
             {/* ASSIGNMENT MODAL */}
-            <Modal visible={showAssignModal} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowAssignModal(false)}>
-                <View style={S.bottomSheetOverlay}>
-                    <SafeBottomSheetSurface style={S.bottomSheet} showHandle>
-                        <View style={S.bottomSheetHeader}>
-                            <Text style={S.bottomSheetTitle}>Assign Staff</Text>
-                            <TouchableOpacity onPress={() => setShowAssignModal(false)}>
-                                <MaterialCommunityIcons name="close" size={24} color={SgateColors.t3} />
-                            </TouchableOpacity>
-                        </View>
-
-                        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-                            {staffList.length === 0 ? (
-                                <Text style={S.staffEmpty}>No staff members found.</Text>
-                            ) : (
-                                staffList.map((staff) => {
-                                    const isAssigned = complaint.assignedTo?.id === staff.id;
-                                    return (
-                                        <TouchableOpacity 
-                                            key={staff.id}
-                                            onPress={() => handleAssignStaff(staff.id)}
-                                            style={[S.staffItem, isAssigned && S.staffItemActive]}
-                                            activeOpacity={0.75}
-                                        >
-                                            <View style={S.staffAvatar}>
-                                                <Text style={S.staffAvatarText}>
-                                                    {staff.name.charAt(0)}
-                                                </Text>
-                                            </View>
-                                            <View style={{ flex: 1 }}>
-                                                <Text style={S.staffName}>{staff.name}</Text>
-                                                <Text style={S.staffSub}>{staff.role} • {staff.phone}</Text>
-                                            </View>
-                                            {isAssigned && (
-                                                <MaterialCommunityIcons name="check-circle" size={24} color={SgateColors.goldDeep} />
-                                            )}
-                                        </TouchableOpacity>
-                                    );
-                                })
-                            )}
-                        </ScrollView>
-                    </SafeBottomSheetSurface>
+            <AnimatedBottomSheetModal visible={showAssignModal} onClose={() => setShowAssignModal(false)}>
+                <View style={S.bottomSheetHeader}>
+                    <Text style={S.bottomSheetTitle}>Assign Staff</Text>
                 </View>
-            </Modal>
+
+                <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+                    {staffList.length === 0 ? (
+                        <Text style={S.staffEmpty}>No staff members found.</Text>
+                    ) : (
+                        staffList.map((staff) => {
+                            const isAssigned = complaint.assignedTo?.id === staff.id;
+                            return (
+                                <TouchableOpacity
+                                    key={staff.id}
+                                    onPress={() => handleAssignStaff(staff.id)}
+                                    style={[S.staffItem, isAssigned && S.staffItemActive]}
+                                    activeOpacity={0.8}
+                                >
+                                    <View style={S.staffAvatar}>
+                                        <Text style={S.staffAvatarText}>
+                                            {staff.name.charAt(0)}
+                                        </Text>
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={S.staffName}>{staff.name}</Text>
+                                        <Text style={S.staffSub}>{staff.role} • {staff.phone}</Text>
+                                    </View>
+                                    {isAssigned && (
+                                        <MaterialCommunityIcons name="check-circle" size={24} color={SgateColors.goldDeep} />
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })
+                    )}
+                </ScrollView>
+            </AnimatedBottomSheetModal>
         </View>
     );
 }
@@ -356,7 +350,7 @@ const S = StyleSheet.create({
     errorText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.red, marginBottom: 16 },
     errorBtn: {
         backgroundColor: SgateColors.gold,
-        paddingHorizontal: 24,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingVertical: 12,
         borderRadius: 14,
     },
@@ -468,7 +462,7 @@ const S = StyleSheet.create({
     infoValueSmall: { fontSize: 12, color: SgateColors.t3 },
 
     // Status Modal
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', alignItems: 'center', justifyContent: 'center', padding: 24 },
     modalCard: {
         backgroundColor: SgateColors.card,
         borderRadius: 20,
@@ -497,7 +491,7 @@ const S = StyleSheet.create({
     modalCancelText: { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
 
     // Assignment Bottom Sheet
-    bottomSheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    bottomSheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
     bottomSheet: {
         paddingHorizontal: 24,
         maxHeight: '75%',

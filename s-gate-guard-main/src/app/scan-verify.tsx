@@ -1,18 +1,27 @@
+import {
+    ListedPass, Match, PassCard, PassReasonRow, ReasonRowData, StatusBanner, passStyles, reasonRows, conflictTitle,
+} from '@/components/PreApprovedPass';
 import api from '@/services/api';
 import { GuardColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
+    BackHandler,
     Dimensions,
+    Keyboard,
+    KeyboardAvoidingView,
+    Linking,
     Platform,
     Pressable,
+    ScrollView,
     StatusBar,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -20,6 +29,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 const FRAME_SIZE = SW * 0.7;
+const PASSCODE_RE = /^[A-Z0-9]{6}$/;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,12 +47,46 @@ interface VerifyResult {
     attendanceAction?: 'CHECKED_IN' | 'CHECKED_OUT';
 }
 
+// Resident pre-approved (CAB / DELIVERY / HELP) QRs carry a signed token whose
+// payload is { type: 'pre_approved', entryId }. /guard/scan only *checks* those, so
+// they go through /guard/pre-approved/validate and the guard records the entry with
+// /guard/pre-approved/:id/use — the same flow as the Pre-approved screen.
+type PrePhase =
+    | { kind: 'result'; matches: Match[]; message?: string }
+    | { kind: 'denied'; message: string; rows: ReasonRowData[]; title?: string }
+    | { kind: 'allowed'; match: Match };
+
+function base64UrlDecode(input: string): string {
+    const b64 = input.replace(/-/g, '+').replace(/_/g, '/');
+    return atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
+}
+
+/** True for a pre-approved entry QR. The signature is checked by the server, not here. */
+function isPreApprovedQr(code: string): boolean {
+    const parts = code.split('.');
+    if (parts.length !== 3) return false;
+    try {
+        const payload = JSON.parse(base64UrlDecode(parts[1]));
+        return payload?.type === 'pre_approved' && typeof payload?.entryId === 'string';
+    } catch {
+        return false;
+    }
+}
+
+function apiError(err: any, fallback: string): string {
+    return err?.response?.data?.message ?? (err?.response ? fallback : 'Network error. Check the connection and try again.');
+}
+
 // ─── Permission Gate ──────────────────────────────────────────────────────────
 
-function PermissionView({ onRequest }: { onRequest: () => void }) {
+function PermissionView({ onRequest, onBack }: { onRequest: () => void; onBack: () => void }) {
     const insets = useSafeAreaInsets();
     return (
         <View style={[S.permRoot, { paddingTop: insets.top + 20 }]}>
+            {/* This route hides the stack header, so give the permission state its own way out. */}
+            <TouchableOpacity style={[S.permBack, { top: insets.top + 8 }]} onPress={onBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="arrow-back" size={22} color={GuardColors.t1} />
+            </TouchableOpacity>
             <View style={S.permIconWrap}>
                 <Ionicons name="camera-outline" size={48} color="#6B7280" />
             </View>
@@ -72,7 +116,7 @@ function ResultCard({
     const accentBg = isAllowed ? '#F0FDF4' : '#FEF2F2';
     const iconName: any = isAllowed ? 'checkmark-circle' : 'close-circle';
 
-    const typeLabel = result.type ?? result.inviteType ?? '';
+    const typeLabel = (result.type ?? result.inviteType ?? '').replace(/_/g, ' ');
     const modeLabel = result.mode ?? '';
 
     return (
@@ -151,6 +195,90 @@ function ResultCard({
     );
 }
 
+// ─── Pre-approved result sheet ──────────────────────────────────────────────
+
+function prePhaseFrom(result: Match, listed: Record<string, ListedPass>): PrePhase {
+    if (result.allowed) {
+        return {
+            kind: 'result',
+            matches: result.matches?.length ? result.matches : [result],
+            message: result.message?.trim() || undefined,
+        };
+    }
+    return { kind: 'denied', message: result.message?.trim() || 'No valid pass found', rows: reasonRows(result.reasons, listed) };
+}
+
+function PreApprovedSheet({
+    phase,
+    windows,
+    allowingId,
+    bottomInset,
+    onAllow,
+    onScanAgain,
+}: {
+    phase: PrePhase;
+    windows: Record<string, ListedPass>;
+    allowingId: string | null;
+    bottomInset: number;
+    onAllow: (m: Match) => void;
+    onScanAgain: () => void;
+}) {
+    const busy = !!allowingId;
+    // While a pass is still pending, keep Scan Again neutral so Allow entry is the one green action.
+    const accent = phase.kind === 'denied' ? '#DC2626' : phase.kind === 'allowed' ? '#16A34A' : GuardColors.ink;
+    return (
+        <View style={[S.resultCard, S.preSheet]}>
+            <ScrollView contentContainerStyle={[S.preScroll, { paddingBottom: Math.max(bottomInset, 16) + 16 }]} bounces={false}>
+                {phase.kind === 'result' && (
+                    <>
+                        <StatusBanner ok title={phase.matches.length > 1 ? `${phase.matches.length} valid passes` : 'Valid pass'}
+                            text={phase.message ?? (phase.matches.length > 1 ? 'Confirm with the visitor, then allow the right one.' : 'Pre-approved by the resident.')} />
+                        {phase.matches.map((m) => (
+                            <PassCard key={m.entryId} match={m} schedule={m.entryId ? windows[m.entryId]?.schedule : null}
+                                visitorName={m.entryId ? windows[m.entryId]?.visitorName : null}>
+                                <Pressable
+                                    style={[passStyles.allowBtn, busy && S.btnDisabled]}
+                                    onPress={() => onAllow(m)}
+                                    disabled={busy}
+                                >
+                                    {allowingId === m.entryId ? <ActivityIndicator color="#fff" /> : (
+                                        <><Ionicons name="checkmark-circle" size={20} color="#fff" /><Text style={passStyles.allowText}>Allow entry</Text></>
+                                    )}
+                                </Pressable>
+                            </PassCard>
+                        ))}
+                    </>
+                )}
+
+                {phase.kind === 'allowed' && (
+                    <>
+                        <StatusBanner ok title="Entry allowed" text="Logged in today's entries. The resident has been notified." />
+                        <PassCard match={phase.match} schedule={phase.match.entryId ? windows[phase.match.entryId]?.schedule : null}
+                            visitorName={phase.match.entryId ? windows[phase.match.entryId]?.visitorName : null} />
+                    </>
+                )}
+
+                {phase.kind === 'denied' && (
+                    <>
+                        <StatusBanner ok={false} title={phase.title ?? 'No valid pass'} text={phase.message} />
+                        {phase.rows.map(({ key, ...row }) => <PassReasonRow key={key} {...row} />)}
+                    </>
+                )}
+
+                <TouchableOpacity
+                    style={[S.scanAgainBtn, { backgroundColor: accent }, busy && S.btnDisabled]}
+                    onPress={onScanAgain}
+                    disabled={busy}
+                    activeOpacity={0.85}
+                >
+                    <Ionicons name="qr-code-outline" size={18} color="#fff" />
+                    <Text style={S.scanAgainText}>Scan Again</Text>
+                </TouchableOpacity>
+            </ScrollView>
+        </View>
+    );
+}
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function ScanVerifyScreen() {
@@ -161,38 +289,93 @@ export default function ScanVerifyScreen() {
     const [result, setResult] = useState<VerifyResult | null>(null);
     const cooldownRef = useRef(false);
 
-    const handleBarcode = useCallback(
-        async ({ data }: { data: string }) => {
-            if (cooldownRef.current || verifying || result) return;
+    const [manualOpen, setManualOpen] = useState(false);
+    const [manualCode, setManualCode] = useState('');
+
+    const [pre, setPre] = useState<PrePhase | null>(null);
+    const [windows, setWindows] = useState<Record<string, ListedPass>>({});
+    const [allowingId, setAllowingId] = useState<string | null>(null);
+    // A ref, because a second tap on Allow can land before the re-render disables it.
+    const allowRef = useRef(false);
+
+    // Resident guest/party passes carry a 6-char passcode (QR value and the code shown
+    // under it). /guard/scan only understands signed QR tokens and staff tokens, so those
+    // must go through /guard/verify-code or every resident pass is "Invalid or expired".
+    const verify = useCallback(
+        async (raw: string) => {
+            const code = raw.trim();
+            if (!code || cooldownRef.current || verifying || result || pre) return;
             cooldownRef.current = true;
 
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             setVerifying(true);
 
             try {
-                const res = await api.post<{
-                    success: boolean;
-                    message?: string;
-                    data: { type: string; allowed: boolean; pass?: Record<string, any> };
-                }>(
-                    '/api/v1/guard/scan',
-                    { qrToken: data }
-                );
-                const scan = res.data?.data;
-                const pass = scan?.pass ?? {};
-                const payload: VerifyResult = {
-                    allowed: Boolean(scan?.allowed),
-                    reason: res.data?.message,
-                    type: scan?.type,
-                    inviteType: pass.inviteType,
-                    visitorName: scan?.type === 'DOMESTIC_STAFF' ? pass.name : pass.visitorName,
-                    flatNumber: pass.flatNumber ?? pass.flat?.flatNumber,
-                    scheduleType: pass.scheduleType,
-                    mode: pass.mode,
-                    staffType: pass.staffType,
-                    isCurrentlyWorking: pass.isCurrentlyWorking,
-                    attendanceAction: pass.attendanceAction,
-                };
+                if (isPreApprovedQr(code)) {
+                    // The validate result has no schedule; the active list fills in each pass's window.
+                    const [res, list] = await Promise.all([
+                        api.post('/api/v1/guard/pre-approved/validate', { qrToken: code }),
+                        api.get('/api/v1/guard/pre-approved?limit=100').catch(() => null),
+                    ]);
+                    const listed: ListedPass[] = list?.data?.data?.entries ?? [];
+                    const byId = Object.fromEntries(listed.map((p) => [p.id, p]));
+                    setWindows(byId);
+                    const phase = prePhaseFrom(res.data?.data ?? { allowed: false, isPrivate: false }, byId);
+                    setPre(phase);
+                    Haptics.notificationAsync(phase.kind === 'denied'
+                        ? Haptics.NotificationFeedbackType.Error
+                        : Haptics.NotificationFeedbackType.Success);
+                    return;
+                }
+
+                let payload: VerifyResult;
+                if (PASSCODE_RE.test(code.toUpperCase())) {
+                    const res = await api.post<{ success: boolean; message?: string; data: Record<string, any> }>(
+                        '/api/v1/guard/verify-code',
+                        { code: code.toUpperCase() }
+                    );
+                    const d = res.data?.data ?? {};
+                    payload = {
+                        allowed: Boolean(d.allowed),
+                        reason: res.data?.message,
+                        inviteType: d.inviteType,
+                        visitorName: d.visitorName,
+                        flatNumber: d.flatNumber,
+                    };
+                } else {
+                    const res = await api.post<{
+                        success: boolean;
+                        message?: string;
+                        data: { type: string; allowed: boolean; pass?: Record<string, any> };
+                    }>(
+                        '/api/v1/guard/scan',
+                        { qrToken: code }
+                    );
+                    const scan = res.data?.data;
+                    if (scan?.type === 'PRE_APPROVED') {
+                        // A token we couldn't decode locally but the server knows: same pre-approved flow.
+                        setWindows({});
+                        setPre(prePhaseFrom({ isPrivate: false, ...(scan.pass as Partial<Match>), allowed: Boolean(scan.allowed) }, {}));
+                        Haptics.notificationAsync(scan.allowed
+                            ? Haptics.NotificationFeedbackType.Success
+                            : Haptics.NotificationFeedbackType.Error);
+                        return;
+                    }
+                    const pass = scan?.pass ?? {};
+                    payload = {
+                        allowed: Boolean(scan?.allowed),
+                        reason: res.data?.message,
+                        type: scan?.type,
+                        inviteType: pass.inviteType,
+                        visitorName: scan?.type === 'DOMESTIC_STAFF' ? pass.name : pass.visitorName,
+                        flatNumber: pass.flatNumber ?? pass.flat?.flatNumber,
+                        scheduleType: pass.scheduleType,
+                        mode: pass.mode,
+                        staffType: pass.staffType,
+                        isCurrentlyWorking: pass.isCurrentlyWorking,
+                        attendanceAction: pass.attendanceAction,
+                    };
+                }
                 setResult(payload);
 
                 if (payload?.allowed) {
@@ -201,22 +384,75 @@ export default function ScanVerifyScreen() {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
                 }
             } catch (err: any) {
-                const msg = err?.response?.data?.message ?? 'Could not verify code';
-                setResult({ allowed: false, reason: msg });
+                const denied = err?.response?.data;
+                if (denied?.data?.type === 'PRE_APPROVED') {
+                    setWindows({});
+                    setPre(prePhaseFrom({ isPrivate: false, ...denied.data.pass, allowed: false }, {}));
+                } else {
+                    setResult({ allowed: false, reason: apiError(err, 'Could not verify code') });
+                }
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             } finally {
+                setManualOpen(false);
+                setManualCode('');
+                Keyboard.dismiss();
                 setVerifying(false);
             }
         },
-        [verifying, result]
+        [verifying, result, pre]
     );
 
-    const handleScanAgain = () => {
+    const handleAllow = useCallback(async (match: Match) => {
+        if (!match.entryId || allowRef.current) return;
+        allowRef.current = true;
+        setAllowingId(match.entryId);
+        try {
+            await api.post(`/api/v1/guard/pre-approved/${match.entryId}/use`, {});
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setPre({ kind: 'allowed', match });
+        } catch (err: any) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            setPre({ kind: 'denied', title: conflictTitle(err), message: apiError(err, 'Could not record the entry'), rows: [] });
+        } finally {
+            allowRef.current = false;
+            setAllowingId(null);
+        }
+    }, []);
+
+    // Hardware back closes the code card first instead of leaving the scanner.
+    useEffect(() => {
+        if (!manualOpen) return;
+        const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+            if (verifying) return true;
+            setManualOpen(false);
+            setManualCode('');
+            return true;
+        });
+        return () => sub.remove();
+    }, [manualOpen, verifying]);
+
+    const handleBarcode = useCallback(({ data }: { data: string }) => { verify(data); }, [verify]);
+
+    const handleScanAgain = useCallback(() => {
+        if (allowRef.current) return;
         setResult(null);
+        setPre(null);
         setVerifying(false);
         // Short delay before allowing next scan to prevent double-fire
         setTimeout(() => { cooldownRef.current = false; }, 800);
-    };
+    }, []);
+
+    // Hardware back on a result returns to the scanner (like Scan Again) instead of
+    // leaving the screen; it is ignored while an entry is being recorded.
+    const showingResult = !!result || !!pre;
+    useEffect(() => {
+        if (!showingResult) return;
+        const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+            if (!allowRef.current) handleScanAgain();
+            return true;
+        });
+        return () => sub.remove();
+    }, [showingResult, handleScanAgain]);
 
     // ── Permission states ─────────────────────────────────────────────────────
     if (!permission) {
@@ -228,7 +464,8 @@ export default function ScanVerifyScreen() {
     }
 
     if (!permission.granted) {
-        return <PermissionView onRequest={requestPermission} />;
+        // Once the user picks "Don't allow" twice Android stops showing the prompt — send them to Settings instead.
+        return <PermissionView onRequest={permission.canAskAgain ? requestPermission : () => Linking.openSettings()} onBack={() => router.back()} />;
     }
 
     // ── Scanner UI ────────────────────────────────────────────────────────────
@@ -241,7 +478,7 @@ export default function ScanVerifyScreen() {
                 style={StyleSheet.absoluteFill}
                 facing="back"
                 barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-                onBarcodeScanned={result || verifying ? undefined : handleBarcode}
+                onBarcodeScanned={showingResult || verifying || manualOpen ? undefined : handleBarcode}
             />
 
             {/* Dark overlay with transparent cut-out simulation */}
@@ -277,9 +514,13 @@ export default function ScanVerifyScreen() {
             </View>
 
             {/* Hint text below frame */}
-            {!result && !verifying && (
-                <View style={S.hintWrap} pointerEvents="none">
+            {!showingResult && !verifying && !manualOpen && (
+                <View style={S.hintWrap} pointerEvents="box-none">
                     <Text style={S.hintText}>Point camera at a visitor or staff QR code</Text>
+                    <TouchableOpacity style={S.manualLink} onPress={() => setManualOpen(true)} activeOpacity={0.85}>
+                        <Ionicons name="keypad-outline" size={16} color="#fff" />
+                        <Text style={S.manualLinkText}>Enter code instead</Text>
+                    </TouchableOpacity>
                 </View>
             )}
 
@@ -293,6 +534,62 @@ export default function ScanVerifyScreen() {
 
             {/* Result card */}
             {result && <ResultCard result={result} onScanAgain={handleScanAgain} />}
+
+            {/* Pre-approved pass result — same cards as the Pre-approved screen */}
+            {pre && (
+                <PreApprovedSheet
+                    phase={pre}
+                    windows={windows}
+                    allowingId={allowingId}
+                    bottomInset={insets.bottom}
+                    onAllow={handleAllow}
+                    onScanAgain={handleScanAgain}
+                />
+            )}
+
+            {/* Manual code entry — for the code shown under the resident's QR */}
+            {/* Edge-to-edge Android doesn't resize the window for the keyboard, so pad on both platforms. */}
+            {manualOpen && !showingResult && (
+                <KeyboardAvoidingView style={S.manualWrap} behavior="padding" pointerEvents="box-none">
+                    <View style={[S.manualCard, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
+                        <Text style={S.manualTitle}>Enter pass code</Text>
+                        <Text style={S.manualSub}>Type the code shown under the visitor&apos;s QR</Text>
+                        <TextInput
+                            style={S.manualInput}
+                            value={manualCode}
+                            onChangeText={(t) => setManualCode(t.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())}
+                            placeholder="e.g. K7M2QX"
+                            placeholderTextColor="#9CA3AF"
+                            autoCapitalize="characters"
+                            autoCorrect={false}
+                            autoFocus
+                            maxLength={64}
+                            editable={!verifying}
+                            returnKeyType="done"
+                            onSubmitEditing={() => verify(manualCode)}
+                        />
+                        <View style={S.manualActions}>
+                            <TouchableOpacity
+                                style={S.manualCancel}
+                                onPress={() => { setManualOpen(false); setManualCode(''); Keyboard.dismiss(); }}
+                                disabled={verifying}
+                            >
+                                <Text style={S.manualCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[S.manualSubmit, (!manualCode.trim() || verifying) && S.manualSubmitDisabled]}
+                                onPress={() => verify(manualCode)}
+                                disabled={!manualCode.trim() || verifying}
+                                activeOpacity={0.85}
+                            >
+                                {verifying
+                                    ? <ActivityIndicator size="small" color={GuardColors.black} />
+                                    : <Text style={[S.manualSubmitText, !manualCode.trim() && S.manualSubmitTextDisabled]}>Verify</Text>}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </KeyboardAvoidingView>
+            )}
         </View>
     );
 }
@@ -353,14 +650,23 @@ const S = StyleSheet.create({
         paddingVertical: 16,
         borderRadius: 16,
         ...Platform.select({
-            ios: { shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12 },
+            ios: { shadowColor: GuardColors.goldDeep, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12 },
             android: { elevation: 5 },
         }),
     },
     permBtnText: {
         fontSize: 16,
         fontWeight: '800',
-        color: '#fff',
+        color: GuardColors.black,
+    },
+    permBack: {
+        position: 'absolute',
+        left: 16,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 
     // ── Overlay ────────────────────────────────────────────────────────────────
@@ -472,6 +778,99 @@ const S = StyleSheet.create({
         color: 'rgba(255,255,255,0.8)',
         textAlign: 'center',
     },
+    manualLink: {
+        marginTop: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 18,
+        paddingVertical: 10,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.35)',
+    },
+    manualLinkText: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: '#fff',
+    },
+    manualWrap: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'flex-end',
+    },
+    manualCard: {
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingHorizontal: 24,
+        paddingTop: 24,
+        ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.15, shadowRadius: 20 },
+            android: { elevation: 16 },
+        }),
+    },
+    manualTitle: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#111827',
+    },
+    manualSub: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#6B7280',
+        marginTop: 4,
+    },
+    manualInput: {
+        marginTop: 16,
+        height: 56,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: GuardColors.border,
+        backgroundColor: '#F9FAFB',
+        paddingHorizontal: 16,
+        fontSize: 20,
+        fontWeight: '800',
+        letterSpacing: 4,
+        color: '#111827',
+    },
+    manualActions: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 16,
+    },
+    manualCancel: {
+        flex: 1,
+        height: 52,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F3F4F6',
+    },
+    manualCancelText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#374151',
+    },
+    manualSubmit: {
+        flex: 2,
+        height: 52,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: GuardColors.gold,
+    },
+    manualSubmitDisabled: {
+        backgroundColor: '#F3F4F6',
+    },
+    manualSubmitText: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: GuardColors.black,
+    },
+    manualSubmitTextDisabled: {
+        color: '#9CA3AF',
+    },
     verifyingWrap: {
         position: 'absolute',
         top: (SH - FRAME_SIZE) / 2 - 40 + FRAME_SIZE / 2 - 40,
@@ -565,6 +964,19 @@ const S = StyleSheet.create({
             ios: { shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10 },
             android: { elevation: 4 },
         }),
+    },
+    preSheet: {
+        maxHeight: SH * 0.85,
+        padding: 0,
+        paddingBottom: 0,
+        alignItems: 'stretch',
+    },
+    preScroll: {
+        padding: 20,
+        paddingTop: 24,
+    },
+    btnDisabled: {
+        opacity: 0.45,
     },
     scanAgainText: {
         fontSize: 16,

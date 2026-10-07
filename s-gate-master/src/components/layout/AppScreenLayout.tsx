@@ -11,8 +11,9 @@ import Animated, {
     useSharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSheetBottomClearance } from '@/hooks/useSheetBottomClearance';
 
-import { SgateColors } from '@/constants/Sgate-theme';
+import { SgateColors, SgateLayout } from '@/constants/Sgate-theme';
 
 import { ScreenHeader, type ScreenHeaderProps } from './ScreenHeader';
 
@@ -96,6 +97,7 @@ export function AppScreenLayout({
     backgroundColor,
 }: AppScreenLayoutProps) {
     const insets = useSafeAreaInsets();
+    const sheetClearance = useSheetBottomClearance();
     const scrollY = useSharedValue(0);
 
     const scrollHandler = useAnimatedScrollHandler({
@@ -152,7 +154,7 @@ export function AppScreenLayout({
                     <View
                         style={[
                             S.bottomBar,
-                            { paddingBottom: Math.max(insets.bottom, 16) },
+                            { paddingBottom: sheetClearance },
                         ]}
                     >
                         {bottomCTA}
@@ -176,7 +178,7 @@ const S = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 10,
     },
     flex: {

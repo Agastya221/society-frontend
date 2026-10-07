@@ -11,10 +11,11 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import api from '../../../services/api';
 import { useAuthStore } from '../../../store/useAuthStore';
 
@@ -57,7 +58,6 @@ export default function FlatsScreen() {
             );
             const blocks: { id: string; name: string }[] =
                 blocksRes.data?.data ?? [];
-            console.log('[Flats] Blocks received:', blocks.length, JSON.stringify(blocks.slice(0, 3)));
 
             const allFlats: Flat[] = [];
             await Promise.all(
@@ -67,7 +67,6 @@ export default function FlatsScreen() {
                             `/resident/onboarding/societies/${societyId}/blocks/${block.id}/flats`
                         );
                         const rawFlats = flatsRes.data?.data ?? [];
-                        console.log(`[Flats] Block "${block.name}" (${block.id}) raw flats:`, rawFlats.length, JSON.stringify(rawFlats.slice(0, 3)));
                         const blockFlats = rawFlats.map(
                             (f: any) => ({
                                 id: f.id,
@@ -85,7 +84,6 @@ export default function FlatsScreen() {
                     }
                 })
             );
-            console.log('[Flats] Total flats loaded:', allFlats.length, 'Sample:', JSON.stringify(allFlats.slice(0, 2)));
             setFlats(allFlats);
         } catch (err) {
             console.error('[Flats] Failed to fetch blocks:', err);
@@ -245,19 +243,16 @@ export default function FlatsScreen() {
                     </View>
                 )}
                 ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <View style={styles.emptyIcon}>
-                            <MaterialCommunityIcons name="home-group" size={36} color={SgateColors.t4} />
-                        </View>
-                        <Text style={styles.emptyTitle}>No flats found</Text>
-                        <Text style={styles.emptySub}>Add flats to manage your society.</Text>
-                    </View>
+                    <EmptyState
+                        iconName="home-group"
+                        title="No flats found"
+                        description="Add flats to manage your society."
+                    />
                 }
                 renderItem={({ item, index }) => {
-                    // Show max 3 chars in the avatar to prevent overflow
-                    const avatarLabel = (item.number || '—').length > 3
-                        ? (item.number || '—').slice(0, 3)
-                        : (item.number || '—');
+                    // Full flat number, shrunk to fit: cutting to 3 characters
+                    // made A101-A104 all read "A10".
+                    const avatarLabel = item.number || '—';
                     return (
                     <Animated.View entering={FadeInDown.delay(Math.min(index, 15) * 40).springify()}>
                         <TouchableOpacity
@@ -270,10 +265,10 @@ export default function FlatsScreen() {
                                     { text: 'Delete', style: 'destructive', onPress: () => handleDelete(item.id) },
                                 ]);
                             }}
-                            activeOpacity={0.7}
+                            activeOpacity={0.8}
                         >
                             <View style={styles.avatarCircle}>
-                                <Text style={styles.avatarText}>{avatarLabel}</Text>
+                                <Text style={styles.avatarText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{avatarLabel}</Text>
                             </View>
                             <View style={styles.cardInfo}>
                                 <Text style={styles.cardTitle} numberOfLines={1}>Flat {item.number || '—'}</Text>
@@ -372,7 +367,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 14 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, marginBottom: 14 },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
@@ -400,7 +395,7 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
     },
 
-    listContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 100, flexGrow: 1 },
+    listContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 8, paddingBottom: 100, flexGrow: 1 },
 
     // Section header
     sectionHeader: {
@@ -438,7 +433,7 @@ const styles = StyleSheet.create({
         backgroundColor: SgateColors.gold,
         alignItems: 'center', justifyContent: 'center',
     },
-    avatarText: { fontSize: 13, fontFamily: SgateFonts.extrabold, color: SgateColors.t1 },
+    avatarText: { fontSize: 13, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, paddingHorizontal: 4 },
     cardInfo: { flex: 1 },
     cardTitle: { fontSize: 15, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginBottom: 2 },
     cardSub: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
@@ -450,20 +445,11 @@ const styles = StyleSheet.create({
     blockTagText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.t3 },
 
     // Empty
-    emptyWrap: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 40 },
-    emptyIcon: {
-        width: 72, height: 72, borderRadius: 24,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center', justifyContent: 'center',
-        marginBottom: 16,
-    },
-    emptyTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
-    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
 
     // Modal
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.48)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,

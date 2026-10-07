@@ -6,7 +6,7 @@ import { Avatar } from '@/components/ui/Avatar';
 type VisitorType = 'Service' | 'Delivery' | 'Guest' | 'Cab' | string;
 
 interface ApprovalCardProps {
-  name: string;
+  name?: string | null;
   type: VisitorType;
   time: string;
   gate?: string;
@@ -42,7 +42,7 @@ export function ApprovalCard({
 
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={1}>
-            {name}
+            {name || 'Visitor'}
           </Text>
           <Text style={styles.meta}>
             {gate} · {time}
@@ -58,7 +58,7 @@ export function ApprovalCard({
 
       {/* Action buttons */}
       <View style={styles.actions}>
-        <TouchableOpacity style={styles.denyBtn} onPress={onDeny} activeOpacity={0.75}>
+        <TouchableOpacity style={styles.denyBtn} onPress={onDeny} activeOpacity={0.8}>
           <Feather name="x" size={14} color={SgateColors.t2} />
           <Text style={styles.denyText}>Deny</Text>
         </TouchableOpacity>

@@ -68,7 +68,7 @@ export const DocumentUploadCard = memo(function DocumentUploadCard({
                     onPress={onPick}
                     disabled={isUploading}
                     style={styles.uploadArea}
-                    activeOpacity={0.7}
+                    activeOpacity={0.8}
                 >
                     {isUploading ? (
                         <View style={styles.uploadingContent}>

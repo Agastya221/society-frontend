@@ -1,12 +1,14 @@
 import React, { useCallback, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 
 type Tab = 'ACTIVE' | 'COMPLETED';
@@ -102,9 +104,9 @@ function ElectionCard({ item, index }: { item: ElectionItem; index: number }) {
   const badgeLabel = isElection ? 'Election' : 'Survey';
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}>
       <TouchableOpacity
-        activeOpacity={0.85}
+        activeOpacity={0.8}
         style={S.card}
         onPress={() => router.push(`/(resident)/elections/${item.id}` as any)}
       >
@@ -155,7 +157,7 @@ function ElectionCard({ item, index }: { item: ElectionItem; index: number }) {
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 export default function ElectionsScreen() {
-  const router = useRouter();
+    const scrollBottomPadding = useScrollBottomPadding();
   const [activeTab, setActiveTab] = useState<Tab>('ACTIVE');
   const [items, setItems] = useState<ElectionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -195,21 +197,10 @@ export default function ElectionsScreen() {
 
   return (
     <View style={S.root}>
-      {/* Header — bg extends behind status bar */}
-      <View style={S.headerContainer}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.header}>
-            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} activeOpacity={0.7}>
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle}>Elections & Surveys</Text>
-            <View style={S.headerSpacer} />
-          </View>
-        </SafeAreaView>
-
+      <ScreenHeader title="Elections & Surveys">
         <View style={S.tabRow}>
           {(['ACTIVE', 'COMPLETED'] as Tab[]).map(tab => (
-            <TouchableOpacity key={tab} activeOpacity={0.75}
+            <TouchableOpacity key={tab} activeOpacity={0.8}
               style={[S.tabBtn, activeTab === tab ? S.tabBtnActive : S.tabBtnInactive]}
               onPress={() => setActiveTab(tab)}>
               <Text style={[S.tabBtnText, activeTab === tab ? S.tabBtnTextActive : S.tabBtnTextInactive]}>
@@ -218,7 +209,7 @@ export default function ElectionsScreen() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </ScreenHeader>
 
       {/* Persistent spacer */}
       <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
@@ -229,20 +220,14 @@ export default function ElectionsScreen() {
         <FlatList<ElectionItem>
           data={filtered}
           keyExtractor={item => item.id}
-          contentContainerStyle={S.listContent}
+          contentContainerStyle={[S.listContent, { paddingBottom: scrollBottomPadding }]}
           renderItem={({ item, index }) => <ElectionCard item={item} index={index} />}
           ListEmptyComponent={
-            <View style={S.emptyContainer}>
-              <View style={S.emptyIconWrap}>
-                <Feather name="bar-chart-2" size={32} color={SgateColors.goldDeep} />
-              </View>
-              <Text style={S.emptyTitle}>No {activeTab.toLowerCase()} polls</Text>
-              <Text style={S.emptySubtitle}>
-                {activeTab === 'ACTIVE'
-                  ? 'Active polls and surveys will show up here when available.'
-                  : "You haven't participated in any polls yet. Completed ones will appear here."}
-              </Text>
-            </View>
+            <EmptyState
+                iconName="chart-bar"
+                title={`No ${activeTab.toLowerCase()} polls`}
+                description={activeTab === 'ACTIVE' ? 'Active polls and surveys will show up here when available.' : "You haven't participated in any polls yet. Completed ones will appear here."}
+            />
           }
           showsVerticalScrollIndicator={false}
         />
@@ -254,29 +239,14 @@ export default function ElectionsScreen() {
 const S = StyleSheet.create({
   root: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  headerContainer: {
-    backgroundColor: SgateColors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.04)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 2,
-    zIndex: 10,
-  },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
-  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginLeft: 8, flex: 1 },
-  headerSpacer: { width: 36 },
-  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 16 },
-  tabBtn: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  tabRow: { flexDirection: 'row', gap: 8, paddingHorizontal: SgateLayout.screenGutter },
+  tabBtn: { borderRadius: 20, paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 8 },
   tabBtnActive: { backgroundColor: SgateColors.gold },
   tabBtnInactive: { backgroundColor: SgateColors.bg },
   tabBtnText: { fontSize: 13, fontFamily: SgateFonts.semibold },
   tabBtnTextActive: { color: SgateColors.t1, fontFamily: SgateFonts.bold },
   tabBtnTextInactive: { color: SgateColors.t2 },
-  listContent: { paddingHorizontal: 16, paddingBottom: 32 },
+  listContent: { paddingHorizontal: SgateLayout.screenGutter, paddingBottom: 32 },
 
   // ── Card ──
   card: {
@@ -381,33 +351,4 @@ const S = StyleSheet.create({
   },
 
   // ── Empty State ──
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 40,
-    gap: 10,
-  },
-  emptyIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: SgateColors.goldPale,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  emptyTitle: {
-    fontSize: 17,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    fontFamily: SgateFonts.regular,
-    color: SgateColors.t3,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
 });

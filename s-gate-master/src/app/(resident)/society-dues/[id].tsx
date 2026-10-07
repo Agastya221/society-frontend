@@ -9,13 +9,13 @@ import {
   Platform
 } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import { useAuthStore } from '../../../store/useAuthStore';
@@ -28,6 +28,7 @@ import {
 } from '../../../services/cashfreePaymentService';
 
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
 // ─── Constants ──────────────────────────────────────────────────────────────
 const BRAND_YELLOW = '#FFD60A';
 const BRAND_YELLOW_BG = '#FFFBE6';
@@ -148,7 +149,7 @@ function LineItemRow({ item }: { item: DueLineItem }) {
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
-export default function SocietyDueDetailScreen() {
+function SocietyDueDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuthStore();
@@ -295,21 +296,17 @@ export default function SocietyDueDetailScreen() {
 
   if (loading) {
     return (
-      <AppLoader />
+      <View style={styles.root}>
+        <ScreenHeader title="Details" />
+        <AppLoader />
+      </View>
     );
   }
 
   if (!due) {
     return (
       <View style={styles.root}>
-        <SafeAreaView edges={['top']} style={styles.headerBar}>
-          <View style={styles.headerInner}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-              <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Details</Text>
-          </View>
-        </SafeAreaView>
+        <ScreenHeader title="Details" />
         <View style={styles.emptyContent}>
           <Feather name="alert-circle" size={48} color={SgateColors.t4} />
           <Text style={styles.emptyText}>Due record not found</Text>
@@ -332,15 +329,7 @@ export default function SocietyDueDetailScreen() {
 
   return (
     <View style={styles.root}>
-      {/* ── Header ── */}
-      <SafeAreaView edges={['top']} style={styles.headerBar}>
-        <View style={styles.headerInner}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Feather name="arrow-left" size={24} color={SgateColors.t1} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{due.month} {due.year}</Text>
-        </View>
-      </SafeAreaView>
+      <ScreenHeader title={`${due.month} ${due.year}`} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Status Strip */}
@@ -408,7 +397,7 @@ export default function SocietyDueDetailScreen() {
         <View style={styles.bottomActions}>
           <TouchableOpacity
             style={styles.downloadBtn}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
             onPress={generateAndShareReceipt}
             disabled={downloading}
           >
@@ -434,36 +423,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  loadingRoot: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  headerBar: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  headerInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: SgateFonts.bold,
-    color: SgateColors.t1,
-    marginLeft: 8,
-  },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 20 },
+  scrollContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 20 },
   statusStrip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -610,3 +571,5 @@ const styles = StyleSheet.create({
     color: SgateColors.t3,
   },
 });
+
+export default withResetOnBlur(SocietyDueDetailScreen);

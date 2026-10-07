@@ -11,6 +11,7 @@ import {
     Alert,
     Dimensions,
     KeyboardAvoidingView,
+    Linking,
     Modal,
     Platform,
     Pressable,
@@ -130,8 +131,11 @@ function CameraModal({
                     <View style={cam.permRoot}>
                         <Ionicons name="camera-outline" size={56} color="#9CA3AF" />
                         <Text style={cam.permTitle}>Camera Access Needed</Text>
-                        <Pressable style={cam.permBtn} onPress={requestPermission}>
+                        <Pressable style={cam.permBtn} onPress={permission && !permission.canAskAgain ? () => Linking.openSettings() : requestPermission}>
                             <Text style={cam.permBtnText}>Allow Camera</Text>
+                        </Pressable>
+                        <Pressable style={cam.permCancel} onPress={onClose} hitSlop={8}>
+                            <Text style={cam.permCancelText}>Not now</Text>
                         </Pressable>
                     </View>
                 ) : captured ? (
@@ -199,34 +203,43 @@ export default function NewEntryScreen() {
     const [showDropdown, setShowDropdown] = useState(false);
     const [recentFlats, setRecentFlats] = useState<FlatResult[]>(recentFlatsCache);
 
+    // Visitor name — optional, but residents see "Visitor" when it's left blank.
+    const [visitorName, setVisitorName] = useState('');
+
     // Photo
     const [photoUri, setPhotoUri] = useState<string | null>(null);
     const [cameraOpen, setCameraOpen] = useState(false);
 
-    // Submit
+    // Submit — the ref blocks a second tap that lands before `submitting` re-renders.
     const [submitting, setSubmitting] = useState(false);
+    const submittingRef = useRef(false);
 
     // Flat search debounce
     useEffect(() => {
-        if (!flatSearch.trim() || selectedFlat?.flatNumber === flatSearch) {
+        // The input shows flatLabel() once a flat is picked (e.g. "Tower A-A101"),
+        // so compare against that — comparing flatNumber re-searched the label and
+        // popped a "No flats found" dropdown under a valid selection.
+        if (!flatSearch.trim() || (selectedFlat && flatLabel(selectedFlat) === flatSearch)) {
             setFlatResults([]);
             setShowDropdown(false);
             return;
         }
+        let cancelled = false;
         const t = setTimeout(async () => {
             setSearchingFlat(true);
             try {
                 const res = await api.get(`/api/v1/gate/flats/search?query=${encodeURIComponent(flatSearch)}`);
+                if (cancelled) return;
                 const data: FlatResult[] = res.data?.data ?? [];
                 setFlatResults(data);
                 setShowDropdown(true);
             } catch {
-                setFlatResults([]);
+                if (!cancelled) setFlatResults([]);
             } finally {
-                setSearchingFlat(false);
+                if (!cancelled) setSearchingFlat(false);
             }
         }, 300);
-        return () => clearTimeout(t);
+        return () => { cancelled = true; clearTimeout(t); setSearchingFlat(false); };
     }, [flatSearch, selectedFlat]);
 
     const handleSelectFlat = (flat: FlatResult) => {
@@ -247,7 +260,8 @@ export default function NewEntryScreen() {
     const canSubmit = !!selectedFlat && (type !== 'DELIVERY' || !!provider);
 
     const handleSubmit = async () => {
-        if (!canSubmit || submitting) return;
+        if (!canSubmit || submittingRef.current) return;
+        submittingRef.current = true;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         setSubmitting(true);
 
@@ -258,6 +272,8 @@ export default function NewEntryScreen() {
                 flatId: selectedFlat!.id,
             };
             if (type === 'DELIVERY' && provider) payload.providerTag = provider;
+            const name = visitorName.trim().replace(/\s+/g, ' ');
+            if (name) payload.visitorName = name.slice(0, 100);
 
             if (photoUri) {
                 payload.photoKey = await uploadEntryPhoto(photoUri);
@@ -272,7 +288,7 @@ export default function NewEntryScreen() {
                 params: {
                     id:    entryId ?? '',
                     flat:  flatLabel(selectedFlat!),
-                    name:  '',
+                    name:  name,
                     type:  type,
                     photo: photoUri ?? '',
                 },
@@ -281,6 +297,7 @@ export default function NewEntryScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             Alert.alert('Failed', err?.response?.data?.message ?? 'Could not send entry request. Try again.');
         } finally {
+            submittingRef.current = false;
             setSubmitting(false);
         }
     };
@@ -301,7 +318,7 @@ export default function NewEntryScreen() {
                         <View style={S.fastNoteIcon}><Ionicons name="flash" size={17} color={GuardColors.black} /></View>
                         <View style={{ flex: 1 }}>
                             <Text style={S.fastNoteTitle}>Fast visitor entry</Text>
-                            <Text style={S.fastNoteText}>Choose a type and unit. Photo is optional.</Text>
+                            <Text style={S.fastNoteText}>Choose a type and unit. Name and photo are optional.</Text>
                         </View>
                     </View>
 
@@ -417,6 +434,23 @@ export default function NewEntryScreen() {
                                 <Text style={S.dropdownEmpty}>No flats found</Text>
                             </View>
                         )}
+                    </View>
+
+                    {/* ── Visitor Name ──────────────────────────────────── */}
+                    <Text style={S.sectionLabel}>{type === 'DELIVERY' ? 'DELIVERY PERSON NAME' : 'VISITOR NAME'} <Text style={S.optional}>OPTIONAL</Text></Text>
+                    <View style={[S.flatInputRow, S.nameRow]}>
+                        <Ionicons name="person-outline" size={18} color="#9CA3AF" style={S.flatIcon} />
+                        <TextInput
+                            style={S.flatInput}
+                            placeholder={type === 'DELIVERY' ? 'e.g. Ravi' : 'Name shown to the resident'}
+                            placeholderTextColor="#9CA3AF"
+                            value={visitorName}
+                            onChangeText={setVisitorName}
+                            autoCapitalize="words"
+                            autoCorrect={false}
+                            maxLength={100}
+                            returnKeyType="done"
+                        />
                     </View>
 
                     {/* ── Visitor Photo ─────────────────────────────────── */}
@@ -601,6 +635,8 @@ const S = StyleSheet.create({
     recentChip: { backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, borderRadius: 12, paddingHorizontal: 11, paddingVertical: 7 },
     recentChipText: { fontSize: 12, fontWeight: '800', color: GuardColors.t1 },
     flatWrap: { marginBottom: 18, zIndex: 10 },
+    nameRow: { marginBottom: 18 },
+    optional: { fontSize: 10, fontWeight: '700', color: GuardColors.t4, letterSpacing: 1 },
     flatInputRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -764,7 +800,9 @@ const cam = StyleSheet.create({
         borderRadius: 14,
         marginTop: 8,
     },
-    permBtnText: { fontSize: 15, fontWeight: '800', color: '#fff' },
+    permBtnText: { fontSize: 15, fontWeight: '800', color: GuardColors.black },
+    permCancel: { paddingVertical: 8, paddingHorizontal: 16 },
+    permCancelText: { fontSize: 14, fontWeight: '700', color: GuardColors.t2 },
     topBar: {
         position: 'absolute',
         top: 0,

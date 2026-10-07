@@ -1,7 +1,6 @@
 import api from './api';
 import type {
     CreatePreApprovedPayload,
-    DayOfWeek,
     Entry,
     EntryRequest,
     EntryRequestStatus,
@@ -116,7 +115,7 @@ export const getInvitePassById = async (id: string): Promise<InvitePass> => {
 };
 
 export const revokeInvitePass = async (id: string): Promise<void> => {
-    await api.delete(`/gate/invites/guest/${id}/revoke`);
+    await api.patch(`/gate/invites/guest/${id}/revoke`);
 };
 
 export const deleteInvitePass = async (id: string): Promise<void> => {
@@ -229,16 +228,64 @@ export interface CreateExpectedDeliveryPayload {
     trackingId?: string;
 }
 
-export const getExpectedDeliveries = async (): Promise<unknown[]> => {
+function clock12(hhmm?: string): string | null {
+    const m = hhmm ? /^(\d{1,2}):(\d{2})/.exec(hhmm) : null;
+    if (!m) return null;
+    const h = Number(m[1]);
+    return `${h % 12 || 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+/** Human window for a delivery pass, using the schedule's local times. */
+function deliveryWindowLabel(schedule?: PreApprovedEntry['schedule']): string | undefined {
+    if (!schedule) return undefined;
+    if (schedule.scheduleType === 'ONCE' || schedule.date) {
+        // `date` is a calendar day sent as midnight UTC; read its UTC parts,
+        // or IST shows it as 5:30 AM (or the previous day west of UTC).
+        const now = new Date();
+        const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const dayKey = schedule.date ? schedule.date.slice(0, 10) : todayKey;
+        const [y, mo, d] = dayKey.split('-').map(Number);
+        const dayLabel = dayKey === todayKey
+            ? 'Today'
+            : new Date(y, mo - 1, d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        const from = clock12(schedule.startTime);
+        const to = clock12(schedule.endTime);
+        return from && to ? `${dayLabel}, ${from} – ${to}` : dayLabel;
+    }
+    if (schedule.validUntil) {
+        return `Until ${new Date(schedule.validUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`;
+    }
+    return undefined;
+}
+
+/**
+ * Deliveries the resident is expecting: their active DELIVERY pre-approvals.
+ * (The backend has no separate expected-deliveries endpoint; the pre-approval
+ * is what the guard checks a delivery against, so it is the source of truth.)
+ */
+export const getExpectedDeliveries = async (): Promise<ExpectedDeliveryItem[]> => {
     try {
-        const res = await api.get('/gate/deliveries/expected');
-        const data = res.data?.data;
-        return Array.isArray(data) ? data : (data?.deliveries ?? []);
+        const { entries } = await getPreApprovedList({ type: 'DELIVERY', status: 'ACTIVE', limit: 50 });
+        return (entries ?? []).map(entry => ({
+            id: entry.id,
+            company: entry.meta?.companyName || (entry.meta?.isSurprise ? 'Surprise delivery' : 'Delivery'),
+            expectedDate: entry.schedule?.date ?? entry.schedule?.validUntil ?? entry.createdAt,
+            windowLabel: deliveryWindowLabel(entry.schedule),
+        }));
     } catch (err: any) {
-        console.warn('⚠️ [Gate Service] Expected deliveries endpoint missing or failed:', err?.response?.status);
-        return []; // Suppress 404 HTML errors
+        console.warn('⚠️ [Gate Service] Could not load expected deliveries:', err?.response?.status);
+        return [];
     }
 };
+
+export interface ExpectedDeliveryItem {
+    id: string;
+    company: string;
+    expectedDate: string;
+    /** e.g. "Today, 5:45 PM – 1:45 AM" or "Daily until 30 Oct". */
+    windowLabel?: string;
+    trackingId?: string;
+}
 
 export const createExpectedDelivery = async (
     data: CreateExpectedDeliveryPayload

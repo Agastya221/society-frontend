@@ -10,7 +10,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SgateBrandMark, SgateHeader } from '../../components/Sgate';
-import { SgateColors, SgateFonts, SgateTypography } from '../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '../../constants/Sgate-theme';
 import type { Notification, NotificationType } from '../../types/api';
 import { useNotificationStore } from '../../store/useNotificationStore';
 import { AppAlert } from '../../components/ui/AppAlert';
@@ -138,7 +138,7 @@ export default function NotificationsScreen() {
                 <Animated.View entering={FadeInDown.delay(Math.min(index, 12) * 40).springify()}>
                     <TouchableOpacity
                         style={[styles.row, !n.isRead && styles.rowUnread]}
-                        activeOpacity={0.7}
+                        activeOpacity={0.8}
                         onPress={() => handlePress(n)}
                     >
                         {/* Icon bubble */}
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     sectionTitle: {
         ...SgateTypography.microLabel,
         color: SgateColors.t3,
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 18,
         paddingBottom: 10,
     },

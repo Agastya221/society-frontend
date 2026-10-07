@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import {
-    Modal,
+
     Platform,
     RefreshControl,
     ScrollView,
@@ -19,7 +19,7 @@ import * as Haptics from 'expo-haptics';
 import * as Linking from 'expo-linking';
 
 import { WorkspaceSwitchButton } from '@/components/ui/WorkspaceSwitchButton';
-import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateRadius } from '@/constants/Sgate-theme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { useProfileStore } from '@/store/useProfileStore';
@@ -29,6 +29,7 @@ import type {
     ResidentContextsResponse,
 } from '@/services/profile.service';
 import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
+import { AnimatedBottomSheetModal } from '@/components/ui/AnimatedBottomSheetModal';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { ResidentContextPicker } from '@/components/context/ResidentContextPicker';
 import { SettingRow } from '@/components/ui/SettingRow';
@@ -309,7 +310,7 @@ export default function AdminProfileScreen() {
                 <View style={styles.card}>
                     <SettingRow
                         icon="bell-outline"
-                        title="Notification Preferences"
+                        title="Notifications"
                         onPress={() => safePush(router, `${routePrefix}/notifications`)}
                     />
                     <SettingRow
@@ -403,7 +404,7 @@ export default function AdminProfileScreen() {
                     <View style={styles.footerCard}>
                         <TouchableOpacity
                             style={styles.footerRow}
-                            activeOpacity={0.6}
+                            activeOpacity={0.8}
                             onPress={() => Linking.openURL('https://sgate.app/terms')}
                         >
                             <View style={styles.footerRowLeft}>
@@ -417,7 +418,7 @@ export default function AdminProfileScreen() {
 
                         <TouchableOpacity
                             style={styles.footerRow}
-                            activeOpacity={0.6}
+                            activeOpacity={0.8}
                             onPress={() => Linking.openURL('https://sgate.app/privacy')}
                         >
                             <View style={styles.footerRowLeft}>
@@ -450,53 +451,41 @@ export default function AdminProfileScreen() {
             />
 
             {/* ── Edit Profile Modal ──────────────────────────────────── */}
-            <Modal
-                visible={isEditModalVisible}
-                transparent
-                animationType="slide"
-                onRequestClose={() => setEditModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalSheet, { paddingBottom: insets.bottom + 20 }]}>
-                        <View style={styles.modalHeader}>
-                            <Text className="font-sora" style={styles.modalTitle}>Edit Profile</Text>
-                            <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.modalClose} hitSlop={8}>
-                                <MaterialCommunityIcons name="close" size={22} color={SgateColors.t2} />
-                            </TouchableOpacity>
-                        </View>
-
-                        <Text className="font-sora" style={styles.inputLabel}>FULL NAME</Text>
-                        <TextInput className="font-sora"
-                            style={styles.input}
-                            value={editData.name}
-                            onChangeText={(t) => setEditData((p) => ({ ...p, name: t }))}
-                            placeholder="Your name"
-                            placeholderTextColor={SgateColors.t4}
-                        />
-
-                        <Text className="font-sora" style={styles.inputLabel}>EMAIL ADDRESS</Text>
-                        <TextInput className="font-sora"
-                            style={styles.input}
-                            value={editData.email}
-                            onChangeText={(t) => setEditData((p) => ({ ...p, email: t }))}
-                            placeholder="you@example.com"
-                            placeholderTextColor={SgateColors.t4}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-
-                        <TouchableOpacity
-                            style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-                            onPress={handleSave}
-                            disabled={saving}
-                        >
-                            <Text className="font-sora" style={styles.saveBtnText}>
-                                {saving ? 'Saving…' : 'Save Changes'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+            <AnimatedBottomSheetModal visible={isEditModalVisible} onClose={() => setEditModalVisible(false)}>
+                <View style={styles.modalHeader}>
+                    <Text className="font-sora" style={styles.modalTitle}>Edit Profile</Text>
                 </View>
-            </Modal>
+
+                <Text className="font-sora" style={styles.inputLabel}>FULL NAME</Text>
+                <TextInput className="font-sora"
+                    style={styles.input}
+                    value={editData.name}
+                    onChangeText={(t) => setEditData((p) => ({ ...p, name: t }))}
+                    placeholder="Your name"
+                    placeholderTextColor={SgateColors.t4}
+                />
+
+                <Text className="font-sora" style={styles.inputLabel}>EMAIL ADDRESS</Text>
+                <TextInput className="font-sora"
+                    style={styles.input}
+                    value={editData.email}
+                    onChangeText={(t) => setEditData((p) => ({ ...p, email: t }))}
+                    placeholder="you@example.com"
+                    placeholderTextColor={SgateColors.t4}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                />
+
+                <TouchableOpacity
+                    style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+                    onPress={handleSave}
+                    disabled={saving}
+                >
+                    <Text className="font-sora" style={styles.saveBtnText}>
+                        {saving ? 'Saving…' : 'Save Changes'}
+                    </Text>
+                </TouchableOpacity>
+            </AnimatedBottomSheetModal>
         </View>
     );
 }
@@ -520,7 +509,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontFamily: SgateFonts.medium,
         color: SgateColors.t3,
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 16,
         paddingBottom: 8,
     },
@@ -576,7 +565,7 @@ const styles = StyleSheet.create({
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        backgroundColor: 'rgba(0,0,0,0.48)',
         justifyContent: 'flex-end',
     },
     modalSheet: {
@@ -595,14 +584,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontFamily: SgateFonts.bold,
         color: SgateColors.t1,
-    },
-    modalClose: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: SgateColors.bg,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     inputLabel: {
         fontSize: 11,

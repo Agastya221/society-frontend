@@ -8,9 +8,10 @@ import { ScreenHeader } from '../../../components/ui/ScreenHeader';
 import { SgateColors, SgateFonts, SgateLayout, SgateRadius, SgateSurfaces } from '../../../constants/Sgate-theme';
 import { EmergencyResponse, getEmergencyById } from '../../../services/emergency';
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
 const TIME_FORMATTER = new Intl.DateTimeFormat('en-IN', { hour: '2-digit', minute: '2-digit' });
 
-export default function EmergencyDetailScreen() {
+function EmergencyDetailScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -186,3 +187,5 @@ const S = StyleSheet.create({
     noteBox: { marginTop: 10, padding: 12, borderRadius: SgateRadius.sm },
     noteText: { fontSize: 12, lineHeight: 18, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
 });
+
+export default withResetOnBlur(EmergencyDetailScreen);

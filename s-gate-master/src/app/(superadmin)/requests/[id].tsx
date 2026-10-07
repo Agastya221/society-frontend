@@ -1,18 +1,20 @@
+import { SgateColors } from '@/constants/Sgate-theme';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Modal,
+
     ScrollView,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AnimatedBottomSheetModal } from '@/components/ui/AnimatedBottomSheetModal';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import api from '@/services/api';
 
 interface RegistrationRequest {
@@ -122,21 +124,25 @@ export default function RequestDetailScreen() {
 
     if (loading) {
         return (
-            <SafeAreaView edges={['top']} className="flex-1 bg-slate-50 items-center justify-center">
+            <View className="flex-1 bg-slate-50">
+                <ScreenHeader title="Request Details" />
                 <AppLoader />
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (!request) {
         return (
-            <SafeAreaView edges={['top']} className="flex-1 bg-slate-50 items-center justify-center">
-                <Feather name="alert-circle" size={48} color="#d1d5db" />
-                <Text className="font-sora text-slate-500 mt-4">Request not found</Text>
-                <TouchableOpacity onPress={() => router.back()} className="mt-4">
-                    <Text className="text-indigo-600 font-sora-semibold">Go Back</Text>
-                </TouchableOpacity>
-            </SafeAreaView>
+            <View className="flex-1 bg-slate-50">
+                <ScreenHeader title="Request Details" />
+                <View className="flex-1 items-center justify-center">
+                    <Feather name="alert-circle" size={48} color="#d1d5db" />
+                    <Text className="font-sora text-slate-500 mt-4">Request not found</Text>
+                    <TouchableOpacity onPress={() => router.back()} className="mt-4">
+                        <Text className="text-indigo-600 font-sora-semibold">Go Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
         );
     }
 
@@ -152,21 +158,10 @@ export default function RequestDetailScreen() {
     );
 
     return (
-        <SafeAreaView edges={['top']} className="flex-1 bg-slate-50">
-            {/* Header */}
-            <View className="bg-white px-5 pt-4 pb-4 border-b border-slate-100">
-                <View className="flex-row items-center gap-3">
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        className="w-10 h-10 bg-slate-100 rounded-xl items-center justify-center"
-                    >
-                        <Feather name="arrow-left" size={20} color="#374151" />
-                    </TouchableOpacity>
-                    <View className="flex-1">
-                        <Text className="text-xl font-sora-bold text-slate-900" numberOfLines={1}>
-                            {request.societyName}
-                        </Text>
-                    </View>
+        <View className="flex-1 bg-slate-50">
+            <ScreenHeader
+                title={request.societyName}
+                rightAction={
                     <View
                         className={`px-3 py-1 rounded-full ${
                             isPending ? 'bg-amber-100' : isApproved ? 'bg-emerald-100' : 'bg-red-100'
@@ -180,8 +175,8 @@ export default function RequestDetailScreen() {
                             {request.status}
                         </Text>
                     </View>
-                </View>
-            </View>
+                }
+            />
 
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: isPending ? 140 : 40 }} showsVerticalScrollIndicator={false}>
                 {/* Status Banners */}
@@ -286,52 +281,45 @@ export default function RequestDetailScreen() {
             )}
 
             {/* Reject Modal */}
-            <Modal visible={rejectVisible} transparent animationType="fade">
-                <View className="flex-1 bg-black/50 justify-end">
-                    <View className="bg-white rounded-t-3xl p-6 pb-10">
-                        <View className="flex-row items-center justify-between mb-4">
-                            <Text className="text-xl font-sora-bold text-slate-900">Reject Registration</Text>
-                            <TouchableOpacity onPress={() => setRejectVisible(false)}>
-                                <Feather name="x" size={24} color="#94a3b8" />
-                            </TouchableOpacity>
-                        </View>
-                        <Text className="font-sora text-slate-500 text-sm mb-4">
-                            Rejecting “{request.societyName}”
-                        </Text>
-                        <Text className="text-slate-700 font-sora-medium text-sm mb-2">Reason for rejection *</Text>
-                        <TextInput
-                            className="font-sora bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 mb-4"
-                            multiline
-                            numberOfLines={4}
-                            textAlignVertical="top"
-                            style={{ minHeight: 100 }}
-                            placeholder="Explain why this registration is being rejected..."
-                            placeholderTextColor="#94a3b8"
-                            value={rejectReason}
-                            onChangeText={setRejectReason}
-                        />
-                        <TouchableOpacity
-                            onPress={handleRejectSubmit}
-                            disabled={!rejectReason.trim() || actionLoading}
-                            className={`rounded-xl py-3.5 items-center flex-row justify-center gap-2 ${
-                                rejectReason.trim() && !actionLoading ? 'bg-red-600' : 'bg-slate-200'
-                            }`}
-                            activeOpacity={0.8}
-                        >
-                            {actionLoading ? (
-                                <ActivityIndicator size="small" color="#fff" />
-                            ) : (
-                                <>
-                                    <Feather name="x-circle" size={18} color={rejectReason.trim() ? '#fff' : '#94a3b8'} />
-                                    <Text className={`font-sora-bold text-base ${rejectReason.trim() ? 'text-white' : 'text-slate-400'}`}>
-                                        Reject Registration
-                                    </Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    </View>
+            <AnimatedBottomSheetModal visible={rejectVisible} onClose={() => setRejectVisible(false)}>
+                <View className="flex-row items-center justify-between mb-4">
+                    <Text className="text-xl font-sora-bold text-slate-900">Reject Registration</Text>
                 </View>
-            </Modal>
-        </SafeAreaView>
+                <Text className="font-sora text-slate-500 text-sm mb-4">
+                    Rejecting “{request.societyName}”
+                </Text>
+                <Text className="text-slate-700 font-sora-medium text-sm mb-2">Reason for rejection *</Text>
+                <TextInput
+                    className="font-sora bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 mb-4"
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    style={{ minHeight: 100 }}
+                    placeholder="Explain why this registration is being rejected..."
+                    placeholderTextColor={SgateColors.t3}
+                    value={rejectReason}
+                    onChangeText={setRejectReason}
+                />
+                <TouchableOpacity
+                    onPress={handleRejectSubmit}
+                    disabled={!rejectReason.trim() || actionLoading}
+                    className={`rounded-xl py-3.5 items-center flex-row justify-center gap-2 ${
+                        rejectReason.trim() && !actionLoading ? 'bg-red-600' : 'bg-slate-200'
+                    }`}
+                    activeOpacity={0.8}
+                >
+                    {actionLoading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                        <>
+                            <Feather name="x-circle" size={18} color={rejectReason.trim() ? '#fff' : '#94a3b8'} />
+                            <Text className={`font-sora-bold text-base ${rejectReason.trim() ? 'text-white' : 'text-slate-400'}`}>
+                                Reject Registration
+                            </Text>
+                        </>
+                    )}
+                </TouchableOpacity>
+            </AnimatedBottomSheetModal>
+        </View>
     );
 }

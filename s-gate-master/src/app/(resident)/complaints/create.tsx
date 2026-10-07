@@ -8,12 +8,13 @@ import {
     ScrollView, StyleSheet, Switch, Text, TextInput,
     TouchableOpacity, View,
 } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { ComplaintScreenLayout } from '../../../components/complaints/ComplaintScreenLayout';
 import { ComplaintCategory, ComplaintUrgency, createComplaint } from '../../../services/complaints';
 import { uploadImage } from '../../../services/uploadService';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import { SafeBottomSheetSurface } from '../../../components/ui/SafeBottomSheetSurface';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 const CATEGORIES: { label: string; value: ComplaintCategory; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
@@ -42,6 +43,7 @@ interface ImageState { localUri: string; s3Key?: string; uploading: boolean; }
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
 export default function CreateComplaintScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
     const router = useRouter();
     const [formData, setFormData] = useState({
         title: '',
@@ -142,7 +144,7 @@ export default function CreateComplaintScreen() {
             }
         >
             <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-                <ScrollView contentContainerStyle={S.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                <ScrollView contentContainerStyle={[S.scrollContent, { paddingBottom: scrollBottomPadding }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
                     {/* Error */}
                     {error ? (
@@ -162,7 +164,7 @@ export default function CreateComplaintScreen() {
                                 <TextInput
                                     style={S.textInput}
                                     placeholder="Brief title (e.g. Water Leak)"
-                                    placeholderTextColor="#999"
+                                    placeholderTextColor={SgateColors.t3}
                                     value={formData.title}
                                     onChangeText={t => { setFormData({ ...formData, title: t }); setError(''); }}
                                     onFocus={() => setFocusedField('title')}
@@ -189,7 +191,7 @@ export default function CreateComplaintScreen() {
                                 <TextInput
                                     style={[S.textInput, S.textArea]}
                                     placeholder="Describe the issue in detail..."
-                                    placeholderTextColor="#999"
+                                    placeholderTextColor={SgateColors.t3}
                                     multiline
                                     textAlignVertical="top"
                                     maxLength={3000}
@@ -211,7 +213,7 @@ export default function CreateComplaintScreen() {
                                 <TextInput
                                     style={[S.textInput, { flex: 1 }]}
                                     placeholder="e.g., Kitchen, Parking Lot B"
-                                    placeholderTextColor="#999"
+                                    placeholderTextColor={SgateColors.t3}
                                     value={formData.location}
                                     onChangeText={t => setFormData({ ...formData, location: t })}
                                     onFocus={() => setFocusedField('location')}
@@ -308,7 +310,7 @@ export default function CreateComplaintScreen() {
                         style={[S.submitBtn, !canSubmit && S.submitBtnDisabled]}
                         onPress={handleSubmit}
                         disabled={!canSubmit}
-                        activeOpacity={0.85}
+                        activeOpacity={0.8}
                     >
                         {isLoading
                             ? <ActivityIndicator size="small" color={SgateColors.t1} />
@@ -323,7 +325,7 @@ export default function CreateComplaintScreen() {
             {/* ── Category Picker ─────────────────────────────────────────── */}
             <Modal visible={showCategoryPicker} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowCategoryPicker(false)}>
                 <TouchableOpacity style={S.modalOverlay} activeOpacity={1} onPress={() => setShowCategoryPicker(false)}>
-                    <SafeBottomSheetSurface style={S.pickerSheet} showHandle minimumBottomPadding={24}>
+                    <SafeBottomSheetSurface style={S.pickerSheet} showHandle>
                         <Text style={S.pickerTitle}>Choose Category</Text>
                         <FlatList
                             data={CATEGORIES}
@@ -346,7 +348,7 @@ export default function CreateComplaintScreen() {
             {/* ── Time Picker ────────────────────────────────────────────── */}
             <Modal visible={showTimePicker} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setShowTimePicker(false)}>
                 <TouchableOpacity style={S.modalOverlay} activeOpacity={1} onPress={() => setShowTimePicker(false)}>
-                    <SafeBottomSheetSurface style={S.pickerSheet} showHandle minimumBottomPadding={24}>
+                    <SafeBottomSheetSurface style={S.pickerSheet} showHandle>
                         <Text style={S.pickerTitle}>Preferred Time</Text>
                         {PREFERRED_TIMES.map(t => {
                             const active = preferredTime === t.value;
@@ -368,11 +370,11 @@ export default function CreateComplaintScreen() {
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const S = StyleSheet.create({
     // Header
-    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
+    headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12 },
     closeBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center' },
     headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 8 },
 
-    scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+    scrollContent: { paddingHorizontal: SgateLayout.screenGutter, paddingBottom: 40 },
 
     // Error
     errorBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: SgateColors.redBg, borderRadius: 12, padding: 14, marginBottom: 14 },
@@ -408,8 +410,8 @@ const S = StyleSheet.create({
     // Photos
     photosRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
     photoThumb: { width: 76, height: 76, borderRadius: 12, overflow: 'hidden', backgroundColor: '#F5F5F5' },
-    photoOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
-    photoRemove: { position: 'absolute', top: 4, right: 4, zIndex: 3, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
+    photoOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.48)', alignItems: 'center', justifyContent: 'center', zIndex: 2 },
+    photoRemove: { position: 'absolute', top: 4, right: 4, zIndex: 3, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(0,0,0,0.48)', alignItems: 'center', justifyContent: 'center' },
     photoCheck: { position: 'absolute', bottom: 4, right: 4, zIndex: 3, width: 16, height: 16, borderRadius: 8, backgroundColor: SgateColors.green, alignItems: 'center', justifyContent: 'center' },
     photoAdd: { width: 76, height: 76, borderRadius: 12, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#DDD', backgroundColor: '#FAFAFA', alignItems: 'center', justifyContent: 'center', gap: 4 },
     photoAddText: { fontSize: 10, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
@@ -444,8 +446,8 @@ const S = StyleSheet.create({
     submitBtnTextDisabled: { color: '#999' },
 
     // Modals
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-    pickerSheet: { paddingHorizontal: 20, maxHeight: '70%' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
+    pickerSheet: { maxHeight: '70%' },
     pickerTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: '#111', marginBottom: 12 },
     pickerRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
     pickerRowActive: { backgroundColor: SgateColors.goldPale, marginHorizontal: -20, paddingHorizontal: 20, borderRadius: 0 },

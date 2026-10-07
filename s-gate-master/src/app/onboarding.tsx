@@ -22,7 +22,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ONBOARDING_SEEN_KEY = 'onboarding_seen';
@@ -204,7 +204,7 @@ export default function OnboardingScreen() {
                         onPress={handleNext}
                         onPressIn={() => { btnScale.value = withSpring(0.97, { damping: 15, stiffness: 300 }); }}
                         onPressOut={() => { btnScale.value = withSpring(1, { damping: 15, stiffness: 300 }); }}
-                        activeOpacity={0.9}
+                        activeOpacity={0.8}
                         style={[styles.ctaBtn, { backgroundColor: currentSlide.accent }]}
                     >
                         <Text style={[
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
 
     // ── Bottom section ───────────────────────────────────────────────
     bottomSection: {
-        paddingHorizontal: 24,
+        paddingHorizontal: SgateLayout.screenGutter,
     },
     dots: {
         flexDirection: 'row',

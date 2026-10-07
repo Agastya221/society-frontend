@@ -1,11 +1,12 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { FlatList, Linking, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import api from '../../../services/api';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import { ScreenHeader } from '../../../components/ui/ScreenHeader';
 
 interface LocalContact {
@@ -74,8 +75,11 @@ export default function CategoryContacts() {
   const [contacts, setContacts] = useState<LocalContact[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Spinner only for a new category; coming back refreshes in place.
+  const loadedCategory = useRef<string | null>(null);
   const fetchContacts = async () => {
-    setLoading(true);
+    if (loadedCategory.current !== category) setLoading(true);
+    loadedCategory.current = category ?? null;
     try {
       const res = await api.get('/resident/local-directory', { params: { category } });
       const raw = res.data?.data ?? res.data;
@@ -117,13 +121,13 @@ export default function CategoryContacts() {
 
     return (
       <Animated.View entering={FadeInDown.delay(Math.min(index, 10) * 50).springify()}>
-        <TouchableOpacity style={styles.card} activeOpacity={0.6}
+        <TouchableOpacity style={styles.card} activeOpacity={0.8}
           onPress={() => router.push({ pathname: '/(resident)/local-directory/contact/[id]' as any, params: { id: item.id } })}>
-          
+
           <View style={[styles.iconBox, { backgroundColor: bg }]}>
             <MaterialCommunityIcons name={icon} size={24} color={color} />
           </View>
-          
+
           <View style={styles.cardContent}>
             <Text style={styles.contactName}>{item.name}</Text>
             <View style={styles.metaRow}>
@@ -143,11 +147,11 @@ export default function CategoryContacts() {
               <Text style={styles.timeAgoText}>{item.timeAgo}</Text>
             </View>
           </View>
-          
+
           <TouchableOpacity style={styles.phoneBtn} onPress={() => Linking.openURL('tel:' + item.phone.replace(/\s/g, ''))} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Feather name="phone" size={18} color="#10B981" />
           </TouchableOpacity>
-          
+
         </TouchableOpacity>
       </Animated.View>
     );
@@ -166,12 +170,12 @@ export default function CategoryContacts() {
           ListHeaderComponent={
             <View style={[styles.searchBar, isSearchFocused && styles.searchBarFocused]}>
               <Feather name="search" size={18} color={isSearchFocused ? SgateColors.goldDeep : SgateColors.t3} />
-              <TextInput 
-                style={styles.searchInput} 
-                placeholder="Search name..." 
-                placeholderTextColor={SgateColors.t4} 
-                value={search} 
-                onChangeText={setSearch} 
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search name..."
+                placeholderTextColor={SgateColors.t4}
+                value={search}
+                onChangeText={setSearch}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 returnKeyType="search"
@@ -186,16 +190,16 @@ export default function CategoryContacts() {
             </View>
           }
           ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <Feather name="users" size={36} color={SgateColors.t4} />
-              <Text style={styles.emptyTitle}>No contacts found</Text>
-              <Text style={styles.emptySubtitle}>Be the first to add a contact!</Text>
-            </View>
+            <EmptyState
+                iconName="account-group-outline"
+                title="No contacts found"
+                description="Be the first to add a contact!"
+            />
           }
         />
       )}
 
-      <TouchableOpacity style={styles.fab} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.fab} activeOpacity={0.8}>
         <Feather name="plus" size={18} color={SgateColors.black} />
         <Text style={styles.fabLabel}>Add contact</Text>
       </TouchableOpacity>
@@ -207,14 +211,14 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 20, paddingBottom: 100 },
-  searchBar: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#FFFFFF', 
-    borderRadius: 16, 
-    paddingHorizontal: 16, 
-    height: 54, 
-    gap: 12, 
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
+    height: 54,
+    gap: 12,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -231,12 +235,12 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  searchInput: { 
-    flex: 1, 
-    fontFamily: SgateFonts.medium, 
-    fontSize: 15, 
+  searchInput: {
+    flex: 1,
+    fontFamily: SgateFonts.medium,
+    fontSize: 15,
     color: SgateColors.t1,
-    paddingVertical: 0, 
+    paddingVertical: 0,
   },
   clearIconWrap: {
     width: 22,
@@ -246,13 +250,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  card: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#FFFFFF', 
-    borderRadius: 18, 
-    padding: 16, 
-    marginBottom: 12, 
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
     gap: 16,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
@@ -262,12 +266,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
   },
-  iconBox: { 
-    width: 48, 
-    height: 48, 
-    borderRadius: 16, 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   cardContent: { flex: 1, justifyContent: 'center' },
   contactName: { fontSize: 16, fontFamily: SgateFonts.semibold, color: '#111827', marginBottom: 6 },
@@ -280,33 +284,30 @@ const styles = StyleSheet.create({
   addedByText: { fontSize: 12, fontFamily: SgateFonts.medium, color: '#6B7280' },
   timeAgoText: { fontSize: 11, fontFamily: SgateFonts.regular, color: '#9CA3AF' },
   likeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  phoneBtn: { 
-    width: 44, 
-    height: 44, 
-    borderRadius: 22, 
+  phoneBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#D1FAE5', // Soft green background
-    alignItems: 'center', 
-    justifyContent: 'center' 
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  emptyWrap: { alignItems: 'center', paddingTop: 60, gap: 10 },
-  emptyTitle: { fontSize: 17, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
-  emptySubtitle: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
-  fab: { 
-    position: 'absolute', 
-    bottom: 24, 
-    right: 20, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 8, 
-    backgroundColor: SgateColors.gold, 
-    borderRadius: 28, 
-    paddingHorizontal: 20, 
-    paddingVertical: 16, 
-    shadowColor: '#FFB800', 
-    shadowOffset: { width: 0, height: 6 }, 
-    shadowOpacity: 0.3, 
-    shadowRadius: 12, 
-    elevation: 8 
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: SgateColors.gold,
+    borderRadius: 28,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    shadowColor: '#FFB800',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8
   },
   fabLabel: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.black },
 });

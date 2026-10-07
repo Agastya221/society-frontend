@@ -1,16 +1,18 @@
 import { Feather } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
 ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
 import api from '../../../../services/api';
 import { bookStaff, getStaffOpenSlots, StaffOpenSlot } from '../../../../services/staffDomesticService';
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface WorksInEntry { flat: string; flatId: string; durationMonths: number }
 interface RatingEntry  { label: string; count: number }
@@ -62,8 +64,8 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
-export default function DailyHelpProfile() {
-  const router = useRouter();
+function DailyHelpProfile() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [helper, setHelper] = useState<Helper | null>(null);
@@ -112,13 +114,7 @@ export default function DailyHelpProfile() {
   if (loading) {
     return (
       <View style={s.safe}>
-        <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
-          <View style={s.header}>
-            <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
-            <Text style={s.headerTitle}>Profile</Text>
-            
-          </View>
-        </SafeAreaView>
+        <ScreenHeader title="Profile" />
         <AppLoader />
       </View>
     );
@@ -127,13 +123,7 @@ export default function DailyHelpProfile() {
   if (!helper) {
     return (
       <View style={s.safe}>
-        <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
-          <View style={s.header}>
-            <TouchableOpacity onPress={() => router.back()}><Feather name="arrow-left" size={22} color={SgateColors.t1} /></TouchableOpacity>
-            <Text style={s.headerTitle}>Profile</Text>
-            
-          </View>
-        </SafeAreaView>
+        <ScreenHeader title="Profile" />
         <View style={s.center}><Text style={s.emptyTitle}>Profile not found</Text></View>
       </View>
     );
@@ -167,17 +157,9 @@ export default function DailyHelpProfile() {
 
   return (
     <View style={s.safe}>
-      <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
-        <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-          </TouchableOpacity>
-          <Text style={s.headerTitle}>{typeLabel} Profile</Text>
-          
-        </View>
-      </SafeAreaView>
+      <ScreenHeader title={`${typeLabel} Profile`} />
 
-      <ScrollView contentContainerStyle={s.content}>
+      <ScrollView contentContainerStyle={[s.content, { paddingBottom: scrollBottomPadding }]}>
         {/* Profile Card */}
         <View style={s.profileCard}>
           <View style={s.profileAvatar}><Text style={s.profileAvatarText}>{helper.name.charAt(0).toUpperCase()}</Text></View>
@@ -299,8 +281,6 @@ export default function DailyHelpProfile() {
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   content: { padding: 16, paddingBottom: 32 },
   profileCard: { backgroundColor: SgateColors.card, borderRadius: 20, borderWidth: 1, borderColor: SgateColors.borderSoft, padding: 24, marginBottom: 12, alignItems: 'center' },
   profileAvatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
@@ -349,3 +329,5 @@ const s = StyleSheet.create({
   bookButtonDisabled: { opacity: 0.45 },
   bookButtonText: { fontSize: 14, fontFamily: SgateFonts.bold, color: SgateColors.black },
 });
+
+export default withResetOnBlur(DailyHelpProfile);

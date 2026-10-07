@@ -2,10 +2,11 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import api from '../../../services/api';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import { ScreenHeader } from '../../../components/ui/ScreenHeader';
 
 interface LocalCategory {
@@ -25,7 +26,7 @@ function getCategoryIcon(name: string): { icon: keyof typeof MaterialCommunityIc
   if (lower.includes('pest')) return { icon: 'bug', color: '#EF4444', bg: '#FEF2F2' }; // Soft Red
   if (lower.includes('security')) return { icon: 'shield-account', color: '#4B5563', bg: '#F3F4F6' }; // Soft Gray
   if (lower.includes('medical') || lower.includes('doctor')) return { icon: 'hospital-box', color: '#EF4444', bg: '#FEF2F2' }; // Soft Red
-  
+
   // Default
   return { icon: 'briefcase', color: '#6B7280', bg: '#F3F4F6' }; // Soft Gray
 }
@@ -66,7 +67,7 @@ export default function LocalDirectoryIndex() {
 
     return (
       <Animated.View entering={FadeInDown.delay(Math.min(index, 10) * 50).springify()}>
-        <TouchableOpacity style={styles.row} activeOpacity={0.6}
+        <TouchableOpacity style={styles.row} activeOpacity={0.8}
           onPress={() => router.push({ pathname: '/(resident)/local-directory/[category]' as any, params: { category: item.name } })}>
           <View style={[styles.iconBox, { backgroundColor: bg }]}>
             <MaterialCommunityIcons name={icon} size={24} color={color} />
@@ -94,12 +95,12 @@ export default function LocalDirectoryIndex() {
           ListHeaderComponent={<View>
             <View style={[styles.searchBar, isSearchFocused && styles.searchBarFocused]}>
               <Feather name="search" size={18} color={isSearchFocused ? SgateColors.goldDeep : SgateColors.t3} />
-              <TextInput 
-                style={styles.searchInput} 
-                placeholder="Search category or name..." 
-                placeholderTextColor={SgateColors.t4} 
-                value={search} 
-                onChangeText={setSearch} 
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search category or name..."
+                placeholderTextColor={SgateColors.t4}
+                value={search}
+                onChangeText={setSearch}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 returnKeyType="search"
@@ -114,15 +115,15 @@ export default function LocalDirectoryIndex() {
             </View>
             <Text style={styles.subtitle}>Discover useful contacts shared by residents. Contribute to grow this list.</Text>
           </View>}
-          ListEmptyComponent={<View style={styles.emptyWrap}>
-            <Feather name="search" size={36} color={SgateColors.t4} />
-            <Text style={styles.emptyTitle}>No categories found</Text>
-            <Text style={styles.emptySubtitle}>Try a different search term</Text>
-          </View>}
+          ListEmptyComponent={<EmptyState
+                                  iconName="magnify"
+                                  title="No categories found"
+                                  description="Try a different search term"
+                              />}
         />
       )}
 
-      <TouchableOpacity style={styles.fab} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.fab} activeOpacity={0.8}>
         <Feather name="plus" size={18} color={SgateColors.black} />
         <Text style={styles.fabLabel}>Add contact</Text>
       </TouchableOpacity>
@@ -134,14 +135,14 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: SgateColors.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   listContent: { padding: 20, paddingBottom: 100 },
-  searchBar: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#FFFFFF', 
-    borderRadius: 16, 
-    paddingHorizontal: 16, 
-    height: 54, 
-    gap: 12, 
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
+    height: 54,
+    gap: 12,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -158,10 +159,10 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  searchInput: { 
-    flex: 1, 
-    fontFamily: SgateFonts.medium, 
-    fontSize: 15, 
+  searchInput: {
+    flex: 1,
+    fontFamily: SgateFonts.medium,
+    fontSize: 15,
     color: SgateColors.t1,
     paddingVertical: 0, // fix for android centering
   },
@@ -174,13 +175,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   subtitle: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 20, lineHeight: 20 },
-  row: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#FFFFFF', 
-    borderRadius: 18, 
-    padding: 16, 
-    marginBottom: 12, 
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
     gap: 16,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
@@ -190,36 +191,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.04)',
   },
-  iconBox: { 
-    width: 48, 
-    height: 48, 
-    borderRadius: 16, 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   rowContent: { flex: 1, justifyContent: 'center' },
   rowName: { fontSize: 16, fontFamily: SgateFonts.semibold, color: '#111827', marginBottom: 2 },
   rowCount: { fontSize: 13, fontFamily: SgateFonts.medium, color: '#6B7280' },
   chevron: { marginLeft: 'auto' },
-  emptyWrap: { alignItems: 'center', paddingTop: 60, gap: 10 },
-  emptyTitle: { fontSize: 17, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
-  emptySubtitle: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
-  fab: { 
-    position: 'absolute', 
-    bottom: 24, 
-    right: 20, 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 8, 
-    backgroundColor: SgateColors.gold, 
-    borderRadius: 28, 
-    paddingHorizontal: 20, 
-    paddingVertical: 16, 
-    shadowColor: '#FFB800', 
-    shadowOffset: { width: 0, height: 6 }, 
-    shadowOpacity: 0.3, 
-    shadowRadius: 12, 
-    elevation: 8 
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: SgateColors.gold,
+    borderRadius: 28,
+    paddingHorizontal: SgateLayout.screenGutter,
+    paddingVertical: 16,
+    shadowColor: '#FFB800',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8
   },
   fabLabel: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.black },
 });

@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSheetBottomClearance } from '@/hooks/useSheetBottomClearance';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { SgateColors, SgateFonts, SgateLayout, SgateRadius, SgateSurfaces } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import { PrimaryButton } from '../../../components/ui/PrimaryButton';
 import { ScreenHeader } from '../../../components/ui/ScreenHeader';
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
 // ─── Type card config ─────────────────────────────────────────────────────────
 
 type VehicleType = 'Car' | 'Bike' | 'Other';
@@ -25,9 +27,10 @@ const TYPE_CARDS: TypeCardCfg[] = [
   { type: 'Other', iconName: 'view-grid-plus', label: 'Other' },
 ];
 
-export default function AddVehicleScreen() {
+function AddVehicleScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const sheetClearance = useSheetBottomClearance();
 
   const [vehicleType, setVehicleType] = useState<VehicleType | null>(null);
   const [number, setNumber]           = useState('');
@@ -43,16 +46,20 @@ export default function AddVehicleScreen() {
     const normalisedNumber = number.trim().toUpperCase().replace(/\s+/g, '');
     setSubmitting(true);
     try {
-      await api.post('/resident/vehicles', {
+      const res = await api.post('/resident/vehicles', {
         vehicleNumber: normalisedNumber,
         vehicleType:   vehicleType,
         model:         model.trim(),
         color:         color.trim(),
       });
 
+      // New vehicles start PENDING; an admin registering their own may be active at once.
+      const active = String(res.data?.data?.status ?? '').toUpperCase() === 'ACTIVE';
       AppAlert.show(
-        'Vehicle Submitted',
-        'Your registration was sent. It will be active once approved by administration.',
+        active ? 'Vehicle Added' : 'Vehicle Submitted',
+        active
+          ? 'Your vehicle is registered and active.'
+          : 'Your registration was sent. It stays Pending Approval until administration verifies it.',
         [{ text: 'Great', onPress: () => router.back() }],
       );
     } catch (err: any) {
@@ -71,7 +78,7 @@ export default function AddVehicleScreen() {
       <KeyboardAvoidingView style={S.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           style={S.flex}
-          contentContainerStyle={S.content}
+          contentContainerStyle={[S.content, { paddingBottom: scrollBottomPadding }]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -146,7 +153,7 @@ export default function AddVehicleScreen() {
 
         </ScrollView>
 
-        <View style={[S.bottomBar, { paddingBottom: Math.max(insets.bottom, 14) }]}>
+        <View style={[S.bottomBar, { paddingBottom: sheetClearance }]}>
           <PrimaryButton
             title={submitting ? 'Submitting…' : 'Submit Registration'}
             onPress={handleSubmit}
@@ -183,3 +190,5 @@ const S = StyleSheet.create({
   infoStrong: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
   bottomBar: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 12, borderTopWidth: 1, borderTopColor: SgateColors.borderSoft, backgroundColor: SgateColors.card },
 });
+
+export default withResetOnBlur(AddVehicleScreen);

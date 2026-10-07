@@ -67,7 +67,7 @@ export default function WaitingGateCard({
                 pendingRequests.map((req, index) => (
                     <Animated.View
                         key={req.id}
-                        entering={FadeInDown.delay(index * 60).springify()}
+                        entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}
                         exiting={
                             exitDir[req.id] === 'right'
                                 ? FadeOutRight.duration(260)

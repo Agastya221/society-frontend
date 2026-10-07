@@ -1,3 +1,4 @@
+import { SgateColors } from '@/constants/Sgate-theme';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
     View,
@@ -14,8 +15,11 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import EmptyState from '@/components/ui/EmptyState';
 import { SgateFonts } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { AppAlert } from '@/components/ui/AppAlert';
 import {
     getFeaturedCities,
     getAllCities,
@@ -112,7 +116,7 @@ const CityListRow = React.memo(function CityListRow({
     return (
         <TouchableOpacity
             onPress={onPress}
-            activeOpacity={0.4}
+            activeOpacity={0.8}
             style={styles.listRow}
         >
             <Text style={styles.listRowText}>{city.name}</Text>
@@ -175,7 +179,21 @@ export default function SelectCityScreen() {
             router.replace(destination as any);
             return;
         }
-        router.back();
+        if (router.canGoBack()) {
+            router.back();
+            return;
+        }
+        // First-time KYC: select-city is the root of the flow (reached via
+        // replace), so there is nothing to go back to and /login would bounce
+        // straight back here while authenticated. Offer to sign out instead.
+        AppAlert.show(
+            'Exit setup?',
+            'You need to finish adding your flat to use S-Gate. Your progress is saved — sign out now and continue later?',
+            [
+                { text: 'STAY', style: 'cancel' },
+                { text: 'SIGN OUT', style: 'destructive', onPress: () => { useAuthStore.getState().logout(); } },
+            ]
+        );
     };
 
     const renderItem = useCallback(
@@ -220,7 +238,7 @@ export default function SelectCityScreen() {
                                 ref={inputRef}
                                 style={styles.searchInput}
                                 placeholder="Search city..."
-                                placeholderTextColor="#BBBBBB"
+                                placeholderTextColor={SgateColors.t3}
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
                                 autoCorrect={false}
@@ -263,10 +281,7 @@ export default function SelectCityScreen() {
                 contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <Feather name="map-pin" size={28} color="#D0D0D0" />
-                        <Text style={styles.emptyText}>No cities found</Text>
-                    </View>
+                    <EmptyState iconName="map-marker-outline" title="No cities found" />
                 }
             />
         </View>
@@ -298,9 +313,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 10,
     },
+    // Same rounded-square button as OnboardingHeader on the later steps.
     headerIconBtn: {
-        width: 40,
-        height: 40,
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: SgateColors.bg,
+        borderWidth: 1,
+        borderColor: SgateColors.borderSoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -388,14 +408,4 @@ const styles = StyleSheet.create({
     },
 
     // ── Empty ──
-    emptyWrap: {
-        paddingVertical: 60,
-        alignItems: 'center',
-        gap: 8,
-    },
-    emptyText: {
-        fontSize: 14,
-        fontFamily: SgateFonts.regular,
-        color: '#AAAAAA',
-    },
 });

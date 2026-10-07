@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, Modal, Text, TouchableOpacity, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useActiveFlatLabel } from '@/hooks/useActiveFlatLabel';
 import type { User } from '../../../../types/api';
 
 interface ProfileQrModalProps {
@@ -23,6 +24,7 @@ function formatGateId(id: string): string {
 }
 
 export function ProfileQrModal({ visible, onClose, user }: ProfileQrModalProps) {
+    const activeFlat = useActiveFlatLabel();
     if (!user) return null;
 
     const name = user.name || 'Resident';
@@ -30,7 +32,7 @@ export function ProfileQrModal({ visible, onClose, user }: ProfileQrModalProps) 
     const gateId = formatGateId(user.id);
     const hasPhoto = !!user.photoUrl;
 
-    const flatInfo = user.flat ? `${user.flat.number}, ${user.flat.block?.name || 'Block'}` : 'Flat Details Pending';
+    const flatInfo = activeFlat ?? 'Flat Details Pending';
     const roleMap: Record<string, string> = {
         OWNER: 'Residing Owner',
         TENANT: 'Residing Tenant',
@@ -45,7 +47,7 @@ export function ProfileQrModal({ visible, onClose, user }: ProfileQrModalProps) 
             transparent={true}
             onRequestClose={onClose}
         >
-            <View className="flex-1 bg-black/60 justify-center items-center px-6">
+            <View className="flex-1 bg-black/50 justify-center items-center px-6">
                 {/* Click outside to close */}
                 <TouchableOpacity 
                     className="absolute inset-0" 
@@ -59,7 +61,7 @@ export function ProfileQrModal({ visible, onClose, user }: ProfileQrModalProps) 
                     <TouchableOpacity 
                         className="absolute top-4 right-4 p-2 bg-white rounded-full z-10" 
                         onPress={onClose}
-                        activeOpacity={0.7}
+                        activeOpacity={0.8}
                     >
                         <Feather name="x" size={20} color="#374151" />
                     </TouchableOpacity>

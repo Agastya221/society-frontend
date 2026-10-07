@@ -4,7 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import * as SplashScreen from "expo-splash-screen";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Platform, Linking, AppState } from "react-native";
 import * as Location from "expo-location";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -13,6 +13,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "../global.css";
 import { useSoraFonts } from "../hooks/useFonts";
 import { useAuthStore } from "../store/useAuthStore";
+import { useOnboardingStore } from "../store/useOnboardingStore";
+import { useGateStore } from "../store/useGateStore";
 import api from "../services/api";
 import { AppAlertProvider, AppAlert } from "../components/ui/AppAlert";
 import { AppLoader } from "../components/ui/AppLoader";
@@ -45,6 +47,9 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { isAuthenticated, isLoading, role, requiresOnboarding, loadToken } = useAuthStore();
+  // "Add Flat/Villa/Office" walks an already-onboarded user through (onboarding);
+  // the role routing below must not bounce them out of it.
+  const addingMembership = useOnboardingStore(state => state.flowMode === 'addMembership');
   const [fontsLoaded, fontError] = useSoraFonts();
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(true);
@@ -197,17 +202,30 @@ export default function RootLayout() {
     return () => sub.remove();
   }, [isAuthenticated, role]);
 
-  // Navigate to approvals when a GATE_REQUEST notification is tapped
-  useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as Record<string, any>;
-      if (data?.type === 'GATE_REQUEST') {
+  // Latest route segments, read from inside notification listeners (whose
+  // closures would otherwise see stale segments).
+  const segmentsRef = useRef<string[]>(segments);
+  segmentsRef.current = segments;
+
+  // Open the screen a tapped notification points at. Skips the push when the
+  // user is already on that screen, so repeated taps don't stack duplicates.
+  const openNotificationTarget = useCallback(
+    (data: Record<string, any> | undefined) => {
+      if (!data || !isAuthenticated) return;
+      const current = segmentsRef.current;
+
+      if (data.type === 'GATE_REQUEST') {
         if (role === 'ADMIN') {
+          if (current[0] === '(admin)' && current[1] === 'approval-requests') return;
           router.push('/(admin)/approval-requests' as any);
-        } else {
+        } else if (role === 'RESIDENT' && !requiresOnboarding) {
+          if (current[0] === '(resident)' && current[1] === 'approvals') {
+            useGateStore.getState().fetchPendingRequests();
+            return;
+          }
           router.push('/(resident)/approvals' as any);
         }
-      } else if (data?.type === 'ONBOARDING_STATUS' && (role === 'ADMIN' || role === 'SUPER_ADMIN')) {
+      } else if (data.type === 'ONBOARDING_STATUS' && (role === 'ADMIN' || role === 'SUPER_ADMIN')) {
         router.push({
           pathname: '/(admin)/onboarding-requests',
           params: {
@@ -216,24 +234,64 @@ export default function RootLayout() {
           },
         } as any);
       }
-    });
-    return () => sub.remove();
-  }, [router, role]);
+    },
+    [router, role, isAuthenticated, requiresOnboarding]
+  );
 
-  // Auto-navigate to approvals when a GATE_REQUEST arrives in foreground
+  // Ids of notification responses already acted on, so the cold-start
+  // response and the live listener never both navigate for the same tap.
+  const handledResponseIds = useRef<Set<string>>(new Set());
+  const handleNotificationResponse = useCallback(
+    (response: Notifications.NotificationResponse) => {
+      // Not ready to navigate yet (auth still loading) — leave it unhandled so
+      // the cold-start effect below picks it up once routing has settled.
+      if (isLoading || !isAuthenticated) return;
+      const id = `${response.notification.request.identifier}:${response.actionIdentifier}`;
+      if (handledResponseIds.current.has(id)) return;
+      handledResponseIds.current.add(id);
+      Notifications.clearLastNotificationResponse();
+      openNotificationTarget(response.notification.request.content.data as Record<string, any>);
+    },
+    [openNotificationTarget, isLoading, isAuthenticated]
+  );
+
+  // Navigate when a notification is TAPPED while the app is running/backgrounded
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+    return () => sub.remove();
+  }, [handleNotificationResponse]);
+
+  // Cold start: a tap that launched the app from a killed state is not
+  // delivered to the listener above. Pick it up once auth + role routing have
+  // settled (we are inside the role's route group), then navigate.
+  const coldStartHandled = useRef(false);
+  useEffect(() => {
+    if (coldStartHandled.current) return;
+    if (isLoading || !onboardingChecked || !isAuthenticated || !role) return;
+    const expectedGroup =
+      role === 'ADMIN' ? '(admin)'
+        : role === 'SUPER_ADMIN' ? '(superadmin)'
+          : requiresOnboarding ? '(onboarding)' : '(resident)';
+    if (segments[0] !== expectedGroup) return;
+    coldStartHandled.current = true;
+    const response = Notifications.getLastNotificationResponse();
+    if (response) handleNotificationResponse(response);
+  }, [isLoading, onboardingChecked, isAuthenticated, role, requiresOnboarding, segments, handleNotificationResponse]);
+
+  // A GATE_REQUEST arriving in the foreground must NOT navigate — the user may
+  // be mid-form. The system banner still shows (see setNotificationHandler)
+  // and tapping it routes via the response listener; here we only refresh the
+  // pending list so Home's waiting card picks the request up immediately.
   useEffect(() => {
     const sub = Notifications.addNotificationReceivedListener((notification) => {
       const data = notification.request.content.data as Record<string, any>;
-      if (data?.type === 'GATE_REQUEST' && isAuthenticated) {
-        if (role === 'ADMIN') {
-          router.push('/(admin)/approval-requests' as any);
-        } else {
-          router.push('/(resident)/approvals' as any);
-        }
+      if (data?.type !== 'GATE_REQUEST' || !isAuthenticated) return;
+      if (role === 'ADMIN' || (role === 'RESIDENT' && !requiresOnboarding)) {
+        useGateStore.getState().fetchPendingRequests();
       }
     });
     return () => sub.remove();
-  }, [router, isAuthenticated, role]);
+  }, [isAuthenticated, role, requiresOnboarding]);
 
   // Check if user has seen the onboarding splash
   useEffect(() => {
@@ -259,6 +317,9 @@ export default function RootLayout() {
     const inResidentGroup = segments[0] === '(resident)';
     const inOnboarding = segments[0] === '(onboarding)';
     const inSuperAdmin = segments[0] === '(superadmin)';
+    // The add-flat flow, including its status screen: submitting resets the
+    // flow before that screen opens, so check the screen itself too.
+    const inAddFlatFlow = inOnboarding && (addingMembership || (segments as string[])[1] === 'add-flat-status');
 
     // First-time user landing on root → show onboarding splash
     // Only redirect from the root (segments[0] === undefined), NOT from /login.
@@ -284,7 +345,7 @@ export default function RootLayout() {
       }
 
       if (role === 'ADMIN') {
-        if (!inAdminGroup) router.replace('/(admin)');
+        if (!inAdminGroup && !inAddFlatFlow) router.replace('/(admin)');
         return;
       }
 
@@ -292,7 +353,7 @@ export default function RootLayout() {
         if (requiresOnboarding) {
           if (!inOnboarding) router.replace('/(onboarding)');
         } else {
-          if (!inResidentGroup) router.replace('/(resident)/home');
+          if (!inResidentGroup && !inAddFlatFlow) router.replace('/(resident)/home');
         }
         return;
       }
@@ -300,7 +361,7 @@ export default function RootLayout() {
       // Fallback for any other role
       if (inAuthGroup) router.replace('/(resident)/home');
     }
-  }, [isAuthenticated, isLoading, role, requiresOnboarding, segments, onboardingChecked, hasSeenOnboarding, router]);
+  }, [isAuthenticated, isLoading, role, requiresOnboarding, segments, onboardingChecked, hasSeenOnboarding, router, addingMembership]);
 
   // Hide splash screen once fonts are loaded and auth is resolved
   useEffect(() => {

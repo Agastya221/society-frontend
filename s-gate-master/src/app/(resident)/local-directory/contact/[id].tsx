@@ -4,11 +4,13 @@ import React, { useCallback, useState } from "react";
 import { Clipboard, Linking, ScrollView, Share, StyleSheet,
   Text, TouchableOpacity, View } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
+import { SgateLayout } from '@/constants/Sgate-theme';
 import { SgateColors, SgateFonts } from "../../../../constants/Sgate-theme";
 import { ScreenHeader } from "../../../../components/ui/ScreenHeader";
 import api from "../../../../services/api";
 import { AppAlert } from '../../../../components/ui/AppAlert';
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Contact {
   id: string;
@@ -75,7 +77,7 @@ function normalise(raw: any): Contact {
 }
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
-export default function ContactProfile() {
+function ContactProfile() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -161,21 +163,21 @@ export default function ContactProfile() {
 
         {/* QUICK ACTIONS ROW */}
         <View style={styles.quickActionsRow}>
-          <TouchableOpacity style={styles.quickActionBtn} onPress={handleCall} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.quickActionBtn} onPress={handleCall} activeOpacity={0.8}>
             <View style={[styles.quickActionIconWrap, { backgroundColor: SgateColors.green }]}>
               <Feather name="phone" size={20} color={SgateColors.card} />
             </View>
             <Text style={[styles.quickActionLabel, { color: SgateColors.green }]}>Call</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.quickActionBtn} onPress={handleShare} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.quickActionBtn} onPress={handleShare} activeOpacity={0.8}>
             <View style={styles.quickActionIconWrap}>
               <Feather name="share-2" size={20} color={SgateColors.blue} />
             </View>
             <Text style={[styles.quickActionLabel, { color: SgateColors.blue }]}>Share</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.quickActionBtn} onPress={handleLike} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.quickActionBtn} onPress={handleLike} activeOpacity={0.8}>
             <View style={styles.quickActionIconWrap}>
               <Feather name="thumbs-up" size={20} color={contact.isLikedByMe ? SgateColors.goldDeep : SgateColors.t2} />
             </View>
@@ -228,7 +230,7 @@ export default function ContactProfile() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: SgateColors.bg }, // iOS typical light gray background
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingVertical: 32, paddingHorizontal: 16 },
+  content: { paddingVertical: 32, paddingHorizontal: SgateLayout.screenGutter },
   
   headerSection: { alignItems: 'center', marginBottom: 28 },
   avatarCircle: { 
@@ -285,3 +287,5 @@ const styles = StyleSheet.create({
   
   emptyTitle: { fontSize: 16, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
 });
+
+export default withResetOnBlur(ContactProfile);

@@ -10,6 +10,8 @@ import {
     View,
 } from 'react-native';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import EmptyState from '@/components/ui/EmptyState';
+import { StatusPill, type StatusTone } from '@/components/ui/StatusPill';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
@@ -46,12 +48,13 @@ const TYPE_META: Record<string, { icon: React.ComponentProps<typeof MaterialIcon
     OTHER:         { icon: 'more-horiz',            bg: SgateColors.surface,  color: SgateColors.t2,       label: 'Other' },
 };
 
-const STATUS_CONFIG: Record<string, { bg: string; color: string; label: string }> = {
-    TRIGGERED:    { bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Active' },
-    ACTIVE:       { bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Active' },
-    ACKNOWLEDGED: { bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Acknowledged' },
-    RESOLVED:     { bg: SgateColors.greenBg,  color: '#065f46',            label: 'Resolved' },
-    FALSE_ALARM:  { bg: SgateColors.surface,  color: SgateColors.t3,       label: 'False Alarm' },
+/**
+ * An ACTIVE emergency is an alarm still going off, so it reads as danger here —
+ * the opposite of an ACTIVE pass. TRIGGERED is shown to residents as "Active".
+ */
+const STATUS_PROPS: Record<string, { tone?: StatusTone; label?: string }> = {
+    TRIGGERED: { tone: 'danger', label: 'Active' },
+    ACTIVE: { tone: 'danger' },
 };
 
 const FILTERS = [
@@ -114,14 +117,13 @@ export default function EmergencyListScreen() {
 
     const renderItem = ({ item, index }: { item: Emergency; index: number }) => {
         const meta   = TYPE_META[item.type]   ?? TYPE_META.OTHER;
-        const status = STATUS_CONFIG[item.status] ?? STATUS_CONFIG.TRIGGERED;
         const isActive = item.status === 'TRIGGERED' || item.status === 'ACTIVE';
 
         const senderName = item.sender?.name || item.reportedBy?.name || item.reportedBy?.firstName || 'Unknown';
         const flatName = item.sender?.flat || item.flat?.flatNumber || item.flat?.number;
 
         return (
-            <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}>
                 <View style={[styles.card, isActive && styles.cardActive]}>
                     {/* Top row */}
                     <View style={styles.cardTop}>
@@ -131,9 +133,7 @@ export default function EmergencyListScreen() {
                         <View style={styles.cardInfo}>
                             <View style={styles.cardTitleRow}>
                                 <Text style={styles.typeLabel}>{meta.label}</Text>
-                                <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-                                    <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
-                                </View>
+                                <StatusPill status={item.status} size="sm" {...(STATUS_PROPS[item.status] ?? {})} />
                             </View>
                             {/* Reporter */}
                             <Text style={styles.senderText} numberOfLines={1}>
@@ -184,7 +184,7 @@ export default function EmergencyListScreen() {
                     <TouchableOpacity
                         style={styles.heroBtn}
                         onPress={() => router.push('/(resident)/emergency/create' as any)}
-                        activeOpacity={0.85}
+                        activeOpacity={0.8}
                     >
                         <View style={styles.heroBtnIcon}>
                             <MaterialIcons name="warning" size={18} color={SgateColors.red} />
@@ -221,7 +221,7 @@ export default function EmergencyListScreen() {
                             key={f.key}
                             style={[styles.filterTab, filter === f.key && styles.filterTabActive]}
                             onPress={() => setFilter(f.key)}
-                            activeOpacity={0.75}
+                            activeOpacity={0.8}
                         >
                             <Text style={[styles.filterText, filter === f.key && styles.filterTextActive]}>
                                 {f.label}
@@ -244,11 +244,7 @@ export default function EmergencyListScreen() {
                     showsVerticalScrollIndicator={false}
                     ListHeaderComponent={ListHeader}
                     ListEmptyComponent={
-                        <View style={styles.emptyWrap}>
-                            <MaterialIcons name="shield" size={56} color={SgateColors.t4} />
-                            <Text style={styles.emptyTitle}>No emergencies</Text>
-                            <Text style={styles.emptySub}>Society is safe.</Text>
-                        </View>
+                        <EmptyState iconName="shield-outline" title="No emergencies" description="Society is safe." />
                     }
                     refreshControl={
                         <RefreshControl
@@ -341,8 +337,6 @@ const styles = StyleSheet.create({
     cardInfo: { flex: 1 },
     cardTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
     typeLabel: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
-    statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-    statusText: { fontSize: 11, fontFamily: SgateFonts.bold },
     senderText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2, marginBottom: 2 },
     timeText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
 
@@ -362,7 +356,4 @@ const styles = StyleSheet.create({
     resolveNoteLabel: { fontSize: 11, fontFamily: SgateFonts.bold, color: '#065f46', marginBottom: 2 },
     resolveNoteText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t2 },
 
-    emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, opacity: 0.7 },
-    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 12, marginBottom: 4 },
-    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 });

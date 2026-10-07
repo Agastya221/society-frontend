@@ -1,12 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 
 interface Amenity {
@@ -55,11 +56,11 @@ function AmenityCard({ item, index }: { item: Amenity; index: number }) {
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(index * 60).springify()}
+      entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}
       style={S.cardWrapper}
     >
       <TouchableOpacity
-        activeOpacity={0.75}
+        activeOpacity={0.8}
         style={S.card}
         onPress={() => router.push(`/(resident)/amenities/${item.id}` as any)}
       >
@@ -67,7 +68,7 @@ function AmenityCard({ item, index }: { item: Amenity; index: number }) {
           <MaterialCommunityIcons name={item.icon as any} size={26} color={item.colorIcon} />
         </View>
 
-        <Text style={S.cardName} numberOfLines={1}>
+        <Text style={S.cardName} numberOfLines={2}>
           {item.name}
         </Text>
 
@@ -85,6 +86,7 @@ function AmenityCard({ item, index }: { item: Amenity; index: number }) {
 }
 
 export default function AmenitiesScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -106,7 +108,7 @@ export default function AmenitiesScreen() {
       onPress={() => router.push('/(resident)/amenities/my-bookings' as any)}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       style={S.myBookingsBtn}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
       <Feather name="calendar" size={14} color="#111827" />
       <Text style={S.myBookingsBtnText}>My Bookings</Text>
@@ -127,7 +129,7 @@ export default function AmenitiesScreen() {
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={S.columnWrapper}
-        contentContainerStyle={S.listContent}
+        contentContainerStyle={[S.listContent, { paddingBottom: scrollBottomPadding }]}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={<View style={{ flex: 1, alignItems: 'center', paddingTop: 60 }}><Feather name="home" size={32} color={SgateColors.t4} /><Text style={{ color: SgateColors.t3, marginTop: 12, fontFamily: SgateFonts.medium }}>No amenities available</Text></View>}
         renderItem={({ item, index }) => <AmenityCard item={item} index={index} />}
@@ -140,7 +142,7 @@ const S = StyleSheet.create({
 
   // Grid
   columnWrapper: {
-    paddingHorizontal: 16, // Better edge breathing room
+    paddingHorizontal: SgateLayout.screenGutter, // Better edge breathing room
     gap: 16, // More breathing room between cards
   },
   listContent: {
@@ -175,6 +177,9 @@ const S = StyleSheet.create({
   },
   cardName: {
     fontSize: 15,
+    lineHeight: 20,
+    // Room for two lines on every card, so cards in a row stay the same height.
+    minHeight: 40,
     fontFamily: SgateFonts.bold,
     color: SgateColors.t1, // Restored theme text color
     marginTop: 16,

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../../../components/ui/Card';
@@ -152,11 +153,11 @@ export default function FamilyScreen() {
                     refreshing={refreshing}
                     onRefresh={onRefresh}
                     ListEmptyComponent={
-                        <View style={S.empty}>
-                            <View style={S.emptyIcon}><Ionicons name="people-outline" size={30} color={SgateColors.t3} /></View>
-                            <Text style={S.emptyTitle}>No family members yet</Text>
-                            <Text style={S.emptyText}>Invite someone so they can receive updates and help approve gate entries.</Text>
-                        </View>
+                        <EmptyState
+                            iconName="account-group-outline"
+                            title="No family members yet"
+                            description="Invite someone so they can receive updates and help approve gate entries."
+                        />
                     }
                     ListFooterComponent={
                         family.length > 0 ? (
@@ -185,7 +186,7 @@ export default function FamilyScreen() {
             >
                 <KeyboardAvoidingView style={S.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
                     <Pressable style={StyleSheet.absoluteFill} onPress={() => setInviteModalVisible(false)} />
-                    <SafeBottomSheetSurface style={S.inviteSheet} showHandle minimumBottomPadding={20}>
+                    <SafeBottomSheetSurface style={S.inviteSheet} showHandle>
                         <View style={S.modalHeader}>
                             <View style={S.modalTitleWrap}>
                                 <Text style={S.modalTitle}>Invite Family Member</Text>
@@ -246,10 +247,6 @@ const S = StyleSheet.create({
     activeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 3, borderRadius: SgateRadius.full, backgroundColor: SgateColors.greenBg },
     activeDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: SgateColors.green },
     activeText: { fontSize: 9, fontFamily: SgateFonts.bold, color: SgateColors.green },
-    empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 60, paddingHorizontal: 28 },
-    emptyIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-    emptyTitle: { fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 6 },
-    emptyText: { fontSize: 13, lineHeight: 19, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center' },
     infoCard: { marginTop: 4, padding: 16, borderRadius: SgateRadius.md, backgroundColor: SgateColors.goldPale, borderWidth: 1, borderColor: '#FFE8A3' },
     infoHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
     infoTitle: { fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.t1 },

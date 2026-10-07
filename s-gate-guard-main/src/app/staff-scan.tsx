@@ -3,7 +3,7 @@ import { GuardColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -14,35 +14,45 @@ import {
     View,
 } from 'react-native';
 
+const cleanStaffType = (value: string) => value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
 export default function StaffScanScreen() {
     const router = useRouter();
     const [staffIdInput, setStaffIdInput] = useState('');
     const [scanning, setScanning] = useState(false);
     const [staffData, setStaffData] = useState<any>(null);
+    const busyRef = useRef(false);
 
     const handleCheckIn = async () => {
-        if (!staffIdInput.trim() || scanning) return;
+        if (!staffIdInput.trim() || busyRef.current) return;
+        busyRef.current = true; // a double tap would toggle check-in straight back to check-out
         setScanning(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         try {
-            const res = await api.post('/api/v1/staff/domestic/check-in', {
-                staffId: staffIdInput.trim()
-            });
+            // The pass code is the staff member's QR token, so a typed code goes through the
+            // same /guard/scan endpoint as the camera (toggles check-in / check-out).
+            // /staff/domestic/check-in expects domesticStaffId + societyId and 500s on { staffId }.
+            const code = staffIdInput.trim().toUpperCase();
+            const res = await api.post('/api/v1/guard/scan', { qrToken: code });
+            const scan = res.data?.data;
+            const pass = scan?.pass ?? {};
+            if (scan?.type !== 'DOMESTIC_STAFF') {
+                throw new Error('This code is not a staff pass. Use Scan pass for visitor QR codes.');
+            }
 
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            
-            const attendance = res.data?.data;
-            if (attendance) {
-                setStaffData({
-                    name: attendance.staffName,
-                    id: attendance.attendanceId || staffIdInput.trim(),
-                    department: 'Domestic Staff',
-                    shift: new Date(attendance.checkInTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-                    status: attendance.status,
-                });
-            }
-            setStaffIdInput(''); // Clear input after successful check-in
+            const checkedOut = pass.attendanceAction === 'CHECKED_OUT';
+            const at = checkedOut ? pass.checkOutTime : pass.checkInTime;
+            setStaffData({
+                name: pass.name ?? 'Staff member',
+                id: code,
+                department: pass.staffType ? cleanStaffType(pass.staffType) : 'Domestic Staff',
+                actionLabel: checkedOut ? 'Checked-out' : 'Checked-in',
+                shift: at ? new Date(at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—',
+                status: checkedOut ? 'CHECKED OUT' : 'CHECKED IN',
+            });
+            setStaffIdInput(''); // Clear input after a successful scan
 
         } catch (err: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -51,6 +61,7 @@ export default function StaffScanScreen() {
                 err?.response?.data?.message || err?.message || 'Could not verify staff check-in'
             );
         } finally {
+            busyRef.current = false;
             setScanning(false);
         }
     };
@@ -62,7 +73,7 @@ export default function StaffScanScreen() {
             <View style={styles.header}>
                 <Text style={styles.eyebrow}>STAFF ACCESS</Text>
                 <Text style={styles.headerTitle}>Mark attendance</Text>
-                <Text style={styles.headerSubtitle}>Scan the helper pass or enter the staff ID.</Text>
+                <Text style={styles.headerSubtitle}>Scan the helper pass or type the code shown under it.</Text>
             </View>
 
             {/* QR Scan shortcut */}
@@ -79,10 +90,10 @@ export default function StaffScanScreen() {
 
             {/* Manual Entry Form */}
             <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>STAFF ID</Text>
+                <Text style={styles.inputLabel}>PASS CODE</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder="Enter printed staff ID"
+                    placeholder="Code shown under the staff QR"
                     placeholderTextColor="#9CA3AF"
                     value={staffIdInput}
                     onChangeText={(t) => { setStaffIdInput(t); setStaffData(null); }}
@@ -99,12 +110,12 @@ export default function StaffScanScreen() {
                     ]}
                 >
                     {scanning ? (
-                        <ActivityIndicator size="small" color="#fff" />
+                        <ActivityIndicator size="small" color={GuardColors.t3} />
                     ) : (
-                        <Ionicons name="checkmark-done" size={21} color={GuardColors.black} />
+                        <Ionicons name="checkmark-done" size={21} color={staffIdInput.trim() ? GuardColors.black : '#9CA3AF'} />
                     )}
                     <Text style={[styles.scanButtonText, (!staffIdInput.trim() || scanning) && styles.scanButtonTextDisabled]}>
-                        {scanning ? 'Verifying...' : 'Check In Staff'}
+                        {scanning ? 'Verifying...' : 'Check In / Out'}
                     </Text>
                 </Pressable>
             </View>
@@ -118,7 +129,7 @@ export default function StaffScanScreen() {
                         </View>
                         <View style={styles.staffInfo}>
                             <Text style={styles.staffName}>{staffData.name}</Text>
-                            <Text style={styles.staffId}>ID: {staffData.id.slice(0, 8)}...</Text>
+                            <Text style={styles.staffId}>Pass {staffData.id}</Text>
                         </View>
                         <View style={styles.statusBadge}>
                             <View style={styles.statusDot} />
@@ -133,7 +144,7 @@ export default function StaffScanScreen() {
                         </View>
                         <View style={styles.detailRow}>
                             <Ionicons name="time-outline" size={18} color="#6B7280" />
-                            <Text style={styles.detailText}>Checked-in at {staffData.shift}</Text>
+                            <Text style={styles.detailText}>{staffData.actionLabel} at {staffData.shift}</Text>
                         </View>
                     </View>
                 </View>

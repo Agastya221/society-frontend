@@ -198,8 +198,9 @@ const styles = StyleSheet.create({
     sectionHeading: { marginBottom: 16 },
     sectionTitle: { fontSize: 19, fontWeight: '900', color: GuardColors.t1, marginBottom: 4 },
     sectionSubtitle: { fontSize: 13, lineHeight: 18, fontWeight: '600', color: GuardColors.t2 },
+    // 3 cards = screen - 2x20 gutter - 2x10 gap
     emergencyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-    emergencyCard: { width: (SCREEN_WIDTH - 72) / 3, minHeight: 104, backgroundColor: GuardColors.card, borderRadius: 18, paddingHorizontal: 6, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: GuardColors.border },
+    emergencyCard: { width: Math.floor((SCREEN_WIDTH - 60) / 3), minHeight: 104, backgroundColor: GuardColors.card, borderRadius: 18, paddingHorizontal: 6, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: GuardColors.border },
     emergencyCardPressed: { transform: [{ scale: 0.97 }], opacity: 0.9 },
     emergencyCardDisabled: { opacity: 0.8, borderColor: '#E5E7EB', backgroundColor: '#F3F4F6' },
     

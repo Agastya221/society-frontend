@@ -1,12 +1,14 @@
 import React, { useCallback, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 
 // Category config — keys match the full PostCategory enum the backend MUST support
@@ -82,8 +84,8 @@ function normalisePost(raw: any): CommunityPost {
 function PostCard({ item, index, onPress, onLike }: { item: CommunityPost; index: number; onPress: () => void; onLike: () => void }) {
   const cfg = CATEGORY_CFG[item.category] ?? CATEGORY_CFG.GENERAL;
   return (
-    <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-      <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
+      <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
         <View style={styles.cardTopRow}>
           {item.isPinned && <Feather name="bookmark" size={14} color={SgateColors.goldDeep} style={styles.pinIcon} />}
           <View style={[styles.categoryBadge, { backgroundColor: cfg.bg }]}>
@@ -120,6 +122,7 @@ function PostCard({ item, index, onPress, onLike }: { item: CommunityPost; index
 
 // ─── Screen ─────────────────────────────────────────────────────────────────
 export default function CommunicationScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
@@ -169,16 +172,17 @@ export default function CommunicationScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Community</Text>
-        <TouchableOpacity onPress={() => router.push('/(resident)/communication/create' as any)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Feather name="edit" size={20} color={SgateColors.t1} />
-        </TouchableOpacity>
-      </View>
+    <View style={styles.safeArea}>
+      <ScreenHeader
+        title="Community"
+        rightAction={(
+          <HeaderIconButton
+            icon="edit"
+            accessibilityLabel="New post"
+            onPress={() => router.push('/(resident)/communication/create' as any)}
+          />
+        )}
+      />
 
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContent}>
@@ -189,7 +193,7 @@ export default function CommunicationScreen() {
               <TouchableOpacity key={cat}
                 style={[styles.chip, isActive ? styles.chipActive : styles.chipInactive]}
                 onPress={() => setActiveCategory(cat)}
-                activeOpacity={0.75}
+                activeOpacity={0.8}
               >
                 <Text style={[styles.chipText, isActive ? styles.chipTextActive : styles.chipTextInactive]}>{label}</Text>
               </TouchableOpacity>
@@ -205,7 +209,7 @@ export default function CommunicationScreen() {
           data={posts}
           keyExtractor={item => item.id}
           style={styles.list}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: scrollBottomPadding }]}
           showsVerticalScrollIndicator={false}
           renderItem={({ item, index }) => (
             <PostCard
@@ -216,24 +220,19 @@ export default function CommunicationScreen() {
             />
           )}
           ListEmptyComponent={
-            <View style={styles.empty}>
-              <Feather name="message-square" size={44} color={SgateColors.t4} />
-              <Text style={styles.emptyText}>No posts yet. Be the first!</Text>
-            </View>
+            <EmptyState iconName="message-outline" title="No posts yet. Be the first!" />
           }
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: SgateColors.card },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: 16, paddingVertical: 12 },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   filterContainer: { backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  filterContent: { paddingHorizontal: 16, paddingVertical: 8 },
+  filterContent: { paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 8 },
   chip: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, marginRight: 8 },
   chipActive: { backgroundColor: SgateColors.gold },
   chipInactive: { backgroundColor: SgateColors.surface },
@@ -241,7 +240,7 @@ const styles = StyleSheet.create({
   chipTextActive: { color: SgateColors.t1 },
   chipTextInactive: { color: SgateColors.t2 },
   list: { flex: 1, backgroundColor: SgateColors.bg },
-  listContent: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
+  listContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 12, paddingBottom: 24 },
   card: { backgroundColor: SgateColors.card, borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: SgateColors.borderSoft },
   cardTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   pinIcon: { marginRight: 6 },
@@ -260,6 +259,4 @@ const styles = StyleSheet.create({
   statItem: { flexDirection: 'row', alignItems: 'center' },
   statText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
   likedText: { color: SgateColors.red },
-  empty: { alignItems: 'center', paddingTop: 60, gap: 12 },
-  emptyText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
 });

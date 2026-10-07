@@ -12,7 +12,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 
 function getParam(value: string | string[] | undefined, fallback = '') {
     if (Array.isArray(value)) return value[0] ?? fallback;
@@ -81,7 +81,7 @@ export default function AddFlatStatusScreen() {
             </View>
 
             <View style={[S.bottomBar, { paddingBottom: insets.bottom + 14 }]}>
-                <TouchableOpacity style={S.primaryBtn} onPress={goBack} activeOpacity={0.82}>
+                <TouchableOpacity style={S.primaryBtn} onPress={goBack} activeOpacity={0.8}>
                     <Text style={S.primaryBtnText}>Back to My Flats</Text>
                 </TouchableOpacity>
             </View>
@@ -108,7 +108,7 @@ const S = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: '#FFFFFF',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingBottom: 16,
         borderBottomWidth: 1,
         borderBottomColor: SgateColors.borderSoft,
@@ -131,7 +131,7 @@ const S = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 34,
     },
     hero: {

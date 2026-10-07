@@ -1,16 +1,19 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
 Animated, Dimensions, FlatList,
     Modal, PanResponder, Pressable, ScrollView, StyleSheet,
     Text, TouchableOpacity, View,
 } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSheetBottomClearance } from '@/hooks/useSheetBottomClearance';
 import api from '../../../services/api';
-import { SgateColors, SgateFonts, SgateRadius } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateRadius } from '../../../constants/Sgate-theme';
 
 const { height: SH } = Dimensions.get('window');
 
@@ -20,6 +23,8 @@ interface Notice {
     content: string;
     type: 'GENERAL' | 'ALERT' | 'EVENT' | 'MAINTENANCE';
     isPinned: boolean;
+    /** Urgent by type (urgent/emergency) or by priority (high/critical). */
+    isUrgent: boolean;
     createdAt: string;
     expiresAt?: string;
     author?: string;
@@ -53,6 +58,7 @@ function normaliseNotice(raw: any): Notice {
         title:     raw.title ?? '',
         content:   raw.content ?? raw.description ?? '',
         type:      TYPE_MAP[raw.type] ?? 'GENERAL',
+        isUrgent:  TYPE_MAP[raw.type] === 'ALERT' || raw.priority === 'HIGH' || raw.priority === 'CRITICAL',
         isPinned:  raw.isPinned ?? false,
         createdAt: raw.publishAt ?? raw.createdAt ?? new Date().toISOString(),
         expiresAt: raw.expiresAt ?? undefined,
@@ -65,18 +71,21 @@ function normaliseNotice(raw: any): Notice {
 // ── Notice Detail Bottom Sheet ─────────────────────────────────────────────
 function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () => void }) {
     const insets = useSafeAreaInsets();
+    const sheetClearance = useSheetBottomClearance();
     const cfg = TYPE_CFG[notice.type];
 
     const sheetY    = useRef(new Animated.Value(SH)).current;
     const backdropO = useRef(new Animated.Value(0)).current;
     const scrollY   = useRef(0);
 
-    useCallback(() => {
+    // Open once on mount. (Starting it during render restarted the spring on
+    // every re-render, snapping the sheet back while it was dragged or closing.)
+    useEffect(() => {
         Animated.parallel([
             Animated.spring(sheetY, { toValue: 0, damping: 24, stiffness: 220, useNativeDriver: true }),
             Animated.timing(backdropO, { toValue: 1, duration: 220, useNativeDriver: true }),
         ]).start();
-    }, [])();
+    }, [backdropO, sheetY]);
 
     const close = () => {
         Animated.parallel([
@@ -110,7 +119,7 @@ function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () =>
             </Animated.View>
 
             <Animated.View
-                style={[M.sheet, { transform: [{ translateY: sheetY }], paddingBottom: insets.bottom + 16 }]}
+                style={[M.sheet, { transform: [{ translateY: sheetY }], paddingBottom: sheetClearance }]}
                 {...panResponder.panHandlers}
             >
                 <View style={[M.typeBanner, { backgroundColor: cfg.bg, borderBottomColor: cfg.border }]}>
@@ -175,6 +184,7 @@ function NoticeDetailSheet({ notice, onClose }: { notice: Notice; onClose: () =>
 }
 
 export default function NoticesScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
     const router = useRouter();
 
     const [notices, setNotices]       = useState<Notice[]>([]);
@@ -222,6 +232,7 @@ export default function NoticesScreen() {
     const filteredNotices = notices.filter(n => {
         if (filter === 'ALL') return true;
         if (filter === 'PINNED') return n.isPinned;
+        if (filter === 'ALERT') return n.isUrgent;
         return n.type === filter;
     });
 
@@ -238,13 +249,13 @@ export default function NoticesScreen() {
         
         return (
             <TouchableOpacity
-                activeOpacity={0.7}
+                activeOpacity={0.8}
                 onPress={() => setSelected(item)}
                 style={S.card}
             >
                 <View style={S.cardHeader}>
                     <View style={S.headerLeft}>
-                        {item.isPinned && <Feather name="paperclip" size={12} color={SgateColors.t2} style={S.pinIcon} />}
+                        {item.isPinned && <Feather name="bookmark" size={12} color={SgateColors.t2} style={S.pinIcon} />}
                         <View style={[S.tagBadge, { backgroundColor: cfg.bg }]}>
                             <Text style={[S.tagText, { color: cfg.text }]}>{cfg.label}</Text>
                         </View>
@@ -279,7 +290,7 @@ export default function NoticesScreen() {
                             const filterLabel = tab === 'ALL' ? 'All' : tab === 'PINNED' ? 'Pinned' : tab === 'ALERT' ? 'Urgent' : tab === 'EVENT' ? 'Events' : tab === 'MAINTENANCE' ? 'Maintenance' : 'General';
                             const active = filter === tab;
                             return (
-                                <TouchableOpacity key={tab} style={[S.chip, active && S.chipActive]} onPress={() => setFilter(tab)} activeOpacity={0.7}>
+                                <TouchableOpacity key={tab} style={[S.chip, active && S.chipActive]} onPress={() => setFilter(tab)} activeOpacity={0.8}>
                                     <Text style={[S.chipText, active && S.chipTextActive]}>{filterLabel}</Text>
                                 </TouchableOpacity>
                             );
@@ -299,17 +310,15 @@ export default function NoticesScreen() {
                     keyExtractor={item => item.id}
                     refreshing={refreshing}
                     onRefresh={onRefresh}
-                    contentContainerStyle={S.listContent}
+                    contentContainerStyle={[S.listContent, { paddingBottom: scrollBottomPadding }]}
                     showsVerticalScrollIndicator={false}
                     renderItem={renderNoticeCard}
                     ListEmptyComponent={
-                        <View style={S.empty}>
-                            <View style={S.emptyIconContainer}>
-                                <Feather name="bell" size={32} color={SgateColors.t3} />
-                            </View>
-                            <Text style={S.emptyTitle}>No notices yet</Text>
-                            <Text style={S.emptySub}>You’re all caught up. Check back later for updates.</Text>
-                        </View>
+                        <EmptyState
+                            iconName="bell-outline"
+                            title="No notices yet"
+                            description="You’re all caught up. Check back later for updates."
+                        />
                     }
                 />
             )}
@@ -338,7 +347,7 @@ const S = StyleSheet.create({
     chipTextActive: { color: SgateColors.t1, fontFamily: SgateFonts.bold },
 
     // Lists
-    listContent: { paddingHorizontal: 20, paddingBottom: 40 },
+    listContent: { paddingHorizontal: SgateLayout.screenGutter, paddingBottom: 40 },
 
     // Notice Card
     card: {
@@ -365,17 +374,13 @@ const S = StyleSheet.create({
     readMoreBox: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     readMoreText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.t2 },
 
-    empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 40 },
-    emptyIconContainer: { width: 64, height: 64, borderRadius: 32, backgroundColor: SgateColors.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, textAlign: 'center', marginBottom: 4 },
-    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center' },
 });
 
 // ── Detail Sheet Styles ────────────────────────────────────────────────────
 const M = StyleSheet.create({
     backdrop: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.45)',
+        backgroundColor: 'rgba(0,0,0,0.48)',
     },
     sheet: {
         position: 'absolute', left: 0, right: 0, bottom: 0,
@@ -413,7 +418,7 @@ const M = StyleSheet.create({
     pinnedBadgeText: { fontSize: 9, fontFamily: SgateFonts.bold, color: SgateColors.gold, letterSpacing: 0.5 },
 
     scroll: { flex: 1 },
-    scrollContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 32 },
+    scrollContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 20, paddingBottom: 32 },
 
     title: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, lineHeight: 28, marginBottom: 16 },
 

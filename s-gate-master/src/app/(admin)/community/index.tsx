@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -12,12 +12,14 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -90,6 +92,7 @@ function normalisePost(raw: any): CommunityPost {
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 export default function AdminCommunityScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
     const router = useRouter();
 
     const [posts, setPosts]               = useState<CommunityPost[]>([]);
@@ -124,7 +127,14 @@ export default function AdminCommunityScreen() {
         }
     };
 
-    useFocusEffect(useCallback(() => { setLoading(true); fetchPosts(); }, [activeCategory]));
+    // Spinner only when the list itself changes (first load or a new category);
+    // coming back to the screen refreshes in place.
+    const loadedCategory = useRef<string | null>(null);
+    useFocusEffect(useCallback(() => {
+        if (loadedCategory.current !== activeCategory) setLoading(true);
+        loadedCategory.current = activeCategory;
+        fetchPosts();
+    }, [activeCategory]));
     const onRefresh = () => { setRefreshing(true); fetchPosts(true); };
 
     const handlePin = async (post: CommunityPost) => {
@@ -194,7 +204,7 @@ export default function AdminCommunityScreen() {
     const renderItem = ({ item, index }: { item: CommunityPost; index: number }) => {
         const cfg = CATEGORY_CFG[item.category] ?? CATEGORY_CFG.GENERAL;
         return (
-            <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                 <View style={styles.card}>
                     <View style={styles.cardTopRow}>
                         {item.isPinned && (
@@ -261,7 +271,7 @@ export default function AdminCommunityScreen() {
                                 key={cat}
                                 style={[styles.filterTab, isActive && styles.filterTabActive]}
                                 onPress={() => setActiveCategory(cat)}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                             >
                                 <Text style={[styles.filterText, isActive && styles.filterTextActive]}>
                                     {label}
@@ -282,15 +292,12 @@ export default function AdminCommunityScreen() {
                     data={posts}
                     keyExtractor={(item) => item.id}
                     renderItem={renderItem}
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[styles.listContent, { paddingBottom: scrollBottomPadding }]}
                     showsVerticalScrollIndicator={false}
                     refreshing={refreshing}
                     onRefresh={onRefresh}
                     ListEmptyComponent={
-                        <View style={styles.empty}>
-                            <MaterialCommunityIcons name="message-outline" size={44} color={SgateColors.t4} />
-                            <Text style={styles.emptyText}>No posts yet</Text>
-                        </View>
+                        <EmptyState iconName="message-outline" title="No posts yet" />
                     }
                 />
             )}
@@ -309,7 +316,7 @@ export default function AdminCommunityScreen() {
                     activeOpacity={1}
                     onPress={() => setMenuTarget(null)}
                 >
-                    <SafeBottomSheetSurface style={styles.menuSheet} showHandle minimumBottomPadding={20}>
+                    <SafeBottomSheetSurface showHandle>
                         <Text style={styles.menuPostTitle} numberOfLines={1}>
                             {menuTarget?.title}
                         </Text>
@@ -427,13 +434,13 @@ const styles = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, marginBottom: 16 },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
     createBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center' },
 
-    filterRow: { paddingHorizontal: 20, gap: 8 },
+    filterRow: { paddingHorizontal: SgateLayout.screenGutter, gap: 8 },
     filterTab: {
         paddingHorizontal: 14,
         paddingVertical: 8,
@@ -444,7 +451,7 @@ const styles = StyleSheet.create({
     filterText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
     filterTextActive: { color: SgateColors.t1 },
 
-    listContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 32, backgroundColor: SgateColors.bg },
+    listContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 12, paddingBottom: 32, backgroundColor: SgateColors.bg },
 
     card: {
         backgroundColor: SgateColors.card,
@@ -472,14 +479,8 @@ const styles = StyleSheet.create({
     statItem: { flexDirection: 'row', alignItems: 'center' },
     statText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 
-    empty: { alignItems: 'center', paddingTop: 60, gap: 12 },
-    emptyText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
-
     // 3-dot menu
-    menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-    menuSheet: {
-        paddingHorizontal: 20,
-    },
+    menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
     menuPostTitle: {
         fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t3,
         marginBottom: 16,

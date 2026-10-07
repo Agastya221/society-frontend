@@ -1,13 +1,24 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect } from 'react';
+import { BackHandler, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SgateColors, SgateFonts, SgateRadius } from '@/constants/Sgate-theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WorkspaceSwitchButton } from '@/components/ui/WorkspaceSwitchButton';
 
 export function WorkspaceOverlay() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // This page sits on its own in the admin tabs; Android back would otherwise
+  // leave the app instead of returning to the admin home.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      router.replace('/(admin)');
+      return true;
+    });
+    return () => sub.remove();
+  }, [router]);
 
   return (
     <View style={[styles.overlay, { paddingTop: insets.top }]}>
@@ -17,8 +28,11 @@ export function WorkspaceOverlay() {
         </View>
         <Text style={styles.title}>Switch Workspace</Text>
         <Text style={styles.description}>
-          This feature is only available in the Resident Workspace. Please switch workspaces using the selector on the Home or Profile screen.
+          This is part of your Resident Workspace. Switch to it in one tap, or go back to admin.
         </Text>
+        <View style={styles.switchRow}>
+          <WorkspaceSwitchButton variant="profile" />
+        </View>
         <TouchableOpacity style={styles.button} onPress={() => router.replace('/(admin)')}>
           <Text style={styles.buttonText}>Back to Admin Home</Text>
         </TouchableOpacity>
@@ -28,6 +42,10 @@ export function WorkspaceOverlay() {
 }
 
 const styles = StyleSheet.create({
+  switchRow: {
+    alignSelf: 'stretch',
+    marginBottom: 12,
+  },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: SgateColors.bg,

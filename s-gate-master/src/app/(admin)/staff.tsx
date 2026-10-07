@@ -1,6 +1,7 @@
 import React from 'react';
 import SharedStaffScreen from '@/components/staff/SharedStaffScreen';
 
-export default function AdminStaffTab() {
-    return <SharedStaffScreen isTab={true} />;
+// Opened from More Tools (not one of the admin's visible tabs), so it keeps its back button.
+export default function AdminStaffScreen() {
+    return <SharedStaffScreen />;
 }

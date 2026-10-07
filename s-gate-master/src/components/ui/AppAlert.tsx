@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../constants/Sgate-theme';
 
 interface AlertButton {
     text: string;
@@ -91,7 +91,7 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
     const getAlertIcon = () => {
         const t = state.title.toLowerCase();
         if (t.includes('error') || t.includes('failed')) return { name: 'alert-circle' as const, color: SgateColors.red };
-        if (t.includes('success')) return { name: 'check-circle' as const, color: SgateColors.green };
+        if (/success|added|saved|created|confirmed|approved|submitted|updated|removed/.test(t)) return { name: 'check-circle' as const, color: SgateColors.green };
         if (t.includes('permission') || t.includes('required')) return { name: 'shield' as const, color: SgateColors.gold };
         if (t.includes('warning') || t.includes('large')) return { name: 'alert-triangle' as const, color: SgateColors.gold };
         return { name: 'info' as const, color: SgateColors.gold };
@@ -107,7 +107,12 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
                 visible={state.visible}
                 animationType="fade"
                 onRequestClose={() => {
-                    if (isCancelable) hide();
+                    if (!isCancelable) return;
+                    // Android back answers the alert the way Cancel (or a lone OK) would,
+                    // so flows like "Submitted → go back" still run their follow-up.
+                    const dismissButton = state.buttons.find(b => b.style === 'cancel')
+                        ?? (state.buttons.length === 1 ? state.buttons[0] : undefined);
+                    handleButtonPress(dismissButton?.onPress);
                 }}
             >
                 <View style={styles.overlay}>
@@ -147,9 +152,9 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
                                             state.buttons.length <= 2 && index > 0 && { marginLeft: 10 },
                                         ]}
                                         onPress={() => handleButtonPress(btn.onPress)}
-                                        activeOpacity={0.7}
+                                        activeOpacity={0.8}
                                     >
-                                        <Text style={[
+                                        <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={[
                                             styles.buttonText,
                                             isPrimary && styles.primaryButtonText,
                                             isDestructive && styles.destructiveButtonText,
@@ -201,7 +206,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     content: {
-        paddingHorizontal: 24,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingBottom: 24,
         alignItems: 'center',
     },
@@ -252,6 +257,8 @@ const styles = StyleSheet.create({
     buttonText: {
         fontSize: 15,
         fontFamily: SgateFonts.bold,
+        textAlign: 'center',
+        paddingHorizontal: 8,
     },
     primaryButtonText: {
         color: SgateColors.t1,

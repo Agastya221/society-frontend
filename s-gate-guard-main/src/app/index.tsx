@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SHIFT_LABEL: Record<string, string> = { MORNING: 'Morning shift', EVENING: 'Evening shift', NIGHT: 'Night shift' };
 
-type Route = '/new-entry' | '/scan-verify' | '/today-entries' | '/approvals' | '/staff-scan' | '/profile' | '/emergencies';
+type Route = '/new-entry' | '/scan-verify' | '/pre-approved' | '/today-entries' | '/approvals' | '/staff-scan' | '/profile' | '/emergencies';
 
 const quickActions: { label: string; detail: string; icon: keyof typeof Ionicons.glyphMap; route: Route }[] = [
   { label: "Today's entries", detail: 'View gate activity', icon: 'receipt-outline', route: '/today-entries' },
@@ -29,7 +29,7 @@ export default function GuardDashboard() {
   useFocusEffect(useCallback(() => {
     api.get('/api/v1/gate/entry-requests?status=PENDING').then((res) => {
       const payload = res.data?.data;
-      const entries: unknown[] = payload?.entryRequests ?? payload?.entries ?? (Array.isArray(payload) ? payload : []);
+      const entries: unknown[] = Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
       setPendingCount(Array.isArray(entries) ? entries.length : 0);
     }).catch(() => undefined);
   }, []));
@@ -79,6 +79,12 @@ export default function GuardDashboard() {
           </Pressable>
         </View>
 
+        <Pressable style={styles.preApproved} onPress={() => open('/pre-approved')}>
+          <View style={styles.preApprovedIcon}><Ionicons name="shield-checkmark-outline" size={22} color={GuardColors.black} /></View>
+          <View style={styles.noticeCopy}><Text style={styles.preApprovedTitle}>Pre-approved passes</Text><Text style={styles.preApprovedText}>Cab, delivery and help by flat or vehicle</Text></View>
+          <Ionicons name="arrow-forward" size={19} color={GuardColors.t1} />
+        </Pressable>
+
         <Text style={styles.sectionLabel}>QUICK ACCESS</Text>
         <View style={styles.quickGrid}>
           {quickActions.map((item) => (
@@ -112,5 +118,6 @@ const styles = StyleSheet.create({
   notice: { marginTop: 22, minHeight: 66, borderRadius: GuardRadius.lg, backgroundColor: GuardColors.gold, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 }, noticeIcon: { width: 38, height: 38, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center' }, noticeCopy: { flex: 1, marginLeft: 12 }, noticeTitle: { color: GuardColors.black, fontSize: 14, fontWeight: '900' }, noticeText: { marginTop: 2, color: '#5E4900', fontSize: 11, fontWeight: '600' },
   sectionTitle: { marginTop: 27, marginBottom: 12, color: GuardColors.t1, fontSize: 17, fontWeight: '900', letterSpacing: -0.2 }, sectionLabel: { marginTop: 28, marginBottom: 14, color: GuardColors.t3, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 }, primaryRow: { flexDirection: 'row', justifyContent: 'space-between' }, primary: { width: '48.3%', height: 176, borderRadius: 24, padding: 16, overflow: 'hidden' }, primaryDark: { backgroundColor: GuardColors.ink, borderWidth: 1, borderColor: GuardColors.ink }, primaryGold: { backgroundColor: GuardColors.goldPale, borderWidth: 1, borderColor: '#EAD58D' }, darkIcon: { width: 46, height: 46, borderRadius: 15, backgroundColor: '#2B2F3A', alignItems: 'center', justifyContent: 'center' }, goldIcon: { width: 46, height: 46, borderRadius: 15, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center' }, primaryDarkTitle: { marginTop: 21, color: GuardColors.card, fontSize: 18, fontWeight: '900' }, primaryTitle: { marginTop: 21, color: GuardColors.t1, fontSize: 18, fontWeight: '900' }, primaryDarkText: { marginTop: 4, color: '#A7ABB5', fontSize: 12, fontWeight: '600' }, primaryText: { marginTop: 4, color: GuardColors.t2, fontSize: 12, fontWeight: '600' }, arrowDark: { position: 'absolute', right: 14, bottom: 14, width: 32, height: 32, borderRadius: 11, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center' }, arrowLight: { position: 'absolute', right: 14, bottom: 14, width: 32, height: 32, borderRadius: 11, backgroundColor: GuardColors.ink, alignItems: 'center', justifyContent: 'center' },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }, quickTile: { width: '48.3%', minHeight: 126, borderRadius: 18, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.borderSoft, padding: 14, justifyContent: 'flex-end' }, quickIcon: { position: 'absolute', left: 14, top: 14, width: 42, height: 42, borderRadius: 13, backgroundColor: GuardColors.surface, alignItems: 'center', justifyContent: 'center' }, quickIconGold: { backgroundColor: GuardColors.goldPale }, quickTitle: { color: GuardColors.t1, fontSize: 13, fontWeight: '900' }, quickText: { marginTop: 3, color: GuardColors.t3, fontSize: 10, fontWeight: '500' }, countBadge: { position: 'absolute', right: 12, top: 12, minWidth: 24, height: 24, borderRadius: 12, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 }, countText: { color: GuardColors.black, fontSize: 11, fontWeight: '900' },
+  preApproved: { marginTop: 12, minHeight: 72, borderRadius: GuardRadius.lg, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.borderSoft, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 }, preApprovedIcon: { width: 42, height: 42, borderRadius: 13, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center' }, preApprovedTitle: { color: GuardColors.t1, fontSize: 14, fontWeight: '900' }, preApprovedText: { marginTop: 2, color: GuardColors.t3, fontSize: 11, fontWeight: '600' },
   emergency: { marginTop: 18, minHeight: 86, borderRadius: 20, borderWidth: 1, borderColor: '#F3CECE', backgroundColor: GuardColors.redBg, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center' }, emergencyIcon: { width: 48, height: 48, borderRadius: 15, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center' }, emergencyCopy: { flex: 1, marginLeft: 12, paddingRight: 8 }, emergencyTitle: { color: GuardColors.red, fontSize: 14, fontWeight: '900' }, emergencyText: { marginTop: 3, color: '#9B5454', fontSize: 11, lineHeight: 15, fontWeight: '600' }, emergencyArrow: { width: 36, height: 36, borderRadius: 12, backgroundColor: GuardColors.red, alignItems: 'center', justifyContent: 'center' }, pressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
 });

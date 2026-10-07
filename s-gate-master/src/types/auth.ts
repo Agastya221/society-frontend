@@ -15,6 +15,8 @@ export interface User {
     isActive?: boolean;
     flat?: {
         number: string;
+        /** What the API actually sends; see `normalizeUser`. */
+        flatNumber?: string;
         block?: { name: string };
     } | null;
     society?: {

@@ -13,11 +13,12 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { useReapplyOnboarding, useSubmitOnboarding } from '@/hooks/useOnboardingQueries';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import type { OnboardingRequestPayload } from '@/types/onboarding.types';
+import { documentTypeLabel } from '@/utils/documentLabels';
 
 // ─── Summary Row ──────────────────────────────────────────────────────────────
 
@@ -79,6 +80,19 @@ export default function ReviewSubmitScreen() {
         return '-';
     }, [residentType, isLivingHere]);
 
+    // Edit pops back to the step's existing screen (no duplicate review/step
+    // screens). `returnTo=review` lets that step jump straight back here on
+    // Continue when nothing downstream was invalidated (see isReadyForReview).
+    const editStep = (
+        pathname:
+            | '/(onboarding)/society-search'
+            | '/(onboarding)/select-block'
+            | '/(onboarding)/select-flat'
+            | '/(onboarding)/resident-type'
+    ) => {
+        router.dismissTo({ pathname, params: { returnTo: 'review' } });
+    };
+
     const handleSubmit = async () => {
         if (!selectedSociety || !selectedBlock || !selectedFlat || !residentType) {
             AppAlert.show('Missing Information', 'Please complete all steps before submitting.');
@@ -118,6 +132,9 @@ export default function ReviewSubmitScreen() {
                 returnTo: destination,
             };
             resetOnboarding();
+            // Drop the KYC steps underneath, so Android back from the status
+            // screen can't land on a form whose data was just cleared.
+            if (router.canDismiss()) router.dismissAll();
             if (flowMode === 'addMembership') {
                 router.replace({
                     pathname: '/(onboarding)/add-flat-status',
@@ -173,7 +190,7 @@ export default function ReviewSubmitScreen() {
                             icon="home"
                             label="Society"
                             value={selectedSociety?.name || '-'}
-                            onEdit={() => router.push('/(onboarding)/society-search')}
+                            onEdit={() => editStep('/(onboarding)/society-search')}
                         />
                         <View style={styles.divider} />
 
@@ -181,7 +198,7 @@ export default function ReviewSubmitScreen() {
                             icon="layers"
                             label="Block / Tower"
                             value={selectedBlock?.name || '-'}
-                            onEdit={() => router.push('/(onboarding)/select-block')}
+                            onEdit={() => editStep('/(onboarding)/select-block')}
                         />
                         <View style={styles.divider} />
 
@@ -189,7 +206,7 @@ export default function ReviewSubmitScreen() {
                             icon="grid"
                             label="Flat"
                             value={selectedFlat?.flatNumber || '-'}
-                            onEdit={() => router.push('/(onboarding)/select-flat')}
+                            onEdit={() => editStep('/(onboarding)/select-flat')}
                         />
                         <View style={styles.divider} />
 
@@ -197,7 +214,7 @@ export default function ReviewSubmitScreen() {
                             icon="user"
                             label="Resident Type"
                             value={residentType || '-'}
-                            onEdit={() => router.push('/(onboarding)/resident-type')}
+                            onEdit={() => editStep('/(onboarding)/resident-type')}
                         />
                         <View style={styles.divider} />
 
@@ -225,7 +242,7 @@ export default function ReviewSubmitScreen() {
                                         </View>
                                         <View style={styles.docContent}>
                                             <Text style={styles.docType}>
-                                                {doc.type.replace(/_/g, ' ')}
+                                                {documentTypeLabel(doc.type)}
                                             </Text>
                                             <Text style={styles.docName} numberOfLines={1}>
                                                 {doc.fileName}
@@ -297,7 +314,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 16,
         paddingBottom: 16,
     },

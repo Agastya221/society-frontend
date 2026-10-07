@@ -236,7 +236,8 @@ export interface User {
     societyId: string | null;
     email?: string;
     photoUrl?: string;
-    flat?: { number: string; block?: { name: string } } | null;
+    /** The API sends `flatNumber`; `normalizeUser` copies it to `number`, which the screens read. */
+    flat?: { number: string; flatNumber?: string; block?: { name: string } } | null;
     society?: { name: string; address?: string; city?: string } | null;
 }
 

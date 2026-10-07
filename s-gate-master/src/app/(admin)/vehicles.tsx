@@ -1,12 +1,10 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
-    KeyboardAvoidingView,
     Modal,
-    Platform,
     ScrollView,
     StyleSheet,
     Switch,
@@ -15,12 +13,17 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AnimatedBottomSheetModal } from '@/components/ui/AnimatedBottomSheetModal';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
-import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
+
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import api from '@/services/api';
+import { isRouteMissing, serverMessage } from '@/services/apiErrors';
+import { decideVehicle, listPendingVehicles, type AdminVehicle } from '@/services/vehicles.service';
+import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import * as Haptics from 'expo-haptics';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -70,7 +73,7 @@ const VIOLATION_TYPES = [
 export default function AdminVehiclesScreen() {
     const router = useRouter();
 
-    const [tab, setTab] = useState<'LOOKUP' | 'VIOLATIONS'>('LOOKUP');
+    const [tab, setTab] = useState<'LOOKUP' | 'VIOLATIONS' | 'APPROVALS'>('LOOKUP');
 
     // Lookup State
     const [query, setQuery] = useState('');
@@ -92,6 +95,17 @@ export default function AdminVehiclesScreen() {
 
     const [resolveTarget, setResolveTarget] = useState<{ id: string, type: 'RESOLVED' | 'DISMISSED' } | null>(null);
     const [resNote, setResNote] = useState('');
+
+    // Approvals State
+    const [pending, setPending] = useState<AdminVehicle[]>([]);
+    const [pendingTotal, setPendingTotal] = useState(0);
+    /** null until the first load; 'missing' when the server has no such route. */
+    const [pendingState, setPendingState] = useState<'ready' | 'missing' | 'error' | null>(null);
+    const [refreshingPending, setRefreshingPending] = useState(false);
+    const [rejectTarget, setRejectTarget] = useState<AdminVehicle | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
+    /** Vehicles with a decision in flight — guards double taps. */
+    const decidingRef = useRef(new Set<string>());
 
     // ─── API: Lookup ──────────────────────────────────────────────────────────
     const handleSearch = async () => {
@@ -186,6 +200,76 @@ export default function AdminVehiclesScreen() {
         }
     };
 
+    // ─── API: Vehicle approvals ───────────────────────────────────────────────
+    const fetchPending = useCallback(async () => {
+        try {
+            const result = await listPendingVehicles();
+            // Rows still being decided stay hidden so a refetch can't resurrect them.
+            setPending(result.vehicles.filter(v => !decidingRef.current.has(v.id)));
+            setPendingTotal(Math.max(0, result.total - decidingRef.current.size));
+            setPendingState('ready');
+        } catch (error: any) {
+            if (isRouteMissing(error)) {
+                setPendingState('missing');
+                setPending([]);
+                setPendingTotal(0);
+            } else {
+                // Keep the list already on screen.
+                setPendingState(prev => (prev === 'ready' ? 'ready' : 'error'));
+            }
+        }
+    }, []);
+
+    // Load once on mount so the tab badge is right before the tab is opened,
+    // then again whenever the screen or the tab regains focus.
+    useEffect(() => { fetchPending(); }, [fetchPending]);
+    useFocusEffect(useCallback(() => {
+        if (tab === 'APPROVALS') fetchPending();
+    }, [tab, fetchPending]));
+
+    const refreshPending = async () => {
+        setRefreshingPending(true);
+        await fetchPending();
+        setRefreshingPending(false);
+    };
+
+    const decide = async (vehicle: AdminVehicle, status: 'ACTIVE' | 'REJECTED', reason?: string) => {
+        if (decidingRef.current.has(vehicle.id)) return;
+        decidingRef.current.add(vehicle.id);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+        // Optimistic: drop the row now, put it back where it was if the server refuses.
+        const index = pending.findIndex(v => v.id === vehicle.id);
+        setPending(list => list.filter(v => v.id !== vehicle.id));
+        setPendingTotal(t => Math.max(0, t - 1));
+        try {
+            await decideVehicle(vehicle.id, status, reason);
+        } catch (err: any) {
+            setPending(list => {
+                if (list.some(v => v.id === vehicle.id)) return list;
+                const next = [...list];
+                next.splice(index < 0 ? 0 : Math.min(index, next.length), 0, vehicle);
+                return next;
+            });
+            setPendingTotal(t => t + 1);
+            AppAlert.show(
+                status === 'ACTIVE' ? 'Could not approve' : 'Could not reject',
+                isRouteMissing(err)
+                    ? 'Vehicle approval needs a server update. Nothing was changed.'
+                    : serverMessage(err, `${vehicle.vehicleNumber} was not updated. Please try again.`),
+            );
+        } finally {
+            decidingRef.current.delete(vehicle.id);
+        }
+    };
+
+    const confirmReject = () => {
+        const target = rejectTarget;
+        if (!target) return;
+        setRejectTarget(null);
+        decide(target, 'REJECTED', rejectReason);
+    };
+
     // ─── UI Renderers ─────────────────────────────────────────────────────────
     const renderLookupItem = ({ item }: { item: Vehicle }) => {
         const isOffice = item.flat?.isAdminFlat;
@@ -254,7 +338,7 @@ export default function AdminVehiclesScreen() {
     const renderViolation = ({ item, index }: { item: Violation; index: number }) => {
         const isOpen = item.status === 'OPEN' || item.status === 'NOTIFIED';
         return (
-            <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                 <View style={styles.card}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                         <View style={styles.platePill}>
@@ -303,6 +387,69 @@ export default function AdminVehiclesScreen() {
         );
     };
 
+    const renderPending = ({ item, index }: { item: AdminVehicle; index: number }) => {
+        const isBike = /bike|scooter|two/i.test(item.vehicleType);
+        return (
+            <Animated.View entering={index < 8 ? FadeInDown.delay(index * 50).springify() : undefined}>
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
+                        <View style={styles.platePill}>
+                            <MaterialCommunityIcons name={isBike ? 'motorbike' : 'car-outline'} size={18} color={SgateColors.t1} />
+                            <Text style={styles.violationPlate}>{item.vehicleNumber}</Text>
+                        </View>
+                        <View style={[styles.statusBadge, styles.pendingBadge]}>
+                            <Text style={[styles.statusText, styles.pendingBadgeText]}>PENDING</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.detailsRow}>
+                        <Text style={styles.detailsText} numberOfLines={1}>
+                            {[item.vehicleType, item.model, item.color].filter(Boolean).join(' · ')}
+                        </Text>
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.infoGrid}>
+                        <View style={styles.infoCol}>
+                            <Text style={styles.infoLabel}>Owner</Text>
+                            <Text style={styles.infoValue} numberOfLines={1}>{item.owner?.name || 'Unknown'}</Text>
+                            {!!item.owner?.phone && <Text style={styles.infoSub}>{item.owner.phone}</Text>}
+                        </View>
+                        <View style={styles.infoCol}>
+                            <Text style={styles.infoLabel}>Flat</Text>
+                            <Text style={styles.infoValue}>{item.flatLabel || '—'}</Text>
+                            {!!item.createdAt && (
+                                <Text style={styles.infoSub}>Added {new Date(item.createdAt).toLocaleDateString()}</Text>
+                            )}
+                        </View>
+                    </View>
+
+                    <View style={styles.decisionRow}>
+                        <PrimaryButton
+                            title="Reject"
+                            variant="outline"
+                            style={styles.decisionBtn}
+                            onPress={() => { setRejectReason(''); setRejectTarget(item); }}
+                        />
+                        <PrimaryButton
+                            title="Approve"
+                            style={styles.decisionBtn}
+                            leftIcon={<MaterialCommunityIcons name="check" size={18} color={SgateColors.t1} />}
+                            onPress={() => decide(item, 'ACTIVE')}
+                        />
+                    </View>
+                </View>
+            </Animated.View>
+        );
+    };
+
+    const tabs: { key: typeof tab; label: string; badge?: number }[] = [
+        { key: 'LOOKUP', label: 'Lookup' },
+        { key: 'VIOLATIONS', label: 'Violations' },
+        { key: 'APPROVALS', label: 'Approvals', badge: pendingTotal },
+    ];
+
     return (
         <View style={styles.safe}>
             {/* Header */}
@@ -310,20 +457,30 @@ export default function AdminVehiclesScreen() {
                 {/* Segmented Control */}
                 <View style={styles.tabWrapper}>
                     <View style={styles.segmentedContainer}>
-                        <TouchableOpacity
-                            style={[styles.segment, tab === 'LOOKUP' && styles.segmentActive]}
-                            onPress={() => { Haptics.selectionAsync(); setTab('LOOKUP'); }}
-                            activeOpacity={0.8}
-                        >
-                            <Text style={[styles.segmentText, tab === 'LOOKUP' && styles.segmentTextActive]}>Lookup</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.segment, tab === 'VIOLATIONS' && styles.segmentActive]}
-                            onPress={() => { Haptics.selectionAsync(); setTab('VIOLATIONS'); }}
-                            activeOpacity={0.8}
-                        >
-                            <Text style={[styles.segmentText, tab === 'VIOLATIONS' && styles.segmentTextActive]}>Violations</Text>
-                        </TouchableOpacity>
+                        {tabs.map(t => {
+                            const active = tab === t.key;
+                            return (
+                                <TouchableOpacity
+                                    key={t.key}
+                                    style={[styles.segment, active && styles.segmentActive]}
+                                    onPress={() => { Haptics.selectionAsync(); setTab(t.key); }}
+                                    activeOpacity={0.8}
+                                    accessibilityRole="tab"
+                                    accessibilityState={{ selected: active }}
+                                >
+                                    <View style={styles.segmentInner}>
+                                        <Text style={[styles.segmentText, active && styles.segmentTextActive]} numberOfLines={1}>{t.label}</Text>
+                                        {!!t.badge && (
+                                            <View style={[styles.segmentBadge, active && styles.segmentBadgeActive]}>
+                                                <Text style={[styles.segmentBadgeText, active && styles.segmentBadgeTextActive]}>
+                                                    {t.badge > 99 ? '99+' : t.badge}
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
                 </View>
             </ScreenHeader>
@@ -388,71 +545,132 @@ export default function AdminVehiclesScreen() {
                     onRefresh={fetchViolations}
                     ListEmptyComponent={
                         !loadingVios ? (
-                            <View style={styles.emptyWrap}>
-                                <MaterialCommunityIcons name="check-circle-outline" size={48} color={SgateColors.t4} />
-                                <Text style={styles.emptyTitle}>All Clear</Text>
-                                <Text style={styles.emptySub}>No active parking violations.</Text>
-                            </View>
+                            <EmptyState
+                                iconName="check-circle-outline"
+                                title="All Clear"
+                                description="No active parking violations."
+                            />
                         ) : null
                     }
                 />
             )}
 
+            {/* Approvals Tab */}
+            {tab === 'APPROVALS' && (
+                pendingState === null && pending.length === 0 ? (
+                    <View style={styles.tabLoader}><ActivityIndicator color={SgateColors.goldDeep} /></View>
+                ) : (
+                    <FlatList
+                        data={pending}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderPending}
+                        contentContainerStyle={styles.listContent}
+                        refreshing={refreshingPending}
+                        onRefresh={refreshPending}
+                        ListHeaderComponent={pendingState === 'error' && pending.length > 0 ? (
+                            <Text style={styles.inlineError}>Could not refresh. Pull down to try again.</Text>
+                        ) : null}
+                        ListEmptyComponent={
+                            pendingState === 'missing' ? (
+                                <EmptyState
+                                    iconName="cloud-alert-outline"
+                                    title="Needs server update"
+                                    description="Vehicle approvals aren't available on this server yet."
+                                />
+                            ) : pendingState === 'error' ? (
+                                <EmptyState
+                                    iconName="wifi-off"
+                                    title="Couldn't load approvals"
+                                    description="Check your connection and try again."
+                                    ctaLabel="Retry"
+                                    onCtaPress={refreshPending}
+                                />
+                            ) : (
+                                <EmptyState
+                                    iconName="check-circle-outline"
+                                    title="No pending vehicles"
+                                    description="New vehicles residents register will appear here for approval."
+                                />
+                            )
+                        }
+                    />
+                )
+            )}
+
+            {/* Reject Vehicle Sheet */}
+            <AnimatedBottomSheetModal visible={!!rejectTarget} onClose={() => setRejectTarget(null)}>
+                <Text style={styles.modalTitle}>Reject vehicle</Text>
+                <Text style={styles.modalSub}>
+                    {rejectTarget?.vehicleNumber}{rejectTarget?.owner?.name ? ` · ${rejectTarget.owner.name}` : ''}
+                </Text>
+                <Text style={[styles.fieldLabel, styles.fieldLabelFirst]}>Reason (optional)</Text>
+                <TextInput
+                    style={styles.inputArea}
+                    placeholder="e.g. Plate number doesn't match the RC"
+                    placeholderTextColor={SgateColors.t4}
+                    value={rejectReason}
+                    onChangeText={setRejectReason}
+                    maxLength={200}
+                    multiline
+                />
+                <Text style={styles.sheetHint}>The resident sees this reason on their vehicle.</Text>
+                <View style={styles.decisionSheetRow}>
+                    <PrimaryButton title="Cancel" variant="secondary" style={styles.decisionBtn} onPress={() => setRejectTarget(null)} />
+                    <PrimaryButton title="Reject" variant="danger" style={styles.decisionBtn} onPress={confirmReject} />
+                </View>
+            </AnimatedBottomSheetModal>
+
             {/* Issue Violation Modal */}
-            <Modal visible={!!issueTarget} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setIssueTarget(null)}>
-                <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-                    <SafeBottomSheetSurface style={styles.modalContent} showHandle minimumBottomPadding={20}>
-                        <Text style={styles.modalTitle}>Issue Violation</Text>
-                        <Text style={styles.modalSub}>
-                            Target: {typeof issueTarget === 'string' ? issueTarget : issueTarget?.plateNumber}
-                        </Text>
-                        
-                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-                            <Text style={styles.fieldLabel}>Violation Type</Text>
-                            <View style={styles.tagsContainer}>
-                                {VIOLATION_TYPES.map(vt => (
-                                    <TouchableOpacity key={vt} style={[styles.tag, vType === vt && styles.tagActive]} onPress={() => setVType(vt)}>
-                                        <Text style={[styles.tagText, vType === vt && styles.tagTextActive]}>{vt.replace('_', ' ')}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
+            <AnimatedBottomSheetModal visible={!!issueTarget} onClose={() => setIssueTarget(null)}>
+                <Text style={styles.modalTitle}>Issue Violation</Text>
+                <Text style={styles.modalSub}>
+                    Target: {typeof issueTarget === 'string' ? issueTarget : issueTarget?.plateNumber}
+                </Text>
 
-                            <Text style={styles.fieldLabel}>Description (Optional)</Text>
-                            <TextInput
-                                style={styles.inputArea}
-                                placeholder="Details..."
-                                placeholderTextColor={SgateColors.t4}
-                                value={vDesc}
-                                onChangeText={setVDesc}
-                                multiline
-                            />
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+                    <Text style={styles.fieldLabel}>Violation Type</Text>
+                    <View style={styles.tagsContainer}>
+                        {VIOLATION_TYPES.map(vt => (
+                            <TouchableOpacity key={vt} style={[styles.tag, vType === vt && styles.tagActive]} onPress={() => setVType(vt)}>
+                                <Text style={[styles.tagText, vType === vt && styles.tagTextActive]}>{vt.replace('_', ' ')}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
 
-                            <View style={styles.rowFields}>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.fieldLabel}>Penalty (INR)</Text>
-                                    <TextInput style={styles.input} keyboardType="numeric" value={vPenalty} onChangeText={setVPenalty} />
-                                </View>
-                                <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                                    <Text style={styles.fieldLabel}>Add to Invoice</Text>
-                                    <Switch value={vInvoice} onValueChange={setVInvoice} trackColor={{ true: SgateColors.green }} />
-                                </View>
-                            </View>
+                    <Text style={styles.fieldLabel}>Description (Optional)</Text>
+                    <TextInput
+                        style={styles.inputArea}
+                        placeholder="Details..."
+                        placeholderTextColor={SgateColors.t4}
+                        value={vDesc}
+                        onChangeText={setVDesc}
+                        multiline
+                    />
 
-                            <View style={styles.modalBtnRow}>
-                                <TouchableOpacity style={styles.modalCancel} onPress={() => setIssueTarget(null)}>
-                                    <Text style={styles.modalCancelTxt}>Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.modalSubmit} onPress={submitViolation} disabled={submitting}>
-                                    {submitting ? <ActivityIndicator color={SgateColors.card} /> : <Text style={styles.modalSubmitTxt}>Confirm Issue</Text>}
-                                </TouchableOpacity>
-                            </View>
-                        </ScrollView>
-                    </SafeBottomSheetSurface>
-                </KeyboardAvoidingView>
-            </Modal>
+                    <View style={styles.rowFields}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.fieldLabel}>Penalty (INR)</Text>
+                            <TextInput style={styles.input} keyboardType="numeric" value={vPenalty} onChangeText={setVPenalty} />
+                        </View>
+                        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                            <Text style={styles.fieldLabel}>Add to Invoice</Text>
+                            <Switch value={vInvoice} onValueChange={setVInvoice} trackColor={{ true: SgateColors.green }} />
+                        </View>
+                    </View>
+
+                    <View style={styles.modalBtnRow}>
+                        <TouchableOpacity style={styles.modalCancel} onPress={() => setIssueTarget(null)}>
+                            <Text style={styles.modalCancelTxt}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.modalSubmit} onPress={submitViolation} disabled={submitting}>
+                            {submitting ? <ActivityIndicator color={SgateColors.card} /> : <Text style={styles.modalSubmitTxt}>Confirm Issue</Text>}
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </AnimatedBottomSheetModal>
 
             {/* Resolve/Dismiss Modal */}
-            <Modal visible={!!resolveTarget} transparent animationType="fade">
+            <Modal visible={!!resolveTarget} transparent animationType="fade" onRequestClose={() => setResolveTarget(null)}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.smallModal}>
                         <Text style={styles.modalTitle}>{resolveTarget?.type === 'RESOLVED' ? 'Mark Resolved' : 'Dismiss Violation'}</Text>
@@ -489,7 +707,7 @@ const styles = StyleSheet.create({
     headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingBottom: 16,
     },
     headerIconBtn: {
@@ -509,7 +727,7 @@ const styles = StyleSheet.create({
     // ── Tabs ─────────────────────────────────────────────────────
     tabWrapper: {
         backgroundColor: SgateColors.card,
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingBottom: 12,
     },
     segmentedContainer: {
@@ -536,6 +754,19 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
         fontFamily: SgateFonts.bold,
     },
+    segmentInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+    segmentBadge: {
+        minWidth: 18,
+        height: 18,
+        paddingHorizontal: 5,
+        borderRadius: 9,
+        backgroundColor: SgateColors.ink,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    segmentBadgeActive: { backgroundColor: SgateColors.card },
+    segmentBadgeText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.card },
+    segmentBadgeTextActive: { color: SgateColors.t1 },
 
     searchSection: { padding: 20 },
     searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderRadius: 12, paddingHorizontal: 14, height: 50, borderWidth: 1, borderColor: SgateColors.border, marginBottom: 12 },
@@ -588,7 +819,7 @@ const styles = StyleSheet.create({
     issueUnknownBtn: { backgroundColor: SgateColors.gold, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
     issueUnknownText: { color: SgateColors.card, fontSize: 14, fontFamily: SgateFonts.bold },
 
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.48)', justifyContent: 'flex-end' },
     modalContent: { paddingHorizontal: 28, maxHeight: '80%', shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 10 },
     smallModal: { backgroundColor: SgateColors.card, margin: 24, padding: 28, borderRadius: 32, marginBottom: 'auto', marginTop: 'auto', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 30, elevation: 20 },
     modalTitle: { fontSize: 22, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, marginBottom: 8 },
@@ -625,6 +856,17 @@ const styles = StyleSheet.create({
     dismissText: { color: SgateColors.t2, fontSize: 14, fontFamily: SgateFonts.bold },
     resolveBtnDark: { flex: 1.5, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.ink, paddingVertical: 14, borderRadius: 12 },
     resolveTextDark: { color: SgateColors.card, fontSize: 14, fontFamily: SgateFonts.bold },
+
+    // Approvals
+    pendingBadge: { backgroundColor: SgateColors.goldPale },
+    pendingBadgeText: { color: SgateColors.goldDeep },
+    decisionRow: { flexDirection: 'row', gap: 12 },
+    decisionSheetRow: { flexDirection: 'row', gap: 12, marginTop: 20 },
+    decisionBtn: { flex: 1 },
+    tabLoader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    inlineError: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.red, marginBottom: 12 },
+    fieldLabelFirst: { marginTop: 0 },
+    sheetHint: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 8 },
 
     // Lookup action buttons
     callBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.ink, borderRadius: 12, paddingVertical: 14, gap: 6 },

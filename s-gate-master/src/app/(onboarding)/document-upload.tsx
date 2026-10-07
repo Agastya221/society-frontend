@@ -12,13 +12,14 @@ import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import { DocumentUploadCard } from '@/components/onboarding/DocumentUploadCard';
 import { uploadImage } from '@/services/uploadService';
 import { AppAlert } from '@/components/ui/AppAlert';
 import type { DocumentType, UploadedDocument } from '@/types/onboarding.types';
+import { documentTypeLabel } from '@/utils/documentLabels';
 
 // ─── Document Config ──────────────────────────────────────────────────────────
 
@@ -88,6 +89,18 @@ export default function DocumentUploadScreen() {
                 // Validate file size (10MB max)
                 if (asset.size && asset.size > 10 * 1024 * 1024) {
                     AppAlert.show('File Too Large', 'Maximum file size is 10 MB.');
+                    return;
+                }
+
+                // One file can't prove two things (e.g. ownership and ID).
+                const duplicate = useOnboardingStore.getState().uploadedDocuments.find(
+                    (d) => d.type !== docType && d.fileName === (asset.name || 'document') && d.fileSize === (asset.size || 0)
+                );
+                if (duplicate) {
+                    AppAlert.show(
+                        'Same file used twice',
+                        `This file is already uploaded as ${documentTypeLabel(duplicate.type)}. Please choose a different document.`
+                    );
                     return;
                 }
 
@@ -199,7 +212,7 @@ export default function DocumentUploadScreen() {
                                     styles.idChip,
                                     selectedIdType === id.type && styles.idChipActive,
                                 ]}
-                                activeOpacity={0.7}
+                                activeOpacity={0.8}
                             >
                                 <Text
                                     style={[
@@ -273,7 +286,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 16,
         paddingBottom: 16,
     },

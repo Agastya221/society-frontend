@@ -3,7 +3,7 @@ import { Platform, StyleSheet, Text, ToastAndroid, TouchableOpacity, View, Share
 import { Feather } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { SgateColors, SgateFonts, SgateRadius } from '../../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateRadius } from '../../../../constants/Sgate-theme';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ export function AddressCard({ flatNumber, blockName, societyName, societyAddress
                 {/* Header row */}
                 <View style={styles.headerRow}>
                     <Text style={styles.label}>My Address</Text>
-                    <TouchableOpacity onPress={handleShare} style={styles.shareBtn} activeOpacity={0.7}>
+                    <TouchableOpacity onPress={handleShare} style={styles.shareBtn} activeOpacity={0.8}>
                         <Text style={styles.shareText}>Share</Text>
                         <Feather name="share-2" size={13} color={SgateColors.t2} />
                     </TouchableOpacity>
@@ -66,7 +66,7 @@ export function AddressCard({ flatNumber, blockName, societyName, societyAddress
 
 const styles = StyleSheet.create({
     container: {
-        paddingHorizontal: 16,
+        paddingHorizontal: SgateLayout.screenGutter,
         marginTop: 12,
     },
     card: {

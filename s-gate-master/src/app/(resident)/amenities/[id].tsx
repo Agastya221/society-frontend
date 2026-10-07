@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Animated, Modal,
 } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
 import { Calendar } from 'react-native-calendars';
@@ -9,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppScreenLayout } from '@/components/layout/AppScreenLayout';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 
 const AMENITY_THEMES: { keywords: string[]; icon: string; colorBg: string; colorIcon: string }[] = [
@@ -31,7 +32,7 @@ function resolveTheme(name: string) {
   return match ?? { icon: 'home', colorBg: SgateColors.goldPale, colorIcon: SgateColors.goldDeep };
 }
 
-interface TimeSlot { id: string; label: string; startTime: string; endTime: string; status: 'AVAILABLE' | 'BOOKED' | 'PAST'; isBookable: boolean; }
+interface TimeSlot { id: string; label: string; startTime: string; endTime: string; status: 'AVAILABLE' | 'BOOKED' | 'PAST'; isBookable: boolean; /** Booked by this flat (sent by newer servers). */ bookedByMe?: boolean; }
 interface Amenity { id: string; name: string; timing: string; maxCapacity: number; slotDurationHours: number; rules: string[]; icon: string; colorBg: string; colorIcon: string; slots: TimeSlot[]; }
 
 const WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
@@ -114,6 +115,7 @@ function DateStripItem({ item, isSelected, onPress }: { item: DateItem; isSelect
 }
 
 export default function AmenityDetailScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -126,39 +128,75 @@ export default function AmenityDetailScreen() {
   const [showCalendar, setShowCalendar] = useState(false);
   const dates = buildDates();
 
-  useFocusEffect(useCallback(() => {
-    (async () => {
-      try {
-        const res = await api.get(`/resident/amenities/${id}`);
-        const raw = res.data?.data ?? res.data;
-        const theme = resolveTheme(raw.name ?? '');
-        setAmenity({
-          id: raw.id, name: raw.name ?? '', timing: raw.timings ?? raw.timing ?? '',
-          maxCapacity: raw.maxCapacity ?? 0, slotDurationHours: raw.slotDurationHours ?? 1,
-          rules: raw.rules ?? [], slots: [],
-          icon: theme.icon, colorBg: theme.colorBg, colorIcon: theme.colorIcon,
-        });
-      } catch { /* shown below */ } finally { setLoading(false); }
-    })();
-  }, [id]));
+  // Read inside the focus effect without making it re-run on every selection.
+  const selection = useRef({ amenityId: null as string | null, date: null as string | null, slotId: null as string | null });
+  selection.current = { amenityId: amenity?.id ?? null, date: selectedDate, slotId: selectedSlot?.id ?? null };
 
-  const handleDateSelect = async (key: string) => {
-    setSelectedDate(key);
-    setSelectedSlot(null);
-    if (!amenity) return;
+  /** Fetch a date's slots. Returns them so callers can re-check a selection. */
+  const loadSlots = useCallback(async (key: string): Promise<TimeSlot[] | null> => {
     setSlotsLoading(true);
     try {
       const res = await api.get(`/resident/amenities/${id}/slots`, { params: { date: key } });
       const rawSlots: any[] = res.data?.data ?? res.data ?? [];
-      setAmenity(a => a ? { ...a, slots: rawSlots.map(s => ({
+      const slots: TimeSlot[] = rawSlots.map(s => ({
         id: s.id,
         label: s.label ?? `${s.startTime} – ${s.endTime}`,
         startTime: s.startTime,
         endTime: s.endTime,
         status: (s.status ?? 'AVAILABLE') as TimeSlot['status'],
         isBookable: s.isBookable ?? s.status === 'AVAILABLE',
-      })) } : a);
-    } catch { /* silently fail */ } finally { setSlotsLoading(false); }
+        bookedByMe: s.bookedByMe === true,
+      }));
+      setAmenity(a => a ? { ...a, slots } : a);
+      return slots;
+    } catch {
+      return null;
+    } finally {
+      setSlotsLoading(false);
+    }
+  }, [id]);
+
+  useFocusEffect(useCallback(() => {
+    const prev = selection.current;
+    const sameAmenity = prev.amenityId === id;
+    if (!sameAmenity) {
+      // Another amenity: never show the previous one's details or selection.
+      setAmenity(null);
+      setLoading(true);
+      setSelectedDate(null);
+      setSelectedSlot(null);
+    }
+    (async () => {
+      try {
+        const res = await api.get(`/resident/amenities/${id}`);
+        const raw = res.data?.data ?? res.data;
+        const theme = resolveTheme(raw.name ?? '');
+        setAmenity(a => ({
+          id: raw.id, name: raw.name ?? '', timing: raw.timings ?? raw.timing ?? '',
+          maxCapacity: raw.maxCapacity ?? raw.capacity ?? 0, slotDurationHours: raw.slotDurationHours ?? 1,
+          rules: raw.rules ?? [],
+          // Keep the grid on screen while it refreshes below.
+          slots: a && a.id === raw.id ? a.slots : [],
+          icon: theme.icon, colorBg: theme.colorBg, colorIcon: theme.colorIcon,
+        }));
+      } catch { /* shown below */ } finally { setLoading(false); }
+
+      // Coming back (e.g. from booking): availability may have changed, so
+      // refresh the chosen date and drop a slot that is no longer free.
+      if (sameAmenity && prev.date) {
+        const slots = await loadSlots(prev.date);
+        if (slots && prev.slotId && !slots.some(sl => sl.id === prev.slotId && sl.isBookable)) {
+          setSelectedSlot(null);
+        }
+      }
+    })();
+  }, [id, loadSlots]));
+
+  const handleDateSelect = async (key: string) => {
+    setSelectedDate(key);
+    setSelectedSlot(null);
+    if (!amenity) return;
+    await loadSlots(key);
   };
 
   const handleBookSlot = () => {
@@ -190,7 +228,7 @@ export default function AmenityDetailScreen() {
     <AppScreenLayout scroll={false} title="Details">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={S.scrollContent}
+        contentContainerStyle={[S.scrollContent, { paddingBottom: scrollBottomPadding }]}
       >
         {/* Premium Profile Header */}
         <View style={S.profileHeader}>
@@ -228,7 +266,7 @@ export default function AmenityDetailScreen() {
 
           {/* Rules */}
           <TouchableOpacity
-            activeOpacity={0.7}
+            activeOpacity={0.8}
             style={S.rulesToggleRow}
             onPress={() => setShowRules((v) => !v)}
           >
@@ -257,7 +295,7 @@ export default function AmenityDetailScreen() {
           {/* Calendar Date Picker */}
           <TouchableOpacity
             style={S.calendarTrigger}
-            activeOpacity={0.75}
+            activeOpacity={0.8}
             onPress={() => setShowCalendar(true)}
           >
             <Feather name="calendar" size={16} color={SgateColors.goldDeep} />
@@ -288,7 +326,6 @@ export default function AmenityDetailScreen() {
                 onTouchEnd={(e) => e.stopPropagation()}
                 onStartShouldSetResponder={() => true}
                 showHandle
-                minimumBottomPadding={20}
               >
                 <Text style={S.calendarSheetTitle}>Select a Date</Text>
 
@@ -342,12 +379,14 @@ export default function AmenityDetailScreen() {
               {amenity.slots.map((slot) => {
                 const isSelected = selectedSlot?.id === slot.id;
                 const chipStyle =
-                  slot.status === 'BOOKED' ? S.slotChipBooked
+                  slot.bookedByMe          ? S.slotChipMine
+                  : slot.status === 'BOOKED' ? S.slotChipBooked
                   : slot.status === 'PAST'  ? S.slotChipPast
                   : isSelected              ? S.slotChipSelected
                   :                           S.slotChipAvailable;
                 const textStyle =
-                  slot.status === 'BOOKED' ? S.slotTimeBooked
+                  slot.bookedByMe          ? S.slotTimeMine
+                  : slot.status === 'BOOKED' ? S.slotTimeBooked
                   : slot.status === 'PAST'  ? S.slotTimePast
                   : isSelected              ? S.slotTimeSelected
                   :                           S.slotTimeDefault;
@@ -356,13 +395,15 @@ export default function AmenityDetailScreen() {
                   <TouchableOpacity
                     key={slot.id}
                     disabled={!slot.isBookable}
-                    activeOpacity={0.75}
+                    activeOpacity={0.8}
                     style={[S.slotChip, chipStyle]}
                     onPress={() => setSelectedSlot(slot)}
                   >
                     <Text style={textStyle}>{slot.label}</Text>
                     {slot.status === 'BOOKED' && (
-                      <Text style={S.slotStatusLabel}>Booked</Text>
+                      <Text style={[S.slotStatusLabel, slot.bookedByMe && S.slotStatusMine]}>
+                        {slot.bookedByMe ? 'Your booking' : 'Booked'}
+                      </Text>
                     )}
                     {slot.status === 'PAST' && (
                       <Text style={S.slotStatusLabel}>Past</Text>
@@ -520,7 +561,7 @@ const S = StyleSheet.create({
 
   // Slots section
   slotsSection: {
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     marginTop: 20,
   },
   slotsSectionTitle: {
@@ -558,7 +599,7 @@ const S = StyleSheet.create({
   // Calendar Modal
   calendarOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.48)',
     justifyContent: 'flex-end',
   },
   calendarSheet: {
@@ -642,14 +683,18 @@ const S = StyleSheet.create({
   },
 
   // Slot grid
+  // Two equal columns, so the pills line up whatever the label length.
   slotGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    justifyContent: 'space-between',
+    rowGap: 10,
   },
   slotChip: {
+    width: '48.5%',
+    alignItems: 'center',
     borderRadius: 100, // Modern pill shape
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     borderWidth: 1,
   },
@@ -659,6 +704,19 @@ const S = StyleSheet.create({
     borderColor: 'transparent',
   },
   // BOOKED & PAST — greyed out
+  // Booked by this flat: show it as theirs, not as someone else's taken slot.
+  slotChipMine: {
+    backgroundColor: SgateColors.greenBg,
+    borderColor: SgateColors.green,
+  },
+  slotTimeMine: {
+    fontSize: 13,
+    fontFamily: SgateFonts.semibold,
+    color: SgateColors.green,
+  },
+  slotStatusMine: {
+    color: SgateColors.green,
+  },
   slotChipBooked: {
     backgroundColor: SgateColors.surface,
     borderColor: 'transparent',

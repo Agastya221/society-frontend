@@ -120,6 +120,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
             if (accessToken && userJson) {
                 const user = JSON.parse(userJson) as User;
+                // Only guards may use this app; a session saved before that rule (e.g. a
+                // SUPER_ADMIN) is cleared so the user lands on sign-in.
+                if (user?.role !== 'GUARD') {
+                    await Promise.allSettled([TOKEN_KEY, REFRESH_TOKEN_KEY, USER_KEY].map((k) => SecureStore.deleteItemAsync(k)));
+                    set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false, isLoading: false });
+                    return;
+                }
                 set({ accessToken, refreshToken: refreshToken ?? null, user, isAuthenticated: true, isLoading: false });
             } else {
                 set({ isLoading: false });

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../../constants/Sgate-theme';
 import type { User } from '../../../../types/api';
 import { AppAlert } from '../../../../components/ui/AppAlert';
 
@@ -81,7 +81,7 @@ export function ProfileHeader({ user, role = 'resident', onEditPress, onQrPress 
                                 </TouchableOpacity>
                             </View>
 
-                            <TouchableOpacity onPress={onQrPress} style={styles.qrBtn} activeOpacity={0.7}>
+                            <TouchableOpacity onPress={onQrPress} style={styles.qrBtn} activeOpacity={0.8}>
                                 <MaterialCommunityIcons name="qrcode-scan" size={20} color={SgateColors.t1} />
                             </TouchableOpacity>
                         </>
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingVertical: 20,
         backgroundColor: SgateColors.card,
     },

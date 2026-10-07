@@ -2,13 +2,14 @@ import React, { useCallback, useState, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet,
   TextInput, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
+import { ScreenHeader, HeaderIconButton } from '@/components/layout/ScreenHeader';
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 interface PostDetail {
@@ -172,8 +173,7 @@ function CommentItem({ comment }: { comment: Comment }) {
 }
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
-export default function CommunicationDetailScreen() {
-  const router = useRouter();
+function CommunicationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [post, setPost]         = useState<PostDetail | null>(null);
@@ -236,34 +236,36 @@ export default function CommunicationDetailScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={S.safeArea} edges={['top']}>
+      <View style={S.safeArea}>
+        <ScreenHeader title="Discussion" />
         <AppLoader />
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!post) {
     return (
-      <SafeAreaView style={S.safeArea} edges={['top']}>
+      <View style={S.safeArea}>
+        <ScreenHeader title="Discussion" />
         <View style={S.center}><Text style={S.notFoundText}>Post not found</Text></View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={S.safeArea} edges={['top']}>
+    <View style={S.safeArea}>
+      <ScreenHeader
+        title="Discussion"
+        rightAction={
+          <HeaderIconButton
+            icon="heart"
+            onPress={handleLike}
+            color={post.isLiked ? SgateColors.red : SgateColors.t2}
+            accessibilityLabel={post.isLiked ? 'Unlike post' : 'Like post'}
+          />
+        }
+      />
       <KeyboardAvoidingView style={S.flex1} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={0}>
-        {/* Header */}
-        <View style={S.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-          </TouchableOpacity>
-          <Text style={S.headerTitle}>Discussion</Text>
-          <View style={S.flex1} />
-          <TouchableOpacity onPress={handleLike} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Feather name="heart" size={22} color={post.isLiked ? SgateColors.red : SgateColors.t2} />
-          </TouchableOpacity>
-        </View>
 
         {/* Comments list */}
         <FlatList
@@ -311,7 +313,7 @@ export default function CommunicationDetailScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -321,8 +323,6 @@ const S = StyleSheet.create({
   flex1: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   notFoundText: { fontFamily: SgateFonts.medium, fontSize: 15, color: SgateColors.t3 },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.card, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
-  headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
   list: { flex: 1, backgroundColor: SgateColors.bg },
   postHeader: { backgroundColor: SgateColors.card, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft, padding: 16, marginBottom: 8 },
   postTopRow: { flexDirection: 'row', alignItems: 'center' },
@@ -340,7 +340,7 @@ const S = StyleSheet.create({
   statsText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
   likeBtn: { flexDirection: 'row', alignItems: 'center' },
   likedText: { color: SgateColors.red },
-  sectionHeader: { fontFamily: SgateFonts.bold, fontSize: 15, color: SgateColors.t1, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: SgateColors.bg },
+  sectionHeader: { fontFamily: SgateFonts.bold, fontSize: 15, color: SgateColors.t1, paddingHorizontal: SgateLayout.screenGutter, paddingVertical: 12, backgroundColor: SgateColors.bg },
   commentItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft, backgroundColor: SgateColors.card },
   commentItemAdmin: { backgroundColor: '#FFFBFB' },
   commentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
@@ -359,3 +359,5 @@ const S = StyleSheet.create({
   textInput: { flex: 1, fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t1, backgroundColor: SgateColors.surface, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 10, maxHeight: 100 },
   sendButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
 });
+
+export default withResetOnBlur(CommunicationDetailScreen);

@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import React, { useCallback, useState } from 'react';
@@ -12,11 +12,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { AppAlert } from '../../../components/ui/AppAlert';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 
 // ─── Download helper ─────────────────────────────────────────────────────────
@@ -149,7 +150,7 @@ function AdminDocCard({ doc, index }: { doc: SocietyDocument; index: number }) {
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={styles.docCard}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()} style={styles.docCard}>
       <FileIconBubble fileType={doc.fileType} />
       <View style={styles.docContent}>
         <Text style={styles.docName} numberOfLines={2}>{doc.name}</Text>
@@ -165,7 +166,7 @@ function AdminDocCard({ doc, index }: { doc: SocietyDocument; index: number }) {
         style={[styles.downloadBtn, busy && styles.downloadBtnActive]}
         onPress={handleDownload}
         disabled={busy}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         {busy
@@ -206,7 +207,7 @@ function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: numb
   };
 
   return (
-    <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={styles.docCard}>
+    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()} style={styles.docCard}>
       <FileIconBubble fileType={doc.fileType} />
       <View style={styles.docContent}>
         <Text style={styles.docName} numberOfLines={2}>{doc.name}</Text>
@@ -223,7 +224,7 @@ function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: numb
           style={[styles.downloadBtn, busy && styles.downloadBtnActive]}
           onPress={handleDownload}
           disabled={busy}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           {busy
@@ -234,7 +235,7 @@ function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: numb
         <TouchableOpacity
           style={styles.deleteActionBtn}
           onPress={handleDelete}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Feather name="trash-2" size={18} color={SgateColors.red} />
@@ -247,7 +248,6 @@ function MyDocCard({ doc, index, onDelete }: { doc: SocietyDocument; index: numb
 // ─── Screen ─────────────────────────────────────────────────────────────────
 
 export default function DocumentsScreen() {
-  const router = useRouter();
   const [adminDocs, setAdminDocs] = useState<SocietyDocument[]>([]);
   const [myDocs, setMyDocs] = useState<SocietyDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -286,22 +286,7 @@ export default function DocumentsScreen() {
     <View style={styles.root}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
-      {/* ── Header (edge-to-edge) ─────────────────────────────────────── */}
-      <View style={styles.headerBg}>
-        <SafeAreaView edges={['top']}>
-          <View style={styles.headerInner}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={styles.backBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Documents</Text>
-            <View style={{ width: 22 }} />
-          </View>
-        </SafeAreaView>
-      </View>
+      <ScreenHeader title="Documents" />
 
       {/* ── Content ───────────────────────────────────────────────────── */}
       {loading ? (
@@ -318,13 +303,11 @@ export default function DocumentsScreen() {
           </View>
 
           {adminDocs.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <View style={styles.emptyIconCircle}>
-                <Feather name="folder" size={28} color={SgateColors.goldDeep} />
-              </View>
-              <Text style={styles.emptyTitle}>No documents available</Text>
-              <Text style={styles.emptySub}>Society documents will appear here once uploaded by the admin</Text>
-            </View>
+            <EmptyState
+                iconName="folder-outline"
+                title="No documents available"
+                description="Society documents will appear here once uploaded by the admin"
+            />
           ) : (
             adminDocs.map((doc, index) => <AdminDocCard key={doc.id} doc={doc} index={index} />)
           )}
@@ -338,13 +321,11 @@ export default function DocumentsScreen() {
           </View>
 
           {myDocs.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <View style={styles.emptyIconCircle}>
-                <Feather name="file-plus" size={28} color={SgateColors.goldDeep} />
-              </View>
-              <Text style={styles.emptyTitle}>No documents yet</Text>
-              <Text style={styles.emptySub}>Upload personal documents to access them anytime</Text>
-            </View>
+            <EmptyState
+                iconName="file-plus-outline"
+                title="No documents yet"
+                description="Upload personal documents to access them anytime"
+            />
           ) : (
             myDocs.map((doc, index) => (
               <MyDocCard key={doc.id} doc={doc} index={index} onDelete={handleDelete} />
@@ -357,7 +338,7 @@ export default function DocumentsScreen() {
       <TouchableOpacity
         style={styles.fab}
         onPress={handleUpload}
-        activeOpacity={0.85}
+        activeOpacity={0.8}
       >
         <Feather name="upload" size={20} color={SgateColors.t1} />
         <Text style={styles.fabText}>Upload</Text>
@@ -375,30 +356,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Header ────────────────────────────────────────────────────────────
-  headerBg: {
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.04)',
-  },
-  headerInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backBtn: {
-    width: 32,
-    height: 32,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t1,
-    marginLeft: 12,
-  },
 
   center: {
     flex: 1,
@@ -411,12 +368,12 @@ const styles = StyleSheet.create({
 
   // ── Section Headers ───────────────────────────────────────────────────
   sectionHeader: {
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     paddingTop: 22,
     paddingBottom: 14,
   },
   sectionHeaderMy: {
-    paddingHorizontal: 16,
+    paddingHorizontal: SgateLayout.screenGutter,
     paddingTop: 28,
     paddingBottom: 14,
   },
@@ -534,38 +491,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Empty State ───────────────────────────────────────────────────────
-  emptyCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginHorizontal: 16,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
-  },
-  emptyIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: SgateColors.goldPale,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontFamily: SgateFonts.semibold,
-    color: SgateColors.t1,
-    marginBottom: 6,
-  },
-  emptySub: {
-    fontSize: 13,
-    fontFamily: SgateFonts.regular,
-    color: SgateColors.t3,
-    textAlign: 'center',
-    lineHeight: 19,
-  },
 
   // ── Upload FAB ────────────────────────────────────────────────────────
   fab: {

@@ -1,3 +1,4 @@
+import { SgateColors } from '@/constants/Sgate-theme';
 import React from 'react';
 import { Modal, Text, TextInput, View } from 'react-native';
 import { PrimaryButton } from './PrimaryButton';
@@ -30,19 +31,19 @@ export function ConfirmationModal({
     return (
         <Modal transparent visible={visible} animationType="fade">
             <View className="flex-1 bg-black/50 justify-center items-center p-4">
-                <View className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl p-6 shadow-xl">
-                    <Text className="text-xl font-sora-bold text-gray-900 dark:text-gray-100 mb-2">
+                <View className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-xl">
+                    <Text className="text-xl font-sora-bold text-gray-900 mb-2">
                         {title}
                     </Text>
-                    <Text className="font-sora text-gray-600 dark:text-gray-400 mb-6 leading-5">
+                    <Text className="font-sora text-gray-600 mb-6 leading-5">
                         {message}
                     </Text>
 
                     {requireReason && (
                         <TextInput
-                            className="font-sora w-full bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 mb-6 text-gray-900 dark:text-gray-100 h-24 text-start"
+                            className="font-sora w-full bg-gray-50 border border-gray-200 rounded-xl p-3 mb-6 text-gray-900 h-24 text-start"
                             placeholder="Please provide a reason..."
-                            placeholderTextColor="#9ca3af"
+                            placeholderTextColor={SgateColors.t3}
                             multiline
                             textAlignVertical="top"
                             value={reason}

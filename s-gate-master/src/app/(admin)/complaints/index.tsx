@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -11,10 +11,11 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { ComplaintCard } from '../../../components/complaints/ComplaintCard';
 import { Complaint, ComplaintStatus, deleteComplaint, fetchComplaints } from '../../../services/complaints';
 
@@ -38,33 +39,10 @@ export default function AdminComplaintsScreen() {
 
     // Fetch complaints from API
     const loadComplaints = async (isRefresh = false) => {
-        if (!isRefresh) {
-            setIsLoading(true);
-        }
         setError('');
 
         try {
-            console.log('📥 [ADMIN] Fetching complaints...');
             const data = await fetchComplaints();
-            
-            console.log('✅ [ADMIN] Fetched complaints count:', data.length);
-            console.log('📋 [ADMIN] Full complaints data:', JSON.stringify(data, null, 2));
-            
-            // Log each complaint individually for easier reading
-            data.forEach((complaint, index) => {
-                console.log(`\n📝 [ADMIN] Complaint ${index + 1}:`, {
-                    id: complaint.id,
-                    title: complaint.title,
-                    status: complaint.status,
-                    priority: complaint.priority,
-                    category: complaint.category,
-                    reportedBy: complaint.reportedBy?.name || 'Anonymous',
-                    flat: complaint.flat?.flatNumber || 'N/A',
-                    images: complaint.images || [],
-                    createdAt: complaint.createdAt,
-                });
-            });
-            
             setComplaints(data);
         } catch (err: any) {
             console.error('❌ [ADMIN] Failed to fetch complaints:', err);
@@ -155,7 +133,7 @@ export default function AdminComplaintsScreen() {
                                 key={tab.key}
                                 onPress={() => setFilterStatus(tab.key)}
                                 style={[styles.filterTab, filterStatus === tab.key && styles.filterTabActive]}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                             >
                                 <Text style={[styles.filterText, filterStatus === tab.key && styles.filterTextActive]}>
                                     {tab.label}
@@ -207,15 +185,11 @@ export default function AdminComplaintsScreen() {
                         />
                     }
                     ListEmptyComponent={
-                        <View style={styles.emptyWrap}>
-                            <MaterialCommunityIcons name="check-circle-outline" size={48} color={SgateColors.t4} />
-                            <Text style={styles.emptyTitle}>
-                                {filterStatus === 'ALL' ? 'No complaints found' : `No ${filterStatus.toLowerCase().replace('_', ' ')} complaints`}
-                            </Text>
-                            <Text style={styles.emptySub}>
-                                Complaints submitted by residents will appear here.
-                            </Text>
-                        </View>
+                        <EmptyState
+                            iconName="check-circle-outline"
+                            title={filterStatus === 'ALL' ? 'No complaints found' : `No ${filterStatus.toLowerCase().replace('_', ' ')} complaints`}
+                            description="Complaints submitted by residents will appear here."
+                        />
                     }
                 />
             )}
@@ -241,7 +215,7 @@ const styles = StyleSheet.create({
         elevation: 2,
         zIndex: 10,
     },
-    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 16 },
+    headerTop: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SgateLayout.screenGutter, marginBottom: 16 },
     backButton: { marginRight: 12 },
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
@@ -269,7 +243,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     filterTab: {
-        paddingHorizontal: 16,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingVertical: 8,
         borderRadius: 20,
         backgroundColor: SgateColors.surface,
@@ -282,7 +256,4 @@ const styles = StyleSheet.create({
     listContent: { padding: 20, flexGrow: 1 },
 
     // Empty
-    emptyWrap: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 32 },
-    emptyTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginTop: 10, textAlign: 'center' },
-    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 4, textAlign: 'center' },
 });

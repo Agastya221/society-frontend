@@ -12,11 +12,11 @@ interface TextProps extends RNTextProps {
 
 export function Text({ variant = 'body', className, ...props }: TextProps) {
     const variants = {
-        h1: 'text-3xl font-sora-bold text-gray-900 dark:text-white',
-        h2: 'text-2xl font-sora-bold text-gray-900 dark:text-white',
-        h3: 'text-xl font-sora-bold text-gray-900 dark:text-white',
-        body: 'font-sora text-base text-gray-700 dark:text-gray-300',
-        caption: 'font-sora text-sm text-gray-500 dark:text-gray-400',
+        h1: 'text-3xl font-sora-bold text-gray-900',
+        h2: 'text-2xl font-sora-bold text-gray-900',
+        h3: 'text-xl font-sora-bold text-gray-900',
+        body: 'font-sora text-base text-gray-700',
+        caption: 'font-sora text-sm text-gray-500',
     };
 
     return (

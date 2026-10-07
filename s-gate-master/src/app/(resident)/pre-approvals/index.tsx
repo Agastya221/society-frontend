@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import { PreApproveSheet } from '../../../components/pre-approvals/PreApproveSheet';
 import { FlatList,
@@ -10,7 +10,9 @@ import { FlatList,
     View } from 'react-native';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { SafeBottomSheetSurface } from '@/components/ui/SafeBottomSheetSurface';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader, HeaderIconButton } from '@/components/layout/ScreenHeader';
+import EmptyState from '@/components/ui/EmptyState';
+import { StatusPill } from '@/components/ui/StatusPill';
 import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
 import {
     cancelPreApproved,
@@ -22,7 +24,6 @@ import type {
     PreApprovedEntry,
     PreApprovedMode,
     PreApprovedScheduleType,
-    PreApprovedStatus,
     PreApprovedType,
 } from '../../../types/api';
 
@@ -32,13 +33,6 @@ const TYPE_CONFIG: Record<PreApprovedType, { label: string; icon: React.Componen
     CAB:      { label: 'Cab',      icon: 'navigation', color: SgateColors.blue,   bg: SgateColors.blueBg  },
     DELIVERY: { label: 'Delivery', icon: 'package',    color: SgateColors.green,  bg: SgateColors.greenBg },
     HELP:     { label: 'Help',     icon: 'tool',       color: SgateColors.gold,   bg: SgateColors.goldPale },
-};
-
-const STATUS_CONFIG: Record<PreApprovedStatus, { label: string; color: string; bg: string }> = {
-    ACTIVE:    { label: 'Active',    color: SgateColors.green, bg: SgateColors.greenBg },
-    EXPIRED:   { label: 'Expired',   color: SgateColors.t3,    bg: SgateColors.surface  },
-    USED:      { label: 'Used',      color: SgateColors.blue,  bg: SgateColors.blueBg   },
-    CANCELLED: { label: 'Cancelled', color: SgateColors.red,   bg: SgateColors.redBg    },
 };
 
 const DAYS_SHORT: Record<string, string> = {
@@ -58,7 +52,6 @@ function scheduleLabel(entry: PreApprovedEntry): string {
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function PreApprovalsScreen() {
-    const router = useRouter();
     const [entries, setEntries] = useState<PreApprovedEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -142,7 +135,6 @@ export default function PreApprovalsScreen() {
     // ── Render item ──────────────────────────────────────────────────────────
     const renderItem = ({ item }: { item: PreApprovedEntry }) => {
         const typeConf  = TYPE_CONFIG[item.type];
-        const statConf  = STATUS_CONFIG[item.status];
         const isActive  = item.status === 'ACTIVE';
         const isCancelled = item.status === 'CANCELLED';
         const schedInfo = scheduleLabel(item);
@@ -162,9 +154,7 @@ export default function PreApprovalsScreen() {
                             <Text style={styles.cardName} numberOfLines={1}>
                                 {item.meta.visitorName ?? typeConf.label}
                             </Text>
-                            <View style={[styles.statusBadge, { backgroundColor: statConf.bg }]}>
-                                <Text style={[styles.statusText, { color: statConf.color }]}>{statConf.label}</Text>
-                            </View>
+                            <StatusPill status={item.status} size="sm" />
                         </View>
 
                         {/* Type + mode badges */}
@@ -226,29 +216,17 @@ export default function PreApprovalsScreen() {
     // ── Loading / error ──────────────────────────────────────────────────────
     if (loading) {
         return (
-            <SafeAreaView style={styles.safe} edges={['top']}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Pre-Approvals</Text>
-                    
-                </View>
+            <View style={styles.safe}>
+                <ScreenHeader title="Pre-Approvals" />
                 <AppLoader />
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (error && entries.length === 0) {
         return (
-            <SafeAreaView style={styles.safe} edges={['top']}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Pre-Approvals</Text>
-                    
-                </View>
+            <View style={styles.safe}>
+                <ScreenHeader title="Pre-Approvals" />
                 <View style={styles.centered}>
                     <Feather name="wifi-off" size={40} color={SgateColors.t4} />
                     <Text style={styles.errorText}>{error}</Text>
@@ -259,27 +237,22 @@ export default function PreApprovalsScreen() {
                         <Text style={styles.retryBtnText}>Retry</Text>
                     </TouchableOpacity>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
         <View style={styles.safe}>
-            {/* Header */}
-            <SafeAreaView edges={['top']} style={{ backgroundColor: SgateColors.card }}>
-                <View style={styles.header}>
-                    <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                        <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Pre-Approvals</Text>
-                    <TouchableOpacity
-                        style={styles.addBtn}
+            <ScreenHeader
+                title="Pre-Approvals"
+                rightAction={
+                    <HeaderIconButton
+                        icon="plus"
                         onPress={() => setSheetVisible(true)}
-                    >
-                        <Feather name="plus" size={20} color={SgateColors.card} />
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+                        accessibilityLabel="Create pre-approval"
+                    />
+                }
+            />
 
             <FlatList
                 data={entries}
@@ -290,19 +263,13 @@ export default function PreApprovalsScreen() {
                 refreshing={refreshing}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={
-                    <View style={styles.empty}>
-                        <Feather name="shield" size={52} color={SgateColors.t4} />
-                        <Text style={styles.emptyTitle}>No Pre-Approvals</Text>
-                        <Text style={styles.emptySubtitle}>
-                            Create a pre-approval so cabs, deliveries, or helpers can enter without manual approval.
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.emptyBtn}
-                            onPress={() => setSheetVisible(true)}
-                        >
-                            <Text style={styles.emptyBtnText}>Create Pre-Approval</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <EmptyState
+                        iconName="shield-outline"
+                        title="No Pre-Approvals"
+                        description="Create a pre-approval so cabs, deliveries, or helpers can enter without manual approval."
+                        ctaLabel="Create Pre-Approval"
+                        onCtaPress={() => setSheetVisible(true)}
+                    />
                 }
             />
 
@@ -320,7 +287,7 @@ export default function PreApprovalsScreen() {
                     activeOpacity={1}
                     onPress={() => setMenuEntry(null)}
                 >
-                    <SafeBottomSheetSurface style={styles.actionSheet} showHandle minimumBottomPadding={20}>
+                    <SafeBottomSheetSurface style={styles.actionSheet} showHandle>
                         <Text style={styles.actionSheetTitle} numberOfLines={1}>
                             {menuEntry?.meta.visitorName ?? TYPE_CONFIG[menuEntry?.type ?? 'CAB']?.label}
                         </Text>
@@ -389,31 +356,6 @@ export default function PreApprovalsScreen() {
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
 
-    header: {
-        backgroundColor: SgateColors.card,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 13,
-        borderBottomWidth: 1,
-        borderBottomColor: SgateColors.borderSoft,
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12, flex: 1 },
-    addBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: SgateColors.black,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
 
     centered: {
         flex: 1,
@@ -483,16 +425,6 @@ const styles = StyleSheet.create({
         flex: 1,
         marginRight: 8,
     },
-    statusBadge: {
-        borderRadius: 10,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-    },
-    statusText: {
-        fontSize: 10,
-        fontFamily: SgateFonts.bold,
-        letterSpacing: 0.6,
-    },
     badgeRow: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -533,44 +465,11 @@ const styles = StyleSheet.create({
         textTransform: 'capitalize',
     },
     // ── Empty ────────────────────────────────────────────────────────────────
-    empty: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingTop: 80,
-        paddingHorizontal: 36,
-        gap: 10,
-    },
-    emptyTitle: {
-        fontSize: 18,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        marginTop: 8,
-    },
-    emptySubtitle: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-    emptyBtn: {
-        marginTop: 12,
-        backgroundColor: SgateColors.black,
-        paddingHorizontal: 28,
-        paddingVertical: 13,
-        borderRadius: 14,
-    },
-    emptyBtnText: {
-        fontSize: 14,
-        fontFamily: SgateFonts.semibold,
-        color: SgateColors.card,
-    },
 
     // ── Modals ───────────────────────────────────────────────────────────────
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.48)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
@@ -581,7 +480,6 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        paddingHorizontal: 20,
     },
     actionSheetTitle: {
         fontSize: 14,

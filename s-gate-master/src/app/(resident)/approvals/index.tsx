@@ -14,6 +14,7 @@ import { ActivityIndicator,
     TouchableOpacity,
     View } from 'react-native';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -179,7 +180,7 @@ export default function ApprovalsScreen() {
         const isUrgent  = secsLeft < 60 && !isExpired;
 
         return (
-            <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}>
                 <View style={[styles.requestCard, isPending && styles.requestCardActive]}>
                     {/* Top: photo + info */}
                     <View style={styles.requestTop}>
@@ -222,7 +223,7 @@ export default function ApprovalsScreen() {
                             <TouchableOpacity
                                 style={styles.denyBtn}
                                 onPress={() => { setRejectTarget(item); setRejectReason(''); }}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                                 disabled={!!actioning}
                             >
                                 <Feather name="x" size={15} color={SgateColors.t2} />
@@ -231,7 +232,7 @@ export default function ApprovalsScreen() {
                             <TouchableOpacity
                                 style={styles.approveBtn}
                                 onPress={() => handleApprove(item)}
-                                activeOpacity={0.75}
+                                activeOpacity={0.8}
                                 disabled={!!actioning}
                             >
                                 {actioning === item.id ? (
@@ -290,11 +291,11 @@ export default function ApprovalsScreen() {
                 onRefresh={() => { setRefreshing(true); fetchRequests(); }}
                 refreshing={refreshing}
                 ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <Feather name="shield" size={56} color={SgateColors.t4} />
-                        <Text style={styles.emptyTitle}>All Caught Up!</Text>
-                        <Text style={styles.emptySub}>No pending approvals at the moment.</Text>
-                    </View>
+                    <EmptyState
+                        iconName="shield-outline"
+                        title="All Caught Up!"
+                        description="No pending approvals at the moment."
+                    />
                 }
             />
 
@@ -505,25 +506,6 @@ const styles = StyleSheet.create({
     },
 
     // ── Empty state ──────────────────────────────────────────────────────────
-    emptyWrap: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 60,
-        opacity: 0.7,
-    },
-    emptyTitle: {
-        fontSize: 18,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        marginTop: 12,
-        marginBottom: 4,
-    },
-    emptySub: {
-        fontSize: 14,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-    },
 
     // ── Error state ──────────────────────────────────────────────────────────
     errorText: {
@@ -547,7 +529,7 @@ const styles = StyleSheet.create({
     // ── Modal ────────────────────────────────────────────────────────────────
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.48)',
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,

@@ -9,9 +9,11 @@ import {
     ActivityIndicator,
     Alert,
     AppState,
+    BackHandler,
     Dimensions,
     Platform,
     Pressable,
+    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -115,13 +117,15 @@ export default function EntryWaitingScreen() {
         id: string; flat: string; name: string; type: string; photo: string;
     }>();
 
-    const { id, flat, type, photo } = params;
+    const { id, flat, type, photo, name } = params;
+    const visitorName = name?.trim() || null;
     const photoUri = photo && photo.length > 0 ? decodeURIComponent(photo) : null;
 
     const [phase,     setPhase]     = useState<Phase>('waiting');
     const [elapsed,   setElapsed]   = useState(0);
     const [actioning, setActioning] = useState(false);
     const [cancelling, setCancelling] = useState(false);
+    const actioningRef = useRef(false); // blocks a second override tap before re-render
 
     const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
     const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -159,7 +163,7 @@ export default function EntryWaitingScreen() {
                 const listRes = await api.get('/api/v1/gate/entry-requests?status=PENDING');
                 const payload = listRes.data?.data;
                 const requests: any[] =
-                    payload?.entryRequests ?? payload?.entries ?? (Array.isArray(payload) ? payload : []);
+                    Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
                 const match = requests.find((r: any) => r.id === id);
                 if (match) {
                     const resolved = resolvePhase(match.status);
@@ -220,11 +224,11 @@ export default function EntryWaitingScreen() {
                     onPress: async () => {
                         setCancelling(true);
                         try {
-                            await api.patch(`/api/v1/gate/entry-requests/${id}/reject`);
+                            await api.patch(`/api/v1/gate/entry-requests/${id}/cancel`);
                         } catch { /* best-effort */ } finally {
                             setCancelling(false);
                             stopAll();
-                            router.replace('/');
+                            goDashboard();
                         }
                     },
                 },
@@ -237,51 +241,75 @@ export default function EntryWaitingScreen() {
         // Do NOT cancel — resident is still being notified.
         // The result will show up in the Approvals screen.
         stopAll();
-        router.replace('/new-entry' as any);
+        goNewEntry();
     };
 
     // ── Override actions ──────────────────────────────────────────────────────
     const handleAllow = async () => {
-        if (actioning) return;
+        if (actioningRef.current) return;
+        actioningRef.current = true;
         setActioning(true);
         try {
             await api.patch(`/api/v1/gate/entry-requests/${id}/approve`);
             settle('approved');
-        } catch {
+        } catch (err: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert('Could not update entry', err?.response?.data?.message ?? 'Please try again.');
         } finally {
+            actioningRef.current = false;
             setActioning(false);
         }
     };
 
     const handleDeny = async () => {
-        if (actioning) return;
+        if (actioningRef.current) return;
+        actioningRef.current = true;
         setActioning(true);
         try {
             await api.patch(`/api/v1/gate/entry-requests/${id}/reject`);
             settle('denied');
-        } catch {
+        } catch (err: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            Alert.alert('Could not update entry', err?.response?.data?.message ?? 'Please try again.');
         } finally {
+            actioningRef.current = false;
             setActioning(false);
         }
     };
 
-    const goNewEntry  = () => router.replace('/new-entry' as any);
-    const goDashboard = () => router.replace('/');
+    // Stack here is [index, new-entry (still holding the submitted form), entry-waiting].
+    // replace() used to leave that stale form (and a second dashboard) underneath, so
+    // Android back resurfaced it. Pop back to the dashboard first, then open a fresh screen.
+    function goDashboard() { router.dismissAll(); }
+    function goNewEntry() { router.dismissAll(); router.push('/new-entry'); }
+    function goApprovals() { router.dismissAll(); router.push('/approvals'); }
+
+    // Android back: while waiting it asks before cancelling (same as the X);
+    // on a result screen it returns to the dashboard instead of the old form.
+    useEffect(() => {
+        const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+            if (!id) goApprovals();
+            else if (phase === 'approved' || phase === 'denied') goDashboard();
+            else if (!cancelling) handleClose();
+            return true;
+        });
+        return () => sub.remove();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, phase, cancelling]);
 
     // ── Result screens ────────────────────────────────────────────────────────
     if (!id) {
-        return <NoIdError onBack={() => router.replace('/approvals' as any)} />;
+        return <NoIdError onBack={goApprovals} />;
     }
 
     if (phase === 'approved') {
         return (
             <View style={[S.resultRoot, { backgroundColor: '#059669' }]}>
+                <StatusBar barStyle="light-content" backgroundColor="#059669" />
                 <View style={[S.resultContent, { paddingTop: insets.top + 24 }]}>
                     <Ionicons name="checkmark-circle" size={96} color="#fff" />
                     <Text style={S.resultTitle}>Entry Approved</Text>
-                    <Text style={S.resultSub}>{typeDisplayLabel(type)}</Text>
+                    <Text style={S.resultSub}>{visitorName ? `${visitorName} · ${typeDisplayLabel(type)}` : typeDisplayLabel(type)}</Text>
                     <Text style={S.resultFlat}>Flat {flat}</Text>
                     <Text style={S.resultHint}>Let the visitor through</Text>
                 </View>
@@ -300,10 +328,11 @@ export default function EntryWaitingScreen() {
     if (phase === 'denied') {
         return (
             <View style={[S.resultRoot, { backgroundColor: '#DC2626' }]}>
+                <StatusBar barStyle="light-content" backgroundColor="#DC2626" />
                 <View style={[S.resultContent, { paddingTop: insets.top + 24 }]}>
                     <Ionicons name="close-circle" size={96} color="#fff" />
                     <Text style={S.resultTitle}>Entry Denied</Text>
-                    <Text style={S.resultSub}>{typeDisplayLabel(type)}</Text>
+                    <Text style={S.resultSub}>{visitorName ? `${visitorName} · ${typeDisplayLabel(type)}` : typeDisplayLabel(type)}</Text>
                     <Text style={S.resultFlat}>Flat {flat}</Text>
                     <Text style={S.resultHint}>Ask the visitor to leave</Text>
                 </View>
@@ -388,6 +417,7 @@ export default function EntryWaitingScreen() {
 
             {/* ── Visitor info ──────────────────────────────────────────── */}
             <View style={S.infoSection}>
+                {visitorName ? <Text style={S.visitorName} numberOfLines={1}>{visitorName}</Text> : null}
                 <View style={S.typeBadge}>
                     <Ionicons
                         name={
@@ -493,10 +523,10 @@ const S = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', gap: 2,
         backgroundColor: GuardColors.goldPale,
         paddingHorizontal: 12, paddingVertical: 8,
-        borderRadius: 20, borderWidth: 1, borderColor: '#BFDBFE',
+        borderRadius: 20, borderWidth: 1, borderColor: '#F3D37A',
     },
     nextBtnText: {
-        fontSize: 13, fontWeight: '700', color: '#2563EB',
+        fontSize: 13, fontWeight: '700', color: GuardColors.t1,
     },
 
     // Fix #1 — queue context strip
@@ -542,13 +572,16 @@ const S = StyleSheet.create({
     infoSection: {
         alignItems: 'center', gap: 6, marginBottom: 20,
     },
+    visitorName: {
+        fontSize: 20, fontWeight: '900', color: GuardColors.t1, maxWidth: SW - 64,
+    },
     typeBadge: {
         flexDirection: 'row', alignItems: 'center', gap: 5,
         backgroundColor: GuardColors.goldPale, paddingHorizontal: 12, paddingVertical: 6,
-        borderRadius: 20, borderWidth: 1, borderColor: '#BFDBFE',
+        borderRadius: 20, borderWidth: 1, borderColor: '#F3D37A',
     },
     typeBadgeText: {
-        fontSize: 14, fontWeight: '700', color: '#2563EB',
+        fontSize: 14, fontWeight: '700', color: GuardColors.t1,
     },
     flatRow: {
         flexDirection: 'row', alignItems: 'center', gap: 5,
@@ -569,10 +602,10 @@ const S = StyleSheet.create({
     },
     timerBadge: {
         backgroundColor: GuardColors.goldPale, paddingHorizontal: 14, paddingVertical: 6,
-        borderRadius: 20, borderWidth: 1, borderColor: '#BFDBFE',
+        borderRadius: 20, borderWidth: 1, borderColor: '#F3D37A',
     },
     timerText: {
-        fontSize: 13, fontWeight: '800', color: '#2563EB',
+        fontSize: 13, fontWeight: '800', color: GuardColors.t1,
     },
     timeoutBadge: {
         flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -646,5 +679,5 @@ const S = StyleSheet.create({
         backgroundColor: GuardColors.gold, paddingHorizontal: 32,
         paddingVertical: 14, borderRadius: 14,
     },
-    nextVisitorText: { fontSize: 15, fontWeight: '800', color: '#fff' },
+    nextVisitorText: { fontSize: 15, fontWeight: '800', color: GuardColors.black },
 });

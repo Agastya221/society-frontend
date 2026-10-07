@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import Animated, {
     FadeInDown,
@@ -16,8 +15,10 @@ import Animated, {
     useSharedValue,
     withSpring,
 } from 'react-native-reanimated';
+import EmptyState from '@/components/ui/EmptyState';
 import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useOnboardingNext } from '@/hooks/useOnboardingNext';
 import { useBlocks } from '@/hooks/useOnboardingQueries';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import { SkeletonList } from '@/components/lists/AppFlashList';
@@ -41,14 +42,14 @@ const BlockCard = memo(function BlockCard({
 
     return (
         <Animated.View
-            entering={FadeInDown.delay(index * 80).springify()}
+            entering={FadeInDown.delay(Math.min(index, 8) * 80).springify()}
             style={animStyle}
         >
             <TouchableOpacity
                 onPress={onPress}
                 onPressIn={() => { scale.value = withSpring(0.96, { damping: 15, stiffness: 400 }); }}
                 onPressOut={() => { scale.value = withSpring(1, { damping: 15, stiffness: 400 }); }}
-                activeOpacity={0.9}
+                activeOpacity={0.8}
                 style={styles.card}
             >
                 <View style={styles.cardRow}>
@@ -89,9 +90,9 @@ const BlockCard = memo(function BlockCard({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function SelectBlockScreen() {
-    const router = useRouter();
     const selectedSociety = useOnboardingStore((s) => s.selectedSociety);
     const setBlock = useOnboardingStore((s) => s.setBlock);
+    const goNext = useOnboardingNext();
 
     const {
         data: blocks,
@@ -103,10 +104,13 @@ export default function SelectBlockScreen() {
 
     const handleSelectBlock = useCallback(
         (block: Block) => {
-            setBlock(block);
-            router.push('/(onboarding)/select-flat');
+            // Re-picking the same block keeps flat/docs (setBlock wipes downstream).
+            if (useOnboardingStore.getState().selectedBlock?.id !== block.id) {
+                setBlock(block);
+            }
+            goNext('/(onboarding)/select-flat');
         },
-        [setBlock, router]
+        [setBlock, goNext]
     );
 
     const renderItem = useCallback(
@@ -141,15 +145,11 @@ export default function SelectBlockScreen() {
                     keyExtractor={keyExtractor}
                     renderItem={renderItem}
                     ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <View style={styles.emptyIconBox}>
-                                <Feather name="layers" size={36} color={SgateColors.t4} />
-                            </View>
-                            <Text style={styles.emptyTitle}>No blocks found</Text>
-                            <Text style={styles.emptySubtitle}>
-                                This society doesn’t have any blocks/towers set up yet.
-                            </Text>
-                        </View>
+                        <EmptyState
+                            iconName="layers"
+                            title="No blocks found"
+                            description="This society doesn’t have any blocks/towers set up yet."
+                        />
                     }
                     contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 32 }}
                     showsVerticalScrollIndicator={false}
@@ -224,34 +224,5 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontFamily: SgateFonts.medium,
         color: SgateColors.t2,
-    },
-    emptyContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 64,
-        paddingHorizontal: 32,
-    },
-    emptyIconBox: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 16,
-    },
-    emptyTitle: {
-        fontSize: 17,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        textAlign: 'center',
-        marginBottom: 8,
-    },
-    emptySubtitle: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-        textAlign: 'center',
-        lineHeight: 20,
     },
 });

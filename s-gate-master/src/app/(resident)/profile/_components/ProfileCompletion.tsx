@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../../constants/Sgate-theme';
 import type { User } from '../../../../types/api';
 
 // ─── Completion Calculation ───────────────────────────────────────────────────
@@ -42,7 +42,7 @@ export function ProfileCompletion({ percentage, onViewProfile }: ProfileCompleti
     if (percentage >= 100) return null; // Fully complete — don't show banner
 
     return (
-        <TouchableOpacity style={styles.container} onPress={onViewProfile} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.container} onPress={onViewProfile} activeOpacity={0.8}>
             <View style={styles.left}>
                 {/* Circular percentage */}
                 <View style={styles.circle}>
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingVertical: 16,
         backgroundColor: SgateColors.card,
         borderTopWidth: 1,

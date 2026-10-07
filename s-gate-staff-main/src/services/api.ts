@@ -1,5 +1,6 @@
 import { create } from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { useAuth } from '../store/auth';
 
 export const API_URL = 'https://society-gate-backend-gsrq.onrender.com/api/v1';
 export const api = create({ baseURL: API_URL, timeout: 60000, headers: { 'Content-Type': 'application/json' } });
@@ -25,9 +26,20 @@ api.interceptors.response.use(undefined, async (error) => {
       SecureStore.setItemAsync('staff_refresh_token', data.refreshToken),
       SecureStore.setItemAsync('staff_profile', JSON.stringify(data.staff)),
     ]);
+    useAuth.setState({ token: data.accessToken, staff: data.staff });
     return data.accessToken as string;
   })().finally(() => { refreshing = null; });
-  const accessToken = await refreshing;
+  let accessToken: string;
+  try {
+    accessToken = await refreshing;
+  } catch (refreshError: any) {
+    // Refresh token missing/expired/revoked: without this the app kept a dead token,
+    // stayed on the home screen and every screen failed silently. Sign out so the
+    // root layout routes back to /login — but not on a plain network failure.
+    const status = refreshError?.response?.status;
+    if (refreshError === error || status === 401 || status === 403) await useAuth.getState().signOut();
+    throw refreshError;
+  }
   request.headers.Authorization = `Bearer ${accessToken}`;
   return api(request);
 });

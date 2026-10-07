@@ -2,8 +2,10 @@ import { Feather } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import api from '../../../services/api';
 
 const C = { black: '#0D0F14', gold: '#FFB800', goldDeep: '#E5A500', goldPale: '#FFF8E1', green: '#00D68F', bg: '#F5F4F0', card: '#FFFFFF', surface: '#EEECEA', border: '#E5E3DE', borderSoft: '#F0EEEB', t1: '#0D0F14', t2: '#4A4D57', t3: '#8A8D97', t4: '#B5B8C0' };
@@ -24,6 +26,7 @@ interface DailyHelper {
   isInside: boolean;
   isOpenToWork: boolean;
   rating: number;
+  createdAt: string | null;
 }
 
 function normaliseHelper(raw: any): DailyHelper {
@@ -32,15 +35,24 @@ function normaliseHelper(raw: any): DailyHelper {
     name:        raw.name ?? '',
     type:        raw.type ?? raw.staffType ?? '',
     housesCount: raw.housesCount ?? 0,
+    // The backend sets isCurrentlyWorking on gate check-in and clears it on check-out.
     isInside:    raw.isInside ?? raw.isCurrentlyWorking ?? false,
     isOpenToWork: raw.isOpenToWork ?? false,
     rating:      raw.rating ?? 0,
+    createdAt:   raw.createdAt ?? null,
   };
 }
 
 const FILTERS = ['Inside', 'Newly added', 'Open to work'];
 
+const NEW_HELPER_DAYS = 30;
+function isNewlyAdded(createdAt: string | null): boolean {
+  if (!createdAt) return false;
+  return Date.now() - new Date(createdAt).getTime() < NEW_HELPER_DAYS * 24 * 60 * 60 * 1000;
+}
+
 export default function DailyHelpTypeList() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
   const { type } = useLocalSearchParams<{ type: string }>();
   const [search, setSearch] = useState('');
@@ -56,9 +68,6 @@ export default function DailyHelpTypeList() {
       // Extract staff array correctly whether it's nested in .staff or direct
       const list: any[] = Array.isArray(apiData?.staff) ? apiData.staff : (Array.isArray(apiData) ? apiData : []);
       
-      console.log("Selected Type:", type);
-      console.log("Staff Types:", list.map(s => s.staffType ?? s.type));
-
       // Filter staff by selected type (case insensitive matching)
       const selectedTypeStr = String(type).toUpperCase();
       const filteredStaff = list.filter((item: any) => {
@@ -80,11 +89,12 @@ export default function DailyHelpTypeList() {
   let filtered = helpers.filter(h => h.name.toLowerCase().includes(search.toLowerCase()));
   if (activeFilter === 'Inside') filtered = filtered.filter(h => h.isInside);
   if (activeFilter === 'Open to work') filtered = filtered.filter(h => h.isOpenToWork);
+  if (activeFilter === 'Newly added') filtered = filtered.filter(h => isNewlyAdded(h.createdAt));
 
   const typeLabel = TYPE_LABEL_MAP[type] ?? type;
 
   const renderItem = ({ item }: { item: DailyHelper }) => (
-    <TouchableOpacity style={s.card} activeOpacity={0.75}
+    <TouchableOpacity style={s.card} activeOpacity={0.8}
       onPress={() => router.push({ pathname: '/(resident)/daily-help/profile/[id]' as any, params: { id: item.id } })}>
       <View style={s.avatar}>
         {item.isInside && <View style={s.onlineDot} />}
@@ -101,21 +111,13 @@ export default function DailyHelpTypeList() {
 
   return (
     <View style={s.safe}>
-      <SafeAreaView edges={['top']} style={{ backgroundColor: C.card }}>
-        <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Feather name="arrow-left" size={22} color={C.t1} />
-          </TouchableOpacity>
-          <Text style={s.headerTitle}>{typeLabel}</Text>
-          
-        </View>
-      </SafeAreaView>
+      <ScreenHeader title={typeLabel} />
 
       {loading ? (
         <AppLoader />
       ) : (
         <FlatList data={filtered} keyExtractor={item => item.id} renderItem={renderItem}
-          contentContainerStyle={s.listContent}
+          contentContainerStyle={[s.listContent, { paddingBottom: scrollBottomPadding }]}
           ListHeaderComponent={
             <View>
               <View style={s.searchBar}>
@@ -134,11 +136,11 @@ export default function DailyHelpTypeList() {
             </View>
           }
           ListEmptyComponent={
-            <View style={s.emptyWrap}>
-              <Feather name="users" size={32} color={C.t4} />
-              <Text style={s.emptyTitle}>No staff available</Text>
-              <Text style={s.emptySubtitle}>None found for this category</Text>
-            </View>
+            <EmptyState
+                iconName="account-group-outline"
+                title="No staff available"
+                description="None found for this category"
+            />
           }
         />
       )}
@@ -148,9 +150,6 @@ export default function DailyHelpTypeList() {
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: C.bg },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: C.card, borderBottomWidth: 1, borderBottomColor: C.borderSoft },
-  headerTitle: { fontSize: 18, fontFamily: F.semiBold, color: C.t1, marginLeft: 12, flex: 1 },
   listContent: { padding: 16, paddingBottom: 40 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.borderSoft, paddingHorizontal: 14, minHeight: 48, gap: 8, marginBottom: 12 },
   searchInput: { flex: 1, fontFamily: F.regular, fontSize: 14, color: C.t1 },
@@ -170,7 +169,4 @@ const s = StyleSheet.create({
   helperMeta: { fontSize: 12, fontFamily: F.regular, color: C.t3, marginBottom: 5 },
   openBadge: { alignSelf: 'flex-start', backgroundColor: C.goldPale, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2 },
   openBadgeText: { fontSize: 10, fontFamily: F.semiBold, color: C.goldDeep },
-  emptyWrap: { alignItems: 'center', paddingTop: 60, gap: 8 },
-  emptyTitle: { fontSize: 16, fontFamily: F.semiBold, color: C.t2 },
-  emptySubtitle: { fontSize: 13, fontFamily: F.regular, color: C.t3 },
 });

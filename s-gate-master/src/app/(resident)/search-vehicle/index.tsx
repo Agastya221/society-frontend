@@ -1,15 +1,17 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Linking, FlatList, Modal, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
+import { AnimatedBottomSheetModal } from '@/components/ui/AnimatedBottomSheetModal';
+import EmptyState from '@/components/ui/EmptyState';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import * as Haptics from 'expo-haptics';
 import { AppAlert } from '../../../components/ui/AppAlert';
-import { SafeBottomSheetSurface } from '../../../components/ui/SafeBottomSheetSurface';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface VehicleResult {
@@ -41,7 +43,7 @@ const VIOLATION_TYPES = [
 
 // ─── Screen ────────────────────────────────────────────────────────────────────
 export default function SearchVehicleScreen() {
-  const router = useRouter();
+    const scrollBottomPadding = useScrollBottomPadding();
   const [tab, setTab] = useState<'LOOKUP' | 'MY_REPORTS'>('LOOKUP');
 
   // Lookup State
@@ -142,7 +144,7 @@ export default function SearchVehicleScreen() {
   const renderComplaint = ({ item, index }: { item: Complaint, index: number }) => {
     const isOpen = item.status === 'OPEN' || item.status === 'NOTIFIED';
     return (
-      <Animated.View entering={FadeInDown.delay(index * 50).springify()} style={S.complaintCard}>
+      <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()} style={S.complaintCard}>
         <View style={S.complaintHeader}>
           <Text style={S.complaintPlate}>{item.vehicleNumber}</Text>
           <View style={[S.cStatusBadge, !isOpen && { backgroundColor: SgateColors.surface }]}>
@@ -160,16 +162,7 @@ export default function SearchVehicleScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
       {/* ── Header + Tabs (one visual block) ────────────────────────────── */}
-      <View style={S.headerBg}>
-        <SafeAreaView edges={['top']}>
-          <View style={S.headerInner}>
-            <TouchableOpacity onPress={() => router.back()} style={S.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={S.headerTitle}>Parking & Vehicles</Text>
-            <View style={{ width: 22 }} />
-          </View>
-        </SafeAreaView>
+      <ScreenHeader title="Parking & Vehicles">
 
         {/* ── Premium Segmented Control ─────────────────────────────────── */}
         <View style={S.segmentContainer}>
@@ -177,7 +170,7 @@ export default function SearchVehicleScreen() {
             <TouchableOpacity
               style={[S.segmentItem, tab === 'LOOKUP' && S.segmentItemActive]}
               onPress={() => setTab('LOOKUP')}
-              activeOpacity={0.85}
+              activeOpacity={0.8}
             >
               <MaterialCommunityIcons name="car-search-outline" size={16} color={tab === 'LOOKUP' ? SgateColors.t1 : '#9CA3AF'} />
               <Text style={[S.segmentText, tab === 'LOOKUP' && S.segmentTextActive]}>Lookup</Text>
@@ -185,21 +178,21 @@ export default function SearchVehicleScreen() {
             <TouchableOpacity
               style={[S.segmentItem, tab === 'MY_REPORTS' && S.segmentItemActive]}
               onPress={() => setTab('MY_REPORTS')}
-              activeOpacity={0.85}
+              activeOpacity={0.8}
             >
               <MaterialCommunityIcons name="clipboard-text-outline" size={16} color={tab === 'MY_REPORTS' ? SgateColors.t1 : '#9CA3AF'} />
               <Text style={[S.segmentText, tab === 'MY_REPORTS' && S.segmentTextActive]}>My Reports</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </ScreenHeader>
 
       {/* Fixed spacing between header block and content */}
       <View style={{ height: 14 }} />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {tab === 'LOOKUP' ? (
-          <ScrollView contentContainerStyle={S.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={[S.scrollContent, { paddingBottom: scrollBottomPadding }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {/* ── Search Card ──────────────────────────────────────────── */}
             <View style={S.searchCard}>
               <Text style={S.searchCardTitle}>Find a Vehicle</Text>
@@ -224,7 +217,7 @@ export default function SearchVehicleScreen() {
                   </TouchableOpacity>
                 )}
               </View>
-              <TouchableOpacity style={[S.searchBtn, isSearchDisabled && S.searchBtnDisabled]} onPress={handleSearch} disabled={isSearchDisabled} activeOpacity={0.85}>
+              <TouchableOpacity style={[S.searchBtn, isSearchDisabled && S.searchBtnDisabled]} onPress={handleSearch} disabled={isSearchDisabled} activeOpacity={0.8}>
                 {loading ? <ActivityIndicator size="small" color={SgateColors.t1} /> : <Text style={[S.searchBtnText, isSearchDisabled && S.searchBtnTextDisabled]}>Search</Text>}
               </TouchableOpacity>
             </View>
@@ -294,18 +287,16 @@ export default function SearchVehicleScreen() {
             data={complaints}
             keyExtractor={(item) => item.id}
             renderItem={renderComplaint}
-            contentContainerStyle={S.listContent}
+            contentContainerStyle={[S.listContent, { paddingBottom: scrollBottomPadding }]}
             refreshing={loadingComplaints}
             onRefresh={fetchMyComplaints}
             ListEmptyComponent={
               !loadingComplaints ? (
-                <View style={S.emptyWrap}>
-                  <View style={S.emptyIconCircle}>
-                    <MaterialCommunityIcons name="shield-check-outline" size={32} color={SgateColors.goldDeep} />
-                  </View>
-                  <Text style={S.emptyTitle}>No Reports</Text>
-                  <Text style={S.emptySub}>You haven&apos;t filed any parking complaints.</Text>
-                </View>
+                <EmptyState
+                    iconName="shield-check-outline"
+                    title="No Reports"
+                    description="You haven't filed any parking complaints."
+                />
               ) : null
             }
           />
@@ -313,41 +304,37 @@ export default function SearchVehicleScreen() {
       </KeyboardAvoidingView>
 
       {/* ── Modal: File Complaint ───────────────────────────────────────── */}
-      <Modal visible={!!reportTarget} transparent animationType="fade" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setReportTarget(null)}>
-        <View style={S.modalOverlay}>
-          <SafeBottomSheetSurface style={S.modalContent} showHandle minimumBottomPadding={20}>
-            <Text style={S.modalTitle}>File Parking Complaint</Text>
-            <Text style={S.modalSub}>Vehicle: {reportTarget}</Text>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-              <Text style={S.fieldLabel}>Issue Type</Text>
-              <View style={S.tagsContainer}>
-                {VIOLATION_TYPES.map(vt => (
-                  <TouchableOpacity key={vt} style={[S.tag, rType === vt && S.tagActive]} onPress={() => setRType(vt)}>
-                    <Text style={[S.tagText, rType === vt && S.tagTextActive]}>{vt.replace('_', ' ')}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <Text style={S.fieldLabel}>Description (Optional but helpful)</Text>
-              <TextInput
-                style={S.inputArea}
-                placeholder="e.g. Blocking my parking spot since morning"
-                placeholderTextColor={SgateColors.t4}
-                value={rDesc}
-                onChangeText={setRDesc}
-                multiline
-              />
-              <View style={S.modalBtnRow}>
-                <TouchableOpacity style={S.modalCancel} onPress={() => setReportTarget(null)}>
-                  <Text style={S.modalCancelTxt}>Cancel</Text>
+      <AnimatedBottomSheetModal visible={!!reportTarget} onClose={() => setReportTarget(null)}>
+          <Text style={S.modalTitle}>File Parking Complaint</Text>
+          <Text style={S.modalSub}>Vehicle: {reportTarget}</Text>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+            <Text style={S.fieldLabel}>Issue Type</Text>
+            <View style={S.tagsContainer}>
+              {VIOLATION_TYPES.map(vt => (
+                <TouchableOpacity key={vt} style={[S.tag, rType === vt && S.tagActive]} onPress={() => setRType(vt)}>
+                  <Text style={[S.tagText, rType === vt && S.tagTextActive]}>{vt.replace('_', ' ')}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={S.modalSubmit} onPress={submitComplaint} disabled={submitting}>
-                  {submitting ? <ActivityIndicator color="#fff" /> : <Text style={S.modalSubmitTxt}>Submit</Text>}
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </SafeBottomSheetSurface>
-        </View>
-      </Modal>
+              ))}
+            </View>
+            <Text style={S.fieldLabel}>Description (Optional but helpful)</Text>
+            <TextInput
+              style={S.inputArea}
+              placeholder="e.g. Blocking my parking spot since morning"
+              placeholderTextColor={SgateColors.t4}
+              value={rDesc}
+              onChangeText={setRDesc}
+              multiline
+            />
+            <View style={S.modalBtnRow}>
+              <TouchableOpacity style={S.modalCancel} onPress={() => setReportTarget(null)}>
+                <Text style={S.modalCancelTxt}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={S.modalSubmit} onPress={submitComplaint} disabled={submitting}>
+                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={S.modalSubmitTxt}>Submit</Text>}
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+      </AnimatedBottomSheetModal>
     </View>
   );
 }
@@ -356,14 +343,9 @@ export default function SearchVehicleScreen() {
 const S = StyleSheet.create({
   root: { flex: 1, backgroundColor: SgateColors.bg },
 
-  // Header
-  headerBg: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.04)' },
-  headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn: { width: 32, height: 32, alignItems: 'flex-start', justifyContent: 'center' },
-  headerTitle: { flex: 1, fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, marginLeft: 12 },
 
   // Premium Segmented Control
-  segmentContainer: { paddingHorizontal: 16, paddingTop: 6, paddingBottom: 14 },
+  segmentContainer: { paddingHorizontal: SgateLayout.screenGutter },
   segmentTrack: { flexDirection: 'row', backgroundColor: '#F4F4F5', borderRadius: 16, padding: 4 },
   segmentItem: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -380,7 +362,7 @@ const S = StyleSheet.create({
   segmentText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: '#9CA3AF' },
   segmentTextActive: { color: SgateColors.t1 },
 
-  scrollContent: { paddingHorizontal: 16, paddingTop: 20, paddingBottom: 32 },
+  scrollContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 20, paddingBottom: 32 },
   listContent: { padding: 16, paddingBottom: 40, flexGrow: 1 },
 
   // Search Card
@@ -430,14 +412,8 @@ const S = StyleSheet.create({
   complaintDate: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t4 },
 
   // Empty
-  emptyWrap: { alignItems: 'center', marginTop: 60 },
-  emptyIconCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: SgateColors.goldPale, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 8 },
-  emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center' },
 
   // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { paddingHorizontal: 24, maxHeight: '80%' },
   modalTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginBottom: 4 },
   modalSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 20 },
   fieldLabel: { fontSize: 12, fontFamily: SgateFonts.bold, color: SgateColors.t2, marginBottom: 8, marginTop: 16, textTransform: 'uppercase' },

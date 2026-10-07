@@ -6,15 +6,15 @@ interface SourceBadgeProps {
 
 export function SourceBadge({ source }: SourceBadgeProps) {
     const styles = {
-        ADMIN: 'bg-purple-100 dark:bg-purple-900/30',
-        GUARD: 'bg-blue-100 dark:bg-blue-900/30',
-        RESIDENT: 'bg-green-100 dark:bg-green-900/30'
+        ADMIN: 'bg-purple-100',
+        GUARD: 'bg-blue-100',
+        RESIDENT: 'bg-green-100'
     };
 
     const textStyles = {
-        ADMIN: 'text-purple-700 dark:text-purple-300',
-        GUARD: 'text-blue-700 dark:text-blue-300',
-        RESIDENT: 'text-green-700 dark:text-green-300'
+        ADMIN: 'text-purple-700',
+        GUARD: 'text-blue-700',
+        RESIDENT: 'text-green-700'
     };
 
     return (

@@ -9,12 +9,13 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
+import EmptyState from '@/components/ui/EmptyState';
+import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useOnboardingNext } from '@/hooks/useOnboardingNext';
 import { useFlats } from '@/hooks/useOnboardingQueries';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import { SkeletonList } from '@/components/lists/AppFlashList';
@@ -22,15 +23,22 @@ import type { Flat } from '@/types/onboarding.types';
 
 // ─── Status color helper ──────────────────────────────────────────────────────
 
+// Go by who actually holds the flat. `isOccupied` alone can be stale (seeded
+// flats are marked occupied with no owner or tenant), which labelled empty
+// flats "Occupied".
+function isTakenFlat(flat: Flat) {
+    return flat.hasTenant || (flat.isOccupied && flat.hasOwner);
+}
+
 function getStatusColor(flat: Flat) {
-    if (flat.isOccupied) return SgateColors.red;
+    if (isTakenFlat(flat)) return SgateColors.red;
     if (flat.hasOwner) return SgateColors.gold;
     if (flat.canApply) return SgateColors.green;
     return SgateColors.t4;
 }
 
 function getStatusLabel(flat: Flat) {
-    if (flat.isOccupied) return 'Occupied';
+    if (isTakenFlat(flat)) return 'Occupied';
     if (flat.hasOwner) return 'Has Owner';
     if (flat.canApply) return 'Available';
     return '';
@@ -61,7 +69,7 @@ const FlatRow = memo(function FlatRow({
         <TouchableOpacity
             onPress={onPress}
             disabled={disabled}
-            activeOpacity={0.6}
+            activeOpacity={0.8}
             style={[
                 styles.flatRow,
                 isSelected && styles.flatRowSelected,
@@ -134,12 +142,12 @@ function FloorHeader({ floor, count }: { floor: string; count: number }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function SelectFlatScreen() {
-    const router = useRouter();
     const insets = useSafeAreaInsets();
     const selectedSociety = useOnboardingStore((s) => s.selectedSociety);
     const selectedBlock = useOnboardingStore((s) => s.selectedBlock);
     const selectedFlat = useOnboardingStore((s) => s.selectedFlat);
     const setFlat = useOnboardingStore((s) => s.setFlat);
+    const goNext = useOnboardingNext();
 
     const [search, setSearch] = useState('');
     const [isFocused, setIsFocused] = useState(false);
@@ -183,6 +191,9 @@ export default function SelectFlatScreen() {
     const handleSelectFlat = useCallback(
         (flat: Flat) => {
             if (!flat.canApply) return;
+            // Re-tapping the selected flat keeps resident type/docs (setFlat
+            // wipes downstream).
+            if (useOnboardingStore.getState().selectedFlat?.id === flat.id) return;
             setFlat(flat);
         },
         [setFlat]
@@ -190,7 +201,7 @@ export default function SelectFlatScreen() {
 
     const handleContinue = () => {
         if (!selectedFlat) return;
-        router.push('/(onboarding)/resident-type');
+        goNext('/(onboarding)/resident-type');
     };
 
     const canContinue = !!selectedFlat;
@@ -291,19 +302,11 @@ export default function SelectFlatScreen() {
                     contentContainerStyle={{ paddingBottom: 88 + insets.bottom }}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <View style={styles.emptyIconBox}>
-                                <Feather name="search" size={28} color={SgateColors.t4} />
-                            </View>
-                            <Text style={styles.emptyTitle}>
-                                {search ? 'No matching flats' : 'No flats found'}
-                            </Text>
-                            <Text style={styles.emptyText}>
-                                {search
-                                    ? `No flat number matches "${search}"`
-                                    : "This block doesn't have any flats yet."}
-                            </Text>
-                        </View>
+                        <EmptyState
+                            iconName="magnify"
+                            title={search ? 'No matching flats' : 'No flats found'}
+                            description={search ? `No flat number matches "${search}"` : "This block doesn't have any flats yet."}
+                        />
                     }
                 />
             )}
@@ -346,7 +349,7 @@ const styles = StyleSheet.create({
     // ── Search ──
     searchContainer: {
         backgroundColor: '#FFFFFF',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 12,
         paddingBottom: 10,
         ...SgateShadows.minimal,
@@ -411,7 +414,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        paddingHorizontal: 16,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 20,
         paddingBottom: 8,
     },
@@ -539,33 +542,6 @@ const styles = StyleSheet.create({
     },
 
     // ── Empty ──
-    emptyContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 72,
-        paddingHorizontal: 32,
-    },
-    emptyIconBox: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 16,
-    },
-    emptyTitle: {
-        fontSize: 16,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        marginBottom: 4,
-    },
-    emptyText: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-        textAlign: 'center',
-    },
 
     // ── Bottom ──
     bottomBar: {

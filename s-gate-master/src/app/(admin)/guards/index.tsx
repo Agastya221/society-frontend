@@ -14,12 +14,13 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import EmptyState from '@/components/ui/EmptyState';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { AppLoader } from '@/components/ui/AppLoader';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -160,21 +161,19 @@ export default function GuardsScreen() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={SgateColors.gold} colors={[SgateColors.gold]} />}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={
-                        <View style={styles.emptyWrap}>
-                            <View style={styles.emptyIconWrap}>
-                                <MaterialCommunityIcons name="shield-off-outline" size={36} color={SgateColors.t4} />
-                            </View>
-                            <Text style={styles.emptyTitle}>No guards found</Text>
-                            <Text style={styles.emptySub}>{searchQuery ? 'Try a different search query.' : 'Tap "Add New Guard" to get started.'}</Text>
-                        </View>
+                        <EmptyState
+                            iconName="shield-off-outline"
+                            title="No guards found"
+                            description={searchQuery ? 'Try a different search query.' : 'Tap "Add New Guard" to get started.'}
+                        />
                     }
                     renderItem={({ item, index }) => {
                         const initial = item.name.charAt(0).toUpperCase();
                         return (
-                            <Animated.View entering={FadeInDown.delay(index * 60).springify()}>
+                            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).springify()}>
                                 <TouchableOpacity
                                     style={styles.card}
-                                    activeOpacity={0.7}
+                                    activeOpacity={0.8}
                                     onPress={() => router.push({ pathname: '/(admin)/guards/[id]', params: { id: item.id, guardData: JSON.stringify(item) } })}
                                 >
                                     {/* Top Row: Avatar + Info + Status */}
@@ -243,8 +242,8 @@ export default function GuardsScreen() {
             )}
 
             {/* ── Add Guard Modal ─────────────────────────────────────────── */}
-            <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet">
-                <View style={[styles.modalWrap, { paddingBottom: insets.bottom }]}>
+            <Modal visible={isModalVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setModalVisible(false)}>
+                <View style={[styles.modalWrap, { paddingTop: insets.top + 16, paddingBottom: insets.bottom }]}>
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>New Guard</Text>
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
@@ -293,7 +292,7 @@ const styles = StyleSheet.create({
     headerBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingVertical: 16,
         backgroundColor: SgateColors.card,
         shadowColor: '#000',
@@ -434,18 +433,6 @@ const styles = StyleSheet.create({
     },
 
     // Empty
-    emptyWrap: { alignItems: 'center', paddingVertical: 48 },
-    emptyIconWrap: {
-        width: 72,
-        height: 72,
-        borderRadius: 24,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 16,
-    },
-    emptyTitle: { fontSize: 16, fontFamily: SgateFonts.bold, color: SgateColors.t2 },
-    emptySub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t4, marginTop: 4, textAlign: 'center', paddingHorizontal: 40 },
 
     // Modal
     modalWrap: { flex: 1, backgroundColor: SgateColors.bg, padding: 24 },

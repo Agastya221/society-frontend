@@ -2,7 +2,7 @@
 import { OTPWidget } from '@msg91comm/sendotp-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GuardBrandMark } from '@/components/GuardBrandMark';
 import { GuardColors, GuardFonts, GuardRadius } from '@/constants/theme';
@@ -11,6 +11,8 @@ import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
 
 type Screen = 'phone' | 'otp';
+
+const NOT_A_GUARD = 'This app is for security guards. Use the S-Gate app.';
 
 export default function AuthScreen() {
   const login = useAuthStore((state) => state.login);
@@ -24,6 +26,16 @@ export default function AuthScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => { OTPWidget.initializeWidget(MSG91_WIDGET_ID, MSG91_TOKEN_AUTH); }, []);
+  // Android back on the OTP step returns to the phone step instead of closing the app.
+  useEffect(() => {
+    if (screen !== 'otp') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (isLoading) return true;
+      setScreen('phone'); setOtp(''); setError('');
+      return true;
+    });
+    return () => sub.remove();
+  }, [screen, isLoading]);
   useEffect(() => {
     if (countdown <= 0) { if (timerRef.current) clearInterval(timerRef.current); return; }
     timerRef.current = setInterval(() => setCountdown((value) => {
@@ -70,10 +82,12 @@ export default function AuthScreen() {
       const backend = await api.post('/api/v1/auth/guard-app/otp/verify', { widgetToken });
       const data = backend.data?.data;
       if (!data?.accessToken || !data?.user) { setError('Authentication failed. Contact your administrator.'); return; }
-      if (data.user.role !== 'GUARD' && data.user.role !== 'SUPER_ADMIN') { setError('This app is available only to security staff.'); return; }
+      if (data.user.role !== 'GUARD') { setError(NOT_A_GUARD); return; }
       await login(data.accessToken, data.refreshToken, data.user);
     } catch (caught: any) {
       const message = caught?.response?.data?.message || caught?.message || 'Verification failed.';
+      // The server rejects non-guard accounts with 403 "...for guards only."
+      if (caught?.response?.status === 403 && /guards only/i.test(message)) { setError(NOT_A_GUARD); return; }
       setError(message);
       if (message.toLowerCase().includes('no guard') || message.includes('404')) {
         Alert.alert('Guard account not found', 'Ask your society administrator to register this mobile number.', [{ text: 'OK', onPress: () => setScreen('phone') }]);

@@ -1,13 +1,15 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
 import { AppLoader } from '@/components/ui/AppLoader';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { ScreenHeader } from '@/components/layout/ScreenHeader';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { SgateColors, SgateFonts } from '../../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
 import { AppAlert } from '../../../components/ui/AppAlert';
 
+import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getInitials(name: string): string {
@@ -158,8 +160,8 @@ function SurveyOptionCard({ option, selected, hasVoted, totalVotes, onSelect }: 
 
 // ── Main Screen ────────────────────────────────────────────────────────────────
 
-export default function ElectionDetailScreen() {
-  const router = useRouter();
+function ElectionDetailScreen() {
+    const scrollBottomPadding = useScrollBottomPadding();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [item, setItem] = useState<ElectionDetail | null>(null);
@@ -189,7 +191,7 @@ export default function ElectionDetailScreen() {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: SgateColors.bg }}>
-        <View style={D.headerContainer}><SafeAreaView edges={['top']} /></View>
+        <ScreenHeader title="Elections & Surveys" />
         <AppLoader />
       </View>
     );
@@ -198,7 +200,7 @@ export default function ElectionDetailScreen() {
   if (!item) {
     return (
       <View style={{ flex: 1, backgroundColor: SgateColors.bg }}>
-        <View style={D.headerContainer}><SafeAreaView edges={['top']} /></View>
+        <ScreenHeader title="Elections & Surveys" />
         <View style={D.notFound}><Text style={D.notFoundText}>Not found</Text></View>
       </View>
     );
@@ -267,23 +269,12 @@ export default function ElectionDetailScreen() {
 
   return (
     <View style={D.root}>
-      {/* Header — extends behind status bar */}
-      <View style={D.headerContainer}>
-        <SafeAreaView edges={['top']}>
-          <View style={D.header}>
-            <TouchableOpacity onPress={() => router.back()} style={D.backBtn} activeOpacity={0.7}>
-              <Feather name="arrow-left" size={22} color={SgateColors.t1} />
-            </TouchableOpacity>
-            <Text style={D.headerTitle} numberOfLines={1}>{item.title}</Text>
-            <View style={D.headerSpacer} />
-          </View>
-        </SafeAreaView>
-      </View>
+      <ScreenHeader title={item.title} />
 
       {/* Persistent spacer */}
       <View style={{ height: 6, backgroundColor: SgateColors.bg }} />
 
-      <ScrollView contentContainerStyle={D.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[D.scrollContent, { paddingBottom: scrollBottomPadding }]} showsVerticalScrollIndicator={false}>
         {/* Summary Card */}
         <View style={D.infoCard}>
           <View style={D.infoTopRow}>
@@ -386,30 +377,9 @@ const D = StyleSheet.create({
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   notFoundText: { fontSize: 16, fontFamily: SgateFonts.medium, color: SgateColors.t3 },
 
-  // ── Header ──
-  headerContainer: {
-    backgroundColor: SgateColors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.04)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 3,
-    elevation: 2,
-    zIndex: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginLeft: 8, flex: 1 },
-  headerSpacer: { width: 36 },
 
   // ── Scroll ──
-  scrollContent: { paddingHorizontal: 16, paddingBottom: 32 },
+  scrollContent: { paddingHorizontal: SgateLayout.screenGutter, paddingBottom: 32 },
 
   // ── Info Card ──
   infoCard: {
@@ -609,3 +579,5 @@ const D = StyleSheet.create({
   },
   footerBtnText: { fontSize: 15, fontFamily: SgateFonts.bold },
 });
+
+export default withResetOnBlur(ElectionDetailScreen);

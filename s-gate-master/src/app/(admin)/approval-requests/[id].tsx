@@ -1,11 +1,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import { AppLoader } from '@/components/ui/AppLoader';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { getGatePassById, GatePass } from '../../../services/gatePass';
 
@@ -86,7 +87,7 @@ export default function ApprovalRequestDetailScreen() {
     if (!request) {
         return (
             <View style={[styles.safe, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color={SgateColors.gold} />
+                <AppLoader />
                 <Text style={styles.loadingText}>Loading details…</Text>
             </View>
         );
@@ -213,7 +214,7 @@ const styles = StyleSheet.create({
 
     // Scroll
     scroll: { flex: 1 },
-    scrollContent: { paddingHorizontal: 20, paddingTop: 16 },
+    scrollContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 16 },
 
     // Card
     card: {

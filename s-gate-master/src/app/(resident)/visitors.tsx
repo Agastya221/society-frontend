@@ -1,3 +1,4 @@
+import { SgateColors } from '@/constants/Sgate-theme';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -128,7 +129,7 @@ export default function VisitorsScreen() {
         const filtered = q
             ? entries.filter(
                   (e) =>
-                      e.visitorName.toLowerCase().includes(q) ||
+                      (e.visitorName ?? '').toLowerCase().includes(q) ||
                       (e.flat?.number ?? '').toLowerCase().includes(q),
               )
             : entries;
@@ -173,7 +174,7 @@ export default function VisitorsScreen() {
                         <View className="flex-1 ml-3">
                             <View className="flex-row items-center justify-between mb-1">
                                 <Text className="flex-1 text-[15px] font-sora-semibold text-gray-900 mr-2" numberOfLines={1}>
-                                    {e.visitorName}
+                                    {e.visitorName || 'Visitor'}
                                 </Text>
                                 <Text className="text-xs font-sora-medium text-gray-500">
                                     {timeOnly(e.createdAt)}
@@ -260,7 +261,7 @@ export default function VisitorsScreen() {
                     <TextInput
                         className="flex-1 text-[15px] font-sora-medium text-gray-900 h-full py-0"
                         placeholder="Search by name or flat…"
-                        placeholderTextColor="#9ca3af"
+                        placeholderTextColor={SgateColors.t3}
                         value={search}
                         onChangeText={setSearch}
                         onFocus={() => setSearchFocused(true)}

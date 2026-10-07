@@ -5,7 +5,8 @@ import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, Linking, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
+import EmptyState from '@/components/ui/EmptyState';
+import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import api from '@/services/api';
@@ -117,7 +118,7 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
                     {['ALL', 'BLOCK_A', 'BLOCK_B'].map(t => (
                         <TouchableOpacity key={t} onPress={() => { Haptics.selectionAsync(); setTarget(t as any); }}
                             style={[styles.targetChip, target === t && styles.targetChipActive]}
-                            activeOpacity={0.7}
+                            activeOpacity={0.8}
                         >
                             <Text style={[styles.targetText, target === t && styles.targetTextActive]}>
                                 {t.replace('_', ' ')}
@@ -145,7 +146,7 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
                 <TextInput
                     style={[styles.input, styles.textarea]}
                     placeholder="Type the broadcast message..."
-                    placeholderTextColor="#AAA"
+                    placeholderTextColor={SgateColors.t3}
                     multiline
                     value={message}
                     onChangeText={setMessage}
@@ -216,8 +217,8 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.listContent}
                 renderItem={({ item, index }) => (
-                    <Animated.View entering={FadeInDown.delay(index * 40).springify()}>
-                        <TouchableOpacity style={styles.contactCard} activeOpacity={0.7}>
+                    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 40).springify()}>
+                        <TouchableOpacity style={styles.contactCard} activeOpacity={0.8}>
                             <Avatar name={item.name} size={44} color={item.isGuard ? SgateColors.blue : SgateColors.gold} />
                             <View style={styles.contactMid}>
                                 <Text style={styles.contactName} numberOfLines={1}>{item.name}</Text>
@@ -231,7 +232,7 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
                             <TouchableOpacity
                                 style={styles.callBtn}
                                 onPress={() => handleCall(item.phone)}
-                                activeOpacity={0.6}
+                                activeOpacity={0.8}
                             >
                                 <MaterialCommunityIcons name="phone" size={16} color={SgateColors.green} />
                             </TouchableOpacity>
@@ -239,13 +240,11 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
                     </Animated.View>
                 )}
                 ListEmptyComponent={
-                    <View style={styles.emptyWrap}>
-                        <View style={styles.emptyIcon}>
-                            <MaterialCommunityIcons name="account-group-outline" size={28} color={SgateColors.t3} />
-                        </View>
-                        <Text style={styles.emptyTitle}>No residents found</Text>
-                        <Text style={styles.emptySub}>Try searching a different name or flat</Text>
-                    </View>
+                    <EmptyState
+                        iconName="account-group-outline"
+                        title="No residents found"
+                        description="Try searching a different name or flat"
+                    />
                 }
             />
             )}
@@ -327,7 +326,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         gap: 12,
         backgroundColor: SgateColors.goldPale,
-        paddingHorizontal: 16,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingVertical: 14,
         borderRadius: 14,
         marginBottom: 24,
@@ -436,7 +435,7 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
     },
 
-    listContent: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 40 },
+    listContent: { paddingHorizontal: SgateLayout.screenGutter, paddingTop: 10, paddingBottom: 40 },
 
     contactCard: {
         flexDirection: 'row',
@@ -465,15 +464,4 @@ const styles = StyleSheet.create({
     },
 
     emptyWrap: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 40 },
-    emptyIcon: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 16,
-    },
-    emptyTitle: { fontSize: 18, fontFamily: SgateFonts.semibold, color: SgateColors.t1, textAlign: 'center', marginBottom: 4 },
-    emptySub: { fontSize: 14, fontFamily: SgateFonts.regular, color: SgateColors.t3, textAlign: 'center' },
 });

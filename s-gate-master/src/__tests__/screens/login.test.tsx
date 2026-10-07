@@ -37,14 +37,14 @@ describe('Login screen', () => {
 
   // ── Phone screen ────────────────────────────────────────────────────────────
   describe('Phone screen', () => {
-    it('renders S-GATE branding', () => {
+    it('renders sign-in subtitle', () => {
       const { getByText } = render(<Login />);
-      expect(getByText('S-GATE')).toBeTruthy();
+      expect(getByText('Sign in to access your gated community.')).toBeTruthy();
     });
 
-    it('renders Welcome Home headline', () => {
+    it('renders Welcome Back headline', () => {
       const { getByText } = render(<Login />);
-      expect(getByText('Welcome\nHome')).toBeTruthy();
+      expect(getByText('Welcome\nBack')).toBeTruthy();
     });
 
     it('renders phone number input with placeholder', () => {
@@ -62,9 +62,9 @@ describe('Login screen', () => {
       expect(getByText('Send OTP')).toBeTruthy();
     });
 
-    it('renders Login as Service Provider link', () => {
-      const { getByText } = render(<Login />);
-      expect(getByText('Login as Service Provider')).toBeTruthy();
+    it('does not render the removed Service Provider link', () => {
+      const { queryByText } = render(<Login />);
+      expect(queryByText('Login as Service Provider')).toBeNull();
     });
 
     it('strips non-numeric characters from phone input', () => {
@@ -151,9 +151,29 @@ describe('Login screen', () => {
       return utils;
     };
 
-    it('renders Enter OTP heading', async () => {
+    it('renders Verify OTP heading', async () => {
       const { getByText } = await setupOtpScreen();
-      expect(getByText('Enter\nOTP')).toBeTruthy();
+      expect(getByText('Verify OTP')).toBeTruthy();
+    });
+
+    it('Android hardware back on OTP step returns to phone entry', async () => {
+      const { BackHandler } = require('react-native');
+      const handlers: Array<() => boolean | null | undefined> = [];
+      const spy = jest.spyOn(BackHandler, 'addEventListener').mockImplementation((...args: unknown[]) => {
+        handlers.push(args[1] as () => boolean);
+        return { remove: jest.fn() };
+      });
+      try {
+        const utils = await setupOtpScreen();
+        expect(handlers.length).toBeGreaterThan(0);
+        let consumed: boolean | null | undefined;
+        act(() => { consumed = handlers[handlers.length - 1](); });
+        expect(consumed).toBe(true);
+        await waitFor(() => expect(utils.queryByText('6-DIGIT CODE')).toBeNull());
+        expect(utils.getByText('Send OTP')).toBeTruthy();
+      } finally {
+        spy.mockRestore();
+      }
     });
 
     it('shows sent-to phone number', async () => {

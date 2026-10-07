@@ -10,11 +10,12 @@ import {
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { SgateColors, SgateFonts, SgateShadows } from '@/constants/Sgate-theme';
+import EmptyState from '@/components/ui/EmptyState';
+import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useOnboardingNext } from '@/hooks/useOnboardingNext';
 import { useSocieties } from '@/hooks/useOnboardingQueries';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import { SkeletonList } from '@/components/lists/AppFlashList';
@@ -32,11 +33,11 @@ const SocietyCard = memo(function SocietyCard({
     index: number;
 }) {
     return (
-        <Animated.View entering={FadeInDown.delay(index * 60).duration(400).springify()}>
+        <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 60).duration(400).springify()}>
             <TouchableOpacity
                 onPress={onPress}
                 style={styles.card}
-                activeOpacity={0.7}
+                activeOpacity={0.8}
             >
                 {/* Gold accent line on the left */}
                 <View style={styles.cardAccent} />
@@ -99,27 +100,20 @@ const SocietyCard = memo(function SocietyCard({
 
 function NoSocietiesFound() {
     return (
-        <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconBox}>
-                <View style={styles.emptyIconInner}>
-                    <Feather name="search" size={28} color={SgateColors.t4} />
-                </View>
-            </View>
-            <Text style={styles.emptyTitle}>No societies found</Text>
-            <Text style={styles.emptySubtitle}>
-                Society is not active on S-Gate yet.{'\n'}
-                Please contact your society office or S-Gate support.
-            </Text>
-        </View>
+        <EmptyState
+            iconName="magnify"
+            title="No societies found"
+            description={`Society is not active on S-Gate yet.${'\n'} Please contact your society office or S-Gate support.`}
+        />
     );
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function SocietySearchScreen() {
-    const router = useRouter();
     const selectedCity = useOnboardingStore((s) => s.selectedCity);
     const setSociety = useOnboardingStore((s) => s.setSociety);
+    const goNext = useOnboardingNext();
 
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -151,10 +145,14 @@ export default function SocietySearchScreen() {
 
     const handleSelectSociety = useCallback(
         (society: Society) => {
-            setSociety(society);
-            router.push('/(onboarding)/select-block');
+            // Re-picking the same society keeps block/flat/docs (setSociety
+            // wipes everything downstream).
+            if (useOnboardingStore.getState().selectedSociety?.id !== society.id) {
+                setSociety(society);
+            }
+            goNext('/(onboarding)/select-block');
         },
-        [setSociety, router]
+        [setSociety, goNext]
     );
 
     const renderItem = useCallback(
@@ -246,7 +244,7 @@ const styles = StyleSheet.create({
     // ── Search ──
     searchContainer: {
         backgroundColor: '#FFFFFF',
-        paddingHorizontal: 16,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingVertical: 12,
         ...SgateShadows.minimal,
     },
@@ -378,41 +376,4 @@ const styles = StyleSheet.create({
     },
 
     // ── Empty ──
-    emptyContainer: {
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 72,
-        paddingHorizontal: 32,
-    },
-    emptyIconBox: {
-        width: 88,
-        height: 88,
-        borderRadius: 44,
-        backgroundColor: SgateColors.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 20,
-    },
-    emptyIconInner: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: '#FFFFFF',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    emptyTitle: {
-        fontSize: 18,
-        fontFamily: SgateFonts.bold,
-        color: SgateColors.t1,
-        textAlign: 'center',
-        marginBottom: 8,
-    },
-    emptySubtitle: {
-        fontSize: 13,
-        fontFamily: SgateFonts.regular,
-        color: SgateColors.t3,
-        textAlign: 'center',
-        lineHeight: 20,
-    },
 });

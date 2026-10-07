@@ -12,7 +12,7 @@ import {
 import { AppLoader } from '@/components/ui/AppLoader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import { AppAlert } from '@/components/ui/AppAlert';
 
@@ -169,21 +169,21 @@ export default function GuardDetailScreen() {
 
                 {/* ── Quick Actions ────────────────────────────────────── */}
                 <View style={styles.quickActionsCard}>
-                    <TouchableOpacity style={styles.quickAction} onPress={handleCall} activeOpacity={0.75}>
+                    <TouchableOpacity style={styles.quickAction} onPress={handleCall} activeOpacity={0.8}>
                         <View style={[styles.quickActionIcon, { backgroundColor: SgateColors.greenBg }]}>
                             <MaterialCommunityIcons name="phone-outline" size={20} color={SgateColors.green} />
                         </View>
                         <Text style={styles.quickActionLabel}>Call</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.quickAction} activeOpacity={0.75}>
+                    <TouchableOpacity style={styles.quickAction} activeOpacity={0.8}>
                         <View style={[styles.quickActionIcon, { backgroundColor: SgateColors.blueBg }]}>
                             <MaterialCommunityIcons name="message-text-outline" size={20} color={SgateColors.blue} />
                         </View>
                         <Text style={styles.quickActionLabel}>Message</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.quickAction} activeOpacity={0.75}>
+                    <TouchableOpacity style={styles.quickAction} activeOpacity={0.8}>
                         <View style={[styles.quickActionIcon, { backgroundColor: '#F3EEFF' }]}>
                             <MaterialCommunityIcons name="history" size={20} color={SgateColors.violet} />
                         </View>
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         backgroundColor: SgateColors.card,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: SgateColors.card,
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingVertical: 20,
         borderRadius: 20,
         marginBottom: 12,

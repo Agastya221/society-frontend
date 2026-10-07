@@ -14,7 +14,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 
-import { SgateColors, SgateFonts } from '../../constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout } from '../../constants/Sgate-theme';
 import type { Entry } from '../../types/api';
 import * as gateService from '../../services/gate.service';
 
@@ -29,6 +29,7 @@ interface ExpectedDelivery {
     id: string;
     company: string;
     expectedDate: string;
+    windowLabel?: string;
     trackingId?: string;
 }
 
@@ -126,7 +127,7 @@ export default function DeliveriesScreen() {
             if (activeTab === 'Expected') {
                 const d = item as ExpectedDelivery;
                 return (
-                    <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                         <View style={styles.card}>
                             <View style={[styles.iconBubble, { backgroundColor: '#E8F0FE' }]}>
                                 <Feather name="package" size={20} color="#3B82F6" />
@@ -134,7 +135,7 @@ export default function DeliveriesScreen() {
                             <View style={styles.cardBody}>
                                 <Text style={styles.cardTitle}>{d.company}</Text>
                                 <Text style={styles.cardSub}>
-                                    Expected {formatDate(d.expectedDate)}
+                                    {d.windowLabel ?? `Expected ${formatDate(d.expectedDate)}`}
                                 </Text>
                                 {d.trackingId ? (
                                     <Text style={styles.trackingId}>
@@ -153,7 +154,7 @@ export default function DeliveriesScreen() {
             if (activeTab === 'Collected') {
                 const e = item as Entry;
                 return (
-                    <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                    <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                         <View style={styles.card}>
                             <View style={[styles.iconBubble, { backgroundColor: SgateColors.greenBg }]}>
                                 <Feather name="check-circle" size={20} color={SgateColors.green} />
@@ -177,7 +178,7 @@ export default function DeliveriesScreen() {
             // At Gate
             const e = item as Entry;
             return (
-                <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
+                <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
                     <View style={styles.card}>
                         <View style={[styles.iconBubble, { backgroundColor: SgateColors.goldPale }]}>
                             <Feather name="package" size={20} color={SgateColors.gold} />
@@ -251,7 +252,7 @@ export default function DeliveriesScreen() {
                             <TouchableOpacity
                                 key={tab}
                                 style={[styles.segPill, active && styles.segPillActive]}
-                                activeOpacity={0.7}
+                                activeOpacity={0.8}
                                 onPress={() => setActiveTab(tab)}
                             >
                                 <Text
@@ -306,7 +307,7 @@ export default function DeliveriesScreen() {
             {/* ── FAB ─────────────────────────────────────────────────── */}
             <TouchableOpacity
                 style={[styles.fab, { bottom: 24 + insets.bottom }]}
-                activeOpacity={0.85}
+                activeOpacity={0.8}
                 onPress={() => setSheetVisible(true)}
             >
                 <Feather name="plus" size={24} color={SgateColors.black} />
@@ -337,7 +338,7 @@ const styles = StyleSheet.create({
     // ── Header ──────────────────────────────────────────────────────────
     // ── Segmented control ───────────────────────────────────────────────
     segWrap: {
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 16,
         paddingBottom: 8,
     },
@@ -395,7 +396,7 @@ const styles = StyleSheet.create({
 
     // ── List ────────────────────────────────────────────────────────────
     listContent: {
-        paddingHorizontal: 20,
+        paddingHorizontal: SgateLayout.screenGutter,
         paddingTop: 8,
         paddingBottom: 100,
     },

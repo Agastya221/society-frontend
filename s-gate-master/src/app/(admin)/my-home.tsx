@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
-import { SgateColors, SgateFonts, SgateTypography } from '@/constants/Sgate-theme';
+import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import { PreApproveSheet } from '@/components/pre-approvals/PreApproveSheet';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -127,7 +127,7 @@ function ActionTile({ title, icon, bg, iconColor, onPress }: {
     bg: string; iconColor: string; onPress: () => void;
 }) {
     return (
-        <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.75}>
+        <TouchableOpacity style={styles.tile} onPress={onPress} activeOpacity={0.8}>
             <View style={[styles.tileIcon, { backgroundColor: bg }]}>
                 <MaterialCommunityIcons name={icon} size={22} color={iconColor} />
             </View>
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     spacer: { height: 6 },
 
     scroll: { flex: 1 },
-    scrollContent: { paddingTop: 14, paddingHorizontal: 20 },
+    scrollContent: { paddingTop: 14, paddingHorizontal: SgateLayout.screenGutter },
 
     // Flat badge
     flatBadgeWrap: { marginBottom: 24 },
