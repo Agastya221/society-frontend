@@ -50,7 +50,7 @@ export default function ApprovalsScreen() {
         try {
             const res = await api.get('/api/v1/gate/entry-requests?status=PENDING');
             const payload = res.data?.data;
-            const pendingEntries = payload?.entryRequests ?? payload?.entries ?? (Array.isArray(payload) ? payload : []);
+            const pendingEntries = Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
             setEntries(Array.isArray(pendingEntries) ? pendingEntries : []);
         } catch (err: any) {
             console.error('Failed to fetch pending approvals:', err);

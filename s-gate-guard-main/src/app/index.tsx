@@ -29,7 +29,7 @@ export default function GuardDashboard() {
   useFocusEffect(useCallback(() => {
     api.get('/api/v1/gate/entry-requests?status=PENDING').then((res) => {
       const payload = res.data?.data;
-      const entries: unknown[] = payload?.entryRequests ?? payload?.entries ?? (Array.isArray(payload) ? payload : []);
+      const entries: unknown[] = Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
       setPendingCount(Array.isArray(entries) ? entries.length : 0);
     }).catch(() => undefined);
   }, []));

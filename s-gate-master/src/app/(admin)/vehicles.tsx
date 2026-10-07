@@ -1,12 +1,10 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
-
     Modal,
-    Platform,
     ScrollView,
     StyleSheet,
     Switch,
@@ -23,6 +21,9 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import api from '@/services/api';
+import { isRouteMissing, serverMessage } from '@/services/apiErrors';
+import { decideVehicle, listPendingVehicles, type AdminVehicle } from '@/services/vehicles.service';
+import { PrimaryButton } from '@/components/ui/PrimaryButton';
 import * as Haptics from 'expo-haptics';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -72,7 +73,7 @@ const VIOLATION_TYPES = [
 export default function AdminVehiclesScreen() {
     const router = useRouter();
 
-    const [tab, setTab] = useState<'LOOKUP' | 'VIOLATIONS'>('LOOKUP');
+    const [tab, setTab] = useState<'LOOKUP' | 'VIOLATIONS' | 'APPROVALS'>('LOOKUP');
 
     // Lookup State
     const [query, setQuery] = useState('');
@@ -94,6 +95,17 @@ export default function AdminVehiclesScreen() {
 
     const [resolveTarget, setResolveTarget] = useState<{ id: string, type: 'RESOLVED' | 'DISMISSED' } | null>(null);
     const [resNote, setResNote] = useState('');
+
+    // Approvals State
+    const [pending, setPending] = useState<AdminVehicle[]>([]);
+    const [pendingTotal, setPendingTotal] = useState(0);
+    /** null until the first load; 'missing' when the server has no such route. */
+    const [pendingState, setPendingState] = useState<'ready' | 'missing' | 'error' | null>(null);
+    const [refreshingPending, setRefreshingPending] = useState(false);
+    const [rejectTarget, setRejectTarget] = useState<AdminVehicle | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
+    /** Vehicles with a decision in flight — guards double taps. */
+    const decidingRef = useRef(new Set<string>());
 
     // ─── API: Lookup ──────────────────────────────────────────────────────────
     const handleSearch = async () => {
@@ -186,6 +198,76 @@ export default function AdminVehiclesScreen() {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    // ─── API: Vehicle approvals ───────────────────────────────────────────────
+    const fetchPending = useCallback(async () => {
+        try {
+            const result = await listPendingVehicles();
+            // Rows still being decided stay hidden so a refetch can't resurrect them.
+            setPending(result.vehicles.filter(v => !decidingRef.current.has(v.id)));
+            setPendingTotal(Math.max(0, result.total - decidingRef.current.size));
+            setPendingState('ready');
+        } catch (error: any) {
+            if (isRouteMissing(error)) {
+                setPendingState('missing');
+                setPending([]);
+                setPendingTotal(0);
+            } else {
+                // Keep the list already on screen.
+                setPendingState(prev => (prev === 'ready' ? 'ready' : 'error'));
+            }
+        }
+    }, []);
+
+    // Load once on mount so the tab badge is right before the tab is opened,
+    // then again whenever the screen or the tab regains focus.
+    useEffect(() => { fetchPending(); }, [fetchPending]);
+    useFocusEffect(useCallback(() => {
+        if (tab === 'APPROVALS') fetchPending();
+    }, [tab, fetchPending]));
+
+    const refreshPending = async () => {
+        setRefreshingPending(true);
+        await fetchPending();
+        setRefreshingPending(false);
+    };
+
+    const decide = async (vehicle: AdminVehicle, status: 'ACTIVE' | 'REJECTED', reason?: string) => {
+        if (decidingRef.current.has(vehicle.id)) return;
+        decidingRef.current.add(vehicle.id);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+        // Optimistic: drop the row now, put it back where it was if the server refuses.
+        const index = pending.findIndex(v => v.id === vehicle.id);
+        setPending(list => list.filter(v => v.id !== vehicle.id));
+        setPendingTotal(t => Math.max(0, t - 1));
+        try {
+            await decideVehicle(vehicle.id, status, reason);
+        } catch (err: any) {
+            setPending(list => {
+                if (list.some(v => v.id === vehicle.id)) return list;
+                const next = [...list];
+                next.splice(index < 0 ? 0 : Math.min(index, next.length), 0, vehicle);
+                return next;
+            });
+            setPendingTotal(t => t + 1);
+            AppAlert.show(
+                status === 'ACTIVE' ? 'Could not approve' : 'Could not reject',
+                isRouteMissing(err)
+                    ? 'Vehicle approval needs a server update. Nothing was changed.'
+                    : serverMessage(err, `${vehicle.vehicleNumber} was not updated. Please try again.`),
+            );
+        } finally {
+            decidingRef.current.delete(vehicle.id);
+        }
+    };
+
+    const confirmReject = () => {
+        const target = rejectTarget;
+        if (!target) return;
+        setRejectTarget(null);
+        decide(target, 'REJECTED', rejectReason);
     };
 
     // ─── UI Renderers ─────────────────────────────────────────────────────────
@@ -305,6 +387,69 @@ export default function AdminVehiclesScreen() {
         );
     };
 
+    const renderPending = ({ item, index }: { item: AdminVehicle; index: number }) => {
+        const isBike = /bike|scooter|two/i.test(item.vehicleType);
+        return (
+            <Animated.View entering={index < 8 ? FadeInDown.delay(index * 50).springify() : undefined}>
+                <View style={styles.card}>
+                    <View style={styles.cardHeader}>
+                        <View style={styles.platePill}>
+                            <MaterialCommunityIcons name={isBike ? 'motorbike' : 'car-outline'} size={18} color={SgateColors.t1} />
+                            <Text style={styles.violationPlate}>{item.vehicleNumber}</Text>
+                        </View>
+                        <View style={[styles.statusBadge, styles.pendingBadge]}>
+                            <Text style={[styles.statusText, styles.pendingBadgeText]}>PENDING</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.detailsRow}>
+                        <Text style={styles.detailsText} numberOfLines={1}>
+                            {[item.vehicleType, item.model, item.color].filter(Boolean).join(' · ')}
+                        </Text>
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.infoGrid}>
+                        <View style={styles.infoCol}>
+                            <Text style={styles.infoLabel}>Owner</Text>
+                            <Text style={styles.infoValue} numberOfLines={1}>{item.owner?.name || 'Unknown'}</Text>
+                            {!!item.owner?.phone && <Text style={styles.infoSub}>{item.owner.phone}</Text>}
+                        </View>
+                        <View style={styles.infoCol}>
+                            <Text style={styles.infoLabel}>Flat</Text>
+                            <Text style={styles.infoValue}>{item.flatLabel || '—'}</Text>
+                            {!!item.createdAt && (
+                                <Text style={styles.infoSub}>Added {new Date(item.createdAt).toLocaleDateString()}</Text>
+                            )}
+                        </View>
+                    </View>
+
+                    <View style={styles.decisionRow}>
+                        <PrimaryButton
+                            title="Reject"
+                            variant="outline"
+                            style={styles.decisionBtn}
+                            onPress={() => { setRejectReason(''); setRejectTarget(item); }}
+                        />
+                        <PrimaryButton
+                            title="Approve"
+                            style={styles.decisionBtn}
+                            leftIcon={<MaterialCommunityIcons name="check" size={18} color={SgateColors.t1} />}
+                            onPress={() => decide(item, 'ACTIVE')}
+                        />
+                    </View>
+                </View>
+            </Animated.View>
+        );
+    };
+
+    const tabs: { key: typeof tab; label: string; badge?: number }[] = [
+        { key: 'LOOKUP', label: 'Lookup' },
+        { key: 'VIOLATIONS', label: 'Violations' },
+        { key: 'APPROVALS', label: 'Approvals', badge: pendingTotal },
+    ];
+
     return (
         <View style={styles.safe}>
             {/* Header */}
@@ -312,20 +457,30 @@ export default function AdminVehiclesScreen() {
                 {/* Segmented Control */}
                 <View style={styles.tabWrapper}>
                     <View style={styles.segmentedContainer}>
-                        <TouchableOpacity
-                            style={[styles.segment, tab === 'LOOKUP' && styles.segmentActive]}
-                            onPress={() => { Haptics.selectionAsync(); setTab('LOOKUP'); }}
-                            activeOpacity={0.8}
-                        >
-                            <Text style={[styles.segmentText, tab === 'LOOKUP' && styles.segmentTextActive]}>Lookup</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.segment, tab === 'VIOLATIONS' && styles.segmentActive]}
-                            onPress={() => { Haptics.selectionAsync(); setTab('VIOLATIONS'); }}
-                            activeOpacity={0.8}
-                        >
-                            <Text style={[styles.segmentText, tab === 'VIOLATIONS' && styles.segmentTextActive]}>Violations</Text>
-                        </TouchableOpacity>
+                        {tabs.map(t => {
+                            const active = tab === t.key;
+                            return (
+                                <TouchableOpacity
+                                    key={t.key}
+                                    style={[styles.segment, active && styles.segmentActive]}
+                                    onPress={() => { Haptics.selectionAsync(); setTab(t.key); }}
+                                    activeOpacity={0.8}
+                                    accessibilityRole="tab"
+                                    accessibilityState={{ selected: active }}
+                                >
+                                    <View style={styles.segmentInner}>
+                                        <Text style={[styles.segmentText, active && styles.segmentTextActive]} numberOfLines={1}>{t.label}</Text>
+                                        {!!t.badge && (
+                                            <View style={[styles.segmentBadge, active && styles.segmentBadgeActive]}>
+                                                <Text style={[styles.segmentBadgeText, active && styles.segmentBadgeTextActive]}>
+                                                    {t.badge > 99 ? '99+' : t.badge}
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
                 </View>
             </ScreenHeader>
@@ -399,6 +554,71 @@ export default function AdminVehiclesScreen() {
                     }
                 />
             )}
+
+            {/* Approvals Tab */}
+            {tab === 'APPROVALS' && (
+                pendingState === null && pending.length === 0 ? (
+                    <View style={styles.tabLoader}><ActivityIndicator color={SgateColors.goldDeep} /></View>
+                ) : (
+                    <FlatList
+                        data={pending}
+                        keyExtractor={(item) => item.id}
+                        renderItem={renderPending}
+                        contentContainerStyle={styles.listContent}
+                        refreshing={refreshingPending}
+                        onRefresh={refreshPending}
+                        ListHeaderComponent={pendingState === 'error' && pending.length > 0 ? (
+                            <Text style={styles.inlineError}>Could not refresh. Pull down to try again.</Text>
+                        ) : null}
+                        ListEmptyComponent={
+                            pendingState === 'missing' ? (
+                                <EmptyState
+                                    iconName="cloud-alert-outline"
+                                    title="Needs server update"
+                                    description="Vehicle approvals aren't available on this server yet."
+                                />
+                            ) : pendingState === 'error' ? (
+                                <EmptyState
+                                    iconName="wifi-off"
+                                    title="Couldn't load approvals"
+                                    description="Check your connection and try again."
+                                    ctaLabel="Retry"
+                                    onCtaPress={refreshPending}
+                                />
+                            ) : (
+                                <EmptyState
+                                    iconName="check-circle-outline"
+                                    title="No pending vehicles"
+                                    description="New vehicles residents register will appear here for approval."
+                                />
+                            )
+                        }
+                    />
+                )
+            )}
+
+            {/* Reject Vehicle Sheet */}
+            <AnimatedBottomSheetModal visible={!!rejectTarget} onClose={() => setRejectTarget(null)}>
+                <Text style={styles.modalTitle}>Reject vehicle</Text>
+                <Text style={styles.modalSub}>
+                    {rejectTarget?.vehicleNumber}{rejectTarget?.owner?.name ? ` · ${rejectTarget.owner.name}` : ''}
+                </Text>
+                <Text style={[styles.fieldLabel, styles.fieldLabelFirst]}>Reason (optional)</Text>
+                <TextInput
+                    style={styles.inputArea}
+                    placeholder="e.g. Plate number doesn't match the RC"
+                    placeholderTextColor={SgateColors.t4}
+                    value={rejectReason}
+                    onChangeText={setRejectReason}
+                    maxLength={200}
+                    multiline
+                />
+                <Text style={styles.sheetHint}>The resident sees this reason on their vehicle.</Text>
+                <View style={styles.decisionSheetRow}>
+                    <PrimaryButton title="Cancel" variant="secondary" style={styles.decisionBtn} onPress={() => setRejectTarget(null)} />
+                    <PrimaryButton title="Reject" variant="danger" style={styles.decisionBtn} onPress={confirmReject} />
+                </View>
+            </AnimatedBottomSheetModal>
 
             {/* Issue Violation Modal */}
             <AnimatedBottomSheetModal visible={!!issueTarget} onClose={() => setIssueTarget(null)}>
@@ -534,6 +754,19 @@ const styles = StyleSheet.create({
         color: SgateColors.t1,
         fontFamily: SgateFonts.bold,
     },
+    segmentInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+    segmentBadge: {
+        minWidth: 18,
+        height: 18,
+        paddingHorizontal: 5,
+        borderRadius: 9,
+        backgroundColor: SgateColors.ink,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    segmentBadgeActive: { backgroundColor: SgateColors.card },
+    segmentBadgeText: { fontSize: 10, fontFamily: SgateFonts.bold, color: SgateColors.card },
+    segmentBadgeTextActive: { color: SgateColors.t1 },
 
     searchSection: { padding: 20 },
     searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: SgateColors.surface, borderRadius: 12, paddingHorizontal: 14, height: 50, borderWidth: 1, borderColor: SgateColors.border, marginBottom: 12 },
@@ -623,6 +856,17 @@ const styles = StyleSheet.create({
     dismissText: { color: SgateColors.t2, fontSize: 14, fontFamily: SgateFonts.bold },
     resolveBtnDark: { flex: 1.5, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.ink, paddingVertical: 14, borderRadius: 12 },
     resolveTextDark: { color: SgateColors.card, fontSize: 14, fontFamily: SgateFonts.bold },
+
+    // Approvals
+    pendingBadge: { backgroundColor: SgateColors.goldPale },
+    pendingBadgeText: { color: SgateColors.goldDeep },
+    decisionRow: { flexDirection: 'row', gap: 12 },
+    decisionSheetRow: { flexDirection: 'row', gap: 12, marginTop: 20 },
+    decisionBtn: { flex: 1 },
+    tabLoader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    inlineError: { fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.red, marginBottom: 12 },
+    fieldLabelFirst: { marginTop: 0 },
+    sheetHint: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 8 },
 
     // Lookup action buttons
     callBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: SgateColors.ink, borderRadius: 12, paddingVertical: 14, gap: 6 },

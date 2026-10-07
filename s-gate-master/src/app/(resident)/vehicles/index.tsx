@@ -16,6 +16,7 @@ import { AppAlert } from '../../../components/ui/AppAlert';
 import EmptyState from '@/components/ui/EmptyState';
 import { SgateColors, SgateFonts, SgateLayout } from '../../../constants/Sgate-theme';
 import api from '../../../services/api';
+import { normaliseVehicleStatus } from '../../../services/vehicles.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,7 @@ interface Vehicle {
   parkingSlot?: string;
   stickerNumber?: string;
   lastSeen?: string;
+  rejectionNote?: string;
 }
 
 function normaliseVehicle(raw: any): Vehicle {
@@ -40,10 +42,11 @@ function normaliseVehicle(raw: any): Vehicle {
     vehicleType: raw.vehicleType ?? raw.type ?? 'Other',
     model: raw.model ?? '',
     color: raw.color ?? '',
-    status: raw.status ?? 'PENDING',
+    status: normaliseVehicleStatus(raw.status),
     parkingSlot: raw.parkingSlot ?? undefined,
     stickerNumber: raw.stickerNumber ?? undefined,
     lastSeen: raw.lastSeen ?? undefined,
+    rejectionNote: raw.rejectionNote ?? raw.reason ?? undefined,
   };
 }
 
@@ -74,6 +77,12 @@ function VehicleCard({ vehicle, index, onDelete }: { vehicle: Vehicle; index: nu
   const statusCfg = getStatusCfg(vehicle.status);
   const typeIcon = getTypeIcon(vehicle.vehicleType);
   const stickerIssued = !!vehicle.stickerNumber;
+  // Only an approved vehicle gets a sticker; say what is actually holding it up.
+  const sticker = vehicle.status === 'ACTIVE'
+    ? { icon: stickerIssued ? 'check-circle' as const : 'clock' as const, color: stickerIssued ? SgateColors.green : SgateColors.t3, text: 'Sticker: ' + (stickerIssued ? vehicle.stickerNumber : 'Pending') }
+    : vehicle.status === 'PENDING'
+      ? { icon: 'clock' as const, color: SgateColors.t3, text: 'Awaiting admin approval' }
+      : { icon: 'x-circle' as const, color: SgateColors.red, text: 'Not approved' };
 
   const handleMenuPress = () => {
     AppAlert.show(
@@ -136,16 +145,21 @@ function VehicleCard({ vehicle, index, onDelete }: { vehicle: Vehicle; index: nu
           </View>
           <View style={{ flex: 1 }} />
           <View style={S.stickerRow}>
-            <Feather
-              name={stickerIssued ? 'check-circle' : 'clock'}
-              size={13}
-              color={stickerIssued ? SgateColors.green : SgateColors.t4}
-            />
-            <Text style={[S.stickerText, { color: stickerIssued ? SgateColors.green : SgateColors.t3 }]}>
-              {'Sticker: ' + (stickerIssued ? vehicle.stickerNumber : 'Pending')}
-            </Text>
+            <Feather name={sticker.icon} size={13} color={sticker.color} />
+            <Text style={[S.stickerText, { color: sticker.color }]}>{sticker.text}</Text>
           </View>
         </View>
+
+        {vehicle.status === 'REJECTED' ? (
+          <View style={S.rejectNote}>
+            <Feather name="info" size={13} color={SgateColors.red} />
+            <Text style={S.rejectNoteText}>
+              {vehicle.rejectionNote
+                ? `Reason: ${vehicle.rejectionNote}`
+                : 'Rejected by the society admin. Contact them, or delete and register it again with the correct details.'}
+            </Text>
+          </View>
+        ) : null}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -176,8 +190,8 @@ export default function MyVehiclesScreen() {
       const list: any[] = Array.isArray(raw) ? raw : raw?.vehicles ?? [];
       setVehicles(list.map(normaliseVehicle));
     } catch (err) {
+      // Keep the vehicles already on screen; a failed refetch shouldn't empty the list.
       console.error('Failed to fetch vehicles:', err);
-      setVehicles([]);
     } finally {
       setLoading(false);
     }
@@ -189,7 +203,7 @@ export default function MyVehiclesScreen() {
     try {
       await api.delete(`/resident/vehicles/${id}`);
       setVehicles(vs => vs.filter(v => v.id !== id));
-    } catch (err) {
+    } catch {
       AppAlert.show('Error', 'Could not delete vehicle. Please try again.');
     }
   };
@@ -379,6 +393,25 @@ const S = StyleSheet.create({
   stickerText: {
     fontFamily: SgateFonts.medium,
     fontSize: 12,
+  },
+
+  rejectNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 12,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: SgateColors.redBg,
+    borderWidth: 1,
+    borderColor: SgateColors.redBorder,
+  },
+  rejectNoteText: {
+    flex: 1,
+    fontFamily: SgateFonts.regular,
+    fontSize: 12,
+    lineHeight: 17,
+    color: SgateColors.t2,
   },
 
   // ── Helper Section ────────────────────────────────────────────────────

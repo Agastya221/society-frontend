@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSheetBottomClearance } from '@/hooks/useSheetBottomClearance';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -31,7 +30,6 @@ const TYPE_CARDS: TypeCardCfg[] = [
 function AddVehicleScreen() {
     const scrollBottomPadding = useScrollBottomPadding();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const sheetClearance = useSheetBottomClearance();
 
   const [vehicleType, setVehicleType] = useState<VehicleType | null>(null);
@@ -48,16 +46,20 @@ function AddVehicleScreen() {
     const normalisedNumber = number.trim().toUpperCase().replace(/\s+/g, '');
     setSubmitting(true);
     try {
-      await api.post('/resident/vehicles', {
+      const res = await api.post('/resident/vehicles', {
         vehicleNumber: normalisedNumber,
         vehicleType:   vehicleType,
         model:         model.trim(),
         color:         color.trim(),
       });
 
+      // New vehicles start PENDING; an admin registering their own may be active at once.
+      const active = String(res.data?.data?.status ?? '').toUpperCase() === 'ACTIVE';
       AppAlert.show(
-        'Vehicle Submitted',
-        'Your registration was sent. It will be active once approved by administration.',
+        active ? 'Vehicle Added' : 'Vehicle Submitted',
+        active
+          ? 'Your vehicle is registered and active.'
+          : 'Your registration was sent. It stays Pending Approval until administration verifies it.',
         [{ text: 'Great', onPress: () => router.back() }],
       );
     } catch (err: any) {

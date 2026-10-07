@@ -288,7 +288,7 @@ export default function NewEntryScreen() {
                 params: {
                     id:    entryId ?? '',
                     flat:  flatLabel(selectedFlat!),
-                    name:  visitorName.trim(),
+                    name:  name,
                     type:  type,
                     photo: photoUri ?? '',
                 },

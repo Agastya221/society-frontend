@@ -1,6 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
     KeyboardAvoidingView,
@@ -169,6 +168,7 @@ export default function SettingsScreen() {
                             }
                         </TouchableOpacity>
                     </View>
+                    <Text style={styles.hint}>Used for the next maintenance invoices.</Text>
                 </Animated.View>
 
                 {/* ── Auto-Approval Rules ───────────────────────────────────── */}
@@ -177,7 +177,7 @@ export default function SettingsScreen() {
                     <View style={styles.toggleCard}>
                         <ToggleRow
                             label="Auto-approve domestic staff"
-                            sub="Daily helpers bypass manual approval"
+                            sub="Daily helpers at the gate"
                             icon="account-outline"
                             value={autoStaff}
                             onValueChange={v => toggle('domesticStaff', v, setAutoStaff)}
@@ -198,9 +198,11 @@ export default function SettingsScreen() {
                             isLast
                         />
                     </View>
-                    {available === false && (
-                        <Text style={styles.hint}>These settings can&apos;t be saved until the server is updated.</Text>
-                    )}
+                    <Text style={styles.hint}>
+                        {available === false
+                            ? "These settings can't be saved until the server is updated."
+                            : "Guards' entries of this type are approved automatically."}
+                    </Text>
                 </Animated.View>
 
                 {/* ── Gate Points ───────────────────────────────────────────── */}
@@ -356,7 +358,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: SgateColors.borderSoft,
         padding: 16,
-        marginBottom: 20,
         gap: 14,
     },
     configInputWrap: { gap: 6 },

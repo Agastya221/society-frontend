@@ -163,7 +163,7 @@ export default function EntryWaitingScreen() {
                 const listRes = await api.get('/api/v1/gate/entry-requests?status=PENDING');
                 const payload = listRes.data?.data;
                 const requests: any[] =
-                    payload?.entryRequests ?? payload?.entries ?? (Array.isArray(payload) ? payload : []);
+                    Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
                 const match = requests.find((r: any) => r.id === id);
                 if (match) {
                     const resolved = resolvePhase(match.status);
