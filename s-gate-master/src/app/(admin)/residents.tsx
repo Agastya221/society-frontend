@@ -380,7 +380,8 @@ export default function ResidentsScreen() {
     // ── Render ─────────────────────────────────────────────────────────────
     const renderItem = ({ item, index }: { item: AdminResident; index: number }) => {
         const ts = TYPE_STYLE[item.residentType];
-        const canRemove = source === 'api' && !!item.membershipId;
+        // The server refuses removing yourself, so don't offer it on the admin's own row.
+        const canRemove = source === 'api' && !!item.membershipId && item.id !== user?.id;
         const removing = removingId === item.membershipId;
         return (
             <Animated.View entering={index < 10 ? FadeInDown.delay(index * 50).springify() : undefined}>

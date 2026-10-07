@@ -3,8 +3,6 @@ import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } 
 import {
     BackHandler,
     Keyboard,
-    KeyboardAvoidingView,
-    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -87,8 +85,13 @@ export function AnimatedBottomSheetModal({
      * run up under the status bar.
      */
     const [rootHeight, setRootHeight] = useState(0);
-    /** Keyboard height while it is open, so a tall sheet still fits above it. */
-    const [keyboardHeight, setKeyboardHeight] = useState(0);
+    /**
+     * How far the keyboard overlaps this sheet's container. Not the keyboard
+     * height: inside a tab screen the container already ends above the tab
+     * bar, so lifting by the full height left a gap and cut the sheet off.
+     */
+    const [keyboardLift, setKeyboardLift] = useState(0);
+    const rootRef = useRef<View>(null);
     const [sheetHeight, setSheetHeight] = useState(0);
     const [contentHeight, setContentHeight] = useState(0);
 
@@ -123,7 +126,7 @@ export function AnimatedBottomSheetModal({
         : insets.bottom + SgateLayout.screenGutter;
 
     /** Hard cap against the real visible area rather than a percentage of a shifted box. */
-    const maxSheetHeight = Math.max(240, (rootHeight || windowHeight) - insets.top - TOP_BREATHING_ROOM - keyboardHeight);
+    const maxSheetHeight = Math.max(240, (rootHeight || windowHeight) - insets.top - TOP_BREATHING_ROOM - keyboardLift);
 
     /**
      * Room the content itself may occupy, once the handle and bottom clearance
@@ -218,8 +221,15 @@ export function AnimatedBottomSheetModal({
 
     useEffect(() => {
         if (!mounted || !avoidKeyboard) return;
-        const show = Keyboard.addListener('keyboardDidShow', e => setKeyboardHeight(e.endCoordinates.height));
-        const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+        const show = Keyboard.addListener('keyboardDidShow', e => {
+            const keyboardTop = e.endCoordinates.screenY;
+            // measure(), not measureInWindow(): the latter is offset by the
+            // status bar under edge-to-edge.
+            rootRef.current?.measure((_x, _y, _w, height, _pageX, pageY) => {
+                setKeyboardLift(Math.max(0, Math.round(pageY + height - keyboardTop)));
+            });
+        });
+        const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardLift(0));
         return () => { show.remove(); hide.remove(); };
     }, [avoidKeyboard, mounted]);
 
@@ -288,6 +298,7 @@ export function AnimatedBottomSheetModal({
 
     return (
         <View
+            ref={rootRef}
             style={styles.root}
             pointerEvents="box-none"
             onLayout={e => {
@@ -304,9 +315,8 @@ export function AnimatedBottomSheetModal({
                 />
             </Animated.View>
 
-            <KeyboardAvoidingView
-                style={styles.keyboardWrap}
-                behavior={avoidKeyboard ? 'padding' : undefined}
+            <View
+                style={[styles.keyboardWrap, { paddingBottom: keyboardLift }]}
                 pointerEvents="box-none"
             >
                 <GestureDetector gesture={panGesture}>
@@ -323,7 +333,7 @@ export function AnimatedBottomSheetModal({
                         </SafeBottomSheetSurface>
                     </Animated.View>
                 </GestureDetector>
-            </KeyboardAvoidingView>
+            </View>
         </View>
     );
 }

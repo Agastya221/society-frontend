@@ -91,7 +91,7 @@ export function AppAlertProvider({ children }: { children: React.ReactNode }) {
     const getAlertIcon = () => {
         const t = state.title.toLowerCase();
         if (t.includes('error') || t.includes('failed')) return { name: 'alert-circle' as const, color: SgateColors.red };
-        if (t.includes('success')) return { name: 'check-circle' as const, color: SgateColors.green };
+        if (/success|added|saved|created|confirmed|approved|submitted|updated|removed/.test(t)) return { name: 'check-circle' as const, color: SgateColors.green };
         if (t.includes('permission') || t.includes('required')) return { name: 'shield' as const, color: SgateColors.gold };
         if (t.includes('warning') || t.includes('large')) return { name: 'alert-triangle' as const, color: SgateColors.gold };
         return { name: 'info' as const, color: SgateColors.gold };
