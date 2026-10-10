@@ -25,12 +25,16 @@ import api from '../../../services/api';
 const FILE_EXT: Record<string, string> = { PDF: '.pdf', DOC: '.doc', DOCX: '.docx', IMAGE: '.jpg' };
 
 async function downloadAndOpen(doc: { id: string; name: string; fileType: string; fileUrl?: string }) {
-  // 1. Get a usable URL — prefer direct fileUrl, otherwise fetch a signed one
-  let url = doc.fileUrl;
-  if (!url) {
+  // 1. Get a usable URL — the bucket is private, so prefer a presigned view URL
+  //    ({ data: { viewUrl } }) and only fall back to the stored fileUrl.
+  let url: string | undefined;
+  try {
     const res = await api.get(`/resident/documents/${doc.id}/view-url`);
-    url = res.data?.data?.url ?? res.data?.url ?? res.data;
+    url = res.data?.data?.viewUrl ?? res.data?.data?.url ?? res.data?.url;
+  } catch {
+    url = doc.fileUrl;
   }
+  if (!url) url = doc.fileUrl;
   if (!url || typeof url !== 'string') {
     throw new Error('NO_URL');
   }
@@ -254,7 +258,7 @@ export default function DocumentsScreen() {
 
   const fetchDocuments = async () => {
     try {
-      const res = await api.get('/resident/documents');
+      const res = await api.get('/resident/documents', { params: { limit: 100 } });
       const raw = res.data?.data ?? res.data;
       const list: any[] = Array.isArray(raw) ? raw : raw?.documents ?? [];
       const normalised = list.map(normaliseDoc);

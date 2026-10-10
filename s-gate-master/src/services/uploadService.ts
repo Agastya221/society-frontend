@@ -24,8 +24,31 @@ interface FileInfo {
 /**
  * Get file info from URI
  */
+/**
+ * Exact byte size of a local file. S3 presigned URLs are signed for the exact
+ * Content-Length, so a guessed size makes the upload fail — never guess.
+ */
+const getExactFileSize = async (uri: string): Promise<number> => {
+    try {
+        const info = await FileSystem.getInfoAsync(uri);
+        const size = info.exists ? (info as any).size : undefined;
+        if (typeof size === 'number' && size > 0) return size;
+    } catch {
+        // fall through to the blob fallback
+    }
+
+    try {
+        const blob = await (await fetch(uri)).blob();
+        if (typeof blob.size === 'number' && blob.size > 0) return blob.size;
+    } catch {
+        // fall through
+    }
+
+    throw new Error('Could not read the file size. Please pick the file again and retry.');
+};
+
 const getFileInfo = async (uri: string): Promise<FileInfo> => {
-    const fileInfo = await FileSystem.getInfoAsync(uri);
+    const fileSize = await getExactFileSize(uri);
     const fileName = uri.split('/').pop() || 'image.jpg';
 
     // Determine MIME type from extension
@@ -38,7 +61,7 @@ const getFileInfo = async (uri: string): Promise<FileInfo> => {
     return {
         fileName,
         mimeType,
-        fileSize: fileInfo.exists ? (fileInfo as any).size || 1000000 : 1000000,
+        fileSize,
     };
 };
 

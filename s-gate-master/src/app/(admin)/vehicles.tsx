@@ -154,12 +154,15 @@ export default function AdminVehiclesScreen() {
     const submitViolation = async () => {
         setSubmitting(true);
         try {
+            // A penalty of 0 (or blank/invalid) means "no penalty" — omit the field entirely.
+            const penalty = parseInt(vPenalty, 10);
+            const hasPenalty = Number.isFinite(penalty) && penalty > 0;
             const payload: any = {
                 type: vType,
                 description: vDesc.trim(),
-                penaltyAmount: vPenalty ? parseInt(vPenalty, 10) : undefined,
-                addToInvoice: vInvoice,
+                addToInvoice: hasPenalty ? vInvoice : false,
             };
+            if (hasPenalty) payload.penaltyAmount = penalty;
 
             if (typeof issueTarget === 'string') {
                 // Unknown vehicle

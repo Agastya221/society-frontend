@@ -125,7 +125,7 @@ export interface Amenity {
     name: string;
     type: string;
     capacity?: number;
-    hourlyRate?: number;
+    pricePerHour?: number;
     description?: string;
     rules?: string;
     timings?: string;
@@ -136,7 +136,7 @@ export interface CreateAmenityPayload {
     name: string;
     type: 'CLUBHOUSE' | 'GYM' | 'SWIMMING_POOL' | 'PARTY_HALL' | 'SPORTS_COURT' | 'BANQUET_HALL' | 'GARDEN' | 'OTHER';
     capacity?: number;
-    hourlyRate?: number;
+    pricePerHour?: number; // server field (was wrongly sent as hourlyRate)
     description?: string;
     rules?: string;
 }

@@ -30,7 +30,7 @@ describe('Resident Home waiting-at-gate states', () => {
     expect(screen.queryByText('Live')).toBeNull();
   });
 
-  it('renders a waiting visitor and wires Allow and Decline to the same request', () => {
+  const renderWaiting = () => {
     const onAllow = jest.fn();
     const onDecline = jest.fn();
     const screen = render(
@@ -42,15 +42,31 @@ describe('Resident Home waiting-at-gate states', () => {
         onViewAll={jest.fn()}
       />,
     );
+    return { screen, onAllow, onDecline };
+  };
+
+  it('renders a waiting visitor and wires Allow to the request', () => {
+    const { screen, onAllow } = renderWaiting();
 
     expect(screen.getByText('Live')).toBeTruthy();
     expect(screen.getByText('Amit Kumar')).toBeTruthy();
     expect(screen.getByText('Visitor • Gate 1')).toBeTruthy();
 
     fireEvent.press(screen.getByLabelText('Allow visitor'));
-    fireEvent.press(screen.getByLabelText('Decline visitor'));
-
     expect(onAllow).toHaveBeenCalledWith('visitor-1');
+  });
+
+  it('wires Decline to the request', () => {
+    const { screen, onDecline } = renderWaiting();
+    fireEvent.press(screen.getByLabelText('Decline visitor'));
     expect(onDecline).toHaveBeenCalledWith('visitor-1');
+  });
+
+  it('ignores a second tap once the card is leaving', () => {
+    const { screen, onAllow, onDecline } = renderWaiting();
+    fireEvent.press(screen.getByLabelText('Allow visitor'));
+    fireEvent.press(screen.getByLabelText('Decline visitor'));
+    expect(onAllow).toHaveBeenCalledTimes(1);
+    expect(onDecline).not.toHaveBeenCalled();
   });
 });

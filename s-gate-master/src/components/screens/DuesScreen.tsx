@@ -278,6 +278,24 @@ function AdminCollectionRow({
   );
 }
 
+// GET /admin/dues caps `limit` at 100, so walk the pages until done.
+// Returns the same `{ data: { data, summary } }` envelope the screen reads from a single page.
+const ADMIN_DUES_PAGE_SIZE = 100;
+const ADMIN_DUES_MAX_PAGES = 30;
+async function fetchAllAdminDues(): Promise<{ data: { data: any[]; summary?: any } }> {
+  const all: any[] = [];
+  let summary: any;
+  for (let page = 1; page <= ADMIN_DUES_MAX_PAGES; page++) {
+    const res = await api.get('/admin/dues', { params: { page, limit: ADMIN_DUES_PAGE_SIZE } });
+    const rows: any[] = Array.isArray(res.data?.data) ? res.data.data : [];
+    if (page === 1) summary = res.data?.summary; // summary covers the whole set, not just the page
+    all.push(...rows);
+    const pages = Number(res.data?.pagination?.pages ?? 0);
+    if (rows.length < ADMIN_DUES_PAGE_SIZE || (pages > 0 && page >= pages)) break;
+  }
+  return { data: { data: all, summary } };
+}
+
 // ─── Screen ─────────────────────────────────────────────────────────────────
 export default function DuesScreen({ role }: DuesScreenProps) {
   const router = useRouter();
@@ -301,7 +319,7 @@ export default function DuesScreen({ role }: DuesScreenProps) {
         const [res, societyRes, adminDuesRes] = await Promise.all([
           api.get('/resident/dues'),
           role === 'admin' ? api.get('/resident/society-dues').catch(() => null) : Promise.resolve(null),
-          role === 'admin' ? api.get('/admin/dues', { params: { limit: 200 } }).catch(() => null) : Promise.resolve(null),
+          role === 'admin' ? fetchAllAdminDues().catch(() => null) : Promise.resolve(null),
         ]);
         const raw = res.data?.data ?? res.data;
         const list: any[] = Array.isArray(raw) ? raw : raw?.dues ?? raw?.items ?? [];

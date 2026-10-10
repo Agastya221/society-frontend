@@ -49,6 +49,30 @@ function timeAgo(iso: string): string {
     return `${Math.floor(diff / 86400)}d ago`;
 }
 
+// Backend poll shape: { title, status: DRAFT|ACTIVE|CLOSED, votingEndsAt, options: [{ id, text, votes }] }
+function normalizePoll(raw: any): Poll {
+    const status = String(raw?.status ?? '').toUpperCase();
+    const options: PollOption[] = Array.isArray(raw?.options)
+        ? raw.options.map((o: any) => ({
+            id: String(o?.id ?? ''),
+            text: o?.text ?? '',
+            voteCount: Number(o?.voteCount ?? o?.votes ?? 0) || 0,
+        }))
+        : [];
+    return {
+        id: String(raw?.id ?? ''),
+        question: raw?.question ?? raw?.title ?? '',
+        description: raw?.description ?? undefined,
+        options,
+        totalVotes: Number(raw?.totalVotes ?? options.reduce((sum, o) => sum + o.voteCount, 0)) || 0,
+        isActive: typeof raw?.isActive === 'boolean' ? raw.isActive : status === 'ACTIVE',
+        allowMultiple: !!raw?.allowMultiple,
+        createdAt: raw?.createdAt ?? new Date().toISOString(),
+        endDate: raw?.endDate ?? raw?.votingEndsAt ?? undefined,
+        createdBy: raw?.createdBy ?? undefined,
+    };
+}
+
 function pct(votes: number, total: number): number {
     if (!total) return 0;
     return Math.round((votes / total) * 100);
@@ -74,9 +98,10 @@ export default function AdminElectionsScreen() {
 
     const fetchPolls = async (silent = false) => {
         try {
-            const res = await api.get('/community/polls');
-            const data = res.data?.data ?? res.data?.polls ?? [];
-            setPolls(Array.isArray(data) ? data : []);
+            const res = await api.get('/admin/polls', { params: { limit: 100 } });
+            const payload = res.data?.data;
+            const data = Array.isArray(payload) ? payload : payload?.polls ?? res.data?.polls ?? [];
+            setPolls(Array.isArray(data) ? data.map(normalizePoll) : []);
         } catch {
             // Show empty state on error — no mock data
             setPolls([]);
@@ -103,9 +128,10 @@ export default function AdminElectionsScreen() {
                 onPress: async () => {
                     setPolls((prev) => prev.map((p) => p.id === poll.id ? { ...p, isActive: false } : p));
                     try {
-                        await api.patch(`/community/polls/${poll.id}/close`);
-                    } catch {
+                        await api.patch(`/admin/polls/${poll.id}`, { status: 'CLOSED' });
+                    } catch (err: any) {
                         fetchPolls(true);
+                        AppAlert.show('Error', err?.response?.data?.message || 'Failed to close poll');
                     }
                 },
             },
@@ -120,9 +146,10 @@ export default function AdminElectionsScreen() {
                 onPress: async () => {
                     setPolls((prev) => prev.filter((p) => p.id !== poll.id));
                     try {
-                        await api.delete(`/community/polls/${poll.id}`);
-                    } catch {
+                        await api.delete(`/admin/polls/${poll.id}`);
+                    } catch (err: any) {
                         fetchPolls(true);
+                        AppAlert.show('Error', err?.response?.data?.message || 'Failed to delete poll');
                     }
                 },
             },
@@ -158,11 +185,11 @@ export default function AdminElectionsScreen() {
 
         setSubmitting(true);
         try {
-            await api.post('/community/polls', {
-                question: question.trim(),
+            await api.post('/admin/polls', {
+                title: question.trim(),
                 description: description.trim() || undefined,
                 options: validOptions,
-                endDate: endDate.trim() || undefined,
+                votingEndsAt: endDate.trim() || undefined,
                 allowMultiple,
             });
             setCreateVisible(false);

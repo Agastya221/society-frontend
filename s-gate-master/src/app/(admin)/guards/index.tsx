@@ -75,9 +75,9 @@ export default function GuardsScreen() {
         setGuards(prev => prev.map(g => g.id === guard.id ? { ...g, isActive: newActive } : g));
         try {
             await api.patch(`/auth/resident-app/users/${guard.id}/status`, { isActive: newActive });
-        } catch {
+        } catch (err: any) {
             setGuards(prev => prev.map(g => g.id === guard.id ? { ...g, isActive: !newActive } : g));
-            AppAlert.show('Error', 'Failed to update guard status');
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to update guard status');
         }
     };
 

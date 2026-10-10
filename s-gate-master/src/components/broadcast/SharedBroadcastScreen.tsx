@@ -11,6 +11,7 @@ import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import api from '@/services/api';
 import { AppAlert } from '@/components/ui/AppAlert';
+import { useAuthStore } from '@/store/useAuthStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface IntercomContact {
@@ -29,9 +30,40 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
     // Broadcast State
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
-    const [target, setTarget] = useState<'ALL' | 'BLOCK_A' | 'BLOCK_B'>('ALL');
+    // 'ALL' or a real block id — the server resolves recipients by blockId.
+    const [target, setTarget] = useState<string>('ALL');
+    const [blocks, setBlocks] = useState<{ id: string; name: string }[]>([]);
     const [isEmergency, setIsEmergency] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+
+    const user = useAuthStore(s => s.user);
+    const adminSocietyId = useAuthStore(s =>
+        s.userContexts.find(c => c.membershipId === s.selectedAdminContextId)?.societyId);
+    const societyId = user?.societyId || adminSocietyId || null;
+
+    // Load the society's real blocks for the target chips
+    React.useEffect(() => {
+        if (!societyId) { setBlocks([]); return; }
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await api.get(`/resident/onboarding/societies/${societyId}/blocks`);
+                const data = res.data?.data ?? [];
+                if (!cancelled) {
+                    setBlocks(Array.isArray(data)
+                        ? data.filter((b: any) => b?.id).map((b: any) => ({ id: String(b.id), name: String(b.name ?? 'Block') }))
+                        : []);
+                }
+            } catch {
+                if (!cancelled) setBlocks([]);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [societyId]);
+
+    const targetLabel = target === 'ALL'
+        ? 'all residents'
+        : blocks.find(b => b.id === target)?.name ?? 'the selected block';
 
     // Intercom State
     const [searchQuery, setSearchQuery] = useState('');
@@ -79,12 +111,12 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
         setSubmitting(true);
         try {
             await api.post('/admin/broadcast', { title, message, isEmergency, target });
-            AppAlert.show('Broadcast Sent ✓', `Push notification sent to ${target.replace('_', ' ')}.`);
+            AppAlert.show('Broadcast Sent ✓', `Push notification sent to ${targetLabel}.`);
             setTitle('');
             setMessage('');
             setIsEmergency(false);
-        } catch {
-            AppAlert.show('Error', 'Failed to send broadcast. Please try again.');
+        } catch (err: any) {
+            AppAlert.show('Error', err?.response?.data?.message || 'Failed to send broadcast. Please try again.');
         } finally {
             setSubmitting(false);
         }
@@ -115,13 +147,13 @@ export default function SharedBroadcastScreen({ isTab = false }: { isTab?: boole
                     Target Audience <Text style={styles.requiredStar}>*</Text>
                 </Text>
                 <View style={styles.targetRow}>
-                    {['ALL', 'BLOCK_A', 'BLOCK_B'].map(t => (
-                        <TouchableOpacity key={t} onPress={() => { Haptics.selectionAsync(); setTarget(t as any); }}
-                            style={[styles.targetChip, target === t && styles.targetChipActive]}
+                    {[{ id: 'ALL', name: 'All' }, ...blocks].map(t => (
+                        <TouchableOpacity key={t.id} onPress={() => { Haptics.selectionAsync(); setTarget(t.id); }}
+                            style={[styles.targetChip, target === t.id && styles.targetChipActive]}
                             activeOpacity={0.8}
                         >
-                            <Text style={[styles.targetText, target === t && styles.targetTextActive]}>
-                                {t.replace('_', ' ')}
+                            <Text style={[styles.targetText, target === t.id && styles.targetTextActive]} numberOfLines={1}>
+                                {t.name}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -366,9 +398,11 @@ const styles = StyleSheet.create({
     },
 
     // ── Target Audience Chips ────────────────────────────────────
-    targetRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+    targetRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
     targetChip: {
-        flex: 1,
+        flexGrow: 1,
+        minWidth: 90,
+        paddingHorizontal: 16,
         height: 40,
         borderRadius: 20,
         backgroundColor: SgateColors.surface,

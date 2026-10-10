@@ -63,8 +63,13 @@ function DocumentDetailScreen() {
   useFocusEffect(useCallback(() => {
     (async () => {
       try {
-        const res = await api.get(`/resident/documents/${id}`);
-        setDoc(normalise(res.data?.data ?? res.data));
+        // There is no GET /resident/documents/:id — find the document in the list
+        // (visible society docs + the caller's own) instead.
+        const res = await api.get('/resident/documents', { params: { limit: 100 } });
+        const raw = res.data?.data ?? res.data;
+        const list: any[] = Array.isArray(raw) ? raw : raw?.documents ?? [];
+        const found = list.find((d) => String(d?.id) === String(id));
+        setDoc(found ? normalise(found) : null);
       } catch { /* handled below */ } finally { setLoading(false); }
     })();
   }, [id]));
@@ -75,7 +80,7 @@ function DocumentDetailScreen() {
     try {
       // 1. Get signed URL
       const res = await api.get(`/resident/documents/${id}/view-url`);
-      const url: string = res.data?.data?.url ?? res.data?.url ?? res.data;
+      const url: string = res.data?.data?.viewUrl ?? res.data?.data?.url ?? res.data?.url;
       if (!url || typeof url !== 'string') {
         AppAlert.show('Error', 'Could not get document URL.');
         return;

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, Linking, FlatList, Modal, StatusBar } from 'react-native';
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, FlatList, StatusBar } from 'react-native';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useFocusEffect } from 'expo-router';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -14,17 +14,30 @@ import * as Haptics from 'expo-haptics';
 import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
+// Residents only get registration status back — never owner name/phone/flat.
 interface VehicleResult {
   vehicleNumber: string;
-  vehicleType: string;
-  model: string;
-  color: string;
-  status: string;
-  parkingSlot?: string;
-  stickerNumber?: string;
-  lastSeen?: string;
-  flat?: { flatNumber: string };
-  user?: { name: string; phone: string };
+  vehicleType?: string;
+  status?: string;       // PENDING | ACTIVE | REJECTED
+  isApproved: boolean;
+}
+
+// GET /resident/vehicles/search → { data: { found, vehicle?: { vehicleNumber, vehicleType }, status, isApproved } }
+// (fields may also arrive flat on `data`).
+function parseSearchResult(data: any, fallbackNumber: string): VehicleResult | null {
+  if (!data || data.found !== true) return null;
+  const v = data.vehicle ?? {};
+  return {
+    vehicleNumber: v.vehicleNumber ?? data.vehicleNumber ?? fallbackNumber,
+    vehicleType: v.vehicleType ?? data.vehicleType ?? undefined,
+    status: data.status ?? v.status ?? undefined,
+    isApproved: data.isApproved === true || (data.status ?? v.status) === 'ACTIVE',
+  };
+}
+
+function prettyVehicleType(t?: string) {
+  if (!t) return 'Vehicle';
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 }
 
 interface Complaint {
@@ -75,9 +88,9 @@ export default function SearchVehicleScreen() {
       const res = await api.get('/resident/vehicles/search', {
         params: { vehicleNumber: normalised },
       });
-      const data = res.data?.data ?? res.data;
-      if (data && data.vehicleNumber) {
-        setResult(data);
+      const parsed = parseSearchResult(res.data?.data, normalised);
+      if (parsed) {
+        setResult(parsed);
       } else {
         setNotFound(true);
       }
@@ -96,8 +109,10 @@ export default function SearchVehicleScreen() {
   const fetchMyComplaints = async () => {
     setLoadingComplaints(true);
     try {
-      const res = await api.get('/resident/parking/complaints');
-      const data = res.data?.data ?? [];
+      // Response: { data: { violations: [...], pagination } } — scoped to the caller's own complaints.
+      const res = await api.get('/resident/parking/complaints', { params: { limit: '100' } });
+      const payload = res.data?.data;
+      const data = Array.isArray(payload) ? payload : payload?.violations ?? [];
       setComplaints(Array.isArray(data) ? data : []);
     } catch (err: any) {
       console.error('Failed to fetch parking complaints:', err);
@@ -225,40 +240,30 @@ export default function SearchVehicleScreen() {
             {/* ── Found Result ─────────────────────────────────────────── */}
             {result && (
               <Animated.View entering={FadeInDown.springify()} style={S.resultCard}>
-                <View style={S.foundBanner}>
-                  <MaterialCommunityIcons name="check-circle-outline" size={18} color={SgateColors.green} />
-                  <Text style={S.foundBannerText}>Registered Vehicle</Text>
+                <View style={[S.foundBanner, !result.isApproved && S.pendingBanner]}>
+                  <MaterialCommunityIcons
+                    name={result.isApproved ? 'check-circle-outline' : 'clock-outline'}
+                    size={18}
+                    color={result.isApproved ? SgateColors.green : SgateColors.goldDeep}
+                  />
+                  <Text style={[S.foundBannerText, !result.isApproved && S.pendingBannerText]}>
+                    {result.isApproved
+                      ? 'Registered Vehicle'
+                      : result.status === 'REJECTED'
+                        ? 'Registration Rejected'
+                        : 'Registration Pending Approval'}
+                  </Text>
                 </View>
                 <Text style={S.vehicleNumber}>{result.vehicleNumber}</Text>
                 <View style={S.detailRows}>
-                  {result.flat?.flatNumber && (
-                    <View style={S.detailRow}>
-                      <View style={S.detailIconWrap}><MaterialCommunityIcons name="home-outline" size={14} color={SgateColors.goldDeep} /></View>
-                      <Text style={S.detailLabel}>Flat</Text>
-                      <Text style={S.detailValue}>{result.flat.flatNumber}</Text>
-                    </View>
-                  )}
                   <View style={S.detailRow}>
                     <View style={S.detailIconWrap}><MaterialCommunityIcons name="car-outline" size={14} color={SgateColors.goldDeep} /></View>
-                    <Text style={S.detailLabel}>Vehicle</Text>
-                    <Text style={S.detailValue}>{result.vehicleType} · {result.model} · {result.color}</Text>
+                    <Text style={S.detailLabel}>Type</Text>
+                    <Text style={S.detailValue}>{prettyVehicleType(result.vehicleType)}</Text>
                   </View>
-                  {result.parkingSlot && (
-                    <View style={S.detailRow}>
-                      <View style={S.detailIconWrap}><MaterialCommunityIcons name="map-marker-outline" size={14} color={SgateColors.goldDeep} /></View>
-                      <Text style={S.detailLabel}>Parking</Text>
-                      <Text style={S.detailValue}>{result.parkingSlot}</Text>
-                    </View>
-                  )}
                 </View>
                 <View style={S.divider} />
                 <View style={S.actionRow}>
-                  {result.user?.phone && (
-                    <TouchableOpacity style={S.callBtn} onPress={() => Linking.openURL('tel:' + result.user!.phone.replace(/\s/g, ''))} activeOpacity={0.8}>
-                      <MaterialCommunityIcons name="phone-outline" size={16} color={SgateColors.green} />
-                      <Text style={S.callBtnText}>Call Owner</Text>
-                    </TouchableOpacity>
-                  )}
                   <TouchableOpacity style={S.reportBtnSec} onPress={() => setReportTarget(result.vehicleNumber)} activeOpacity={0.8}>
                     <MaterialCommunityIcons name="alert-outline" size={16} color={SgateColors.t2} />
                     <Text style={S.reportBtnSecText}>Report Issue</Text>
@@ -381,6 +386,8 @@ const S = StyleSheet.create({
   resultCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginTop: 16, borderWidth: 1, borderColor: 'rgba(0,0,0,0.04)', shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 1 },
   foundBanner: { backgroundColor: SgateColors.greenBg, borderRadius: 10, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
   foundBannerText: { fontSize: 13, fontFamily: SgateFonts.bold, color: SgateColors.green },
+  pendingBanner: { backgroundColor: SgateColors.goldPale },
+  pendingBannerText: { color: SgateColors.goldDeep },
   vehicleNumber: { fontSize: 22, fontFamily: SgateFonts.extrabold, color: SgateColors.t1, textAlign: 'center', marginBottom: 18, letterSpacing: 2 },
   detailRows: { gap: 12 },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
