@@ -81,8 +81,8 @@ export default function CreateComplaintScreen() {
                 location: formData.location.trim(),
                 urgency: isUrgent ? 'CRITICAL' : formData.urgency,
                 isPrivate: requestType === 'unit',
-                photos: s3Keys,
-            } as any);
+                images: s3Keys,
+            });
             AppAlert.show('Complaint Submitted', `Your complaint has been registered.\n\nTicket: ${result.ticketNumber}`, [
                 { text: 'OK', onPress: () => router.back() },
             ]);

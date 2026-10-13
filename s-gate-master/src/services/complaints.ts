@@ -1,4 +1,3 @@
-import { useAuthStore } from '../store/useAuthStore';
 import api from './api';
 
 // Complaint types
@@ -12,7 +11,7 @@ export interface CreateComplaintPayload {
     category: ComplaintCategory;
     urgency: ComplaintUrgency;
     isPrivate: boolean;
-    photos?: string[];
+    images?: string[]; // S3 keys from uploadImage — the server reads `images`
     location?: string; // Location of the complaint
     societyId?: string;
 }
@@ -76,21 +75,15 @@ export const createComplaint = async (payload: CreateComplaintPayload): Promise<
             title: payload.title,
             description: payload.description,
             priority: payload.urgency, // urgency → priority
-            images: payload.photos || [], // Always include images, even if empty
+            images: payload.images || [], // Always include images, even if empty
             location: payload.location || '', // Required field
             isAnonymous: payload.isPrivate, // isPrivate → isAnonymous
         };
-
-        console.log('📤 Creating complaint');
-        console.log('📦 Request payload:', JSON.stringify(requestPayload, null, 2));
 
         const response = await api.post<{ data: ComplaintResponse }>(
             '/community/complaints',
             requestPayload
         );
-
-        console.log('✅ Complaint created successfully!');
-        console.log('📋 Response:', response.data.data);
 
         return response.data.data;
     } catch (error: any) {
@@ -199,19 +192,6 @@ export const createComplaintV2 = async ({
 
 export const fetchComplaints = async (): Promise<Complaint[]> => {
     try {
-        // Get user info from auth store
-        const user = useAuthStore.getState().user;
-        const societyId = user?.societyId;
-        const userId = user?.id;
-        const userRole = user?.role;
-
-        console.log('📥 Fetching complaints for user:');
-        console.log('👤 User ID:', userId);
-        console.log('👔 User Role:', userRole);
-        console.log('🏢 Society ID:', societyId);
-        console.log('🔗 GET Request URL:', '/community/complaints');
-        console.log('📋 Note: Authorization header with Bearer token is automatically added by interceptor');
-
         const response = await api.get<{
             data: {
                 complaints: Complaint[];
@@ -223,9 +203,6 @@ export const fetchComplaints = async (): Promise<Complaint[]> => {
 
         // Extract complaints from nested structure
         const complaints = response.data.data?.complaints || [];
-
-        console.log('✅ Fetched complaints count:', complaints.length);
-        console.log('✅ Fetched complaints with S3 keys:', complaints);
 
         return complaints;
     } catch (error: any) {
@@ -324,27 +301,35 @@ export const fetchGuards = async (): Promise<Guard[]> => {
 };
 
 /**
- * Update complaint status or assign to staff
- * Combining logic as typically "assignment" can be part of an update patch, 
- * or there might be specific endpoints. 
- * Since docs don't explicit show "ASSIGN", we'll check if PATCH /complaints/:id supports it.
- * If not, we might need a specific endpoint. 
- * For now, assuming PATCH supports 'status' and 'assignedToId'.
+ * Update complaint status or assign to staff (admin).
+ * The backend has no generic PATCH /community/complaints/:id — each action has its own route:
+ *   PATCH /community/complaints/:id/assign   { assignedToId }   (also moves it to IN_PROGRESS)
+ *   PATCH /community/complaints/:id/resolve  { resolution }     (sets RESOLVED + resolvedBy/At)
+ *   PATCH /community/complaints/:id/status   { status }
+ * Those responses are partial, so the full complaint is re-fetched afterwards.
  */
 export const updateComplaint = async (
     complaintId: string,
     updates: { status?: ComplaintStatus; assignedToId?: string; resolution?: string }
 ): Promise<Complaint> => {
     try {
-        console.log(`📤 Updating complaint ${complaintId}:`, updates);
+        if (updates.assignedToId) {
+            await api.patch(`/community/complaints/${complaintId}/assign`, {
+                assignedToId: updates.assignedToId,
+            });
+        }
 
-        const response = await api.patch<{ data: Complaint }>(
-            `/community/complaints/${complaintId}`,
-            updates
-        );
+        if (updates.status === 'RESOLVED') {
+            await api.patch(`/community/complaints/${complaintId}/resolve`, {
+                resolution: updates.resolution?.trim() || 'Resolved by admin',
+            });
+        } else if (updates.status) {
+            await api.patch(`/community/complaints/${complaintId}/status`, {
+                status: updates.status,
+            });
+        }
 
-        console.log('✅ Complaint updated successfully');
-        return response.data.data;
+        return await fetchComplaintDetails(complaintId);
     } catch (error: any) {
         console.error('❌ Update complaint error:', error);
         if (error.response?.data?.message) {

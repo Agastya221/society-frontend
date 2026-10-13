@@ -76,9 +76,27 @@ function shouldLog(method: string, url: string, isError: boolean): boolean {
     return true;
 }
 
+// Keys whose values must never reach the console (auth/refresh tokens, MSG91 widget JWT, OTPs).
+const SENSITIVE_KEY = /token|otp|password|secret|authorization|cookie/i;
+
+function redact(value: any, depth = 0): any {
+    if (depth > 8 || value === null || typeof value !== 'object') return value;
+    if (Array.isArray(value)) return value.map((v) => redact(v, depth + 1));
+    const out: Record<string, any> = {};
+    for (const [k, v] of Object.entries(value)) {
+        out[k] = SENSITIVE_KEY.test(k) ? '[REDACTED]' : redact(v, depth + 1);
+    }
+    return out;
+}
+
 function truncate(value: any): string {
     try {
-        const str = typeof value === 'string' ? value : JSON.stringify(value);
+        let parsed = value;
+        if (typeof value === 'string') {
+            try { parsed = JSON.parse(value); } catch { parsed = value; }
+        }
+        const safe = redact(parsed);
+        const str = typeof safe === 'string' ? safe : JSON.stringify(safe);
         if (!str) return '(empty)';
         if (config.bodyPreviewLength > 0 && str.length > config.bodyPreviewLength) {
             return str.substring(0, config.bodyPreviewLength) + `… (${str.length} chars)`;

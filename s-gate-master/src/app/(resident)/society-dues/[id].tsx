@@ -33,6 +33,12 @@ import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
 const BRAND_YELLOW = '#FFD60A';
 const BRAND_YELLOW_BG = '#FFFBE6';
 
+// The backend has the online gateway (Cashfree) switched off — /payments answers 503.
+// Residents pay the society directly, so the Pay button is hidden. Flip this back
+// (cashfreePaymentService is kept) if online payments are re-enabled server-side.
+const ONLINE_PAYMENTS_ENABLED = false;
+const ONLINE_PAYMENTS_DISABLED_MESSAGE = 'Online payments are not available. Please pay your society directly.';
+
 type DueStatus = 'PAID' | 'PENDING' | 'OVERDUE';
 interface DueLineItem { label: string; amount: number; isRed?: boolean }
 interface PaymentRecord { date: string; method: string; amount: number; txnId: string }
@@ -368,9 +374,18 @@ function SocietyDueDetailScreen() {
       </ScrollView>
 
       {/* Bottom Bar */}
-      {isActionable && (
+      {isActionable && !ONLINE_PAYMENTS_ENABLED && (
         <View style={styles.bottomActions}>
-          <TouchableOpacity 
+          <View style={styles.payOfflineNote}>
+            <Feather name="info" size={18} color={SgateColors.t2} />
+            <Text style={styles.payOfflineNoteText}>{ONLINE_PAYMENTS_DISABLED_MESSAGE}</Text>
+          </View>
+        </View>
+      )}
+
+      {isActionable && ONLINE_PAYMENTS_ENABLED && (
+        <View style={styles.bottomActions}>
+          <TouchableOpacity
             style={[styles.payMainBtn, paying && styles.payMainBtnDisabled]} 
             activeOpacity={0.8} 
             disabled={paying}
@@ -557,6 +572,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: SgateFonts.semibold,
     color: SgateColors.t1,
+  },
+  payOfflineNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: SgateColors.surface,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  payOfflineNoteText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 19,
+    fontFamily: SgateFonts.medium,
+    color: SgateColors.t2,
   },
   emptyContent: {
     flex: 1,

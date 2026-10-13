@@ -104,7 +104,6 @@ export default function Login() {
         setError('');
         try {
             const response = await OTPWidget.sendOTP({ identifier: `91${cleaned}` });
-            console.log('📤 MSG91 sendOTP response:', JSON.stringify(response));
             const isHardError = response?.type === 'error' || response?.success === false;
             if (isHardError) {
                 setError('Failed to send OTP. Please try again.');
@@ -130,7 +129,6 @@ export default function Login() {
         setError('');
         try {
             const retryResponse = await OTPWidget.retryOTP({ reqId, retryChannel: 11 });
-            console.log('🔄 MSG91 retryOTP response:', retryResponse);
             const responseMessage = String(retryResponse?.message ?? '');
             const isSuccess =
                 retryResponse?.type === 'success' ||
@@ -166,7 +164,6 @@ export default function Login() {
         setError('');
         try {
             const verifyResponse = await OTPWidget.verifyOTP({ reqId, otp: otp.trim() });
-            console.log('✅ MSG91 verifyOTP response:', verifyResponse);
             const isSuccess =
                 verifyResponse?.message?.toUpperCase() === 'SUCCESS' ||
                 verifyResponse?.type === 'success';
@@ -179,7 +176,6 @@ export default function Login() {
                 (typeof verifyResponse?.message === 'string' && verifyResponse.message.startsWith('eyJ'))
                     ? verifyResponse.message
                     : verifyResponse?.reqId ?? reqId;
-            console.log('🔑 widgetToken:', widgetToken.substring(0, 20) + '...');
             const backendRes = await api.post('/auth/otp/verify', { widgetToken });
             const data = backendRes.data?.data;
             if (!data?.accessToken || !data?.user) {
@@ -195,7 +191,8 @@ export default function Login() {
                 data.onboardingStatus ?? null,
             );
         } catch (err: any) {
-            console.error('Verify error:', err);
+            // Log only the status — the axios error carries the request body (widgetToken) and auth headers.
+            console.error('Verify error:', err?.response?.status ?? err?.message);
             const status = err?.response?.status;
             const msg = err?.response?.data?.message || err?.message || 'Verification failed.';
             if (status === 429) {

@@ -100,7 +100,13 @@ export default function AdminEmergenciesScreen() {
             } else if (Array.isArray(res.data?.emergencies)) {
                 emergenciesArray = res.data.emergencies;
             }
-            setEmergencies(emergenciesArray);
+            // The backend keeps a responded-to emergency ACTIVE (with respondedById set)
+            // and stores the resolution text as `notes`.
+            setEmergencies(emergenciesArray.map((e: any) => ({
+                ...e,
+                status: e.status === 'ACTIVE' && (e.respondedById || e.respondedBy) ? 'ACKNOWLEDGED' : e.status,
+                resolutionNote: e.resolutionNote ?? e.notes ?? undefined,
+            })));
         } catch (err) {
             if (!silent) console.error('Failed to fetch emergencies:', err);
         } finally {
@@ -125,7 +131,7 @@ export default function AdminEmergenciesScreen() {
 
     const handleAcknowledge = async (id: string) => {
         try {
-            await api.patch(`/community/emergencies/${id}/acknowledge`);
+            await api.patch(`/community/emergencies/${id}/respond`);
             setEmergencies((prev) =>
                 prev.map((e) => (e.id === id ? { ...e, status: 'ACKNOWLEDGED' } : e))
             );
@@ -139,7 +145,7 @@ export default function AdminEmergenciesScreen() {
         setResolving(true);
         try {
             await api.patch(`/community/emergencies/${resolveTarget.id}/resolve`, {
-                resolutionNote: resolveNote.trim() || 'Resolved by admin',
+                notes: resolveNote.trim() || 'Resolved by admin',
             });
             setEmergencies((prev) =>
                 prev.map((e) =>
