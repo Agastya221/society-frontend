@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import '../global.css';
 import api from '@/services/api';
 import { GuardColors, GuardFonts } from '@/constants/theme';
+import { useLanguageStore, useT } from '@/i18n';
 
 // Show notifications while app is in foreground
 Notifications.setNotificationHandler({
@@ -23,6 +24,13 @@ Notifications.setNotificationHandler({
 export default function RootLayout() {
   const router = useRouter();
   const { isAuthenticated, isLoading, loadToken } = useAuthStore();
+  const t = useT();
+  const loadLang = useLanguageStore((state) => state.loadLang);
+
+  // Saved language (Hindi by default)
+  useEffect(() => {
+    loadLang();
+  }, [loadLang]);
 
   // Load stored token on app launch
   useEffect(() => {
@@ -82,7 +90,7 @@ export default function RootLayout() {
         headerStyle: { backgroundColor: GuardColors.card },
         headerTintColor: GuardColors.t1,
         headerShadowVisible: false,
-        headerTitleStyle: { fontFamily: GuardFonts.semibold, fontWeight: '700', fontSize: 17 },
+        headerTitleStyle: { fontFamily: GuardFonts.semibold, fontWeight: '800', fontSize: 22 },
       }}>
         <Stack.Protected guard={!isAuthenticated}>
           <Stack.Screen name="auth" options={{ headerShown: false }} />
@@ -94,35 +102,35 @@ export default function RootLayout() {
           options={{ 
             presentation: 'card', 
             headerShown: true,
-            title: 'New Entry',
+            title: t('title.newEntry'),
           }} 
         />
         <Stack.Screen 
           name="today-entries" 
           options={{ 
             headerShown: true,
-            title: "Today's Entries",
+            title: t('title.entries'),
           }} 
         />
         <Stack.Screen 
           name="approvals" 
           options={{ 
             headerShown: true,
-            title: 'Approval Status',
+            title: t('title.waiting'),
           }} 
         />
         <Stack.Screen 
           name="staff-scan" 
           options={{ 
             headerShown: true,
-            title: 'Staff Scan',
+            title: t('title.staffScan'),
           }} 
         />
         <Stack.Screen
           name="pre-approved"
           options={{
             headerShown: true,
-            title: 'Pre-approved Passes',
+            title: t('title.preApproved'),
           }}
         />
         <Stack.Screen
@@ -143,7 +151,7 @@ export default function RootLayout() {
           name="profile" 
           options={{ 
             headerShown: true,
-            title: 'My Profile',
+            title: t('title.profile'),
           }}
         />
         </Stack.Protected>

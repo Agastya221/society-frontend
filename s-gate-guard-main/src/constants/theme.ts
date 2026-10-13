@@ -26,6 +26,21 @@ export const GuardColors = {
   t4: '#B5B8C0',
 } as const;
 
+/** Colour = meaning on every guard screen: green lets in, red stops, amber waits. */
+export const GuardSemantic = {
+  allow: GuardColors.green,
+  allowBg: '#0A9A62',
+  deny: '#D93636',
+  denyBg: '#C42B2B',
+  wait: GuardColors.gold,
+  waitBg: '#FFF3CC',
+  neutral: GuardColors.ink,
+} as const;
+
+/** Sizes for guards: big, readable in sunlight, easy to hit with a thumb. */
+export const GuardType = { body: 18, button: 20, title: 28, result: 44, min: 15 } as const;
+export const GuardTouch = { min: 56, button: 72, giant: 120 } as const;
+
 export const GuardSpacing = { xs: 4, sm: 8, md: 12, base: 16, lg: 20, xl: 24, xxl: 32 } as const;
 export const GuardRadius = { sm: 12, md: 16, lg: 20, xl: 24, full: 999 } as const;
 
