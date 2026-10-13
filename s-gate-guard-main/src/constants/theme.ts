@@ -37,6 +37,25 @@ export const GuardSemantic = {
   neutral: GuardColors.ink,
 } as const;
 
+/** Gradient fills (top-left to bottom-right) for the big buttons and result screens. */
+export const GuardGradients = {
+  gold: ['#FFD95A', '#FFB800', '#FF9F0A'],
+  dark: ['#2A2F3E', '#161922', '#0D0F14'],
+  allow: ['#22D39A', '#0FB57A', '#08915F'],
+  deny: ['#FF6B6B', '#E04545', '#B82424'],
+  wait: ['#FFE38A', '#FFC933', '#FFB000'],
+  glow: ['#FFF1C2', '#FBF4DF', '#F5F4F0'],
+} as const;
+
+/** Soft layered shadow shared by the cards. Colour it per card for a glow. */
+export const guardShadow = (color = '#0D0F14', level: 1 | 2 | 3 = 2) => ({
+  shadowColor: color,
+  shadowOffset: { width: 0, height: level * 4 },
+  shadowOpacity: 0.08 + level * 0.05,
+  shadowRadius: level * 8,
+  elevation: level * 3,
+});
+
 /** Sizes for guards: big, readable in sunlight, easy to hit with a thumb. */
 export const GuardType = { body: 18, button: 20, title: 28, result: 44, min: 15 } as const;
 export const GuardTouch = { min: 56, button: 72, giant: 120 } as const;

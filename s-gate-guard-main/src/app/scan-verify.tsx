@@ -21,6 +21,7 @@ import {
     StatusBar,
     StyleSheet,
     Text,
+    TouchableOpacity,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -158,24 +159,25 @@ function CodeEntry({
 
                 <View style={S.keys}>
                     {KEYS.map((c) => (
-                        <Pressable key={c} testID={`key-${c}`} accessibilityRole="button" accessibilityLabel={c} style={({ pressed }) => [S.key, pressed && S.keyPressed]} onPress={() => press(c)}>
+                        <TouchableOpacity key={c} activeOpacity={0.6} testID={`key-${c}`} accessibilityRole="button" accessibilityLabel={c} style={S.key} onPress={() => press(c)}>
                             <Text style={S.keyText}>{c}</Text>
-                        </Pressable>
+                        </TouchableOpacity>
                     ))}
                 </View>
 
                 <View style={S.codeActions}>
-                    <Pressable
+                    <TouchableOpacity
+                        activeOpacity={0.6}
                         testID="key-delete"
                         accessibilityRole="button"
                         accessibilityLabel={t('scan.delete')}
                         disabled={busy || !value}
-                        style={({ pressed }) => [S.deleteKey, (!value || busy) && { opacity: 0.4 }, pressed && S.keyPressed]}
+                        style={[S.deleteKey, (!value || busy) && { opacity: 0.4 }]}
                         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onChange(value.slice(0, -1)); }}
                         onLongPress={() => onChange('')}
                     >
                         <Ionicons name="backspace-outline" size={30} color={GuardColors.t1} />
-                    </Pressable>
+                    </TouchableOpacity>
                     <GiantButton
                         label={t('scan.verify')}
                         icon="shield-checkmark"
@@ -658,7 +660,6 @@ const S = StyleSheet.create({
     codePlaceholder: { color: GuardColors.t4, letterSpacing: 4 },
     keys: { marginTop: 14, flexDirection: 'row', flexWrap: 'wrap', gap: KEY_GAP },
     key: { width: (SW - 40 - KEY_GAP * 5) / 6, height: 56, borderRadius: 14, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center' },
-    keyPressed: { backgroundColor: GuardColors.goldPale, borderColor: GuardColors.gold },
     keyText: { fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '800', color: GuardColors.t1 },
     codeActions: { marginTop: 14, flexDirection: 'row', gap: 12, alignItems: 'center' },
     deleteKey: { width: GuardTouch.button, height: GuardTouch.button, borderRadius: GuardRadius.xl, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center' },

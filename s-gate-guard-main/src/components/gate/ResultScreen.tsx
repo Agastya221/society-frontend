@@ -3,7 +3,7 @@ import { useT } from '@/i18n';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Image, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type ResultKind = 'allow' | 'deny' | 'wait';
@@ -96,18 +96,19 @@ export function ResultScreen({
       </View>
 
       <View style={styles.actions}>
-        <Pressable
+        <TouchableOpacity
+          activeOpacity={0.85}
           accessibilityRole="button"
           disabled={busy}
           onPress={onPrimary}
-          style={({ pressed }) => [styles.primary, (busy || pressed) && { opacity: 0.85 }]}
+          style={[styles.primary, busy && { opacity: 0.6 }]}
         >
           <Text style={[styles.primaryText, { color: BG[kind] }]}>{primaryLabel}</Text>
-        </Pressable>
+        </TouchableOpacity>
         {!!secondaryLabel && !!onSecondary && (
-          <Pressable accessibilityRole="button" disabled={busy} onPress={onSecondary} style={({ pressed }) => [styles.secondary, (busy || pressed) && { opacity: 0.85 }]}>
+          <TouchableOpacity activeOpacity={0.85} accessibilityRole="button" disabled={busy} onPress={onSecondary} style={[styles.secondary, busy && { opacity: 0.6 }]}>
             <Text style={styles.secondaryText}>{secondaryLabel}</Text>
-          </Pressable>
+          </TouchableOpacity>
         )}
         {!!autoReturnSeconds && left > 0 && <Text style={styles.countdown}>{t('common.returningIn', { n: left })}</Text>}
       </View>

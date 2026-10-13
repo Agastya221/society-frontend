@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** Sticky "Home" bar for the bottom of every screen — a guard can always get out. */
@@ -14,15 +14,16 @@ export function HomeButton({ onPress }: { onPress?: () => void }) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.bar, { paddingBottom: insets.bottom + 10 }]}>
-      <Pressable
+      <TouchableOpacity
+        activeOpacity={0.85}
         accessibilityRole="button"
         accessibilityLabel={t('common.home')}
         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); (onPress ?? (() => router.replace('/')))(); }}
-        style={({ pressed }) => [styles.btn, pressed && { opacity: 0.85 }]}
+        style={styles.btn}
       >
         <Ionicons name="home-outline" size={26} color={GuardColors.t1} />
         <Text style={styles.text}>{t('common.home')}</Text>
-      </Pressable>
+      </TouchableOpacity>
     </View>
   );
 }
