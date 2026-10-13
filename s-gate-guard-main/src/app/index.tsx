@@ -1,123 +1,193 @@
+import { GiantButton } from '@/components/gate/GiantButton';
+import { LanguageSwitch } from '@/components/gate/LanguageSwitch';
 import { GuardBrandMark } from '@/components/GuardBrandMark';
-import { GuardColors, GuardFonts, GuardRadius } from '@/constants/theme';
+import { GuardColors, GuardFonts, GuardRadius, GuardSemantic, GuardTouch, GuardType } from '@/constants/theme';
+import { useT } from '@/i18n';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, Easing, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const SHIFT_LABEL: Record<string, string> = { MORNING: 'Morning shift', EVENING: 'Evening shift', NIGHT: 'Night shift' };
+const HOLD_MS = 2000;
+const POLL_MS = 15000;
 
-type Route = '/new-entry' | '/scan-verify' | '/pre-approved' | '/today-entries' | '/approvals' | '/staff-scan' | '/profile' | '/emergencies';
+type Route = '/new-entry' | '/scan-verify' | '/today-entries' | '/approvals' | '/profile' | '/emergencies';
 
-const quickActions: { label: string; detail: string; icon: keyof typeof Ionicons.glyphMap; route: Route }[] = [
-  { label: "Today's entries", detail: 'View gate activity', icon: 'receipt-outline', route: '/today-entries' },
-  { label: 'Approvals', detail: 'Resident responses', icon: 'checkmark-done-outline', route: '/approvals' },
-  { label: 'Staff check-in', detail: 'Verify staff ID', icon: 'people-outline', route: '/staff-scan' },
-  { label: 'My profile', detail: 'Duty and gate details', icon: 'person-outline', route: '/profile' },
-];
+/** People inside right now: visitors checked in and staff who haven't checked out. */
+function countInside(data: any): number {
+  const entries: any[] = Array.isArray(data?.entries) ? data.entries : [];
+  const staff: any[] = Array.isArray(data?.staffAttendances) ? data.staffAttendances : [];
+  return entries.filter((e) => e?.status === 'CHECKED_IN').length + staff.filter((a) => !a?.checkOutTime).length;
+}
+
+/**
+ * Emergency needs a 2 second press so it can't be set off by accident.
+ * A short tap only explains what to do.
+ */
+function EmergencyHold({ onTrigger }: { onTrigger: () => void }) {
+  const t = useT();
+  const progress = useRef(new Animated.Value(0)).current;
+  const [hint, setHint] = useState(false);
+  const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (hintTimer.current) clearTimeout(hintTimer.current); }, []);
+
+  const showHint = () => {
+    setHint(true);
+    if (hintTimer.current) clearTimeout(hintTimer.current);
+    hintTimer.current = setTimeout(() => setHint(false), 3500);
+  };
+
+  return (
+    <View style={styles.emergencyCol}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('home.emergency')}
+        accessibilityHint={t('home.emergencyHint')}
+        delayLongPress={HOLD_MS}
+        onPressIn={() => {
+          progress.setValue(0);
+          Animated.timing(progress, { toValue: 1, duration: HOLD_MS, easing: Easing.linear, useNativeDriver: false }).start();
+        }}
+        onPressOut={() => { progress.stopAnimation(); progress.setValue(0); }}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); showHint(); }}
+        onLongPress={() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); setHint(false); onTrigger(); }}
+        style={styles.emergency}
+      >
+        <Animated.View style={[styles.emergencyFill, { width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
+        <Ionicons name="warning" size={28} color={GuardSemantic.deny} />
+        <View style={styles.emergencyCopy}>
+          <Text style={styles.emergencyTitle}>{t('home.emergency')}</Text>
+          <Text style={styles.emergencySub}>{t('home.emergencyHold')}</Text>
+        </View>
+      </Pressable>
+      {hint && <Text style={styles.hint}>{t('home.emergencyHint')}</Text>}
+    </View>
+  );
+}
 
 export default function GuardDashboard() {
+  const t = useT();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const [pendingCount, setPendingCount] = useState(0);
+  const [insideCount, setInsideCount] = useState(0);
+  const focused = useRef(true);
 
-  useFocusEffect(useCallback(() => {
+  const refresh = useCallback(() => {
     api.get('/api/v1/gate/entry-requests?status=PENDING').then((res) => {
       const payload = res.data?.data;
       const entries: unknown[] = Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
       setPendingCount(Array.isArray(entries) ? entries.length : 0);
     }).catch(() => undefined);
-  }, []));
+    api.get('/api/v1/guard/today').then((res) => {
+      setInsideCount(countInside(res.data?.data));
+    }).catch(() => undefined);
+  }, []);
 
-  const open = (route: Route, strong = false) => {
-    Haptics.impactAsync(strong ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light);
-    router.push(route);
-  };
+  useFocusEffect(useCallback(() => {
+    focused.current = true;
+    refresh();
+    return () => { focused.current = false; };
+  }, [refresh]));
+
+  // A visitor can arrive any time, so keep the counts fresh while this screen is showing.
+  useEffect(() => {
+    const timer = setInterval(() => { if (focused.current) refresh(); }, POLL_MS);
+    return () => clearInterval(timer);
+  }, [refresh]);
+
+  const open = (route: Route) => router.push(route);
+
+  const firstName = user?.name?.split(' ')[0] ?? 'Guard';
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor={GuardColors.bg} />
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 28 }]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.topbar}>
           <GuardBrandMark compact />
-          <Pressable style={styles.avatar} onPress={() => open('/profile')}><Text style={styles.avatarText}>{(user?.name ?? 'G').charAt(0).toUpperCase()}</Text></Pressable>
+          <LanguageSwitch compact />
         </View>
 
-        <View style={styles.welcomeRow}>
-          <View style={styles.welcomeCopy}>
-            <Text style={styles.eyebrow}>SECURITY DESK</Text>
-            <Text style={styles.title}>Good to see you,{`\n`}{user?.name?.split(' ')[0] ?? 'Guard'}.</Text>
-            <Text style={styles.gate}>{user?.gate ?? 'Main Gate'}</Text>
-          </View>
-          <View style={styles.dutyChip}><View style={styles.dutyDot} /><Text style={styles.dutyText}>{user?.shift ? SHIFT_LABEL[user.shift] : 'On duty'}</Text></View>
+        <Text style={styles.greeting} numberOfLines={2}>{t('home.greeting', { name: firstName, gate: user?.gate ?? 'Main Gate' })}</Text>
+
+        <View style={styles.primary}>
+          <GiantButton
+            size="giant"
+            tone="gold"
+            icon="qr-code-outline"
+            label={t('home.scan')}
+            sub={t('home.scanSub')}
+            onPress={() => open('/scan-verify')}
+          />
+          <GiantButton
+            size="giant"
+            tone="dark"
+            icon="person-add-outline"
+            label={t('home.newVisitor')}
+            sub={t('home.newVisitorSub')}
+            onPress={() => open('/new-entry')}
+          />
         </View>
 
         {pendingCount > 0 && (
-          <Pressable style={styles.notice} onPress={() => open('/approvals')}>
-            <View style={styles.noticeIcon}><Ionicons name="time-outline" size={20} color={GuardColors.black} /></View>
-            <View style={styles.noticeCopy}><Text style={styles.noticeTitle}>{pendingCount} visitor{pendingCount === 1 ? '' : 's'} waiting</Text><Text style={styles.noticeText}>Review resident approvals</Text></View>
-            <Ionicons name="arrow-forward" size={19} color={GuardColors.black} />
+          <Pressable accessibilityRole="button" style={[styles.strip, styles.stripWait]} onPress={() => open('/approvals')}>
+            <Ionicons name="time" size={30} color={GuardColors.black} />
+            <View style={styles.stripCopy}>
+              <Text style={styles.stripTitle}>{pendingCount === 1 ? t('home.waitingOne') : t('home.waiting', { n: pendingCount })}</Text>
+              <Text style={styles.stripSub}>{t('home.waitingSub')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={26} color={GuardColors.black} />
           </Pressable>
         )}
 
-        <Text style={styles.sectionTitle}>Gate operations</Text>
-        <View style={styles.primaryRow}>
-          <Pressable style={[styles.primary, styles.primaryDark]} onPress={() => open('/new-entry', true)}>
-            <View style={styles.darkIcon}><Ionicons name="person-add-outline" size={25} color={GuardColors.gold} /></View>
-            <Text style={styles.primaryDarkTitle}>New entry</Text><Text style={styles.primaryDarkText}>Register a visitor</Text>
-            <View style={styles.arrowDark}><Ionicons name="arrow-forward" size={18} color={GuardColors.black} /></View>
-          </Pressable>
-          <Pressable style={[styles.primary, styles.primaryGold]} onPress={() => open('/scan-verify')}>
-            <View style={styles.goldIcon}><Ionicons name="qr-code-outline" size={25} color={GuardColors.black} /></View>
-            <Text style={styles.primaryTitle}>Scan pass</Text><Text style={styles.primaryText}>Verify QR access</Text>
-            <View style={styles.arrowLight}><Ionicons name="arrow-forward" size={18} color={GuardColors.card} /></View>
-          </Pressable>
-        </View>
-
-        <Pressable style={styles.preApproved} onPress={() => open('/pre-approved')}>
-          <View style={styles.preApprovedIcon}><Ionicons name="shield-checkmark-outline" size={22} color={GuardColors.black} /></View>
-          <View style={styles.noticeCopy}><Text style={styles.preApprovedTitle}>Pre-approved passes</Text><Text style={styles.preApprovedText}>Cab, delivery and help by flat or vehicle</Text></View>
-          <Ionicons name="arrow-forward" size={19} color={GuardColors.t1} />
+        <Pressable accessibilityRole="button" style={[styles.strip, styles.stripInside]} onPress={() => open('/today-entries')}>
+          <Ionicons name="people" size={30} color={GuardColors.t1} />
+          <View style={styles.stripCopy}>
+            <Text style={styles.stripTitle}>{t('home.inside', { n: insideCount })}</Text>
+            <Text style={styles.stripSub}>{t('home.insideSub')}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={26} color={GuardColors.t1} />
         </Pressable>
 
-        <Text style={styles.sectionLabel}>QUICK ACCESS</Text>
-        <View style={styles.quickGrid}>
-          {quickActions.map((item) => (
-            <Pressable key={item.route} style={styles.quickTile} onPress={() => open(item.route)}>
-              <View style={[styles.quickIcon, item.route === '/approvals' && styles.quickIconGold]}>
-                <Ionicons name={item.icon} size={23} color={item.route === '/approvals' ? GuardColors.goldDeep : GuardColors.t1} />
-              </View>
-              <Text style={styles.quickTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>{item.label}</Text>
-              <Text style={styles.quickText} numberOfLines={1}>{item.detail}</Text>
-              {item.route === '/approvals' && pendingCount > 0 && <View style={styles.countBadge}><Text style={styles.countText}>{pendingCount}</Text></View>}
-            </Pressable>
-          ))}
+        <View style={styles.bottomRow}>
+          <EmergencyHold onTrigger={() => open('/emergencies')} />
+          <Pressable accessibilityRole="button" accessibilityLabel={t('home.profile')} style={styles.profile} onPress={() => open('/profile')}>
+            <Ionicons name="person-circle-outline" size={30} color={GuardColors.t1} />
+            <Text style={styles.profileText}>{t('home.profile')}</Text>
+          </Pressable>
         </View>
-
-        <Pressable style={styles.emergency} onPress={() => open('/emergencies', true)}>
-          <View style={styles.emergencyIcon}><Ionicons name="warning-outline" size={24} color={GuardColors.red} /></View>
-          <View style={styles.emergencyCopy}><Text style={styles.emergencyTitle}>Emergency assistance</Text><Text style={styles.emergencyText}>Alert your society response team</Text></View>
-          <View style={styles.emergencyArrow}><Ionicons name="arrow-forward" size={18} color={GuardColors.card} /></View>
-        </Pressable>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: GuardColors.bg }, content: { paddingHorizontal: 20, paddingTop: 12 },
+  root: { flex: 1, backgroundColor: GuardColors.bg },
+  content: { paddingHorizontal: 20, paddingTop: 12 },
   topbar: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  avatar: { width: 42, height: 42, borderRadius: 15, backgroundColor: GuardColors.ink, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: GuardColors.gold, fontFamily: GuardFonts.bold, fontSize: 17, fontWeight: '800' },
-  welcomeRow: { marginTop: 27, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }, welcomeCopy: { flex: 1 }, eyebrow: { color: GuardColors.goldDeep, fontSize: 10, fontWeight: '800', letterSpacing: 1.6 }, title: { marginTop: 8, color: GuardColors.t1, fontSize: 31, lineHeight: 36, fontWeight: '900', letterSpacing: -0.8 }, gate: { marginTop: 8, color: GuardColors.t2, fontSize: 14, fontWeight: '600' },
-  dutyChip: { marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: GuardColors.greenBg, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 99 }, dutyDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: GuardColors.green }, dutyText: { color: GuardColors.green, fontSize: 11, fontWeight: '800', textTransform: 'capitalize' },
-  notice: { marginTop: 22, minHeight: 66, borderRadius: GuardRadius.lg, backgroundColor: GuardColors.gold, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 }, noticeIcon: { width: 38, height: 38, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center' }, noticeCopy: { flex: 1, marginLeft: 12 }, noticeTitle: { color: GuardColors.black, fontSize: 14, fontWeight: '900' }, noticeText: { marginTop: 2, color: '#5E4900', fontSize: 11, fontWeight: '600' },
-  sectionTitle: { marginTop: 27, marginBottom: 12, color: GuardColors.t1, fontSize: 17, fontWeight: '900', letterSpacing: -0.2 }, sectionLabel: { marginTop: 28, marginBottom: 14, color: GuardColors.t3, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 }, primaryRow: { flexDirection: 'row', justifyContent: 'space-between' }, primary: { width: '48.3%', height: 176, borderRadius: 24, padding: 16, overflow: 'hidden' }, primaryDark: { backgroundColor: GuardColors.ink, borderWidth: 1, borderColor: GuardColors.ink }, primaryGold: { backgroundColor: GuardColors.goldPale, borderWidth: 1, borderColor: '#EAD58D' }, darkIcon: { width: 46, height: 46, borderRadius: 15, backgroundColor: '#2B2F3A', alignItems: 'center', justifyContent: 'center' }, goldIcon: { width: 46, height: 46, borderRadius: 15, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center' }, primaryDarkTitle: { marginTop: 21, color: GuardColors.card, fontSize: 18, fontWeight: '900' }, primaryTitle: { marginTop: 21, color: GuardColors.t1, fontSize: 18, fontWeight: '900' }, primaryDarkText: { marginTop: 4, color: '#A7ABB5', fontSize: 12, fontWeight: '600' }, primaryText: { marginTop: 4, color: GuardColors.t2, fontSize: 12, fontWeight: '600' }, arrowDark: { position: 'absolute', right: 14, bottom: 14, width: 32, height: 32, borderRadius: 11, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center' }, arrowLight: { position: 'absolute', right: 14, bottom: 14, width: 32, height: 32, borderRadius: 11, backgroundColor: GuardColors.ink, alignItems: 'center', justifyContent: 'center' },
-  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 12 }, quickTile: { width: '48.3%', minHeight: 126, borderRadius: 18, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.borderSoft, padding: 14, justifyContent: 'flex-end' }, quickIcon: { position: 'absolute', left: 14, top: 14, width: 42, height: 42, borderRadius: 13, backgroundColor: GuardColors.surface, alignItems: 'center', justifyContent: 'center' }, quickIconGold: { backgroundColor: GuardColors.goldPale }, quickTitle: { color: GuardColors.t1, fontSize: 13, fontWeight: '900' }, quickText: { marginTop: 3, color: GuardColors.t3, fontSize: 10, fontWeight: '500' }, countBadge: { position: 'absolute', right: 12, top: 12, minWidth: 24, height: 24, borderRadius: 12, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 }, countText: { color: GuardColors.black, fontSize: 11, fontWeight: '900' },
-  preApproved: { marginTop: 12, minHeight: 72, borderRadius: GuardRadius.lg, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.borderSoft, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 }, preApprovedIcon: { width: 42, height: 42, borderRadius: 13, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center' }, preApprovedTitle: { color: GuardColors.t1, fontSize: 14, fontWeight: '900' }, preApprovedText: { marginTop: 2, color: GuardColors.t3, fontSize: 11, fontWeight: '600' },
-  emergency: { marginTop: 18, minHeight: 86, borderRadius: 20, borderWidth: 1, borderColor: '#F3CECE', backgroundColor: GuardColors.redBg, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center' }, emergencyIcon: { width: 48, height: 48, borderRadius: 15, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center' }, emergencyCopy: { flex: 1, marginLeft: 12, paddingRight: 8 }, emergencyTitle: { color: GuardColors.red, fontSize: 14, fontWeight: '900' }, emergencyText: { marginTop: 3, color: '#9B5454', fontSize: 11, lineHeight: 15, fontWeight: '600' }, emergencyArrow: { width: 36, height: 36, borderRadius: 12, backgroundColor: GuardColors.red, alignItems: 'center', justifyContent: 'center' }, pressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
+  greeting: { marginTop: 18, marginBottom: 18, color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 22, lineHeight: 30, fontWeight: '800' },
+  primary: { gap: 14 },
+  strip: { marginTop: 14, minHeight: GuardTouch.button, borderRadius: GuardRadius.xl, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, gap: 14 },
+  stripWait: { backgroundColor: GuardSemantic.wait },
+  stripInside: { backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border },
+  stripCopy: { flex: 1 },
+  stripTitle: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: GuardType.button, fontWeight: '900' },
+  stripSub: { marginTop: 2, color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: GuardType.min, fontWeight: '600' },
+  bottomRow: { marginTop: 22, flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  emergencyCol: { flex: 1.3 },
+  emergency: { minHeight: GuardTouch.button, borderRadius: GuardRadius.xl, borderWidth: 2, borderColor: GuardSemantic.deny, backgroundColor: GuardColors.redBg, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12 },
+  emergencyFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: 'rgba(240,68,68,0.28)' },
+  emergencyCopy: { flex: 1 },
+  emergencyTitle: { color: GuardSemantic.deny, fontFamily: GuardFonts.bold, fontSize: GuardType.button, fontWeight: '900' },
+  emergencySub: { color: '#9B5454', fontFamily: GuardFonts.medium, fontSize: GuardType.min, fontWeight: '600' },
+  hint: { marginTop: 8, color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: GuardType.min + 1, lineHeight: 21, fontWeight: '600' },
+  profile: { flex: 1, minHeight: GuardTouch.button, borderRadius: GuardRadius.xl, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  profileText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: GuardType.min + 1, fontWeight: '800' },
 });

@@ -1,28 +1,26 @@
+import { GiantButton } from '@/components/gate/GiantButton';
+import { ResultScreen } from '@/components/gate/ResultScreen';
 import {
-    ListedPass, Match, PassCard, PassReasonRow, ReasonRowData, StatusBanner, passStyles, reasonRows, conflictTitle,
+    ListedPass, Match, ReasonRowData, conflictTitle, reasonRows,
 } from '@/components/PreApprovedPass';
+import { GuardColors, GuardFonts, GuardRadius, GuardTouch, GuardType } from '@/constants/theme';
+import { useT } from '@/i18n';
 import api from '@/services/api';
-import { GuardColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     BackHandler,
     Dimensions,
-    Keyboard,
-    KeyboardAvoidingView,
     Linking,
-    Platform,
     Pressable,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
-    TextInput,
-    TouchableOpacity,
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +28,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const { width: SW, height: SH } = Dimensions.get('window');
 const FRAME_SIZE = SW * 0.7;
 const PASSCODE_RE = /^[A-Z0-9]{6}$/;
+/** A result goes back to Home by itself after this long, so the next guard action starts clean. */
+const AUTO_RETURN_SECONDS = 8;
+/** Digits first (most codes are mostly numbers), then A–Z: six keys per row. */
+const KEYS = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const MIN_CODE_LENGTH = 6;
+const MAX_CODE_LENGTH = 64;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,7 +57,7 @@ interface VerifyResult {
 // /guard/pre-approved/:id/use — the same flow as the Pre-approved screen.
 type PrePhase =
     | { kind: 'result'; matches: Match[]; message?: string }
-    | { kind: 'denied'; message: string; rows: ReasonRowData[]; title?: string }
+    | { kind: 'denied'; message?: string; rows: ReasonRowData[]; title?: string }
     | { kind: 'allowed'; match: Match };
 
 function base64UrlDecode(input: string): string {
@@ -73,129 +77,14 @@ function isPreApprovedQr(code: string): boolean {
     }
 }
 
-function apiError(err: any, fallback: string): string {
-    return err?.response?.data?.message ?? (err?.response ? fallback : 'Network error. Check the connection and try again.');
+/** The server's own message wins; with no response at all it is a network problem. */
+function apiError(err: any, fallback: string, network: string): string {
+    return err?.response?.data?.message ?? (err?.response ? fallback : network);
 }
 
-// ─── Permission Gate ──────────────────────────────────────────────────────────
-
-function PermissionView({ onRequest, onBack }: { onRequest: () => void; onBack: () => void }) {
-    const insets = useSafeAreaInsets();
-    return (
-        <View style={[S.permRoot, { paddingTop: insets.top + 20 }]}>
-            {/* This route hides the stack header, so give the permission state its own way out. */}
-            <TouchableOpacity style={[S.permBack, { top: insets.top + 8 }]} onPress={onBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Ionicons name="arrow-back" size={22} color={GuardColors.t1} />
-            </TouchableOpacity>
-            <View style={S.permIconWrap}>
-                <Ionicons name="camera-outline" size={48} color="#6B7280" />
-            </View>
-            <Text style={S.permTitle}>Camera Access Needed</Text>
-            <Text style={S.permSub}>
-                Allow camera access to scan resident QR codes for entry verification.
-            </Text>
-            <Pressable style={S.permBtn} onPress={onRequest}>
-                <Text style={S.permBtnText}>Allow Camera</Text>
-            </Pressable>
-        </View>
-    );
+function prettify(value: string): string {
+    return value.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
-
-// ─── Result Card ──────────────────────────────────────────────────────────────
-
-function ResultCard({
-    result,
-    onScanAgain,
-}: {
-    result: VerifyResult;
-    onScanAgain: () => void;
-}) {
-    const isAllowed = result.allowed;
-    const isStaff = result.type === 'DOMESTIC_STAFF';
-    const accent = isAllowed ? '#16A34A' : '#DC2626';
-    const accentBg = isAllowed ? '#F0FDF4' : '#FEF2F2';
-    const iconName: any = isAllowed ? 'checkmark-circle' : 'close-circle';
-
-    const typeLabel = (result.type ?? result.inviteType ?? '').replace(/_/g, ' ');
-    const modeLabel = result.mode ?? '';
-
-    return (
-        <View style={S.resultCard}>
-            {/* Status icon + headline */}
-            <View style={[S.resultIconWrap, { backgroundColor: accentBg }]}>
-                <Ionicons name={iconName} size={52} color={accent} />
-            </View>
-
-            <Text style={[S.resultHeadline, { color: accent }]}>
-                {isAllowed
-                    ? (isStaff
-                        ? (result.attendanceAction === 'CHECKED_OUT' ? 'Staff Checked Out' : 'Staff Checked In')
-                        : 'Entry Allowed')
-                    : 'Entry Denied'}
-            </Text>
-
-            {!isAllowed && !!result.reason && (
-                <Text style={S.resultReason}>{result.reason}</Text>
-            )}
-
-            {isAllowed && (
-                <View style={S.resultRows}>
-                    {!!result.visitorName && (
-                        <View style={S.resultRow}>
-                            <Ionicons name="person-outline" size={16} color="#6B7280" />
-                            <Text style={S.resultRowLabel}>Name</Text>
-                            <Text style={S.resultRowValue}>{result.visitorName}</Text>
-                        </View>
-                    )}
-                    {!!result.flatNumber && (
-                        <View style={S.resultRow}>
-                            <Ionicons name="home-outline" size={16} color="#6B7280" />
-                            <Text style={S.resultRowLabel}>Flat</Text>
-                            <Text style={S.resultRowValue}>
-                                {result.flatNumber === 'OFFICE' ? 'Admin Office' : result.flatNumber}
-                            </Text>
-                        </View>
-                    )}
-                    {!!typeLabel && (
-                        <View style={S.resultRow}>
-                            <Ionicons name="layers-outline" size={16} color="#6B7280" />
-                            <Text style={S.resultRowLabel}>Type</Text>
-                            <Text style={S.resultRowValue}>{typeLabel}</Text>
-                        </View>
-                    )}
-                    {isStaff && !!result.staffType && (
-                        <View style={S.resultRow}>
-                            <Ionicons name="briefcase-outline" size={16} color="#6B7280" />
-                            <Text style={S.resultRowLabel}>Role</Text>
-                            <Text style={S.resultRowValue}>{result.staffType.replace(/_/g, ' ')}</Text>
-                        </View>
-                    )}
-                    {isStaff && (
-                        <View style={S.resultRow}>
-                            <Ionicons name="time-outline" size={16} color="#6B7280" />
-                            <Text style={S.resultRowLabel}>Status</Text>
-                            <Text style={S.resultRowValue}>{result.isCurrentlyWorking ? 'Checked in' : 'Not checked in'}</Text>
-                        </View>
-                    )}
-                    {!!modeLabel && modeLabel !== 'NORMAL' && (
-                        <View style={S.resultRow}>
-                            <Ionicons name="shield-outline" size={16} color="#6B7280" />
-                            <Text style={S.resultRowLabel}>Mode</Text>
-                            <Text style={S.resultRowValue}>{modeLabel}</Text>
-                        </View>
-                    )}
-                </View>
-            )}
-
-            <TouchableOpacity style={[S.scanAgainBtn, { backgroundColor: accent }]} onPress={onScanAgain} activeOpacity={0.85}>
-                <Ionicons name="qr-code-outline" size={18} color="#fff" />
-                <Text style={S.scanAgainText}>Scan Again</Text>
-            </TouchableOpacity>
-        </View>
-    );
-}
-
-// ─── Pre-approved result sheet ──────────────────────────────────────────────
 
 function prePhaseFrom(result: Match, listed: Record<string, ListedPass>): PrePhase {
     if (result.allowed) {
@@ -205,76 +94,142 @@ function prePhaseFrom(result: Match, listed: Record<string, ListedPass>): PrePha
             message: result.message?.trim() || undefined,
         };
     }
-    return { kind: 'denied', message: result.message?.trim() || 'No valid pass found', rows: reasonRows(result.reasons, listed) };
+    return { kind: 'denied', message: result.message?.trim() || undefined, rows: reasonRows(result.reasons, listed) };
 }
 
-function PreApprovedSheet({
-    phase,
-    windows,
-    allowingId,
-    bottomInset,
-    onAllow,
-    onScanAgain,
-}: {
-    phase: PrePhase;
-    windows: Record<string, ListedPass>;
-    allowingId: string | null;
-    bottomInset: number;
-    onAllow: (m: Match) => void;
-    onScanAgain: () => void;
-}) {
-    const busy = !!allowingId;
-    // While a pass is still pending, keep Scan Again neutral so Allow entry is the one green action.
-    const accent = phase.kind === 'denied' ? '#DC2626' : phase.kind === 'allowed' ? '#16A34A' : GuardColors.ink;
+// ─── Permission Gate ──────────────────────────────────────────────────────────
+
+function PermissionView({ onRequest, onBack }: { onRequest: () => void; onBack: () => void }) {
+    const t = useT();
+    const insets = useSafeAreaInsets();
     return (
-        <View style={[S.resultCard, S.preSheet]}>
-            <ScrollView contentContainerStyle={[S.preScroll, { paddingBottom: Math.max(bottomInset, 16) + 16 }]} bounces={false}>
-                {phase.kind === 'result' && (
-                    <>
-                        <StatusBanner ok title={phase.matches.length > 1 ? `${phase.matches.length} valid passes` : 'Valid pass'}
-                            text={phase.message ?? (phase.matches.length > 1 ? 'Confirm with the visitor, then allow the right one.' : 'Pre-approved by the resident.')} />
-                        {phase.matches.map((m) => (
-                            <PassCard key={m.entryId} match={m} schedule={m.entryId ? windows[m.entryId]?.schedule : null}
-                                visitorName={m.entryId ? windows[m.entryId]?.visitorName : null}>
-                                <Pressable
-                                    style={[passStyles.allowBtn, busy && S.btnDisabled]}
-                                    onPress={() => onAllow(m)}
-                                    disabled={busy}
-                                >
-                                    {allowingId === m.entryId ? <ActivityIndicator color="#fff" /> : (
-                                        <><Ionicons name="checkmark-circle" size={20} color="#fff" /><Text style={passStyles.allowText}>Allow entry</Text></>
-                                    )}
-                                </Pressable>
-                            </PassCard>
-                        ))}
-                    </>
-                )}
+        <View style={[S.permRoot, { paddingTop: insets.top + 20 }]}>
+            {/* This route hides the stack header, so give the permission state its own way out. */}
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} style={[S.permBack, { top: insets.top + 8 }]} onPress={onBack}>
+                <Ionicons name="arrow-back" size={26} color={GuardColors.t1} />
+            </Pressable>
+            <View style={S.permIconWrap}>
+                <Ionicons name="camera-outline" size={56} color={GuardColors.t2} />
+            </View>
+            <Text style={S.permTitle}>{t('scan.cameraTitle')}</Text>
+            <Text style={S.permSub}>{t('scan.cameraText')}</Text>
+            <GiantButton label={t('scan.allowCamera')} icon="camera" onPress={onRequest} style={S.permBtn} />
+        </View>
+    );
+}
 
-                {phase.kind === 'allowed' && (
-                    <>
-                        <StatusBanner ok title="Entry allowed" text="Logged in today's entries. The resident has been notified." />
-                        <PassCard match={phase.match} schedule={phase.match.entryId ? windows[phase.match.entryId]?.schedule : null}
-                            visitorName={phase.match.entryId ? windows[phase.match.entryId]?.visitorName : null} />
-                    </>
-                )}
+// ─── Code entry (big keys, no system keyboard) ───────────────────────────────
 
-                {phase.kind === 'denied' && (
-                    <>
-                        <StatusBanner ok={false} title={phase.title ?? 'No valid pass'} text={phase.message} />
-                        {phase.rows.map(({ key, ...row }) => <PassReasonRow key={key} {...row} />)}
-                    </>
-                )}
+function CodeEntry({
+    value, busy, bottomInset, onChange, onVerify, onClose,
+}: {
+    value: string;
+    busy: boolean;
+    bottomInset: number;
+    onChange: (next: string) => void;
+    onVerify: () => void;
+    onClose: () => void;
+}) {
+    const t = useT();
+    const ready = value.length >= MIN_CODE_LENGTH && !busy;
+    const press = (c: string) => {
+        if (busy || value.length >= MAX_CODE_LENGTH) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onChange(value + c);
+    };
+    return (
+        <View style={S.codeWrap} pointerEvents="box-none">
+            <View style={[S.codeCard, { paddingBottom: Math.max(bottomInset, 12) + 12 }]}>
+                <View style={S.codeHead}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={S.codeTitle}>{t('scan.codeTitle')}</Text>
+                        <Text style={S.codeSub}>{t('scan.codeHint')}</Text>
+                    </View>
+                    <Pressable accessibilityRole="button" accessibilityLabel={t('scan.close')} testID="code-close" style={S.codeClose} onPress={onClose} disabled={busy}>
+                        <Ionicons name="close" size={28} color={GuardColors.t1} />
+                    </Pressable>
+                </View>
 
-                <TouchableOpacity
-                    style={[S.scanAgainBtn, { backgroundColor: accent }, busy && S.btnDisabled]}
-                    onPress={onScanAgain}
-                    disabled={busy}
-                    activeOpacity={0.85}
-                >
-                    <Ionicons name="qr-code-outline" size={18} color="#fff" />
-                    <Text style={S.scanAgainText}>Scan Again</Text>
-                </TouchableOpacity>
+                <View style={S.codeDisplay}>
+                    <Text testID="code-display" style={[S.codeText, !value && S.codePlaceholder]} numberOfLines={1} adjustsFontSizeToFit>
+                        {value || '– – – – – –'}
+                    </Text>
+                </View>
+
+                <View style={S.keys}>
+                    {KEYS.map((c) => (
+                        <Pressable key={c} testID={`key-${c}`} accessibilityRole="button" accessibilityLabel={c} style={({ pressed }) => [S.key, pressed && S.keyPressed]} onPress={() => press(c)}>
+                            <Text style={S.keyText}>{c}</Text>
+                        </Pressable>
+                    ))}
+                </View>
+
+                <View style={S.codeActions}>
+                    <Pressable
+                        testID="key-delete"
+                        accessibilityRole="button"
+                        accessibilityLabel={t('scan.delete')}
+                        disabled={busy || !value}
+                        style={({ pressed }) => [S.deleteKey, (!value || busy) && { opacity: 0.4 }, pressed && S.keyPressed]}
+                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onChange(value.slice(0, -1)); }}
+                        onLongPress={() => onChange('')}
+                    >
+                        <Ionicons name="backspace-outline" size={30} color={GuardColors.t1} />
+                    </Pressable>
+                    <GiantButton
+                        label={t('scan.verify')}
+                        icon="shield-checkmark"
+                        tone="allow"
+                        loading={busy}
+                        disabled={!ready}
+                        onPress={onVerify}
+                        style={S.verifyBtn}
+                    />
+                </View>
+            </View>
+        </View>
+    );
+}
+
+// ─── Several valid passes: pick the right one ───────────────────────────────
+
+function PassPicker({
+    matches, windows, busy, onAllow, onCancel,
+}: {
+    matches: Match[];
+    windows: Record<string, ListedPass>;
+    busy: boolean;
+    onAllow: (m: Match) => void;
+    onCancel: () => void;
+}) {
+    const t = useT();
+    const insets = useSafeAreaInsets();
+    return (
+        <View style={[S.pickerRoot, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 16 }]}>
+            <Ionicons name="checkmark-circle" size={96} color="#FFFFFF" style={{ alignSelf: 'center' }} />
+            <Text style={S.pickerTitle}>{t('scan.validPasses', { n: matches.length })}</Text>
+            <Text style={S.pickerSub}>{t('scan.pickRight')}</Text>
+            <ScrollView contentContainerStyle={S.pickerList} showsVerticalScrollIndicator={false}>
+                {matches.map((m) => {
+                    const visitor = m.entryId ? windows[m.entryId]?.visitorName : null;
+                    const flat = m.isPrivate ? t('scan.privateFlat') : m.flatNumber === 'OFFICE' ? t('scan.office') : m.flatNumber;
+                    const sub = [visitor, flat ? `${t('common.flat')} ${flat}` : null].filter(Boolean).join(' · ');
+                    return (
+                        <GiantButton
+                            key={m.entryId ?? m.displayLabel}
+                            label={m.displayLabel ?? t('scan.validPass')}
+                            sub={sub || undefined}
+                            icon={m.type === 'CAB' ? 'car' : m.type === 'HELP' ? 'construct' : 'cube'}
+                            tone="light"
+                            disabled={busy}
+                            onPress={() => onAllow(m)}
+                        />
+                    );
+                })}
             </ScrollView>
+            <Pressable accessibilityRole="button" disabled={busy} onPress={onCancel} style={S.pickerCancel}>
+                <Text style={S.pickerCancelText}>{t('common.cancel')}</Text>
+            </Pressable>
         </View>
     );
 }
@@ -282,6 +237,7 @@ function PreApprovedSheet({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function ScanVerifyScreen() {
+    const t = useT();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const [permission, requestPermission] = useCameraPermissions();
@@ -297,6 +253,8 @@ export default function ScanVerifyScreen() {
     const [allowingId, setAllowingId] = useState<string | null>(null);
     // A ref, because a second tap on Allow can land before the re-render disables it.
     const allowRef = useRef(false);
+
+    const goHome = useCallback(() => router.replace('/'), [router]);
 
     // Resident guest/party passes carry a 6-char passcode (QR value and the code shown
     // under it). /guard/scan only understands signed QR tokens and staff tokens, so those
@@ -389,17 +347,16 @@ export default function ScanVerifyScreen() {
                     setWindows({});
                     setPre(prePhaseFrom({ isPrivate: false, ...denied.data.pass, allowed: false }, {}));
                 } else {
-                    setResult({ allowed: false, reason: apiError(err, 'Could not verify code') });
+                    setResult({ allowed: false, reason: apiError(err, t('scan.couldNotVerify'), t('scan.networkError')) });
                 }
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             } finally {
                 setManualOpen(false);
                 setManualCode('');
-                Keyboard.dismiss();
                 setVerifying(false);
             }
         },
-        [verifying, result, pre]
+        [verifying, result, pre, t]
     );
 
     const handleAllow = useCallback(async (match: Match) => {
@@ -412,12 +369,17 @@ export default function ScanVerifyScreen() {
             setPre({ kind: 'allowed', match });
         } catch (err: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            setPre({ kind: 'denied', title: conflictTitle(err), message: apiError(err, 'Could not record the entry'), rows: [] });
+            setPre({
+                kind: 'denied',
+                title: conflictTitle(err) ? t('scan.passUsed') : undefined,
+                message: apiError(err, t('scan.couldNotRecord'), t('scan.networkError')),
+                rows: [],
+            });
         } finally {
             allowRef.current = false;
             setAllowingId(null);
         }
-    }, []);
+    }, [t]);
 
     // Hardware back closes the code card first instead of leaving the scanner.
     useEffect(() => {
@@ -468,6 +430,100 @@ export default function ScanVerifyScreen() {
         return <PermissionView onRequest={permission.canAskAgain ? requestPermission : () => Linking.openSettings()} onBack={() => router.back()} />;
     }
 
+    // ── Verdict screens ───────────────────────────────────────────────────────
+    const flatText = (flat?: string | null, isPrivate?: boolean) => {
+        if (isPrivate) return t('scan.privateFlat');
+        if (!flat) return undefined;
+        return `${t('common.flat')} ${flat === 'OFFICE' ? t('scan.office') : flat}`;
+    };
+    const passName = (m: Match) => (m.entryId ? windows[m.entryId]?.visitorName : null) ?? m.displayLabel;
+
+    const verdict = (() => {
+        if (result) {
+            const staff = result.type === 'DOMESTIC_STAFF';
+            const out = result.attendanceAction === 'CHECKED_OUT';
+            const kindLabel = staff && result.staffType
+                ? prettify(result.staffType)
+                : (result.type ?? result.inviteType ?? '').replace(/_/g, ' ');
+            const typeLabel = ({ GUEST: t('common.guest'), DELIVERY: t('common.delivery'), CAB: t('common.cab'), HELP: t('common.help') } as Record<string, string>)[kindLabel.toUpperCase()]
+                ?? (staff ? kindLabel : kindLabel.toUpperCase());
+            return (
+                <ResultScreen
+                    kind={result.allowed ? 'allow' : 'deny'}
+                    title={!result.allowed ? t('common.deny') : staff ? t(out ? 'scan.staffOut' : 'scan.staffIn') : t('common.allow')}
+                    reason={!result.allowed ? (result.reason || t('scan.noPassFound')) : staff ? t(out ? 'scan.staffOutSub' : 'scan.staffInSub') : undefined}
+                    name={result.allowed ? result.visitorName : undefined}
+                    flat={result.allowed ? flatText(result.flatNumber) : undefined}
+                    typeLabel={result.allowed ? typeLabel || undefined : undefined}
+                    primaryLabel={t('scan.scanNext')}
+                    onPrimary={handleScanAgain}
+                    secondaryLabel={t('common.home')}
+                    onSecondary={goHome}
+                    autoReturnSeconds={AUTO_RETURN_SECONDS}
+                    onAutoReturn={goHome}
+                />
+            );
+        }
+        if (!pre) return null;
+        if (pre.kind === 'result' && pre.matches.length > 1) {
+            return <PassPicker matches={pre.matches} windows={windows} busy={!!allowingId} onAllow={handleAllow} onCancel={handleScanAgain} />;
+        }
+        if (pre.kind === 'result') {
+            const m = pre.matches[0];
+            return (
+                <ResultScreen
+                    kind="allow"
+                    title={t('scan.validPass')}
+                    reason={pre.message ?? t('scan.preApprovedBy')}
+                    name={passName(m)}
+                    flat={flatText(m.flatNumber, m.isPrivate)}
+                    primaryLabel={t('scan.allowEntry')}
+                    onPrimary={() => handleAllow(m)}
+                    secondaryLabel={t('common.cancel')}
+                    onSecondary={handleScanAgain}
+                    busy={!!allowingId}
+                />
+            );
+        }
+        if (pre.kind === 'allowed') {
+            return (
+                <ResultScreen
+                    kind="allow"
+                    title={t('common.allow')}
+                    reason={t('scan.logged')}
+                    name={passName(pre.match)}
+                    flat={flatText(pre.match.flatNumber, pre.match.isPrivate)}
+                    primaryLabel={t('scan.scanNext')}
+                    onPrimary={handleScanAgain}
+                    secondaryLabel={t('common.home')}
+                    onSecondary={goHome}
+                    autoReturnSeconds={AUTO_RETURN_SECONDS}
+                    onAutoReturn={goHome}
+                />
+            );
+        }
+        return (
+            <ResultScreen
+                kind="deny"
+                title={pre.title ?? t('scan.noValidPass')}
+                reason={pre.message ?? t('scan.noPassFound')}
+                primaryLabel={t('scan.scanNext')}
+                onPrimary={handleScanAgain}
+                secondaryLabel={t('common.home')}
+                onSecondary={goHome}
+                autoReturnSeconds={AUTO_RETURN_SECONDS}
+                onAutoReturn={goHome}
+            >
+                {pre.rows.map(({ key, title, detail, tag }) => (
+                    <View key={key} style={S.reasonRow}>
+                        <Text style={S.reasonTitle}>{title} — {tag}</Text>
+                        <Text style={S.reasonDetail}>{detail}</Text>
+                    </View>
+                ))}
+            </ResultScreen>
+        );
+    })();
+
     // ── Scanner UI ────────────────────────────────────────────────────────────
     return (
         <View style={S.root}>
@@ -483,15 +539,10 @@ export default function ScanVerifyScreen() {
 
             {/* Dark overlay with transparent cut-out simulation */}
             <View style={S.overlay} pointerEvents="none">
-                {/* Top dark bar */}
                 <View style={S.overlayTop} />
-
-                {/* Middle row: dark left + frame gap + dark right */}
                 <View style={S.overlayMiddle}>
                     <View style={S.overlaySide} />
-                    {/* Frame hole (transparent) */}
                     <View style={S.frame}>
-                        {/* Corner markers */}
                         <View style={[S.corner, S.cornerTL]} />
                         <View style={[S.corner, S.cornerTR]} />
                         <View style={[S.corner, S.cornerBL]} />
@@ -499,96 +550,51 @@ export default function ScanVerifyScreen() {
                     </View>
                     <View style={S.overlaySide} />
                 </View>
-
-                {/* Bottom dark bar */}
                 <View style={S.overlayBottom} />
             </View>
 
             {/* Header bar */}
             <View style={[S.headerBar, { paddingTop: insets.top + 8 }]}>
-                <TouchableOpacity style={S.backBtn} onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Ionicons name="arrow-back" size={22} color="#fff" />
-                </TouchableOpacity>
-                <Text style={S.headerTitle}>Scan QR Code</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} style={S.backBtn} onPress={() => router.back()}>
+                    <Ionicons name="arrow-back" size={28} color="#fff" />
+                </Pressable>
+                <Text style={S.headerTitle}>{t('scan.title')}</Text>
                 <View style={S.headerSpacer} />
             </View>
 
-            {/* Hint text below frame */}
+            {/* Hint + type-code button */}
             {!showingResult && !verifying && !manualOpen && (
-                <View style={S.hintWrap} pointerEvents="box-none">
-                    <Text style={S.hintText}>Point camera at a visitor or staff QR code</Text>
-                    <TouchableOpacity style={S.manualLink} onPress={() => setManualOpen(true)} activeOpacity={0.85}>
-                        <Ionicons name="keypad-outline" size={16} color="#fff" />
-                        <Text style={S.manualLinkText}>Enter code instead</Text>
-                    </TouchableOpacity>
-                </View>
+                <>
+                    <View style={S.hintWrap} pointerEvents="none">
+                        <Text style={S.hintText}>{t('scan.hint')}</Text>
+                    </View>
+                    <View style={[S.bottomAction, { paddingBottom: insets.bottom + 16 }]} pointerEvents="box-none">
+                        <GiantButton label={t('scan.typeCode')} icon="keypad" tone="light" onPress={() => setManualOpen(true)} />
+                    </View>
+                </>
             )}
 
             {/* Verifying spinner */}
             {verifying && (
                 <View style={S.verifyingWrap} pointerEvents="none">
                     <ActivityIndicator size="large" color="#fff" />
-                    <Text style={S.verifyingText}>Verifying…</Text>
+                    <Text style={S.verifyingText}>{t('scan.verifying')}</Text>
                 </View>
             )}
 
-            {/* Result card */}
-            {result && <ResultCard result={result} onScanAgain={handleScanAgain} />}
+            {/* Verdict: full-screen green or red */}
+            {verdict && <View style={StyleSheet.absoluteFill}>{verdict}</View>}
 
-            {/* Pre-approved pass result — same cards as the Pre-approved screen */}
-            {pre && (
-                <PreApprovedSheet
-                    phase={pre}
-                    windows={windows}
-                    allowingId={allowingId}
-                    bottomInset={insets.bottom}
-                    onAllow={handleAllow}
-                    onScanAgain={handleScanAgain}
-                />
-            )}
-
-            {/* Manual code entry — for the code shown under the resident's QR */}
-            {/* Edge-to-edge Android doesn't resize the window for the keyboard, so pad on both platforms. */}
+            {/* Code entry — for the code shown under the resident's QR */}
             {manualOpen && !showingResult && (
-                <KeyboardAvoidingView style={S.manualWrap} behavior="padding" pointerEvents="box-none">
-                    <View style={[S.manualCard, { paddingBottom: Math.max(insets.bottom, 16) + 12 }]}>
-                        <Text style={S.manualTitle}>Enter pass code</Text>
-                        <Text style={S.manualSub}>Type the code shown under the visitor&apos;s QR</Text>
-                        <TextInput
-                            style={S.manualInput}
-                            value={manualCode}
-                            onChangeText={(t) => setManualCode(t.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())}
-                            placeholder="e.g. K7M2QX"
-                            placeholderTextColor="#9CA3AF"
-                            autoCapitalize="characters"
-                            autoCorrect={false}
-                            autoFocus
-                            maxLength={64}
-                            editable={!verifying}
-                            returnKeyType="done"
-                            onSubmitEditing={() => verify(manualCode)}
-                        />
-                        <View style={S.manualActions}>
-                            <TouchableOpacity
-                                style={S.manualCancel}
-                                onPress={() => { setManualOpen(false); setManualCode(''); Keyboard.dismiss(); }}
-                                disabled={verifying}
-                            >
-                                <Text style={S.manualCancelText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[S.manualSubmit, (!manualCode.trim() || verifying) && S.manualSubmitDisabled]}
-                                onPress={() => verify(manualCode)}
-                                disabled={!manualCode.trim() || verifying}
-                                activeOpacity={0.85}
-                            >
-                                {verifying
-                                    ? <ActivityIndicator size="small" color={GuardColors.black} />
-                                    : <Text style={[S.manualSubmitText, !manualCode.trim() && S.manualSubmitTextDisabled]}>Verify</Text>}
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </KeyboardAvoidingView>
+                <CodeEntry
+                    value={manualCode}
+                    busy={verifying}
+                    bottomInset={insets.bottom}
+                    onChange={setManualCode}
+                    onVerify={() => verify(manualCode)}
+                    onClose={() => { setManualOpen(false); setManualCode(''); }}
+                />
             )}
         </View>
     );
@@ -596,391 +602,78 @@ export default function ScanVerifyScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const CORNER_LEN = 28;
-const CORNER_THICKNESS = 4;
-const CORNER_RADIUS = 6;
+const CORNER_LEN = 34;
+const CORNER_THICKNESS = 5;
+const CORNER_RADIUS = 8;
+const FRAME_TOP = (SH - FRAME_SIZE) / 2 - 40;
+const KEY_GAP = 8;
 
 const S = StyleSheet.create({
-    root: {
-        flex: 1,
-        backgroundColor: '#000',
-    },
-    loadingRoot: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#fff',
-    },
+    root: { flex: 1, backgroundColor: '#000' },
+    loadingRoot: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: GuardColors.bg },
 
     // ── Permission screen ──────────────────────────────────────────────────────
-    permRoot: {
-        flex: 1,
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 40,
-        gap: 12,
-    },
-    permIconWrap: {
-        width: 96,
-        height: 96,
-        borderRadius: 28,
-        backgroundColor: '#F3F4F6',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 8,
-    },
-    permTitle: {
-        fontSize: 22,
-        fontWeight: '800',
-        color: '#111827',
-        textAlign: 'center',
-    },
-    permSub: {
-        fontSize: 15,
-        fontWeight: '500',
-        color: '#6B7280',
-        textAlign: 'center',
-        lineHeight: 22,
-    },
-    permBtn: {
-        marginTop: 16,
-        backgroundColor: GuardColors.gold,
-        paddingHorizontal: 36,
-        paddingVertical: 16,
-        borderRadius: 16,
-        ...Platform.select({
-            ios: { shadowColor: GuardColors.goldDeep, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12 },
-            android: { elevation: 5 },
-        }),
-    },
-    permBtnText: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: GuardColors.black,
-    },
-    permBack: {
-        position: 'absolute',
-        left: 16,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
+    permRoot: { flex: 1, backgroundColor: GuardColors.bg, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 14 },
+    permIconWrap: { width: 112, height: 112, borderRadius: 32, backgroundColor: GuardColors.surface, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+    permTitle: { fontFamily: GuardFonts.bold, fontSize: GuardType.title, fontWeight: '900', color: GuardColors.t1, textAlign: 'center' },
+    permSub: { fontFamily: GuardFonts.medium, fontSize: GuardType.body, fontWeight: '500', color: GuardColors.t2, textAlign: 'center', lineHeight: 26 },
+    permBtn: { marginTop: 12 },
+    permBack: { position: 'absolute', left: 16, width: GuardTouch.min, height: GuardTouch.min, borderRadius: GuardTouch.min / 2, alignItems: 'center', justifyContent: 'center' },
 
     // ── Overlay ────────────────────────────────────────────────────────────────
-    overlay: {
-        ...StyleSheet.absoluteFillObject,
-        flexDirection: 'column',
-    },
-    overlayTop: {
-        // Space above frame: center frame vertically a bit above center
-        height: (SH - FRAME_SIZE) / 2 - 40,
-        backgroundColor: 'rgba(0,0,0,0.62)',
-    },
-    overlayMiddle: {
-        flexDirection: 'row',
-        height: FRAME_SIZE,
-    },
-    overlaySide: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.62)',
-    },
-    overlayBottom: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.62)',
-    },
-    frame: {
-        width: FRAME_SIZE,
-        height: FRAME_SIZE,
-        // transparent — camera shows through
-    },
-
-    // Corner markers
-    corner: {
-        position: 'absolute',
-        width: CORNER_LEN,
-        height: CORNER_LEN,
-        borderColor: '#fff',
-    },
-    cornerTL: {
-        top: 0,
-        left: 0,
-        borderTopWidth: CORNER_THICKNESS,
-        borderLeftWidth: CORNER_THICKNESS,
-        borderTopLeftRadius: CORNER_RADIUS,
-    },
-    cornerTR: {
-        top: 0,
-        right: 0,
-        borderTopWidth: CORNER_THICKNESS,
-        borderRightWidth: CORNER_THICKNESS,
-        borderTopRightRadius: CORNER_RADIUS,
-    },
-    cornerBL: {
-        bottom: 0,
-        left: 0,
-        borderBottomWidth: CORNER_THICKNESS,
-        borderLeftWidth: CORNER_THICKNESS,
-        borderBottomLeftRadius: CORNER_RADIUS,
-    },
-    cornerBR: {
-        bottom: 0,
-        right: 0,
-        borderBottomWidth: CORNER_THICKNESS,
-        borderRightWidth: CORNER_THICKNESS,
-        borderBottomRightRadius: CORNER_RADIUS,
-    },
+    overlay: { ...StyleSheet.absoluteFillObject, flexDirection: 'column' },
+    overlayTop: { height: FRAME_TOP, backgroundColor: 'rgba(0,0,0,0.62)' },
+    overlayMiddle: { flexDirection: 'row', height: FRAME_SIZE },
+    overlaySide: { flex: 1, backgroundColor: 'rgba(0,0,0,0.62)' },
+    overlayBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.62)' },
+    frame: { width: FRAME_SIZE, height: FRAME_SIZE },
+    corner: { position: 'absolute', width: CORNER_LEN, height: CORNER_LEN, borderColor: GuardColors.gold },
+    cornerTL: { top: 0, left: 0, borderTopWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS, borderTopLeftRadius: CORNER_RADIUS },
+    cornerTR: { top: 0, right: 0, borderTopWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS, borderTopRightRadius: CORNER_RADIUS },
+    cornerBL: { bottom: 0, left: 0, borderBottomWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS, borderBottomLeftRadius: CORNER_RADIUS },
+    cornerBR: { bottom: 0, right: 0, borderBottomWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS, borderBottomRightRadius: CORNER_RADIUS },
 
     // ── Header ─────────────────────────────────────────────────────────────────
-    headerBar: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingBottom: 12,
-    },
-    backBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(0,0,0,0.4)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    headerTitle: {
-        flex: 1,
-        textAlign: 'center',
-        fontSize: 17,
-        fontWeight: '700',
-        color: '#fff',
-    },
-    headerSpacer: {
-        width: 40,
-    },
+    headerBar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
+    backBtn: { width: GuardTouch.min, height: GuardTouch.min, borderRadius: GuardTouch.min / 2, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { flex: 1, textAlign: 'center', fontFamily: GuardFonts.bold, fontSize: 22, fontWeight: '800', color: '#fff' },
+    headerSpacer: { width: GuardTouch.min },
 
-    // ── Hints / verifying ──────────────────────────────────────────────────────
-    hintWrap: {
-        position: 'absolute',
-        // below the frame
-        top: (SH - FRAME_SIZE) / 2 - 40 + FRAME_SIZE + 20,
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-    },
-    hintText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: 'rgba(255,255,255,0.8)',
-        textAlign: 'center',
-    },
-    manualLink: {
-        marginTop: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 18,
-        paddingVertical: 10,
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.5)',
-        backgroundColor: 'rgba(0,0,0,0.35)',
-    },
-    manualLinkText: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#fff',
-    },
-    manualWrap: {
-        ...StyleSheet.absoluteFillObject,
-        justifyContent: 'flex-end',
-    },
-    manualCard: {
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        paddingHorizontal: 24,
-        paddingTop: 24,
-        ...Platform.select({
-            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.15, shadowRadius: 20 },
-            android: { elevation: 16 },
-        }),
-    },
-    manualTitle: {
-        fontSize: 20,
-        fontWeight: '800',
-        color: '#111827',
-    },
-    manualSub: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#6B7280',
-        marginTop: 4,
-    },
-    manualInput: {
-        marginTop: 16,
-        height: 56,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: GuardColors.border,
-        backgroundColor: '#F9FAFB',
-        paddingHorizontal: 16,
-        fontSize: 20,
-        fontWeight: '800',
-        letterSpacing: 4,
-        color: '#111827',
-    },
-    manualActions: {
-        flexDirection: 'row',
-        gap: 12,
-        marginTop: 16,
-    },
-    manualCancel: {
-        flex: 1,
-        height: 52,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#F3F4F6',
-    },
-    manualCancelText: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#374151',
-    },
-    manualSubmit: {
-        flex: 2,
-        height: 52,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: GuardColors.gold,
-    },
-    manualSubmitDisabled: {
-        backgroundColor: '#F3F4F6',
-    },
-    manualSubmitText: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: GuardColors.black,
-    },
-    manualSubmitTextDisabled: {
-        color: '#9CA3AF',
-    },
-    verifyingWrap: {
-        position: 'absolute',
-        top: (SH - FRAME_SIZE) / 2 - 40 + FRAME_SIZE / 2 - 40,
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-        gap: 12,
-    },
-    verifyingText: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#fff',
-    },
+    // ── Hint / type code / verifying ───────────────────────────────────────────
+    hintWrap: { position: 'absolute', top: FRAME_TOP + FRAME_SIZE + 24, left: 0, right: 0, alignItems: 'center', paddingHorizontal: 24 },
+    hintText: { fontFamily: GuardFonts.bold, fontSize: 22, lineHeight: 30, fontWeight: '800', color: '#fff', textAlign: 'center' },
+    bottomAction: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 20 },
+    verifyingWrap: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+    verifyingText: { marginTop: 14, color: '#fff', fontFamily: GuardFonts.bold, fontSize: GuardType.button, fontWeight: '800' },
 
-    // ── Result card ────────────────────────────────────────────────────────────
-    resultCard: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 28,
-        borderTopRightRadius: 28,
-        padding: 28,
-        paddingBottom: 40,
-        alignItems: 'center',
-        ...Platform.select({
-            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.15, shadowRadius: 20 },
-            android: { elevation: 16 },
-        }),
-    },
-    resultIconWrap: {
-        width: 88,
-        height: 88,
-        borderRadius: 28,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 12,
-    },
-    resultHeadline: {
-        fontSize: 24,
-        fontWeight: '900',
-        letterSpacing: -0.5,
-        marginBottom: 6,
-    },
-    resultReason: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#6B7280',
-        textAlign: 'center',
-        marginBottom: 8,
-        paddingHorizontal: 16,
-    },
-    resultRows: {
-        width: '100%',
-        marginTop: 12,
-        gap: 10,
-        marginBottom: 8,
-    },
-    resultRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        backgroundColor: '#F9FAFB',
-        borderRadius: 12,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-    },
-    resultRowLabel: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#9CA3AF',
-        flex: 1,
-    },
-    resultRowValue: {
-        fontSize: 14,
-        fontWeight: '700',
-        color: '#1F2937',
-    },
-    scanAgainBtn: {
-        marginTop: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 32,
-        paddingVertical: 16,
-        borderRadius: 16,
-        width: '100%',
-        justifyContent: 'center',
-        ...Platform.select({
-            ios: { shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10 },
-            android: { elevation: 4 },
-        }),
-    },
-    preSheet: {
-        maxHeight: SH * 0.85,
-        padding: 0,
-        paddingBottom: 0,
-        alignItems: 'stretch',
-    },
-    preScroll: {
-        padding: 20,
-        paddingTop: 24,
-    },
-    btnDisabled: {
-        opacity: 0.45,
-    },
-    scanAgainText: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: '#fff',
-    },
+    // ── Code entry ─────────────────────────────────────────────────────────────
+    codeWrap: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)' },
+    codeCard: { backgroundColor: GuardColors.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 18 },
+    codeHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    codeTitle: { fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '900', color: GuardColors.t1 },
+    codeSub: { marginTop: 2, fontFamily: GuardFonts.medium, fontSize: GuardType.min + 1, fontWeight: '600', color: GuardColors.t2 },
+    codeClose: { width: GuardTouch.min, height: GuardTouch.min, borderRadius: GuardTouch.min / 2, backgroundColor: GuardColors.surface, alignItems: 'center', justifyContent: 'center' },
+    codeDisplay: { marginTop: 14, minHeight: 72, borderRadius: GuardRadius.lg, backgroundColor: GuardColors.card, borderWidth: 2, borderColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+    codeText: { fontFamily: GuardFonts.bold, fontSize: 38, fontWeight: '900', letterSpacing: 6, color: GuardColors.t1 },
+    codePlaceholder: { color: GuardColors.t4, letterSpacing: 4 },
+    keys: { marginTop: 14, flexDirection: 'row', flexWrap: 'wrap', gap: KEY_GAP },
+    key: { width: (SW - 40 - KEY_GAP * 5) / 6, height: 56, borderRadius: 14, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center' },
+    keyPressed: { backgroundColor: GuardColors.goldPale, borderColor: GuardColors.gold },
+    keyText: { fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '800', color: GuardColors.t1 },
+    codeActions: { marginTop: 14, flexDirection: 'row', gap: 12, alignItems: 'center' },
+    deleteKey: { width: GuardTouch.button, height: GuardTouch.button, borderRadius: GuardRadius.xl, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center' },
+    verifyBtn: { flex: 1, width: undefined },
+
+    // ── Pass picker ────────────────────────────────────────────────────────────
+    pickerRoot: { flex: 1, backgroundColor: '#0A9A62', paddingHorizontal: 20 },
+    pickerTitle: { marginTop: 8, textAlign: 'center', color: '#fff', fontFamily: GuardFonts.bold, fontSize: 34, fontWeight: '900' },
+    pickerSub: { marginTop: 6, marginBottom: 16, textAlign: 'center', color: 'rgba(255,255,255,0.92)', fontFamily: GuardFonts.medium, fontSize: GuardType.body, fontWeight: '600' },
+    pickerList: { gap: 12, paddingBottom: 12 },
+    pickerCancel: { minHeight: 60, borderRadius: 20, borderWidth: 2, borderColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+    pickerCancelText: { color: '#fff', fontFamily: GuardFonts.bold, fontSize: GuardType.button, fontWeight: '800' },
+
+    // ── Refusal reasons on the red screen ──────────────────────────────────────
+    reasonRow: { marginTop: 14, alignSelf: 'stretch', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 },
+    reasonTitle: { color: '#fff', fontFamily: GuardFonts.bold, fontSize: GuardType.body, fontWeight: '800' },
+    reasonDetail: { marginTop: 2, color: 'rgba(255,255,255,0.9)', fontFamily: GuardFonts.medium, fontSize: GuardType.min + 1, fontWeight: '600' },
 });

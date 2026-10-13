@@ -1,4 +1,38 @@
 import type { Strings } from '../types';
 
-/** Strings for the home screen(s). Add keys to BOTH languages. */
-export const home: Strings = { hi: {}, en: {} };
+export const home: Strings = {
+  hi: {
+    'home.greeting': 'नमस्ते, {name} · {gate}',
+    'home.scan': 'QR स्कैन करें',
+    'home.scanSub': 'पास दिखाने वाले का QR',
+    'home.newVisitor': 'नया विज़िटर',
+    'home.newVisitorSub': 'जिसके पास QR नहीं है',
+    'home.waiting': '{n} विज़िटर इंतज़ार में',
+    'home.waitingOne': '1 विज़िटर इंतज़ार में',
+    'home.waitingSub': 'निवासी के जवाब का इंतज़ार',
+    'home.inside': 'अभी अंदर: {n}',
+    'home.insideSub': 'देखें और बाहर करें',
+    'home.emergency': 'आपातकाल',
+    'home.emergencyHold': 'दबाकर रखें',
+    'home.emergencyHint': 'आपातकाल के लिए बटन को 2 सेकंड दबाकर रखें',
+    'home.profile': 'प्रोफाइल',
+    'home.onDuty': 'ड्यूटी पर',
+  },
+  en: {
+    'home.greeting': 'Hello, {name} · {gate}',
+    'home.scan': 'Scan QR',
+    'home.scanSub': 'Visitor or staff QR pass',
+    'home.newVisitor': 'New visitor',
+    'home.newVisitorSub': 'For someone without a QR',
+    'home.waiting': '{n} visitors waiting',
+    'home.waitingOne': '1 visitor waiting',
+    'home.waitingSub': 'Waiting for the resident',
+    'home.inside': 'Inside now: {n}',
+    'home.insideSub': 'View and send out',
+    'home.emergency': 'Emergency',
+    'home.emergencyHold': 'Press and hold',
+    'home.emergencyHint': 'Press and hold the button for 2 seconds',
+    'home.profile': 'Profile',
+    'home.onDuty': 'On duty',
+  },
+};

@@ -16,6 +16,7 @@ interface ResultScreenProps {
   reason?: string;
   /** Person / pass details, shown big. */
   name?: string;
+  /** Full text, e.g. "फ्लैट A-101". */
   flat?: string;
   /** e.g. "Guest", "Maid" — shown as a pill. */
   typeLabel?: string;
@@ -29,6 +30,8 @@ interface ResultScreenProps {
   onAutoReturn?: () => void;
   /** Disables the buttons while a request is in flight (double-tap guard). */
   busy?: boolean;
+  /** Extra lines under the reason (e.g. why each pass was refused). */
+  children?: React.ReactNode;
 }
 
 const BG: Record<ResultKind, string> = { allow: GuardSemantic.allowBg, deny: GuardSemantic.denyBg, wait: '#B98600' };
@@ -40,7 +43,7 @@ const ICON: Record<ResultKind, keyof typeof Ionicons.glyphMap> = { allow: 'check
  */
 export function ResultScreen({
   kind, title, reason, name, flat, typeLabel, photoUrl, primaryLabel, onPrimary, secondaryLabel, onSecondary,
-  autoReturnSeconds, onAutoReturn, busy,
+  autoReturnSeconds, onAutoReturn, busy, children,
 }: ResultScreenProps) {
   const t = useT();
   const insets = useSafeAreaInsets();
@@ -80,12 +83,13 @@ export function ResultScreen({
         <Ionicons name={ICON[kind]} size={132} color="#FFFFFF" />
         <Text style={styles.title} adjustsFontSizeToFit numberOfLines={2}>{title}</Text>
         {!!reason && <Text style={styles.reason}>{reason}</Text>}
+        {children}
 
         {(!!name || !!flat || !!photoUrl) && (
           <View style={styles.person}>
             {!!photoUrl && <Image source={{ uri: photoUrl }} style={styles.photo} />}
             {!!name && <Text style={styles.name} numberOfLines={2}>{name}</Text>}
-            {!!flat && <Text style={styles.flat}>{t('common.flat')} {flat}</Text>}
+            {!!flat && <Text style={styles.flat}>{flat}</Text>}
             {!!typeLabel && <View style={styles.pill}><Text style={styles.pillText}>{typeLabel}</Text></View>}
           </View>
         )}
