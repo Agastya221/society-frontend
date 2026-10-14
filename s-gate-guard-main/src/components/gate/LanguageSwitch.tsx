@@ -36,7 +36,7 @@ export function LanguageSwitch({ compact = false }: { compact?: boolean }) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 10 },
-  rowCompact: { gap: 0, backgroundColor: GuardColors.surface, borderRadius: 999, padding: 3 },
+  rowCompact: { gap: 0, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 999, padding: 3, borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)' },
   btn: { flex: 1, minHeight: GuardTouch.min, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border },
   btnCompact: { flex: 0, minHeight: 40, minWidth: 64, paddingHorizontal: 12, borderRadius: 999, borderWidth: 0, backgroundColor: 'transparent' },
   btnActive: { backgroundColor: GuardColors.gold, borderColor: GuardColors.gold },

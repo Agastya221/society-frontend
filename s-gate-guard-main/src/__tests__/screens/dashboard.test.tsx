@@ -54,25 +54,30 @@ describe('Guard Dashboard (index)', () => {
     mockCounts();
   });
 
-  // ── Greeting ────────────────────────────────────────────────────────────────
-  describe('Greeting', () => {
-    it('greets the guard by first name with the gate', async () => {
+  // ── Header ──────────────────────────────────────────────────────────────────
+  describe('Header', () => {
+    it('greets the guard by first name and shows the gate they are on duty at', async () => {
       const { getByText } = await renderDashboard();
-      expect(getByText('Hello, Ravi · North Gate')).toBeTruthy();
+      expect(getByText('Hello,')).toBeTruthy();
+      expect(getByText('Ravi')).toBeTruthy();
+      expect(getByText('On duty · North Gate')).toBeTruthy();
+      expect(getByText('R')).toBeTruthy();
     });
 
     it('falls back to "Main Gate" and "Guard"', async () => {
       useAuthStore.setState({ user: { ...mockGuard, name: undefined, gate: undefined } as any });
       const { getByText } = await renderDashboard();
-      expect(getByText('Hello, Guard · Main Gate')).toBeTruthy();
+      expect(getByText('Guard')).toBeTruthy();
+      expect(getByText('On duty · Main Gate')).toBeTruthy();
     });
 
     it('speaks Hindi by default for guards', async () => {
       useLanguageStore.setState({ lang: 'hi' });
       const { getByText } = await renderDashboard();
-      expect(getByText('नमस्ते, Ravi · North Gate')).toBeTruthy();
+      expect(getByText('नमस्ते,')).toBeTruthy();
       expect(getByText('QR स्कैन करें')).toBeTruthy();
       expect(getByText('नया विज़िटर')).toBeTruthy();
+      expect(getByText('अभी अंदर')).toBeTruthy();
     });
 
     it('switches language from the top bar', async () => {
@@ -98,7 +103,8 @@ describe('Guard Dashboard (index)', () => {
     it.each([
       ['Scan QR', '/scan-verify'],
       ['New visitor', '/new-entry'],
-      ['Inside now: 0', '/today-entries'],
+      ['Inside now', '/today-entries'],
+      ['Waiting', '/approvals'],
       ['Profile', '/profile'],
     ])('pressing "%s" pushes %s', async (label, route) => {
       const { getByText } = await renderDashboard();
@@ -108,24 +114,21 @@ describe('Guard Dashboard (index)', () => {
     });
   });
 
-  // ── Waiting visitors strip ──────────────────────────────────────────────────
-  describe('Waiting at gate strip', () => {
-    it('is hidden when nobody is waiting', async () => {
-      const { queryByText } = await renderDashboard();
-      expect(queryByText(/waiting/)).toBeNull();
+  // ── Waiting visitors ────────────────────────────────────────────────────────
+  describe('Waiting at gate', () => {
+    it('shows zero and the plain label when nobody is waiting', async () => {
+      const { getByLabelText, queryByText } = await renderDashboard();
+      expect(getByLabelText('Waiting 0')).toBeTruthy();
+      expect(queryByText('Needs an answer')).toBeNull();
     });
 
-    it('shows the plural count and opens the waiting list', async () => {
+    it('highlights the count and opens the waiting list', async () => {
       mockCounts({ pending: [{ id: 'e1' }, { id: 'e2' }, { id: 'e3' }] });
-      const { getByText } = await renderDashboard();
-      fireEvent.press(getByText('3 visitors waiting'));
+      const { getByText, getByLabelText } = await renderDashboard();
+      expect(getByLabelText('Waiting 3')).toBeTruthy();
+      expect(getByText('Needs an answer')).toBeTruthy();
+      fireEvent.press(getByText('Needs an answer'));
       expect(mockPush).toHaveBeenCalledWith('/approvals');
-    });
-
-    it('uses the singular for one visitor', async () => {
-      mockCounts({ pending: [{ id: 'e1' }] });
-      const { getByText } = await renderDashboard();
-      expect(getByText('1 visitor waiting')).toBeTruthy();
     });
 
     it('handles the entryRequests and flat array response shapes', async () => {
@@ -134,7 +137,7 @@ describe('Guard Dashboard (index)', () => {
         return Promise.resolve({ data: { data: {} } });
       });
       const first = await renderDashboard();
-      expect(first.getByText('2 visitors waiting')).toBeTruthy();
+      expect(first.getByLabelText('Waiting 2')).toBeTruthy();
       first.unmount();
 
       (api.get as jest.Mock).mockImplementation((url: string) => {
@@ -142,7 +145,7 @@ describe('Guard Dashboard (index)', () => {
         return Promise.resolve({ data: { data: {} } });
       });
       const second = await renderDashboard();
-      expect(second.getByText('4 visitors waiting')).toBeTruthy();
+      expect(second.getByLabelText('Waiting 4')).toBeTruthy();
     });
   });
 
@@ -155,8 +158,8 @@ describe('Guard Dashboard (index)', () => {
           staffAttendances: [{ checkOutTime: null }, { checkOutTime: '2026-10-13T10:00:00Z' }],
         },
       });
-      const { getByText } = await renderDashboard();
-      expect(getByText('Inside now: 3')).toBeTruthy();
+      const { getByLabelText } = await renderDashboard();
+      expect(getByLabelText('Inside now 3')).toBeTruthy();
     });
   });
 
@@ -186,9 +189,9 @@ describe('Guard Dashboard (index)', () => {
 
     it('handles API errors without crashing', async () => {
       (api.get as jest.Mock).mockRejectedValue(new Error('Server error'));
-      const { getByText, queryByText } = await renderDashboard();
-      expect(getByText('Hello, Ravi · North Gate')).toBeTruthy();
-      expect(queryByText(/waiting/)).toBeNull();
+      const { getByText, getByLabelText } = await renderDashboard();
+      expect(getByText('Ravi')).toBeTruthy();
+      expect(getByLabelText('Waiting 0')).toBeTruthy();
     });
   });
 });

@@ -3,12 +3,13 @@ import { ResultScreen } from '@/components/gate/ResultScreen';
 import {
     ListedPass, Match, ReasonRowData, conflictTitle, reasonRows,
 } from '@/components/PreApprovedPass';
-import { GuardColors, GuardFonts, GuardRadius, GuardTouch, GuardType } from '@/constants/theme';
+import { GuardColors, GuardFonts, GuardRadius, GuardTouch, GuardType, guardShadow } from '@/constants/theme';
 import { useT } from '@/i18n';
 import api from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -24,6 +25,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SW, height: SH } = Dimensions.get('window');
@@ -98,6 +100,27 @@ function prePhaseFrom(result: Match, listed: Record<string, ListedPass>): PrePha
     return { kind: 'denied', message: result.message?.trim() || undefined, rows: reasonRows(result.reasons, listed) };
 }
 
+// ─── Scan line ────────────────────────────────────────────────────────────────
+
+/** A soft gold line sweeping the frame, so it is obvious the camera is looking. */
+function ScanLine() {
+    const y = useSharedValue(0);
+    useEffect(() => {
+        y.value = withRepeat(withTiming(1, { duration: 1900, easing: Easing.inOut(Easing.quad) }), -1, true);
+    }, [y]);
+    const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.value * (FRAME_SIZE - 28) + 8 }] }));
+    return (
+        <Animated.View style={[S.scanLine, style]} pointerEvents="none">
+            <LinearGradient
+                colors={['rgba(255,184,0,0)', 'rgba(255,200,40,0.95)', 'rgba(255,184,0,0)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={StyleSheet.absoluteFill}
+            />
+        </Animated.View>
+    );
+}
+
 // ─── Permission Gate ──────────────────────────────────────────────────────────
 
 function PermissionView({ onRequest, onBack }: { onRequest: () => void; onBack: () => void }) {
@@ -141,6 +164,7 @@ function CodeEntry({
     return (
         <View style={S.codeWrap} pointerEvents="box-none">
             <View style={[S.codeCard, { paddingBottom: Math.max(bottomInset, 12) + 12 }]}>
+                <View style={S.handle} />
                 <View style={S.codeHead}>
                     <View style={{ flex: 1 }}>
                         <Text style={S.codeTitle}>{t('scan.codeTitle')}</Text>
@@ -549,6 +573,7 @@ export default function ScanVerifyScreen() {
                         <View style={[S.corner, S.cornerTR]} />
                         <View style={[S.corner, S.cornerBL]} />
                         <View style={[S.corner, S.cornerBR]} />
+                        {!showingResult && !verifying && !manualOpen && <ScanLine />}
                     </View>
                     <View style={S.overlaySide} />
                 </View>
@@ -570,6 +595,7 @@ export default function ScanVerifyScreen() {
                     <View style={S.hintWrap} pointerEvents="none">
                         <Text style={S.hintText}>{t('scan.hint')}</Text>
                     </View>
+                    <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.78)']} style={S.scrim} pointerEvents="none" />
                     <View style={[S.bottomAction, { paddingBottom: insets.bottom + 16 }]} pointerEvents="box-none">
                         <GiantButton label={t('scan.typeCode')} icon="keypad" tone="light" onPress={() => setManualOpen(true)} />
                     </View>
@@ -604,9 +630,9 @@ export default function ScanVerifyScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const CORNER_LEN = 34;
-const CORNER_THICKNESS = 5;
-const CORNER_RADIUS = 8;
+const CORNER_LEN = 46;
+const CORNER_THICKNESS = 6;
+const CORNER_RADIUS = 20;
 const FRAME_TOP = (SH - FRAME_SIZE) / 2 - 40;
 const KEY_GAP = 8;
 
@@ -630,6 +656,7 @@ const S = StyleSheet.create({
     overlayBottom: { flex: 1, backgroundColor: 'rgba(0,0,0,0.62)' },
     frame: { width: FRAME_SIZE, height: FRAME_SIZE },
     corner: { position: 'absolute', width: CORNER_LEN, height: CORNER_LEN, borderColor: GuardColors.gold },
+    scanLine: { position: 'absolute', left: 14, right: 14, height: 4, borderRadius: 2 },
     cornerTL: { top: 0, left: 0, borderTopWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS, borderTopLeftRadius: CORNER_RADIUS },
     cornerTR: { top: 0, right: 0, borderTopWidth: CORNER_THICKNESS, borderRightWidth: CORNER_THICKNESS, borderTopRightRadius: CORNER_RADIUS },
     cornerBL: { bottom: 0, left: 0, borderBottomWidth: CORNER_THICKNESS, borderLeftWidth: CORNER_THICKNESS, borderBottomLeftRadius: CORNER_RADIUS },
@@ -637,36 +664,38 @@ const S = StyleSheet.create({
 
     // ── Header ─────────────────────────────────────────────────────────────────
     headerBar: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 12 },
-    backBtn: { width: GuardTouch.min, height: GuardTouch.min, borderRadius: GuardTouch.min / 2, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
+    backBtn: { width: GuardTouch.min, height: GuardTouch.min, borderRadius: GuardTouch.min / 2, backgroundColor: 'rgba(255,255,255,0.16)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.32)', alignItems: 'center', justifyContent: 'center' },
     headerTitle: { flex: 1, textAlign: 'center', fontFamily: GuardFonts.bold, fontSize: 22, fontWeight: '800', color: '#fff' },
     headerSpacer: { width: GuardTouch.min },
 
     // ── Hint / type code / verifying ───────────────────────────────────────────
     hintWrap: { position: 'absolute', top: FRAME_TOP + FRAME_SIZE + 24, left: 0, right: 0, alignItems: 'center', paddingHorizontal: 24 },
-    hintText: { fontFamily: GuardFonts.bold, fontSize: 22, lineHeight: 30, fontWeight: '800', color: '#fff', textAlign: 'center' },
+    hintText: { fontFamily: GuardFonts.bold, fontSize: 20, lineHeight: 28, fontWeight: '800', color: '#fff', textAlign: 'center', backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 22, paddingVertical: 10, overflow: 'hidden' },
+    scrim: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 190 },
     bottomAction: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 20 },
     verifyingWrap: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
     verifyingText: { marginTop: 14, color: '#fff', fontFamily: GuardFonts.bold, fontSize: GuardType.button, fontWeight: '800' },
 
     // ── Code entry ─────────────────────────────────────────────────────────────
     codeWrap: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.55)' },
-    codeCard: { backgroundColor: GuardColors.bg, borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 18 },
+    codeCard: { backgroundColor: GuardColors.bg, borderTopLeftRadius: 34, borderTopRightRadius: 34, paddingHorizontal: 20, paddingTop: 10, ...guardShadow('#000000', 3) },
+    handle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: GuardColors.t4, marginBottom: 14 },
     codeHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     codeTitle: { fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '900', color: GuardColors.t1 },
     codeSub: { marginTop: 2, fontFamily: GuardFonts.medium, fontSize: GuardType.min + 1, fontWeight: '600', color: GuardColors.t2 },
     codeClose: { width: GuardTouch.min, height: GuardTouch.min, borderRadius: GuardTouch.min / 2, backgroundColor: GuardColors.surface, alignItems: 'center', justifyContent: 'center' },
-    codeDisplay: { marginTop: 14, minHeight: 72, borderRadius: GuardRadius.lg, backgroundColor: GuardColors.card, borderWidth: 2, borderColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+    codeDisplay: { marginTop: 14, minHeight: 76, borderRadius: 24, backgroundColor: GuardColors.card, borderWidth: 2, borderColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, ...guardShadow('#FFB300', 1) },
     codeText: { fontFamily: GuardFonts.bold, fontSize: 38, fontWeight: '900', letterSpacing: 6, color: GuardColors.t1 },
     codePlaceholder: { color: GuardColors.t4, letterSpacing: 4 },
     keys: { marginTop: 14, flexDirection: 'row', flexWrap: 'wrap', gap: KEY_GAP },
-    key: { width: (SW - 40 - KEY_GAP * 5) / 6, height: 56, borderRadius: 14, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center' },
+    key: { width: (SW - 40 - KEY_GAP * 5) / 6, height: 58, borderRadius: 18, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center', ...guardShadow('#0D0F14', 1) },
     keyText: { fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '800', color: GuardColors.t1 },
     codeActions: { marginTop: 14, flexDirection: 'row', gap: 12, alignItems: 'center' },
-    deleteKey: { width: GuardTouch.button, height: GuardTouch.button, borderRadius: GuardRadius.xl, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center' },
+    deleteKey: { width: GuardTouch.button, height: GuardTouch.button, borderRadius: 26, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center', ...guardShadow('#0D0F14', 1) },
     verifyBtn: { flex: 1, width: undefined },
 
     // ── Pass picker ────────────────────────────────────────────────────────────
-    pickerRoot: { flex: 1, backgroundColor: '#0A9A62', paddingHorizontal: 20 },
+    pickerRoot: { flex: 1, backgroundColor: '#0FB57A', paddingHorizontal: 20 },
     pickerTitle: { marginTop: 8, textAlign: 'center', color: '#fff', fontFamily: GuardFonts.bold, fontSize: 34, fontWeight: '900' },
     pickerSub: { marginTop: 6, marginBottom: 16, textAlign: 'center', color: 'rgba(255,255,255,0.92)', fontFamily: GuardFonts.medium, fontSize: GuardType.body, fontWeight: '600' },
     pickerList: { gap: 12, paddingBottom: 12 },
