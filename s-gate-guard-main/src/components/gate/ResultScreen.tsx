@@ -36,6 +36,8 @@ interface ResultScreenProps {
   busy?: boolean;
   /** Extra lines under the reason (e.g. why each pass was refused). */
   children?: React.ReactNode;
+  /** Replaces the badge icon (the default is a tick, cross or clock to match `kind`). */
+  icon?: keyof typeof Ionicons.glyphMap;
 }
 
 const GRADIENT: Record<ResultKind, readonly [string, string, ...string[]]> = {
@@ -53,7 +55,7 @@ const ICON: Record<ResultKind, keyof typeof Ionicons.glyphMap> = { allow: 'check
  */
 export function ResultScreen({
   kind, title, reason, name, flat, typeLabel, photoUrl, primaryLabel, onPrimary, secondaryLabel, onSecondary,
-  autoReturnSeconds, onAutoReturn, busy, children,
+  autoReturnSeconds, onAutoReturn, busy, children, icon,
 }: ResultScreenProps) {
   const t = useT();
   const insets = useSafeAreaInsets();
@@ -116,7 +118,7 @@ export function ResultScreen({
           <Animated.View style={[styles.ring, styles.ringOuter, ringStyle]} />
           <Animated.View style={[styles.ring, styles.ringInner, ringStyle]} />
           <Animated.View style={[styles.badge, guardShadow('#000000', 3), badge]}>
-            <Ionicons name={ICON[kind]} size={78} color={accent} />
+            <Ionicons name={icon ?? ICON[kind]} size={78} color={accent} />
           </Animated.View>
         </View>
 

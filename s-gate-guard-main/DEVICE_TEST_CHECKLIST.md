@@ -78,11 +78,33 @@ Tick each box as it is checked. Write what looked wrong next to it.
 - [ ] "आज के सभी" shows the whole day with the filter chips (All, Guests, Deliveries, Staff, Services, Cabs)
 - [ ] The Inside number on Home matches the number of cards in the default view
 
-## Part 6 — Still old-looking (Phase 4, then added here)
+## Part 6 — Emergency, profile and login (Phase 4)
 
-- [ ] Emergency screen, Profile, Login
+- [ ] **Login** (log out first, from Profile): gradient glow background, brand mark and the हिंदी / English switch at the top; number box is large (28 px) with +91; the number pad opens; OTP box shows big spaced digits
+- [ ] Login with Manoj (`6202923168`, OTP `989898`) works; a resident number (e.g. your own `6202923165`) shows "यह ऐप सिर्फ सुरक्षा गार्ड के लिए है…"; a wrong OTP shows a red message; Resend counts down 30 s then works; "नंबर बदलें" and Android back return to the number step
+- [ ] Language chosen on the login screen stays after login and after restarting the app
+- [ ] **Emergency** (Home, hold 2 s): header with back circle; nine big tiles (Medical, Fire, Security threat, Violence, Theft, Accident, Lift stuck, Animal threat, Other) with 20 px labels, easy to read and hit
+- [ ] Tapping a tile opens the dim confirm card "अलार्म भेजें?"; Cancel and Android back close it without sending
+- [ ] "अलार्म भेजें" sends **one** alert (double tap = one), then the red full-screen "मदद आ रही है" with the type and time; the resident app and admins receive the alert (test with a dummy alert only!)
+- [ ] During the 15 s after an alarm all tiles are greyed with a countdown
+- [ ] Alarm failure (airplane mode) shows the "call security directly" alert and no success screen
+- [ ] **Profile**: gold hero card with initial, name, "सिक्योरिटी गार्ड" and the green ON DUTY chip; phone, society and last sign-in rows
+- [ ] Language switch on Profile changes the whole app at once
+- [ ] Log out asks first; "लॉग आउट" returns to the login screen; profile load failure shows "Try again" plus language and log out
+- [ ] Home button on Profile / waiting list / inside list always leaves to Home
+
+## Part 7 — Whole-app pass (after Parts 1-6)
+
+- [ ] Walk one full real visit: new visitor → resident approves in the main app → green result → Inside now shows them → Exit
+- [ ] Walk one pre-approved visit: resident creates a cab pass → guard scans its QR → one tap allows → resident is notified
+- [ ] Walk one staff visit: staff QR check-in, scan again for check-out
+- [ ] Switch to English and repeat the first walk; no Hindi or raw keys left over
+- [ ] Rotate through Home, scanner and lists on a small phone: nothing is cut off, no horizontal scroll
+- [ ] Back-navigation from every screen: no dark "ghost" frame during the back animation
 
 ## Known limits (not bugs)
 
 - Server messages such as "Pass expired" stay in English; only the app's own text is Hindi.
 - The scanner can't check out a guest by QR (the server only supports that for staff); use the Inside list.
+- The old Pre-approved and Staff-scan screens are no longer linked from Home (the scanner and New visitor cover them). Staff-scan redirects to the scanner; pre-approved.tsx still exists but is unused.
+- The waiting screen times out after 45 s (the plan said 60); this is the original behaviour.
