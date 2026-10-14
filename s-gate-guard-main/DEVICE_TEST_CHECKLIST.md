@@ -11,6 +11,26 @@ If a screen looks old, restart Metro with `--clear` (it often misses file edits)
 
 Tick each box as it is checked. Write what looked wrong next to it.
 
+## Test log — 14 Oct 2026 (Pixel 6a, guard Manoj, Hindi)
+
+**Checked on the phone and working:** Home look, animation and Hindi/English switch (kept after restart);
+emergency short-tap hint, 2 s hold, nine tiles, confirm card, back closes it (no alarm was sent);
+scanner screen (frame, scan line, hint, back); typed code with the big keys (3KEA9D → green result with name,
+flat, type pill and draining bar; same code again → red "already used"); delete, long-press clear, close;
+New visitor: Guest and Delivery→Swiggy, live flat search (A10 → Tower A-A101), photo take / retake / preview,
+send → amber waiting screen → resident approves → green result with the visitor's photo → Home;
+Inside count and list, Exit button, "All today" with filters; waiting list with Stop confirm and Allow;
+no-pass delivery carried on to the resident request; Profile; log out confirm; login (number pad, OTP, language kept).
+
+**Found and fixed during the test:** verify button ran off the screen; result title wrapped to two lines;
+Hindi labels clipped to their first word in auto-width boxes (fixed for all Hindi text); number pad covered the
+login button (screen now lifts above the keyboard); a dev warning from navigating inside a state update;
+emergency double tap could send two alarms; "जानवर का खतरा" label shortened.
+
+**Not tested yet (needs a QR in front of the camera, a resident account, or time):**
+real camera scan of a guest QR, pre-approval QR and staff QR; pre-approved cab/delivery shortcut; waiting-screen
+45 s timeout buttons; sending a real emergency alarm; English-mode walk; the whole of Part 7.
+
 ## Part 1 — Look and feel (Home, scanner, result)
 
 - [ ] Home shows the gold **Scan QR** card and dark **New visitor** card with gradients, rounded corners and shadows (no flat/unstyled buttons)

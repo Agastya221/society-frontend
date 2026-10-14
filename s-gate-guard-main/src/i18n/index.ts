@@ -50,7 +50,10 @@ export function translate(lang: Lang, key: string, params?: Record<string, strin
 /** `const t = useT(); t('common.home')` — re-renders when the language changes. */
 export function useT() {
   const lang = useLanguageStore((s) => s.lang);
-  return (key: string, params?: Record<string, string | number>) => translate(lang, key, params);
+  // Hindi gets a trailing no-break space: on Android a short Devanagari label in an auto-width
+  // box was drawn one word short ("सिक्योरिटी गार्ड" showed as "सिक्योरिटी"). The slack stops that wrap.
+  const slack = lang === 'hi' ? ' ' : '';
+  return (key: string, params?: Record<string, string | number>) => translate(lang, key, params) + slack;
 }
 
 /** Dev check: keys that exist in only one language. Used by the tests. */

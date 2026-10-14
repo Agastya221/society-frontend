@@ -1,5 +1,6 @@
 import { GiantButton } from '@/components/gate/GiantButton';
 import { KeyGrid } from '@/components/gate/KeyGrid';
+import { useKeyboardHeight } from '@/components/gate/useKeyboardHeight';
 import { PassPicker } from '@/components/gate/PassPicker';
 import { Pressy } from '@/components/gate/Pressy';
 import { ResultScreen } from '@/components/gate/ResultScreen';
@@ -237,6 +238,7 @@ export default function NewEntryScreen() {
     const t = useT();
     const router = useRouter();
     const insets = useSafeAreaInsets();
+    const keyboardHeight = useKeyboardHeight();
 
     const [step, setStep] = useState<Step>(1);
 
@@ -621,7 +623,7 @@ export default function NewEntryScreen() {
             {step === 3 && (
                 <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
                     <Animated.View key="photo" entering={FadeInDown.duration(260)} style={{ flex: 1 }}>
-                        <ScrollView contentContainerStyle={[S.step3, { paddingBottom: insets.bottom + 20 }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                        <ScrollView contentContainerStyle={[S.step3, { paddingBottom: insets.bottom + 20 + keyboardHeight }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                             <View style={[S.summary, guardShadow('#0D0F14', 1)]}>
                                 <View style={[S.summaryIcon, { backgroundColor: typeInfo.bg }]}>
                                     <Ionicons name={providerInfo && type === 'DELIVERY' ? providerInfo.icon : typeInfo.icon} size={30} color={providerInfo && type === 'DELIVERY' ? providerInfo.color : typeInfo.tint} />

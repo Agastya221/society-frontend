@@ -7,6 +7,7 @@ import { Alert, BackHandler, KeyboardAvoidingView, Platform, ScrollView, StatusB
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GiantButton } from '@/components/gate/GiantButton';
 import { LanguageSwitch } from '@/components/gate/LanguageSwitch';
+import { useKeyboardHeight } from '@/components/gate/useKeyboardHeight';
 import { GuardBrandMark } from '@/components/GuardBrandMark';
 import { GuardColors, GuardFonts, GuardGradients, GuardTouch, GuardType, guardShadow } from '@/constants/theme';
 import { MSG91_TOKEN_AUTH, MSG91_WIDGET_ID } from '@/constants/msg91';
@@ -18,6 +19,7 @@ type Screen = 'phone' | 'otp';
 
 export default function AuthScreen() {
   const t = useT();
+  const keyboardHeight = useKeyboardHeight();
   const login = useAuthStore((state) => state.login);
   const [screen, setScreen] = useState<Screen>('phone');
   const [phone, setPhone] = useState('');
@@ -27,6 +29,11 @@ export default function AuthScreen() {
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  // With the keyboard up, bring the button into view.
+  useEffect(() => {
+    if (keyboardHeight > 0) setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+  }, [keyboardHeight]);
 
   useEffect(() => { OTPWidget.initializeWidget(MSG91_WIDGET_ID, MSG91_TOKEN_AUTH); }, []);
   // Android back on the OTP step returns to the phone step instead of closing the app.
@@ -106,7 +113,7 @@ export default function AuthScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={GuardColors.bg} />
       <LinearGradient colors={GuardGradients.glow} style={styles.glow} pointerEvents="none" />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView ref={scrollRef} contentContainerStyle={[styles.content, { paddingBottom: 24 + keyboardHeight }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.topRow}>
             <GuardBrandMark />
             <LanguageSwitch compact />
