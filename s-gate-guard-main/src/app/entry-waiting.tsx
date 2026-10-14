@@ -1,8 +1,12 @@
+import { GiantButton } from '@/components/gate/GiantButton';
+import { ResultScreen } from '@/components/gate/ResultScreen';
+import { GuardColors, GuardFonts, GuardTouch, GuardType, guardShadow } from '@/constants/theme';
+import { useT } from '@/i18n';
 import api from '@/services/api';
-import { GuardColors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -10,9 +14,6 @@ import {
     Alert,
     AppState,
     BackHandler,
-    Dimensions,
-    Platform,
-    Pressable,
     StatusBar,
     StyleSheet,
     Text,
@@ -24,13 +25,13 @@ import Animated, {
     useAnimatedStyle,
     useSharedValue,
     withRepeat,
+    withDelay,
     withSequence,
     withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width: SW } = Dimensions.get('window');
-const PHOTO_SIZE = SW * 0.42;
+const PHOTO_SIZE = 150;
 const POLL_MS    = 3000;
 const TIMEOUT_S  = 45;
 
@@ -38,13 +39,22 @@ const TIMEOUT_S  = 45;
 
 type Phase = 'waiting' | 'timeout' | 'approved' | 'denied';
 
-function typeDisplayLabel(type?: string): string {
-    if (!type) return 'Visitor';
-    if (type.includes('DELIVERY')) return 'Delivery';
-    if (type === 'CAB')     return 'Cab';
-    if (type === 'SERVICE') return 'Service';
-    if (type === 'GUEST')   return 'Guest';
-    return type.replace(/_/g, ' ');
+function typeLabelKey(type?: string): string | null {
+    if (!type) return 'common.guest';
+    if (type.includes('DELIVERY')) return 'common.delivery';
+    if (type === 'CAB') return 'common.cab';
+    if (type === 'SERVICE' || type === 'VENDOR') return 'common.service';
+    if (type === 'GUEST' || type === 'VISITOR') return 'common.guest';
+    if (type === 'HELP') return 'common.help';
+    if (type === 'OTHER') return 'common.other';
+    return null;
+}
+
+function typeIcon(type?: string): keyof typeof Ionicons.glyphMap {
+    if (type === 'DELIVERY') return 'cube';
+    if (type === 'CAB') return 'car';
+    if (type === 'SERVICE' || type === 'HELP') return 'construct';
+    return 'person';
 }
 
 function resolvePhase(status: string): Phase | null {
@@ -56,32 +66,24 @@ function resolvePhase(status: string): Phase | null {
 
 // ─── Pulsing ring ─────────────────────────────────────────────────────────────
 
-function PulseRing({ color }: { color: string }) {
+function PulseRing({ delay = 0 }: { delay?: number }) {
     const scale   = useSharedValue(1);
-    const opacity = useSharedValue(0.5);
+    const opacity = useSharedValue(0.45);
 
     useEffect(() => {
-        scale.value = withRepeat(
-            withSequence(
-                withTiming(1,    { duration: 0 }),
-                withTiming(1.55, { duration: 1400, easing: Easing.out(Easing.ease) }),
-            ),
+        const loop = (from: number, to: number) => withDelay(delay, withRepeat(
+            withSequence(withTiming(from, { duration: 0 }), withTiming(to, { duration: 1800, easing: Easing.out(Easing.ease) })),
             -1, false,
-        );
-        opacity.value = withRepeat(
-            withSequence(
-                withTiming(0.5, { duration: 0 }),
-                withTiming(0,   { duration: 1400, easing: Easing.out(Easing.ease) }),
-            ),
-            -1, false,
-        );
-    }, [opacity, scale]);
+        ));
+        scale.value = loop(1, 1.9);
+        opacity.value = loop(0.45, 0);
+    }, [opacity, scale, delay]);
 
     const style = useAnimatedStyle(() => ({
         position: 'absolute',
         width: PHOTO_SIZE, height: PHOTO_SIZE,
         borderRadius: PHOTO_SIZE / 2,
-        borderWidth: 2, borderColor: color,
+        backgroundColor: 'rgba(255,255,255,0.55)',
         transform: [{ scale: scale.value }],
         opacity: opacity.value,
     }));
@@ -89,28 +91,10 @@ function PulseRing({ color }: { color: string }) {
     return <Animated.View style={style} />;
 }
 
-// ─── No-ID error state ────────────────────────────────────────────────────────
-
-function NoIdError({ onBack }: { onBack: () => void }) {
-    const insets = useSafeAreaInsets();
-    return (
-        <View style={[S.root, { paddingTop: insets.top + 20, justifyContent: 'center' }]}>
-            <Ionicons name="alert-circle-outline" size={64} color="#F59E0B" />
-            <Text style={[S.statusText, { marginTop: 16 }]}>Entry submitted</Text>
-            <Text style={[S.statusSub, { marginTop: 6, paddingHorizontal: 40, textAlign: 'center' }]}>
-                Could not track this request — resident was notified.
-                Check the Approvals screen for the response.
-            </Text>
-            <Pressable style={[S.nextVisitorBtn, { marginTop: 32 }]} onPress={onBack}>
-                <Text style={S.nextVisitorText}>Go to Approvals</Text>
-            </Pressable>
-        </View>
-    );
-}
-
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function EntryWaitingScreen() {
+    const t = useT();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const params = useLocalSearchParams<{
@@ -120,6 +104,8 @@ export default function EntryWaitingScreen() {
     const { id, flat, type, photo, name } = params;
     const visitorName = name?.trim() || null;
     const photoUri = photo && photo.length > 0 ? decodeURIComponent(photo) : null;
+    const typeKey = typeLabelKey(type);
+    const typeText = typeKey ? t(typeKey) : (type ?? '').replace(/_/g, ' ');
 
     const [phase,     setPhase]     = useState<Phase>('waiting');
     const [elapsed,   setElapsed]   = useState(0);
@@ -130,6 +116,13 @@ export default function EntryWaitingScreen() {
     const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
     const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
     const settled   = useRef(false);
+
+    // The time bar drains over the wait.
+    const bar = useSharedValue(1);
+    useEffect(() => {
+        bar.value = withTiming(0, { duration: TIMEOUT_S * 1000, easing: Easing.linear });
+    }, [bar]);
+    const barStyle = useAnimatedStyle(() => ({ width: `${bar.value * 100}%` }));
 
     const stopAll = useCallback(() => {
         if (pollRef.current)  clearInterval(pollRef.current);
@@ -204,7 +197,7 @@ export default function EntryWaitingScreen() {
         return () => { if (pollRef.current) clearInterval(pollRef.current); };
     }, [poll]);
 
-    // ── Fix #4: AppState — resume polling when app comes to foreground ────────
+    // ── AppState — resume polling when app comes to foreground ────────────────
     useEffect(() => {
         const sub = AppState.addEventListener('change', (state) => {
             if (state === 'active' && !settled.current) poll();
@@ -212,15 +205,15 @@ export default function EntryWaitingScreen() {
         return () => sub.remove();
     }, [poll]);
 
-    // ── Fix #3: Cancel request when X is tapped ───────────────────────────────
+    // ── Cancel request when X is tapped ───────────────────────────────────────
     const handleClose = () => {
         Alert.alert(
-            'Cancel Request?',
-            'This will cancel the approval request for this visitor.',
+            t('waiting.cancelTitle'),
+            t('waiting.cancelText'),
             [
-                { text: 'Keep Waiting', style: 'cancel' },
+                { text: t('waiting.keepWaiting'), style: 'cancel' },
                 {
-                    text: 'Cancel Request', style: 'destructive',
+                    text: t('waiting.cancelRequest'), style: 'destructive',
                     onPress: async () => {
                         setCancelling(true);
                         try {
@@ -236,41 +229,25 @@ export default function EntryWaitingScreen() {
         );
     };
 
-    // ── Fix #1: Next visitor — leave request pending, go to new entry ─────────
+    // ── Next visitor — leave request pending, go to new entry ─────────────────
     const handleNextVisitor = () => {
         // Do NOT cancel — resident is still being notified.
-        // The result will show up in the Approvals screen.
+        // The result will show up in the waiting list.
         stopAll();
         goNewEntry();
     };
 
     // ── Override actions ──────────────────────────────────────────────────────
-    const handleAllow = async () => {
+    const override = async (action: 'approve' | 'reject') => {
         if (actioningRef.current) return;
         actioningRef.current = true;
         setActioning(true);
         try {
-            await api.patch(`/api/v1/gate/entry-requests/${id}/approve`);
-            settle('approved');
+            await api.patch(`/api/v1/gate/entry-requests/${id}/${action}`);
+            settle(action === 'approve' ? 'approved' : 'denied');
         } catch (err: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Could not update entry', err?.response?.data?.message ?? 'Please try again.');
-        } finally {
-            actioningRef.current = false;
-            setActioning(false);
-        }
-    };
-
-    const handleDeny = async () => {
-        if (actioningRef.current) return;
-        actioningRef.current = true;
-        setActioning(true);
-        try {
-            await api.patch(`/api/v1/gate/entry-requests/${id}/reject`);
-            settle('denied');
-        } catch (err: any) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Could not update entry', err?.response?.data?.message ?? 'Please try again.');
+            Alert.alert(t('waiting.couldNotUpdate'), err?.response?.data?.message ?? t('waiting.tryAgain'));
         } finally {
             actioningRef.current = false;
             setActioning(false);
@@ -299,52 +276,37 @@ export default function EntryWaitingScreen() {
 
     // ── Result screens ────────────────────────────────────────────────────────
     if (!id) {
-        return <NoIdError onBack={goApprovals} />;
-    }
-
-    if (phase === 'approved') {
         return (
-            <View style={[S.resultRoot, { backgroundColor: '#059669' }]}>
-                <StatusBar barStyle="light-content" backgroundColor="#059669" />
-                <View style={[S.resultContent, { paddingTop: insets.top + 24 }]}>
-                    <Ionicons name="checkmark-circle" size={96} color="#fff" />
-                    <Text style={S.resultTitle}>Entry Approved</Text>
-                    <Text style={S.resultSub}>{visitorName ? `${visitorName} · ${typeDisplayLabel(type)}` : typeDisplayLabel(type)}</Text>
-                    <Text style={S.resultFlat}>Flat {flat}</Text>
-                    <Text style={S.resultHint}>Let the visitor through</Text>
-                </View>
-                <View style={[S.resultActions, { paddingBottom: insets.bottom + 24 }]}>
-                    <TouchableOpacity style={S.resultBtnSecondary} onPress={goNewEntry} activeOpacity={0.85}>
-                        <Text style={S.resultBtnSecondaryText}>New Entry</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={S.resultBtnPrimary} onPress={goDashboard} activeOpacity={0.85}>
-                        <Text style={S.resultBtnPrimaryText}>Dashboard</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
+            <ResultScreen
+                kind="wait"
+                title={t('waiting.untracked')}
+                reason={t('waiting.untrackedText')}
+                primaryLabel={t('waiting.goWaiting')}
+                onPrimary={goApprovals}
+                secondaryLabel={t('common.home')}
+                onSecondary={goDashboard}
+            />
         );
     }
 
-    if (phase === 'denied') {
+    if (phase === 'approved' || phase === 'denied') {
+        const ok = phase === 'approved';
         return (
-            <View style={[S.resultRoot, { backgroundColor: '#DC2626' }]}>
-                <StatusBar barStyle="light-content" backgroundColor="#DC2626" />
-                <View style={[S.resultContent, { paddingTop: insets.top + 24 }]}>
-                    <Ionicons name="close-circle" size={96} color="#fff" />
-                    <Text style={S.resultTitle}>Entry Denied</Text>
-                    <Text style={S.resultSub}>{visitorName ? `${visitorName} · ${typeDisplayLabel(type)}` : typeDisplayLabel(type)}</Text>
-                    <Text style={S.resultFlat}>Flat {flat}</Text>
-                    <Text style={S.resultHint}>Ask the visitor to leave</Text>
-                </View>
-                <View style={[S.resultActions, { paddingBottom: insets.bottom + 24 }]}>
-                    <TouchableOpacity style={S.resultBtnSecondary} onPress={goNewEntry} activeOpacity={0.85}>
-                        <Text style={S.resultBtnSecondaryText}>New Entry</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={S.resultBtnPrimary} onPress={goDashboard} activeOpacity={0.85}>
-                        <Text style={S.resultBtnPrimaryText}>Dashboard</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
+            <ResultScreen
+                kind={ok ? 'allow' : 'deny'}
+                title={ok ? t('common.allow') : t('common.deny')}
+                reason={ok ? t('waiting.letThrough') : t('waiting.askLeave')}
+                name={visitorName ?? typeText}
+                flat={flat ? `${t('common.flat')} ${flat}` : undefined}
+                typeLabel={visitorName ? typeText : undefined}
+                photoUrl={photoUri}
+                primaryLabel={t('waiting.newVisitor')}
+                onPrimary={goNewEntry}
+                secondaryLabel={t('common.home')}
+                onSecondary={goDashboard}
+                autoReturnSeconds={8}
+                onAutoReturn={goDashboard}
+            />
         );
     }
 
@@ -353,331 +315,120 @@ export default function EntryWaitingScreen() {
     const remaining  = Math.max(0, TIMEOUT_S - elapsed);
 
     return (
-        <View style={[S.root, { paddingTop: insets.top }]}>
+        <LinearGradient
+            colors={isTimeout ? ['#FFC58A', '#FF9F55', '#F57C2A'] : ['#FFE38A', '#FFC933', '#FFB000']}
+            start={{ x: 0.1, y: 0 }}
+            end={{ x: 0.9, y: 1 }}
+            style={[S.root, { paddingTop: insets.top + 10, paddingBottom: insets.bottom + 16 }]}
+        >
+            <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
 
             {/* ── Top bar ───────────────────────────────────────────────── */}
             <View style={S.topBar}>
-                {/* Fix #3: cancel with confirmation */}
                 <TouchableOpacity
+                    testID="wait-close"
+                    accessibilityRole="button"
+                    accessibilityLabel={t('waiting.cancelRequest')}
                     style={S.closeBtn}
                     onPress={handleClose}
                     disabled={cancelling}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    activeOpacity={0.7}
                 >
                     {cancelling
-                        ? <ActivityIndicator size="small" color="#6B7280" />
-                        : <Ionicons name="close" size={22} color="#6B7280" />
+                        ? <ActivityIndicator size="small" color={GuardColors.t1} />
+                        : <Ionicons name="close" size={28} color={GuardColors.t1} />
                     }
                 </TouchableOpacity>
-
-                <Text style={S.topTitle}>
-                    {isTimeout ? 'No Response' : 'Notifying Resident'}
-                </Text>
-
-                {/* Fix #1: next visitor shortcut */}
-                <TouchableOpacity style={S.nextBtn} onPress={handleNextVisitor}>
-                    <Text style={S.nextBtnText}>Next</Text>
-                    <Ionicons name="chevron-forward" size={14} color={GuardColors.goldDeep} />
-                </TouchableOpacity>
+                <Text style={S.topTitle} numberOfLines={1}>{isTimeout ? t('waiting.noResponse') : t('waiting.notifying')}</Text>
+                <View style={{ width: GuardTouch.min }} />
             </View>
 
-            {/* Fix #1: context strip explaining "Next" */}
-            {!isTimeout && (
-                <View style={S.queueStrip}>
-                    <Ionicons name="people-outline" size={13} color="#6B7280" />
-                    <Text style={S.queueStripText}>
-                        More visitors waiting? Tap <Text style={{ fontWeight: '800' }}>Next</Text> — this request stays active in Approvals.
-                    </Text>
+            {/* ── Visitor ───────────────────────────────────────────────── */}
+            <View style={S.center}>
+                <View style={S.photoWrap}>
+                    {!isTimeout && <><PulseRing /><PulseRing delay={900} /></>}
+                    {photoUri ? (
+                        <Image source={{ uri: photoUri }} style={S.photo} contentFit="cover" />
+                    ) : (
+                        <View style={S.avatarFallback}>
+                            <Ionicons name={typeIcon(type)} size={64} color={GuardColors.goldDeep} />
+                        </View>
+                    )}
                 </View>
-            )}
 
-            {/* ── Photo + pulse rings ───────────────────────────────────── */}
-            <View style={S.photoWrap}>
-                {!isTimeout && (
-                    <>
-                        <PulseRing color={GuardColors.goldDeep} />
-                    </>
-                )}
-                {photoUri ? (
-                    <Image source={{ uri: photoUri }} style={S.photo} contentFit="cover" />
-                ) : (
-                    <View style={S.avatarFallback}>
-                        <Ionicons
-                            name={
-                                type === 'DELIVERY' ? 'cube'      :
-                                type === 'CAB'      ? 'car'       :
-                                type === 'SERVICE'  ? 'construct' : 'person'
-                            }
-                            size={52}
-                            color={GuardColors.goldDeep}
-                        />
+                <View style={[S.card, guardShadow('#000000', 2)]}>
+                    {visitorName ? <Text style={S.visitorName} numberOfLines={1}>{visitorName}</Text> : null}
+                    <View style={S.cardRow}>
+                        <View style={S.typeBadge}>
+                            <Ionicons name={typeIcon(type)} size={18} color={GuardColors.goldDeep} />
+                            <Text style={S.typeBadgeText}>{typeText}</Text>
+                        </View>
+                        <View style={S.flatRow}>
+                            <Ionicons name="home" size={18} color={GuardColors.t2} />
+                            <Text style={S.flatLabel}>{t('common.flat')} {flat}</Text>
+                        </View>
                     </View>
-                )}
-            </View>
-
-            {/* ── Visitor info ──────────────────────────────────────────── */}
-            <View style={S.infoSection}>
-                {visitorName ? <Text style={S.visitorName} numberOfLines={1}>{visitorName}</Text> : null}
-                <View style={S.typeBadge}>
-                    <Ionicons
-                        name={
-                            type === 'DELIVERY' ? 'cube'      :
-                            type === 'CAB'      ? 'car'       :
-                            type === 'SERVICE'  ? 'construct' : 'person'
-                        }
-                        size={14}
-                        color={GuardColors.goldDeep}
-                    />
-                    <Text style={S.typeBadgeText}>{typeDisplayLabel(type)}</Text>
                 </View>
-                <View style={S.flatRow}>
-                    <Ionicons name="home-outline" size={15} color="#9CA3AF" />
-                    <Text style={S.flatLabel}>Flat {flat}</Text>
+
+                {/* ── Status ─────────────────────────────────────────────── */}
+                <View style={S.status}>
+                    {!isTimeout ? (
+                        <>
+                            <Text style={S.statusText}>{t('waiting.waitingFor')}</Text>
+                            <View style={S.track}><Animated.View style={[S.fill, barStyle]} /></View>
+                            <Text style={S.timerText}>{t('waiting.secondsLeft', { n: remaining })}</Text>
+                        </>
+                    ) : (
+                        <>
+                            <Text style={S.statusText}>{t('waiting.noResponseAfter', { n: TIMEOUT_S })}</Text>
+                            <Text style={S.statusSub}>{t('waiting.youDecide')}</Text>
+                        </>
+                    )}
                 </View>
             </View>
 
-            {/* ── Status ───────────────────────────────────────────────── */}
-            <View style={S.statusSection}>
-                {!isTimeout ? (
+            {/* ── Actions ───────────────────────────────────────────────── */}
+            <View style={S.actions}>
+                {isTimeout ? (
                     <>
-                        <ActivityIndicator size="small" color={GuardColors.goldDeep} style={{ marginBottom: 10 }} />
-                        <Text style={S.statusText}>Waiting for resident to respond…</Text>
-                        <View style={S.timerBadge}>
-                            <Text style={S.timerText}>{remaining}s remaining</Text>
-                        </View>
+                        <GiantButton label={t('waiting.letInAnyway')} icon="checkmark-circle" tone="allow" loading={actioning} onPress={() => override('approve')} />
+                        <GiantButton label={t('waiting.sendAway')} icon="close-circle" tone="deny" disabled={actioning} onPress={() => override('reject')} />
                     </>
-                ) : (
-                    <>
-                        <View style={S.timeoutBadge}>
-                            <Ionicons name="time-outline" size={16} color="#D97706" />
-                            <Text style={S.timeoutBadgeText}>No response after {TIMEOUT_S}s</Text>
-                        </View>
-                        <Text style={S.statusSub}>Resident may be unavailable. You decide.</Text>
-                    </>
-                )}
+                ) : null}
+                <GiantButton label={t('waiting.next')} sub={isTimeout ? undefined : t('waiting.nextHint')} icon="people" tone={isTimeout ? 'light' : 'dark'} onPress={handleNextVisitor} />
             </View>
-
-            {/* ── Override buttons — timeout only ───────────────────────── */}
-            {isTimeout && (
-                <View style={[S.overrideRow, { paddingBottom: insets.bottom + 16 }]}>
-                    <Pressable
-                        style={S.denyBtn}
-                        onPress={handleDeny}
-                        disabled={actioning}
-                    >
-                        {actioning
-                            ? <ActivityIndicator size="small" color="#DC2626" />
-                            : <>
-                                <Ionicons name="close-circle-outline" size={20} color="#DC2626" />
-                                <Text style={S.denyBtnText}>Turn Away</Text>
-                              </>
-                        }
-                    </Pressable>
-                    <Pressable
-                        style={S.allowBtn}
-                        onPress={handleAllow}
-                        disabled={actioning}
-                    >
-                        {actioning
-                            ? <ActivityIndicator size="small" color="#fff" />
-                            : <>
-                                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-                                <Text style={S.allowBtnText}>Allow Anyway</Text>
-                              </>
-                        }
-                    </Pressable>
-                </View>
-            )}
-        </View>
+        </LinearGradient>
     );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const S = StyleSheet.create({
-    root: {
-        flex: 1,
-        backgroundColor: GuardColors.bg,
-        alignItems: 'center',
-    },
+    root: { flex: 1, paddingHorizontal: 20 },
 
-    // ── Top bar ────────────────────────────────────────────────────────────────
-    topBar: {
-        width: '100%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingVertical: 14,
-    },
-    closeBtn: {
-        width: 40, height: 40, borderRadius: 20,
-        backgroundColor: '#F3F4F6',
-        alignItems: 'center', justifyContent: 'center',
-    },
-    topTitle: {
-        fontSize: 16, fontWeight: '700', color: '#1F2937',
-    },
-    // Fix #1 — "Next" button
-    nextBtn: {
-        flexDirection: 'row', alignItems: 'center', gap: 2,
-        backgroundColor: GuardColors.goldPale,
-        paddingHorizontal: 12, paddingVertical: 8,
-        borderRadius: 20, borderWidth: 1, borderColor: '#F3D37A',
-    },
-    nextBtnText: {
-        fontSize: 13, fontWeight: '700', color: GuardColors.t1,
-    },
+    topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+    closeBtn: { width: GuardTouch.min, height: GuardTouch.min, borderRadius: GuardTouch.min / 2, backgroundColor: 'rgba(255,255,255,0.6)', alignItems: 'center', justifyContent: 'center' },
+    topTitle: { flex: 1, textAlign: 'center', color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 22, lineHeight: 30, fontWeight: '900' },
 
-    // Fix #1 — queue context strip
-    queueStrip: {
-        flexDirection: 'row', alignItems: 'flex-start', gap: 6,
-        backgroundColor: '#F9FAFB',
-        borderRadius: 10, marginHorizontal: 20,
-        paddingHorizontal: 12, paddingVertical: 8,
-        borderWidth: 1, borderColor: '#E5E7EB',
-    },
-    queueStripText: {
-        flex: 1, fontSize: 12, fontWeight: '500', color: '#6B7280', lineHeight: 17,
-    },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 22 },
+    photoWrap: { width: PHOTO_SIZE, height: PHOTO_SIZE, alignItems: 'center', justifyContent: 'center' },
+    photo: { width: PHOTO_SIZE, height: PHOTO_SIZE, borderRadius: PHOTO_SIZE / 2, borderWidth: 5, borderColor: '#FFFFFF' },
+    avatarFallback: { width: PHOTO_SIZE, height: PHOTO_SIZE, borderRadius: PHOTO_SIZE / 2, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
 
-    // ── Photo ──────────────────────────────────────────────────────────────────
-    photoWrap: {
-        width: PHOTO_SIZE, height: PHOTO_SIZE,
-        alignItems: 'center', justifyContent: 'center',
-        marginTop: 28, marginBottom: 24,
-    },
-    photo: {
-        width: PHOTO_SIZE, height: PHOTO_SIZE,
-        borderRadius: PHOTO_SIZE / 2,
-        borderWidth: 4, borderColor: '#fff',
-        ...Platform.select({
-            ios: { shadowColor: '#1F2937', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.15, shadowRadius: 20 },
-            android: { elevation: 6 },
-        }),
-    },
-    avatarFallback: {
-        width: PHOTO_SIZE, height: PHOTO_SIZE,
-        borderRadius: PHOTO_SIZE / 2,
-        backgroundColor: GuardColors.goldPale,
-        alignItems: 'center', justifyContent: 'center',
-        borderWidth: 4, borderColor: '#fff',
-        ...Platform.select({
-            ios: { shadowColor: '#1F2937', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16 },
-            android: { elevation: 5 },
-        }),
-    },
+    card: { alignSelf: 'stretch', backgroundColor: '#FFFFFF', borderRadius: 28, padding: 18, alignItems: 'center', gap: 10 },
+    visitorName: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 28, lineHeight: 36, fontWeight: '900', letterSpacing: -0.4 },
+    cardRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 12 },
+    typeBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: GuardColors.goldPale, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 99 },
+    typeBadgeText: { color: GuardColors.goldDeep, fontFamily: GuardFonts.bold, fontSize: GuardType.min + 1, lineHeight: 22, fontWeight: '800' },
+    flatRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    flatLabel: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 22, lineHeight: 30, fontWeight: '900' },
 
-    // ── Info ───────────────────────────────────────────────────────────────────
-    infoSection: {
-        alignItems: 'center', gap: 6, marginBottom: 20,
-    },
-    visitorName: {
-        fontSize: 20, fontWeight: '900', color: GuardColors.t1, maxWidth: SW - 64,
-    },
-    typeBadge: {
-        flexDirection: 'row', alignItems: 'center', gap: 5,
-        backgroundColor: GuardColors.goldPale, paddingHorizontal: 12, paddingVertical: 6,
-        borderRadius: 20, borderWidth: 1, borderColor: '#F3D37A',
-    },
-    typeBadgeText: {
-        fontSize: 14, fontWeight: '700', color: GuardColors.t1,
-    },
-    flatRow: {
-        flexDirection: 'row', alignItems: 'center', gap: 5,
-    },
-    flatLabel: {
-        fontSize: 15, fontWeight: '600', color: '#6B7280',
-    },
+    status: { alignSelf: 'stretch', alignItems: 'center', gap: 10 },
+    statusText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: GuardType.button, lineHeight: 28, fontWeight: '800', textAlign: 'center' },
+    statusSub: { color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: GuardType.body, lineHeight: 26, fontWeight: '600', textAlign: 'center' },
+    track: { alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: 'rgba(13,15,20,0.15)', overflow: 'hidden' },
+    fill: { height: 8, borderRadius: 4, backgroundColor: GuardColors.black },
+    timerText: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: GuardType.min + 1, lineHeight: 22, fontWeight: '700' },
 
-    // ── Status ─────────────────────────────────────────────────────────────────
-    statusSection: {
-        alignItems: 'center', paddingHorizontal: 32, gap: 8, flex: 1,
-    },
-    statusText: {
-        fontSize: 16, fontWeight: '700', color: '#1F2937', textAlign: 'center',
-    },
-    statusSub: {
-        fontSize: 13, fontWeight: '500', color: '#9CA3AF', textAlign: 'center',
-    },
-    timerBadge: {
-        backgroundColor: GuardColors.goldPale, paddingHorizontal: 14, paddingVertical: 6,
-        borderRadius: 20, borderWidth: 1, borderColor: '#F3D37A',
-    },
-    timerText: {
-        fontSize: 13, fontWeight: '800', color: GuardColors.t1,
-    },
-    timeoutBadge: {
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        backgroundColor: '#FEF3C7', borderWidth: 1, borderColor: '#FDE68A',
-        paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginBottom: 4,
-    },
-    timeoutBadgeText: {
-        fontSize: 13, fontWeight: '700', color: '#D97706',
-    },
-
-    // ── Override buttons ───────────────────────────────────────────────────────
-    overrideRow: {
-        width: '100%', flexDirection: 'row', gap: 12,
-        paddingHorizontal: 20, paddingTop: 12,
-    },
-    denyBtn: {
-        flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: 7, paddingVertical: 16, borderRadius: 16,
-        borderWidth: 1.5, borderColor: '#FECACA', backgroundColor: '#FEF2F2',
-    },
-    allowBtn: {
-        flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        gap: 7, paddingVertical: 16, borderRadius: 16, backgroundColor: '#10B981',
-        ...Platform.select({
-            ios: { shadowColor: '#10B981', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12 },
-            android: { elevation: 5 },
-        }),
-    },
-    btnPressed: { opacity: 0.8, transform: [{ scale: 0.97 }] },
-    denyBtnText:  { fontSize: 15, fontWeight: '800', color: '#DC2626' },
-    allowBtnText: { fontSize: 15, fontWeight: '800', color: '#fff' },
-
-    // ── Result screen ──────────────────────────────────────────────────────────
-    resultRoot: {
-        flex: 1, justifyContent: 'space-between',
-    },
-    resultContent: {
-        flex: 1, alignItems: 'center', justifyContent: 'center',
-        gap: 8, paddingHorizontal: 32,
-    },
-    resultTitle: {
-        fontSize: 32, fontWeight: '900', color: '#fff',
-        letterSpacing: -1, marginTop: 12,
-    },
-    resultSub: {
-        fontSize: 18, fontWeight: '700', color: 'rgba(255,255,255,0.9)',
-    },
-    resultFlat: {
-        fontSize: 15, fontWeight: '600', color: 'rgba(255,255,255,0.7)',
-    },
-    resultHint: {
-        marginTop: 8, fontSize: 14, fontWeight: '600',
-        color: 'rgba(255,255,255,0.6)', textAlign: 'center',
-    },
-    resultActions: {
-        flexDirection: 'row', gap: 12, paddingHorizontal: 24,
-    },
-    resultBtnSecondary: {
-        flex: 1, paddingVertical: 16, borderRadius: 16,
-        backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center',
-    },
-    resultBtnPrimary: {
-        flex: 2, paddingVertical: 16, borderRadius: 16,
-        backgroundColor: '#fff', alignItems: 'center',
-    },
-    resultBtnSecondaryText: { fontSize: 15, fontWeight: '700', color: '#fff' },
-    resultBtnPrimaryText:   { fontSize: 15, fontWeight: '800', color: '#1F2937' },
-
-    // ── Next visitor button (NoIdError) ────────────────────────────────────────
-    nextVisitorBtn: {
-        backgroundColor: GuardColors.gold, paddingHorizontal: 32,
-        paddingVertical: 14, borderRadius: 14,
-    },
-    nextVisitorText: { fontSize: 15, fontWeight: '800', color: GuardColors.black },
+    actions: { gap: 12 },
 });

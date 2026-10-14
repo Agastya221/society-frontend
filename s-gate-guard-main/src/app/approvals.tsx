@@ -1,15 +1,16 @@
-import api from '@/services/api';
-import { GuardColors } from '@/constants/theme';
+import { GiantButton } from '@/components/gate/GiantButton';
+import { HomeButton } from '@/components/gate/HomeButton';
 import { ScreenEmpty, ScreenLoading } from '@/components/ScreenState';
+import { GuardColors, GuardFonts, GuardTouch, GuardType, guardShadow } from '@/constants/theme';
+import { useT } from '@/i18n';
+import api from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
     Alert,
     FlatList,
-    Pressable,
     RefreshControl,
     StyleSheet,
     Text,
@@ -31,16 +32,17 @@ interface PendingEntry {
 
 // Backend entry types are VISITOR / DELIVERY / CAB / VENDOR (new-entry maps
 // Guest→VISITOR, Service→VENDOR); GUEST/SERVICE kept for older records.
-const TYPE_META: Record<string, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
-    VISITOR:  { label: 'Guest',    color: '#3B82F6', icon: 'person' },
-    GUEST:    { label: 'Guest',    color: '#3B82F6', icon: 'person' },
-    DELIVERY: { label: 'Delivery', color: '#F59E0B', icon: 'cube' },
-    CAB:      { label: 'Cab',      color: '#10B981', icon: 'car' },
-    VENDOR:   { label: 'Service',  color: '#8B5CF6', icon: 'construct' },
-    SERVICE:  { label: 'Service',  color: '#8B5CF6', icon: 'construct' },
+const TYPE_META: Record<string, { labelKey: string; color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
+    VISITOR:  { labelKey: 'common.guest',    color: '#3B82F6', bg: '#EBF3FF', icon: 'person' },
+    GUEST:    { labelKey: 'common.guest',    color: '#3B82F6', bg: '#EBF3FF', icon: 'person' },
+    DELIVERY: { labelKey: 'common.delivery', color: '#F59E0B', bg: '#FFF4DC', icon: 'cube' },
+    CAB:      { labelKey: 'common.cab',      color: '#10B981', bg: '#E5FBF3', icon: 'car' },
+    VENDOR:   { labelKey: 'common.service',  color: '#8657E8', bg: '#F1EBFF', icon: 'construct' },
+    SERVICE:  { labelKey: 'common.service',  color: '#8657E8', bg: '#F1EBFF', icon: 'construct' },
 };
 
 export default function ApprovalsScreen() {
+    const t = useT();
     const [entries, setEntries] = useState<PendingEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -75,7 +77,7 @@ export default function ApprovalsScreen() {
             setEntries((prev) => prev.filter((e) => e.id !== id));
         } catch (err: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', err?.response?.data?.message ?? 'Failed to approve.');
+            Alert.alert(t('approvals.failed'), err?.response?.data?.message ?? t('approvals.failedText'));
             fetchPending(); // it may have been answered/expired meanwhile — don't leave a stale card
         } finally {
             busyRef.current = false;
@@ -84,10 +86,10 @@ export default function ApprovalsScreen() {
     };
 
     const handleReject = async (id: string) => {
-        Alert.alert('Reject Entry', 'Are you sure you want to reject this visitor?', [
-            { text: 'Cancel', style: 'cancel' },
+        Alert.alert(t('approvals.stopTitle'), t('approvals.stopText'), [
+            { text: t('common.cancel'), style: 'cancel' },
             {
-                text: 'Reject', style: 'destructive', onPress: async () => {
+                text: t('approvals.stop'), style: 'destructive', onPress: async () => {
                     if (busyRef.current) return;
                     busyRef.current = true;
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -96,7 +98,7 @@ export default function ApprovalsScreen() {
                         await api.patch(`/api/v1/gate/entry-requests/${id}/reject`);
                         setEntries((prev) => prev.filter((e) => e.id !== id));
                     } catch (err: any) {
-                        Alert.alert('Error', err?.response?.data?.message ?? 'Failed to reject.');
+                        Alert.alert(t('approvals.failed'), err?.response?.data?.message ?? t('approvals.failedText'));
                         fetchPending();
                     } finally {
                         busyRef.current = false;
@@ -110,18 +112,19 @@ export default function ApprovalsScreen() {
     return (
         <View style={styles.container}>
             {loading ? (
-                <ScreenLoading label="Checking pending approvals…" />
+                <ScreenLoading label={t('approvals.loading')} />
             ) : (
                 // Empty state lives inside the list so pull-to-refresh still works when it's all clear.
                 <FlatList
                     data={entries}
-                    ListEmptyComponent={<ScreenEmpty icon="checkmark-done-outline" title="All clear" message="There are no visitors waiting for resident approval." />}
+                    ListEmptyComponent={<ScreenEmpty icon="checkmark-done-circle-outline" title={t('approvals.allClear')} message={t('approvals.allClearText')} />}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item }) => (
                         <ApprovalCard
                             entry={item}
                             isApproving={actioning === item.id + '_approve'}
                             isRejecting={actioning === item.id + '_reject'}
+                            busy={!!actioning}
                             onApprove={() => handleApprove(item.id)}
                             onReject={() => handleReject(item.id)}
                         />
@@ -131,95 +134,82 @@ export default function ApprovalsScreen() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchPending(); }} tintColor={GuardColors.goldDeep} />}
                 />
             )}
+            <HomeButton />
         </View>
     );
 }
 
-function ApprovalCard({ entry, isApproving, isRejecting, onApprove, onReject }: {
+/** "Just arrived" / "For 4 min" from the request time. */
+function waitedLabel(createdAt: string, t: ReturnType<typeof useT>): string {
+    const mins = Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
+    return mins >= 1 ? t('approvals.minutes', { n: mins }) : t('approvals.justNow');
+}
+
+function ApprovalCard({ entry, isApproving, isRejecting, busy, onApprove, onReject }: {
     entry: PendingEntry;
-    isApproving: boolean; isRejecting: boolean;
+    isApproving: boolean; isRejecting: boolean; busy: boolean;
     onApprove: () => void; onReject: () => void;
 }) {
-    const meta = TYPE_META[entry.type] ?? { label: entry.type?.replace(/_/g, ' ') ?? 'Visitor', color: '#6B7280', icon: 'person' as const };
-    const color = meta.color;
+    const t = useT();
+    const meta = TYPE_META[entry.type] ?? { labelKey: '', color: '#6B7280', bg: '#F3F4F6', icon: 'person' as const };
+    const typeText = meta.labelKey ? t(meta.labelKey) : (entry.type?.replace(/_/g, ' ') ?? t('common.guest'));
     const rawFlat = entry.flatLabel || entry.flat?.flatNumber || entry.flat?.number || entry.flatNumber || '—';
-    const flatLabel = rawFlat === 'OFFICE' ? 'Admin Office' : rawFlat;
+    const flatLabel = rawFlat === 'OFFICE' ? t('scan.office') : rawFlat;
     const residentName = entry.flat?.resident?.name;
 
     return (
-        <View style={[styles.card, { borderLeftColor: color }]}>
-            {/* Header */}
+        <View style={[styles.card, guardShadow('#0D0F14', 2)]}>
             <View style={styles.cardHeader}>
-                <View style={[styles.typeIcon, { backgroundColor: color + '18' }]}>
-                    <Ionicons name={meta.icon} size={20} color={color} />
+                <View style={[styles.typeIcon, { backgroundColor: meta.bg }]}>
+                    <Ionicons name={meta.icon} size={30} color={meta.color} />
                 </View>
                 <View style={styles.cardHeaderText}>
-                    <Text style={styles.visitorName} numberOfLines={1}>{entry.visitorName || meta.label}</Text>
-                    <Text style={styles.visitorDetails}>
-                        {entry.visitorName ? `${meta.label} • ` : ''}Flat {flatLabel}
-                        {residentName ? ` (${residentName})` : ''}
-                    </Text>
-                    {entry.purpose ? <Text style={styles.purposeText}>{entry.purpose}</Text> : null}
-                </View>
-                <View style={styles.pendingBadge}>
-                    <Ionicons name="time" size={13} color="#D97706" />
-                    <Text style={styles.pendingText}>WAITING</Text>
+                    <Text style={styles.visitorName} numberOfLines={1}>{entry.visitorName || typeText}</Text>
+                    <Text style={styles.flatText} numberOfLines={1}>{t('common.flat')} {flatLabel}{residentName ? ` · ${residentName}` : ''}</Text>
+                    {entry.purpose ? <Text style={styles.purposeText} numberOfLines={2}>{entry.purpose}</Text> : null}
                 </View>
             </View>
 
-            <Text style={styles.timestamp}>
-                {new Date(entry.createdAt).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-            </Text>
+            <View style={styles.metaRow}>
+                <View style={[styles.pill, { backgroundColor: meta.bg }]}>
+                    <Text style={[styles.pillText, { color: meta.color }]}>{typeText}</Text>
+                </View>
+                <View style={styles.waited}>
+                    <Ionicons name="time" size={18} color={GuardColors.goldDeep} />
+                    <Text style={styles.waitedText}>{waitedLabel(entry.createdAt, t)}</Text>
+                </View>
+            </View>
 
-            {/* Action Buttons */}
             <View style={styles.actions}>
-                <Pressable
-                    onPress={onReject}
-                    disabled={isApproving || isRejecting}
-                    style={styles.rejectBtn}
-                >
-                    {isRejecting ? <ActivityIndicator size="small" color="#DC2626" /> : (
-                        <>
-                            <Ionicons name="close-circle-outline" size={19} color="#DC2626" />
-                            <Text style={styles.rejectText}>Reject</Text>
-                        </>
-                    )}
-                </Pressable>
-                <Pressable
-                    onPress={onApprove}
-                    disabled={isApproving || isRejecting}
-                    style={styles.approveBtn}
-                >
-                    {isApproving ? <ActivityIndicator size="small" color="#fff" /> : (
-                        <>
-                            <Ionicons name="checkmark-circle-outline" size={19} color="#fff" />
-                            <Text style={styles.approveText}>Approve & Let In</Text>
-                        </>
-                    )}
-                </Pressable>
+                <View style={styles.actionStop}>
+                    <GiantButton label={t('approvals.stop')} icon="close-circle" tone="deny" loading={isRejecting} disabled={busy && !isRejecting} onPress={onReject} />
+                </View>
+                <View style={styles.actionAllow}>
+                    <GiantButton label={t('approvals.allow')} icon="checkmark-circle" tone="allow" loading={isApproving} disabled={busy && !isApproving} onPress={onApprove} />
+                </View>
             </View>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, width: '100%', height: '100%', backgroundColor: GuardColors.bg },
-    listContent: { padding: 20, paddingBottom: 40 },
+    container: { flex: 1, backgroundColor: GuardColors.bg },
+    listContent: { padding: 16, gap: 14 },
     listEmpty: { flexGrow: 1 },
-    card: { backgroundColor: GuardColors.card, borderRadius: 18, padding: 16, marginBottom: 12, borderLeftWidth: 3, borderWidth: 1, borderColor: GuardColors.border },
-    cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
-    typeIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-    cardHeaderText: { flex: 1 },
-    visitorName: { fontSize: 17, fontWeight: '800', color: '#1F2937', marginBottom: 2 },
-    visitorDetails: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
-    purposeText: { fontSize: 13, fontWeight: '500', color: '#9CA3AF', marginTop: 2 },
-    pendingBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FEF3C7', borderWidth: 1, borderColor: '#FDE68A', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10 },
-    pendingText: { fontSize: 10, fontWeight: '800', color: '#D97706', letterSpacing: 0.5 },
-    timestamp: { fontSize: 12, fontWeight: '600', color: '#9CA3AF', marginBottom: 14 },
-    actions: { flexDirection: 'row', gap: 10 },
-    rejectBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: '#FECACA', backgroundColor: '#FEF2F2' },
-    approveBtn: { flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13, borderRadius: 12, backgroundColor: GuardColors.green },
-    btnPressed: { opacity: 0.75, transform: [{ scale: 0.97 }] },
-    rejectText: { fontSize: 14, fontWeight: '800', color: '#DC2626' },
-    approveText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+
+    card: { backgroundColor: GuardColors.card, borderRadius: 30, padding: 18, gap: 14 },
+    cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    typeIcon: { width: 60, height: 60, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+    cardHeaderText: { flex: 1, gap: 2 },
+    visitorName: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 24, lineHeight: 32, fontWeight: '900', letterSpacing: -0.3 },
+    flatText: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: GuardType.body, lineHeight: 26, fontWeight: '700' },
+    purposeText: { color: GuardColors.t3, fontFamily: GuardFonts.medium, fontSize: GuardType.min + 1, lineHeight: 22, fontWeight: '600' },
+    metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    pill: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 99 },
+    pillText: { fontFamily: GuardFonts.bold, fontSize: GuardType.min + 1, lineHeight: 22, fontWeight: '800' },
+    waited: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    waitedText: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: GuardType.min + 1, lineHeight: 22, fontWeight: '700' },
+    actions: { gap: 10, minHeight: GuardTouch.button },
+    actionStop: { width: '100%' },
+    actionAllow: { width: '100%' },
 });

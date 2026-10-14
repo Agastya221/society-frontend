@@ -65,9 +65,21 @@ Tick each box as it is checked. Write what looked wrong next to it.
 - [ ] "निवासी को बताएँ" sends once (double tap = one request) and opens the waiting screen; the resident's phone (main app) gets the request with name/photo
 - [ ] Failure (airplane mode) shows the alert and stays on step 3
 
-## Part 5 — Still old-looking (will be done in Phases 3 and 4, then added here)
+## Part 5 — Waiting, waiting list and who is inside (Phase 3)
 
-- [ ] Waiting screen, Waiting list (Approvals), Who-is-inside list
+- [ ] After "निवासी को बताएँ", the amber **waiting screen** shows the visitor photo (or icon) with two pulsing rings, the white card (name, type pill, flat) and a time bar draining over 45 s
+- [ ] When the resident taps **Allow** in the main app, the guard screen turns green "अंदर जाने दें" within about 3 seconds (name, flat, photo); **Deny** turns it red "रोकें"
+- [ ] The result returns to Home by itself after 8 s; "नया विज़िटर" opens a fresh New visitor; Home button works; Android back on a result goes to Home (not back to the old form)
+- [ ] After 45 s with no answer the screen turns orange "कोई जवाब नहीं आया" with **फिर भी अंदर जाने दें** / **वापस भेजें**; each works once (double tap = one request)
+- [ ] The X (top left) asks "अनुरोध रद्द करें?"; "इंतज़ार करें" stays, "रद्द करें" cancels and goes Home; Android back does the same
+- [ ] "अगला विज़िटर" (bottom) leaves the request running and opens a fresh New visitor; the earlier request's answer appears in the waiting list
+- [ ] **Waiting list** (Home → Waiting tile): one big card per visitor with name, flat, resident, kind and "For N min"; green **अंदर जाने दें** and red **रोकें**; Stop asks to confirm; list pulls to refresh; empty state "सब ठीक है"; Home button at the bottom
+- [ ] **Who is inside** (Home → Inside tile): default shows only people inside, each visitor with a red-outline **बाहर** button that records the exit and removes the card; staff show the "scan the staff QR" hint instead
+- [ ] "आज के सभी" shows the whole day with the filter chips (All, Guests, Deliveries, Staff, Services, Cabs)
+- [ ] The Inside number on Home matches the number of cards in the default view
+
+## Part 6 — Still old-looking (Phase 4, then added here)
+
 - [ ] Emergency screen, Profile, Login
 
 ## Known limits (not bugs)

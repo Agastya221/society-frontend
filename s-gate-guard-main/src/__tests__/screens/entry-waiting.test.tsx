@@ -3,6 +3,7 @@ import { Alert, BackHandler } from 'react-native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 import api from '@/services/api';
+import { useLanguageStore } from '@/i18n';
 
 import EntryWaitingScreen from '../../app/entry-waiting';
 
@@ -25,8 +26,11 @@ const renderScreen = async () => {
   return utils;
 };
 
-const pressClose = (utils: ReturnType<typeof render>) =>
-  fireEvent.press(utils.UNSAFE_getByProps({ name: 'close', size: 22 }));
+const pressClose = (utils: ReturnType<typeof render>) => fireEvent.press(utils.getByTestId('wait-close'));
+
+const waitOutTimeout = () => {
+  for (let i = 0; i < 45; i++) act(() => { jest.advanceTimersByTime(1000); });
+};
 
 describe('EntryWaitingScreen', () => {
   let alertSpy: jest.SpyInstance;
@@ -34,6 +38,7 @@ describe('EntryWaitingScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    useLanguageStore.setState({ lang: 'en' });
     (useLocalSearchParams as jest.Mock).mockReturnValue(PARAMS);
     (api.get as jest.Mock).mockResolvedValue(pending);
     (api.patch as jest.Mock).mockResolvedValue({});
@@ -47,17 +52,36 @@ describe('EntryWaitingScreen', () => {
 
   it('shows the visitor while notifying the resident', async () => {
     const { getByText } = await renderScreen();
-    expect(getByText('Notifying Resident')).toBeTruthy();
+    expect(getByText('Notifying resident')).toBeTruthy();
     expect(getByText('Asha Rao')).toBeTruthy();
+    expect(getByText('Guest')).toBeTruthy();
+    expect(getByText('Flat Tower A-A101')).toBeTruthy();
+    expect(getByText('Waiting for the resident…')).toBeTruthy();
     expect(api.get).toHaveBeenCalledWith('/api/v1/gate/entry-requests/er-1');
   });
 
-  it('shows the approved result when polling sees APPROVED', async () => {
+  it('speaks Hindi for guards by default', async () => {
+    useLanguageStore.setState({ lang: 'hi' });
+    const { getByText } = await renderScreen();
+    expect(getByText('निवासी को बताया जा रहा है')).toBeTruthy();
+    expect(getByText('अगला विज़िटर')).toBeTruthy();
+  });
+
+  it('counts down the seconds left', async () => {
+    const { getByText } = await renderScreen();
+    expect(getByText('45s remaining')).toBeTruthy();
+    act(() => { jest.advanceTimersByTime(5000); });
+    expect(getByText('40s remaining')).toBeTruthy();
+  });
+
+  it('shows the green result when polling sees APPROVED', async () => {
     (api.get as jest.Mock).mockResolvedValue({ data: { data: { status: 'APPROVED' } } });
     const { getByText } = await renderScreen();
-    expect(getByText('Entry Approved')).toBeTruthy();
-    expect(getByText('Asha Rao · Guest')).toBeTruthy();
+    expect(getByText('Let in')).toBeTruthy();
+    expect(getByText('Let the visitor through')).toBeTruthy();
+    expect(getByText('Asha Rao')).toBeTruthy();
     expect(getByText('Flat Tower A-A101')).toBeTruthy();
+    expect(getByText('Guest')).toBeTruthy();
   });
 
   it('falls back to the pending list (flat array shape) when the single lookup fails', async () => {
@@ -69,38 +93,90 @@ describe('EntryWaitingScreen', () => {
       return Promise.resolve({ data: { data: { entries: [] } } });
     });
     const { getByText } = await renderScreen();
-    expect(getByText('Entry Denied')).toBeTruthy();
+    expect(getByText('Stop')).toBeTruthy();
+    expect(getByText('Ask the visitor to leave')).toBeTruthy();
   });
 
-  it('switches to "No Response" after the timeout', async () => {
+  it('returns to the dashboard by itself after the result', async () => {
+    (api.get as jest.Mock).mockResolvedValue({ data: { data: { status: 'APPROVED' } } });
+    await renderScreen();
+    act(() => { jest.advanceTimersByTime(8100); });
+    expect(mockRouter.dismissAll).toHaveBeenCalled();
+  });
+
+  it('opens a fresh New visitor from the result', async () => {
+    (api.get as jest.Mock).mockResolvedValue({ data: { data: { status: 'APPROVED' } } });
     const { getByText } = await renderScreen();
-    for (let i = 0; i < 45; i++) act(() => { jest.advanceTimersByTime(1000); });
-    expect(getByText('No Response')).toBeTruthy();
+    fireEvent.press(getByText('New visitor'));
+    expect(mockRouter.dismissAll).toHaveBeenCalled();
+    expect(mockRouter.push).toHaveBeenCalledWith('/new-entry');
+  });
+
+  describe('No answer', () => {
+    it('switches to "No response" after the timeout and offers the override buttons', async () => {
+      const { getByText } = await renderScreen();
+      waitOutTimeout();
+      expect(getByText('No response')).toBeTruthy();
+      expect(getByText('No response after 45s')).toBeTruthy();
+      expect(getByText('Let in anyway')).toBeTruthy();
+      expect(getByText('Send away')).toBeTruthy();
+    });
+
+    it('does not show the override buttons while waiting', async () => {
+      const { queryByText } = await renderScreen();
+      expect(queryByText('Let in anyway')).toBeNull();
+      expect(queryByText('Send away')).toBeNull();
+    });
+
+    it('lets the guard allow anyway', async () => {
+      const utils = await renderScreen();
+      waitOutTimeout();
+      await act(async () => { fireEvent.press(utils.getByText('Let in anyway')); });
+      expect(api.patch).toHaveBeenCalledWith('/api/v1/gate/entry-requests/er-1/approve');
+      expect(utils.getByText('Let the visitor through')).toBeTruthy();
+    });
+
+    it('lets the guard send the visitor away', async () => {
+      const utils = await renderScreen();
+      waitOutTimeout();
+      await act(async () => { fireEvent.press(utils.getByText('Send away')); });
+      expect(api.patch).toHaveBeenCalledWith('/api/v1/gate/entry-requests/er-1/reject');
+      expect(utils.getByText('Ask the visitor to leave')).toBeTruthy();
+    });
+
+    it('tells the guard when the override fails and keeps the buttons', async () => {
+      (api.patch as jest.Mock).mockRejectedValueOnce({ response: { data: { message: 'Already handled' } } });
+      const utils = await renderScreen();
+      waitOutTimeout();
+      await act(async () => { fireEvent.press(utils.getByText('Let in anyway')); });
+      expect(alertSpy).toHaveBeenCalledWith('Could not update entry', 'Already handled');
+      expect(utils.getByText('Let in anyway')).toBeTruthy();
+    });
   });
 
   describe('Cancel flow', () => {
     it('asks for confirmation before cancelling', async () => {
       const utils = await renderScreen();
       pressClose(utils);
-      expect(alertSpy).toHaveBeenCalledWith('Cancel Request?', expect.any(String), expect.any(Array));
-      expect(lastAlertButtons(alertSpy).map((b) => b.text)).toEqual(['Keep Waiting', 'Cancel Request']);
+      expect(alertSpy).toHaveBeenCalledWith('Cancel request?', expect.any(String), expect.any(Array));
+      expect(lastAlertButtons(alertSpy).map((b) => b.text)).toEqual(['Keep waiting', 'Cancel request']);
       expect(api.patch).not.toHaveBeenCalled();
     });
 
-    it('keeps waiting when the guard chooses Keep Waiting', async () => {
+    it('keeps waiting when the guard chooses Keep waiting', async () => {
       const utils = await renderScreen();
       pressClose(utils);
-      const keep = lastAlertButtons(alertSpy).find((b) => b.text === 'Keep Waiting')!;
+      const keep = lastAlertButtons(alertSpy).find((b) => b.text === 'Keep waiting')!;
       keep.onPress?.();
       expect(api.patch).not.toHaveBeenCalled();
       expect(mockRouter.dismissAll).not.toHaveBeenCalled();
-      expect(utils.getByText('Notifying Resident')).toBeTruthy();
+      expect(utils.getByText('Notifying resident')).toBeTruthy();
     });
 
     it('cancels the request and returns to the dashboard', async () => {
       const utils = await renderScreen();
       pressClose(utils);
-      const cancel = lastAlertButtons(alertSpy).find((b) => b.text === 'Cancel Request')!;
+      const cancel = lastAlertButtons(alertSpy).find((b) => b.text === 'Cancel request')!;
       await act(async () => { await cancel.onPress?.(); });
 
       expect(api.patch).toHaveBeenCalledWith('/api/v1/gate/entry-requests/er-1/cancel');
@@ -117,7 +193,7 @@ describe('EntryWaitingScreen', () => {
       (api.patch as jest.Mock).mockRejectedValueOnce(new Error('offline'));
       const utils = await renderScreen();
       pressClose(utils);
-      const cancel = lastAlertButtons(alertSpy).find((b) => b.text === 'Cancel Request')!;
+      const cancel = lastAlertButtons(alertSpy).find((b) => b.text === 'Cancel request')!;
       await act(async () => { await cancel.onPress?.(); });
       expect(mockRouter.dismissAll).toHaveBeenCalledTimes(1);
     });
@@ -131,15 +207,14 @@ describe('EntryWaitingScreen', () => {
       await renderScreen();
       const handled = handlers[handlers.length - 1]();
       expect(handled).toBe(true);
-      expect(alertSpy).toHaveBeenCalledWith('Cancel Request?', expect.any(String), expect.any(Array));
+      expect(alertSpy).toHaveBeenCalledWith('Cancel request?', expect.any(String), expect.any(Array));
       addSpy.mockRestore();
     });
   });
 
-  it('Next leaves the request pending and opens a fresh New Entry', async () => {
+  it('Next visitor leaves the request pending and opens a fresh New visitor', async () => {
     const utils = await renderScreen();
-    // The first "Next" is the top-bar button; the second is bold text in the hint strip.
-    fireEvent.press(utils.getAllByText('Next')[0]);
+    fireEvent.press(utils.getByText('Next visitor'));
     expect(api.patch).not.toHaveBeenCalled();
     expect(mockRouter.dismissAll).toHaveBeenCalled();
     expect(mockRouter.push).toHaveBeenCalledWith('/new-entry');
@@ -149,7 +224,7 @@ describe('EntryWaitingScreen', () => {
     (useLocalSearchParams as jest.Mock).mockReturnValue({ ...PARAMS, id: '' });
     const utils = await renderScreen();
     expect(utils.getByText('Entry submitted')).toBeTruthy();
-    fireEvent.press(utils.getByText('Go to Approvals'));
+    fireEvent.press(utils.getByText('Open waiting list'));
     expect(mockRouter.push).toHaveBeenCalledWith('/approvals');
   });
 });
