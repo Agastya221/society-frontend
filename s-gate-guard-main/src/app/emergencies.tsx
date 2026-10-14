@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     tile: { minHeight: 150, borderRadius: 28, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 8, paddingVertical: 14 },
     tileOff: { opacity: 0.7 },
     tileIcon: { width: 70, height: 70, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-    tileLabel: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 20, lineHeight: 26, fontWeight: '800', textAlign: 'center' },
+    tileLabel: { alignSelf: 'stretch', color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 20, lineHeight: 26, fontWeight: '800', textAlign: 'center' },
     cooldown: { position: 'absolute', top: 10, right: 12, color: GuardColors.t3, fontFamily: GuardFonts.bold, fontSize: GuardType.min, lineHeight: 20, fontWeight: '800' },
 
     dim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },

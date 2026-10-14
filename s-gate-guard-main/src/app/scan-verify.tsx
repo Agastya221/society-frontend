@@ -196,15 +196,16 @@ function CodeEntry({
                     >
                         <Ionicons name="backspace-outline" size={30} color={GuardColors.t1} />
                     </TouchableOpacity>
-                    <GiantButton
-                        label={t('scan.verify')}
-                        icon="shield-checkmark"
-                        tone="allow"
-                        loading={busy}
-                        disabled={!ready}
-                        onPress={onVerify}
-                        style={S.verifyBtn}
-                    />
+                    <View style={{ flex: 1 }}>
+                        <GiantButton
+                            label={t('scan.verify')}
+                            icon="shield-checkmark"
+                            tone="allow"
+                            loading={busy}
+                            disabled={!ready}
+                            onPress={onVerify}
+                        />
+                    </View>
                 </View>
             </View>
         </View>

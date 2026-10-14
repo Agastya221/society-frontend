@@ -361,7 +361,7 @@ export default function EntryWaitingScreen() {
                     <View style={S.cardRow}>
                         <View style={S.typeBadge}>
                             <Ionicons name={typeIcon(type)} size={18} color={GuardColors.goldDeep} />
-                            <Text style={S.typeBadgeText}>{typeText}</Text>
+                            <Text style={S.typeBadgeText}>{typeText + '\u00A0'}</Text>
                         </View>
                         <View style={S.flatRow}>
                             <Ionicons name="home" size={18} color={GuardColors.t2} />

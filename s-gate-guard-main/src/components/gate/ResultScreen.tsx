@@ -88,15 +88,15 @@ export function ResultScreen({
     setLeft(autoReturnSeconds);
     bar.value = 1;
     bar.value = withTiming(0, { duration: autoReturnSeconds * 1000, easing: Easing.linear });
+    // Count with a plain variable: navigating inside a setState updater runs during render.
+    let remaining = autoReturnSeconds;
     const timer = setInterval(() => {
-      setLeft((n) => {
-        if (n <= 1) {
-          clearInterval(timer);
-          if (!returned.current) { returned.current = true; onAutoReturn(); }
-          return 0;
-        }
-        return n - 1;
-      });
+      remaining -= 1;
+      setLeft(Math.max(0, remaining));
+      if (remaining <= 0) {
+        clearInterval(timer);
+        if (!returned.current) { returned.current = true; onAutoReturn(); }
+      }
     }, 1000);
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,7 +122,7 @@ export function ResultScreen({
           </Animated.View>
         </View>
 
-        <Animated.Text entering={FadeInDown.delay(120).duration(360)} style={styles.title} adjustsFontSizeToFit numberOfLines={2}>{title}</Animated.Text>
+        <Animated.Text entering={FadeInDown.delay(120).duration(360)} style={styles.title} adjustsFontSizeToFit numberOfLines={1}>{title}</Animated.Text>
         {!!reason && (
           <Animated.View entering={FadeInDown.delay(200).duration(360)} style={styles.reasonPill}>
             <Text style={styles.reason}>{reason}</Text>
@@ -144,7 +144,7 @@ export function ResultScreen({
                 )}
                 {!!typeLabel && (
                   <View style={[styles.pill, { backgroundColor: SOFT[kind] }]}>
-                    <Text style={[styles.pillText, { color: accent }]}>{typeLabel}</Text>
+                    <Text style={[styles.pillText, { color: accent }]}>{typeLabel + '\u00A0'}</Text>
                   </View>
                 )}
               </View>

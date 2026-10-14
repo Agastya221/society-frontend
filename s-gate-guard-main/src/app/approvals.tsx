@@ -172,7 +172,7 @@ function ApprovalCard({ entry, isApproving, isRejecting, busy, onApprove, onReje
 
             <View style={styles.metaRow}>
                 <View style={[styles.pill, { backgroundColor: meta.bg }]}>
-                    <Text style={[styles.pillText, { color: meta.color }]}>{typeText}</Text>
+                    <Text style={[styles.pillText, { color: meta.color }]}>{typeText + '\u00A0'}</Text>
                 </View>
                 <View style={styles.waited}>
                     <Ionicons name="time" size={18} color={GuardColors.goldDeep} />

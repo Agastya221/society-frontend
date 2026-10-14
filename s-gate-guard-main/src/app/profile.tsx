@@ -137,7 +137,7 @@ export default function ProfileScreen() {
                             <Text style={styles.role}>{t('profile.guard')}</Text>
                             <View style={styles.dutyChip}>
                                 {profile.isActive ? <LiveDot color={GuardSemantic.allow} size={8} /> : <Ionicons name="pause-circle" size={18} color={GuardColors.t2} />}
-                                <Text style={styles.dutyText}>{profile.isActive ? t('profile.onDuty') : t('profile.inactive')}</Text>
+                                <Text style={styles.dutyText}>{(profile.isActive ? t('profile.onDuty') : t('profile.inactive')) + '\u00A0'}</Text>
                             </View>
                         </LinearGradient>
 

@@ -132,7 +132,7 @@ export default function GuardDashboard() {
 
         <Animated.View entering={rise(1)} style={styles.dutyChip}>
           <LiveDot color={GuardColors.green} size={8} />
-          <Text style={styles.dutyText} numberOfLines={1}>{t('home.onDutyAt', { gate: user?.gate ?? 'Main Gate' })}</Text>
+          <Text style={styles.dutyText} numberOfLines={1}>{t('home.onDutyAt', { gate: user?.gate ?? 'Main Gate' }) + '\u00A0'}</Text>
         </Animated.View>
 
         {/* Hero: scan */}

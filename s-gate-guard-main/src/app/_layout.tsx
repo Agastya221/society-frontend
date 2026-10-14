@@ -3,12 +3,25 @@ import * as Notifications from 'expo-notifications';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, View } from 'react-native';
 import 'react-native-reanimated';
 import '../global.css';
 import api from '@/services/api';
 import { GuardColors, GuardFonts } from '@/constants/theme';
 import { useLanguageStore, useT } from '@/i18n';
+
+// Android measures a Text with one line-breaking strategy and draws it with another,
+// so Devanagari labels in auto-width boxes were drawn one word short ("ड्यूटी पर" showed
+// as "ड्यूटी"). The simple strategy measures and draws the same way.
+if (Platform.OS === 'android') {
+  const AnyText = Text as unknown as { render?: (props: Record<string, unknown>, ref: unknown) => unknown };
+  const originalRender = AnyText.render;
+  if (typeof originalRender === 'function') {
+    AnyText.render = function patchedRender(this: unknown, props: Record<string, unknown>, ref: unknown) {
+      return originalRender.call(this, { textBreakStrategy: 'simple', ...props }, ref);
+    };
+  }
+}
 
 // Show notifications while app is in foreground
 Notifications.setNotificationHandler({

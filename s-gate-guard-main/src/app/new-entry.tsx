@@ -668,8 +668,8 @@ export default function NewEntryScreen() {
                             ) : (
                                 <TouchableOpacity testID="add-name" style={S.addName} activeOpacity={0.7} onPress={() => setNameOpen(true)}>
                                     <Ionicons name="add-circle" size={26} color={GuardColors.goldDeep} />
-                                    <Text style={S.addNameText}>{t('visitor.addName')}</Text>
-                                    <Text style={S.addNameSub}>{t('visitor.addNameSub')}</Text>
+                                    {/* One Text (not two in a row): Devanagari in an auto-width row was clipped to its first word. */}
+                                    <Text style={S.addNameText}>{t('visitor.addName')}<Text style={S.addNameSub}>{`  ${t('visitor.addNameSub')}`}</Text></Text>
                                 </TouchableOpacity>
                             )}
 
@@ -753,7 +753,7 @@ const S = StyleSheet.create({
     photoAction: { flex: 1, minHeight: GuardTouch.min, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.6)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
     photoActionText: { color: '#fff', fontFamily: GuardFonts.bold, fontSize: GuardType.body, lineHeight: 26, fontWeight: '800' },
     addName: { minHeight: GuardTouch.min, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4 },
-    addNameText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: GuardType.body, lineHeight: 26, fontWeight: '800' },
+    addNameText: { flex: 1, color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: GuardType.body, lineHeight: 26, fontWeight: '800' },
     addNameSub: { color: GuardColors.t3, fontFamily: GuardFonts.medium, fontSize: GuardType.min, lineHeight: 22, fontWeight: '600' },
     nameBox: { minHeight: 64, borderRadius: 22, backgroundColor: GuardColors.card, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16 },
     nameInput: { flex: 1, color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 20, fontWeight: '700', paddingVertical: 10 },

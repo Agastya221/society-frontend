@@ -11,7 +11,7 @@ export const emergency: Strings = {
     'emergency.THEFT': 'चोरी',
     'emergency.ACCIDENT': 'दुर्घटना',
     'emergency.LIFT_STUCK': 'लिफ्ट फँसी',
-    'emergency.ANIMAL_THREAT': 'जानवर का खतरा',
+    'emergency.ANIMAL_THREAT': 'जानवर',
     'emergency.OTHER': 'दूसरा',
     'emergency.confirmTitle': 'अलार्म भेजें?',
     'emergency.confirmText': '{type} का अलार्म सभी निवासियों और एडमिन को तुरंत जाएगा।',

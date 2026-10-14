@@ -298,8 +298,9 @@ const EntryCard = memo(function EntryCard({
                         {locationLabel}{typeLabel ? ` · ${typeLabel}` : ''}{entry.purpose ? ` · ${entry.purpose}` : ''}
                     </Text>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
-                    <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+                {/* key: remount when the label changes, or Android keeps the old (narrower) width and clips Devanagari. */}
+                <View key={status.label} style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                    <Text style={[styles.statusText, { color: status.color }]}>{status.label + '\u00A0'}</Text>
                 </View>
             </View>
 
