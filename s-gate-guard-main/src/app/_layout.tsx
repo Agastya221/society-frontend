@@ -101,8 +101,8 @@ export default function RootLayout() {
           name="new-entry" 
           options={{ 
             presentation: 'card', 
-            headerShown: true,
-            title: t('title.newEntry'),
+            // The screen draws its own big header with step dots.
+            headerShown: false,
           }} 
         />
         <Stack.Screen 

@@ -1,4 +1,6 @@
 import { GiantButton } from '@/components/gate/GiantButton';
+import { KeyGrid } from '@/components/gate/KeyGrid';
+import { PassPicker } from '@/components/gate/PassPicker';
 import { ResultScreen } from '@/components/gate/ResultScreen';
 import {
     ListedPass, Match, ReasonRowData, conflictTitle, reasonRows,
@@ -33,8 +35,6 @@ const FRAME_SIZE = SW * 0.7;
 const PASSCODE_RE = /^[A-Z0-9]{6}$/;
 /** A result goes back to Home by itself after this long, so the next guard action starts clean. */
 const AUTO_RETURN_SECONDS = 8;
-/** Digits first (most codes are mostly numbers), then A–Z: six keys per row. */
-const KEYS = '1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 const MIN_CODE_LENGTH = 6;
 const MAX_CODE_LENGTH = 64;
 
@@ -181,13 +181,7 @@ function CodeEntry({
                     </Text>
                 </View>
 
-                <View style={S.keys}>
-                    {KEYS.map((c) => (
-                        <TouchableOpacity key={c} activeOpacity={0.6} testID={`key-${c}`} accessibilityRole="button" accessibilityLabel={c} style={S.key} onPress={() => press(c)}>
-                            <Text style={S.keyText}>{c}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                <View style={{ marginTop: 14 }}><KeyGrid disabled={busy} onKey={press} /></View>
 
                 <View style={S.codeActions}>
                     <TouchableOpacity
@@ -213,49 +207,6 @@ function CodeEntry({
                     />
                 </View>
             </View>
-        </View>
-    );
-}
-
-// ─── Several valid passes: pick the right one ───────────────────────────────
-
-function PassPicker({
-    matches, windows, busy, onAllow, onCancel,
-}: {
-    matches: Match[];
-    windows: Record<string, ListedPass>;
-    busy: boolean;
-    onAllow: (m: Match) => void;
-    onCancel: () => void;
-}) {
-    const t = useT();
-    const insets = useSafeAreaInsets();
-    return (
-        <View style={[S.pickerRoot, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 16 }]}>
-            <Ionicons name="checkmark-circle" size={96} color="#FFFFFF" style={{ alignSelf: 'center' }} />
-            <Text style={S.pickerTitle}>{t('scan.validPasses', { n: matches.length })}</Text>
-            <Text style={S.pickerSub}>{t('scan.pickRight')}</Text>
-            <ScrollView contentContainerStyle={S.pickerList} showsVerticalScrollIndicator={false}>
-                {matches.map((m) => {
-                    const visitor = m.entryId ? windows[m.entryId]?.visitorName : null;
-                    const flat = m.isPrivate ? t('scan.privateFlat') : m.flatNumber === 'OFFICE' ? t('scan.office') : m.flatNumber;
-                    const sub = [visitor, flat ? `${t('common.flat')} ${flat}` : null].filter(Boolean).join(' · ');
-                    return (
-                        <GiantButton
-                            key={m.entryId ?? m.displayLabel}
-                            label={m.displayLabel ?? t('scan.validPass')}
-                            sub={sub || undefined}
-                            icon={m.type === 'CAB' ? 'car' : m.type === 'HELP' ? 'construct' : 'cube'}
-                            tone="light"
-                            disabled={busy}
-                            onPress={() => onAllow(m)}
-                        />
-                    );
-                })}
-            </ScrollView>
-            <Pressable accessibilityRole="button" disabled={busy} onPress={onCancel} style={S.pickerCancel}>
-                <Text style={S.pickerCancelText}>{t('common.cancel')}</Text>
-            </Pressable>
         </View>
     );
 }
@@ -634,7 +585,6 @@ const CORNER_LEN = 46;
 const CORNER_THICKNESS = 6;
 const CORNER_RADIUS = 20;
 const FRAME_TOP = (SH - FRAME_SIZE) / 2 - 40;
-const KEY_GAP = 8;
 
 const S = StyleSheet.create({
     root: { flex: 1, backgroundColor: '#000' },
@@ -687,20 +637,11 @@ const S = StyleSheet.create({
     codeDisplay: { marginTop: 14, minHeight: 76, borderRadius: 24, backgroundColor: GuardColors.card, borderWidth: 2, borderColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, ...guardShadow('#FFB300', 1) },
     codeText: { fontFamily: GuardFonts.bold, fontSize: 38, fontWeight: '900', letterSpacing: 6, color: GuardColors.t1 },
     codePlaceholder: { color: GuardColors.t4, letterSpacing: 4 },
-    keys: { marginTop: 14, flexDirection: 'row', flexWrap: 'wrap', gap: KEY_GAP },
-    key: { width: (SW - 40 - KEY_GAP * 5) / 6, height: 58, borderRadius: 18, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center', ...guardShadow('#0D0F14', 1) },
-    keyText: { fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '800', color: GuardColors.t1 },
     codeActions: { marginTop: 14, flexDirection: 'row', gap: 12, alignItems: 'center' },
     deleteKey: { width: GuardTouch.button, height: GuardTouch.button, borderRadius: 26, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center', ...guardShadow('#0D0F14', 1) },
     verifyBtn: { flex: 1, width: undefined },
 
     // ── Pass picker ────────────────────────────────────────────────────────────
-    pickerRoot: { flex: 1, backgroundColor: '#0FB57A', paddingHorizontal: 20 },
-    pickerTitle: { marginTop: 8, textAlign: 'center', color: '#fff', fontFamily: GuardFonts.bold, fontSize: 34, fontWeight: '900' },
-    pickerSub: { marginTop: 6, marginBottom: 16, textAlign: 'center', color: 'rgba(255,255,255,0.92)', fontFamily: GuardFonts.medium, fontSize: GuardType.body, fontWeight: '600' },
-    pickerList: { gap: 12, paddingBottom: 12 },
-    pickerCancel: { minHeight: 60, borderRadius: 20, borderWidth: 2, borderColor: 'rgba(255,255,255,0.7)', alignItems: 'center', justifyContent: 'center', marginTop: 8 },
-    pickerCancelText: { color: '#fff', fontFamily: GuardFonts.bold, fontSize: GuardType.button, fontWeight: '800' },
 
     // ── Refusal reasons on the red screen ──────────────────────────────────────
     reasonRow: { marginTop: 14, alignSelf: 'stretch', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 },
