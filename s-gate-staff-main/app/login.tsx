@@ -1,17 +1,25 @@
 import { OTPWidget } from '@msg91comm/sendotp-react-native';
+import { AppAlert } from '../src/components/AppAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius } from '../src/constants/theme';
 import { MSG91_TOKEN_AUTH, MSG91_WIDGET_ID } from '../src/constants/msg91';
 import { api } from '../src/services/api';
 import { useAuth } from '../src/store/auth';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 // RN's SafeAreaView is deprecated and ignores Android insets under edge-to-edge.
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 /** Message from the OTP widget's reply, when it gave one. */
-const widgetMessage = (reply: any, fallback: string) =>
-  typeof reply?.message === 'string' && reply.message.trim() && !reply.message.startsWith('eyJ') ? reply.message.trim() : fallback;
+const widgetMessage = (reply: any, fallback: string) => {
+  const raw = typeof reply?.message === 'string' && !reply.message.startsWith('eyJ') ? reply.message.trim() : '';
+  if (!raw) return fallback;
+  // The OTP service answers in short lower-case codes ("invalid otp"); say it plainly instead.
+  if (/invalid|incorrect|wrong|mismatch/i.test(raw)) return 'That code is not right. Check the SMS and type it again.';
+  if (/expire/i.test(raw)) return 'This code has expired. Tap "Change mobile number" and send a new OTP.';
+  if (/limit|too many|exceed|attempt/i.test(raw)) return 'Too many tries. Please wait a few minutes and try again.';
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+};
 
 const isNetworkError = (error: any) =>
   !error?.response && (error?.code === 'ERR_NETWORK' || error?.code === 'ECONNABORTED' || error?.request != null
@@ -50,7 +58,7 @@ export default function Login() {
   }, [step, loading]);
   const continueLogin = async () => {
     const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length !== 10) return Alert.alert('Enter your 10-digit mobile number');
+    if (cleaned.length !== 10) return AppAlert.show('Enter your 10-digit mobile number');
     // A second tap before `loading` re-renders would send a second OTP / verify twice
     // (the duplicate verify fails and shows "Account not ready" over a good login).
     if (busyRef.current) return;
@@ -62,7 +70,7 @@ export default function Login() {
         if (sent?.type === 'error' || sent?.success === false) throw new Error(widgetMessage(sent, 'Could not send OTP. Please try again.'));
         setReqId(sent?.reqId ?? sent?.message ?? ''); setStep('otp'); return;
       }
-      if (otp.length !== 6) return Alert.alert('Enter the 6-digit OTP');
+      if (otp.length !== 6) return AppAlert.show('Enter the 6-digit OTP');
       const verified = await OTPWidget.verifyOTP({ reqId, otp });
       const success = verified?.message?.toUpperCase() === 'SUCCESS' || verified?.type === 'success';
       if (!success) throw new Error(widgetMessage(verified, 'Incorrect or expired OTP. Check the code and try again.'));
@@ -72,7 +80,7 @@ export default function Login() {
       await signIn(data.accessToken, data.refreshToken, data.staff);
     } catch (error: any) {
       const { title, message } = loginError(error);
-      Alert.alert(title, message);
+      AppAlert.show(title, message);
     } finally { busyRef.current = false; setLoading(false); }
   };
   return (
