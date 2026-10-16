@@ -9,6 +9,7 @@ import '../global.css';
 import api from '@/services/api';
 import { GuardColors, GuardFonts } from '@/constants/theme';
 import { useLanguageStore, useT } from '@/i18n';
+import { AppAlertHost } from '@/components/gate/AppAlert';
 
 // Android measures a Text with one line-breaking strategy and draws it with another,
 // so Devanagari labels in auto-width boxes were drawn one word short ("ड्यूटी पर" showed
@@ -163,6 +164,7 @@ export default function RootLayout() {
         </Stack.Protected>
       </Stack>
       <StatusBar style="dark" backgroundColor={GuardColors.card} />
+      <AppAlertHost />
     </>
   );
 }

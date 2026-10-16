@@ -1,5 +1,5 @@
+import { AppAlert } from '@/components/gate/AppAlert';
 import React from 'react';
-import { Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import * as SecureStore from 'expo-secure-store';
 import { OTPWidget } from '@msg91comm/sendotp-react-native';
@@ -242,7 +242,7 @@ describe('Guard AuthScreen', () => {
     });
 
     it('shows the backend error message and an alert when no guard account exists', async () => {
-      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+      const alertSpy = jest.spyOn(AppAlert, 'show').mockImplementation(() => {});
       (OTPWidget.verifyOTP as jest.Mock).mockResolvedValueOnce({ type: 'success', message: MOCK_JWT });
       (api.post as jest.Mock).mockRejectedValueOnce({
         response: { status: 404, data: { message: 'No guard account found' } },
@@ -289,7 +289,7 @@ describe('Guard AuthScreen', () => {
     );
 
     it('maps the server 403 "guards only" rejection to the guard-only message', async () => {
-      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+      const alertSpy = jest.spyOn(AppAlert, 'show').mockImplementation(() => {});
       const utils = await verifyAs(() => {
         (api.post as jest.Mock).mockRejectedValueOnce({
           response: { status: 403, data: { message: 'This login is for guards only.' } },

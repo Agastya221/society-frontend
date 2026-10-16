@@ -1,5 +1,5 @@
+import { AppAlert } from '@/components/gate/AppAlert';
 import React from 'react';
-import { Alert } from 'react-native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import api from '@/services/api';
 import { useLanguageStore } from '@/i18n';
@@ -47,7 +47,7 @@ describe('TodayEntriesScreen (who is inside)', () => {
     useLanguageStore.setState({ lang: 'en' });
     (api.get as jest.Mock).mockResolvedValue({ data: { data: TODAY } });
     (api.patch as jest.Mock).mockResolvedValue({});
-    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    alertSpy = jest.spyOn(AppAlert, 'show').mockImplementation(() => {});
   });
 
   afterEach(() => alertSpy.mockRestore());

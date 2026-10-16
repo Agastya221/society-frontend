@@ -10,7 +10,6 @@ import { useFocusEffect } from 'expo-router';
 import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
     RefreshControl,
     ScrollView,
@@ -19,6 +18,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/gate/AppAlert';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Entry {
@@ -165,7 +165,7 @@ export default function TodayEntriesScreen() {
                 )
             );
         } catch (err: any) {
-            Alert.alert(t('inside.exitFailed'), err?.response?.data?.message ?? t('waiting.tryAgain'));
+            AppAlert.show(t('inside.exitFailed'), err?.response?.data?.message ?? t('waiting.tryAgain'));
             fetchEntries();
         } finally {
             checkoutBusy.current = false;

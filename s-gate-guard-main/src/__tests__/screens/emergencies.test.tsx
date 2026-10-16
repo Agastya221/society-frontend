@@ -1,5 +1,5 @@
+import { AppAlert } from '@/components/gate/AppAlert';
 import React from 'react';
-import { Alert } from 'react-native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import api from '@/services/api';
 import { useLanguageStore } from '@/i18n';
@@ -85,7 +85,7 @@ describe('EmergenciesScreen', () => {
   });
 
   it('tells the guard to call security when the alarm fails', async () => {
-    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const alert = jest.spyOn(AppAlert, 'show').mockImplementation(() => {});
     (api.post as jest.Mock).mockRejectedValueOnce(new Error('offline'));
     const { getByTestId, getByText, queryByText } = renderScreen();
     fireEvent.press(getByTestId('emergency-FIRE'));

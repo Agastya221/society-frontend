@@ -3,7 +3,8 @@ import { useT } from '@/i18n';
 import { toEnglishName } from '@/utils/englishName';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AppAlert } from '@/components/gate/AppAlert';
 
 type SpeechPackage = typeof import('expo-speech-recognition');
 type Subscription = { remove: () => void };
@@ -37,7 +38,7 @@ export function VoiceNameInput({ value, onChange }: { value: string; onChange: (
       if (!module.isRecognitionAvailable()) throw new Error('Speech recognition unavailable');
       const permission = await module.requestPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(t('visitor.voiceUnavailable'), t('visitor.voicePermission'));
+        AppAlert.show(t('visitor.voiceUnavailable'), t('visitor.voicePermission'));
         return;
       }
       clearListeners();
@@ -55,7 +56,7 @@ export function VoiceNameInput({ value, onChange }: { value: string; onChange: (
         module.addListener('error', (event) => {
           setListening(false);
           setPreview('');
-          if (event.error !== 'aborted') Alert.alert(t('visitor.voiceUnavailable'), t('visitor.voiceTryTyping'));
+          if (event.error !== 'aborted') AppAlert.show(t('visitor.voiceUnavailable'), t('visitor.voiceTryTyping'));
         }),
       ];
       // Names are stored in English letters for both Hindi and English UI.
@@ -63,7 +64,7 @@ export function VoiceNameInput({ value, onChange }: { value: string; onChange: (
     } catch {
       setListening(false);
       clearListeners();
-      Alert.alert(t('visitor.voiceUnavailable'), t('visitor.voiceTryTyping'));
+      AppAlert.show(t('visitor.voiceUnavailable'), t('visitor.voiceTryTyping'));
     }
   };
 

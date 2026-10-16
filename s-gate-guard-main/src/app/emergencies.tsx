@@ -9,7 +9,6 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    Alert,
     BackHandler,
     ScrollView,
     StatusBar,
@@ -20,6 +19,7 @@ import {
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppAlert } from '@/components/gate/AppAlert';
 
 type EmergencyType = {
     apiType: string;
@@ -91,7 +91,7 @@ export default function EmergenciesScreen() {
             setSent({ type: t(`emergency.${emergency.apiType}`), time: new Date() });
         } catch (err: any) {
             setConfirm(null);
-            Alert.alert(t('emergency.failed'), err?.response?.data?.message ?? t('emergency.failedText'));
+            AppAlert.show(t('emergency.failed'), err?.response?.data?.message ?? t('emergency.failedText'));
         } finally {
             raisingRef.current = false;
             setRaising(null);

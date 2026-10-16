@@ -3,7 +3,7 @@ import { OTPWidget } from '@msg91comm/sendotp-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, BackHandler, KeyboardAvoidingView, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GiantButton } from '@/components/gate/GiantButton';
 import { LanguageSwitch } from '@/components/gate/LanguageSwitch';
@@ -14,6 +14,7 @@ import { MSG91_TOKEN_AUTH, MSG91_WIDGET_ID } from '@/constants/msg91';
 import { useT } from '@/i18n';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { AppAlert } from '@/components/gate/AppAlert';
 
 type Screen = 'phone' | 'otp';
 
@@ -100,7 +101,7 @@ export default function AuthScreen() {
       if (caught?.response?.status === 403 && /guards only/i.test(message)) { setError(t('auth.notGuard')); return; }
       setError(message);
       if (message.toLowerCase().includes('no guard') || message.includes('404')) {
-        Alert.alert(t('auth.notFoundTitle'), t('auth.notFoundText'), [{ text: t('common.ok'), onPress: () => setScreen('phone') }]);
+        AppAlert.show(t('auth.notFoundTitle'), t('auth.notFoundText'), [{ text: t('common.ok'), onPress: () => setScreen('phone') }]);
       }
     } finally { setIsLoading(false); }
   };

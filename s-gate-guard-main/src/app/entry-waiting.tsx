@@ -13,7 +13,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     AppState,
     BackHandler,
     StatusBar,
@@ -32,6 +31,7 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppAlert } from '@/components/gate/AppAlert';
 
 const PHOTO_SIZE = 150;
 const POLL_MS    = BACKOFF_START_MS;
@@ -216,7 +216,7 @@ export default function EntryWaitingScreen() {
     // ── Cancel request when X is tapped ───────────────────────────────────────
     const handleClose = () => {
         if (phase === 'approved') { stopAll(); goDashboard(); return; }
-        Alert.alert(
+        AppAlert.show(
             t('waiting.cancelTitle'),
             t('waiting.cancelText'),
             [
@@ -256,7 +256,7 @@ export default function EntryWaitingScreen() {
             settle(action === 'approve' ? 'approved' : 'denied');
         } catch (err: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert(t('waiting.couldNotUpdate'), err?.response?.data?.message ?? t('waiting.tryAgain'));
+            AppAlert.show(t('waiting.couldNotUpdate'), err?.response?.data?.message ?? t('waiting.tryAgain'));
         } finally {
             actioningRef.current = false;
             setActioning(false);
@@ -272,7 +272,7 @@ export default function EntryWaitingScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setPhase('admitted');
         } catch (err: any) {
-            Alert.alert(t('waiting.couldNotUpdate'), err?.response?.data?.message ?? t('waiting.tryAgain'));
+            AppAlert.show(t('waiting.couldNotUpdate'), err?.response?.data?.message ?? t('waiting.tryAgain'));
             goDashboard();
         } finally {
             actioningRef.current = false;

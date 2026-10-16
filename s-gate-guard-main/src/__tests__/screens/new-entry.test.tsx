@@ -1,5 +1,6 @@
+import { AppAlert } from '@/components/gate/AppAlert';
 import React from 'react';
-import { Alert, BackHandler } from 'react-native';
+import { BackHandler } from 'react-native';
 import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
 import api from '@/services/api';
 import { useLanguageStore } from '@/i18n';
@@ -263,7 +264,7 @@ describe('NewEntryScreen', () => {
     });
 
     it('shows an alert and stays on the step when the request fails', async () => {
-      const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+      const alert = jest.spyOn(AppAlert, 'show').mockImplementation(() => {});
       const utils = render(<NewEntryScreen />);
       await toNotifyStep(utils);
       (api.post as jest.Mock).mockRejectedValueOnce({ response: { data: { message: 'Flat has no residents' } } });

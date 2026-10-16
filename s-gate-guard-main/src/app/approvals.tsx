@@ -9,7 +9,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
-import { Alert, AppState, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { AppState, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { AppAlert } from '@/components/gate/AppAlert';
 
 const OVERRIDE_WAIT_MS = 45_000;
 /** One /queue call this often — only while this screen is focused and the app is in front. */
@@ -76,7 +77,7 @@ export default function ApprovalsScreen() {
         : Haptics.NotificationFeedbackType.Success);
       await refresh();
     } catch (err: any) {
-      Alert.alert(t('queue.changed'), err?.response?.data?.message ?? t('queue.tryAgain'));
+      AppAlert.show(t('queue.changed'), err?.response?.data?.message ?? t('queue.tryAgain'));
       await refresh();
     } finally {
       actioningRef.current = false;
@@ -85,7 +86,7 @@ export default function ApprovalsScreen() {
   };
 
   const confirm = (id: string, action: 'no-show' | 'reject') => {
-    Alert.alert(t(action === 'no-show' ? 'queue.leftTitle' : 'queue.stopTitle'), t(action === 'no-show' ? 'queue.leftText' : 'queue.stopText'), [
+    AppAlert.show(t(action === 'no-show' ? 'queue.leftTitle' : 'queue.stopTitle'), t(action === 'no-show' ? 'queue.leftText' : 'queue.stopText'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t(action === 'no-show' ? 'queue.left' : 'queue.stop'), style: 'destructive', onPress: () => act(id, action) },
     ]);

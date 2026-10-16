@@ -19,7 +19,6 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     BackHandler,
     Linking,
     Modal,
@@ -34,6 +33,7 @@ import {
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { backOrHome } from '@/utils/navigation';
+import { AppAlert } from '@/components/gate/AppAlert';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -600,7 +600,7 @@ export default function NewEntryScreen() {
             });
         } catch (err: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert(t('visitor.failed'), err?.response?.data?.message ?? err?.message ?? t('visitor.failedText'));
+            AppAlert.show(t('visitor.failed'), err?.response?.data?.message ?? err?.message ?? t('visitor.failedText'));
         } finally {
             submittingRef.current = false;
             setSubmitting(false);

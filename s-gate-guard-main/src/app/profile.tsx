@@ -12,13 +12,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { AppAlert } from '@/components/gate/AppAlert';
 
 interface Society {
     name: string;
@@ -87,7 +87,7 @@ export default function ProfileScreen() {
 
     const handleLogout = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Alert.alert(
+        AppAlert.show(
             t('profile.logoutTitle'),
             t('profile.logoutText'),
             [

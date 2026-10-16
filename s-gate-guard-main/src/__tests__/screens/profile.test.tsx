@@ -1,5 +1,5 @@
+import { AppAlert } from '@/components/gate/AppAlert';
 import React from 'react';
-import { Alert } from 'react-native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -38,7 +38,7 @@ describe('ProfileScreen', () => {
       accessToken: 't', refreshToken: 'r', isAuthenticated: true, user: { id: 'g-001', role: 'GUARD' } as any, isLoading: false,
     });
     (api.get as jest.Mock).mockResolvedValue({ data: { data: PROFILE } });
-    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    alertSpy = jest.spyOn(AppAlert, 'show').mockImplementation(() => {});
   });
 
   afterEach(() => alertSpy.mockRestore());

@@ -1,5 +1,6 @@
+import { AppAlert } from '@/components/gate/AppAlert';
 import React from 'react';
-import { Alert, BackHandler } from 'react-native';
+import { BackHandler } from 'react-native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 import api from '@/services/api';
@@ -42,7 +43,7 @@ describe('EntryWaitingScreen', () => {
     (useLocalSearchParams as jest.Mock).mockReturnValue(PARAMS);
     (api.get as jest.Mock).mockResolvedValue(pending);
     (api.patch as jest.Mock).mockResolvedValue({});
-    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    alertSpy = jest.spyOn(AppAlert, 'show').mockImplementation(() => {});
   });
 
   afterEach(() => {

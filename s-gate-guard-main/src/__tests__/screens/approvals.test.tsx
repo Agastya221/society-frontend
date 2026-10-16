@@ -1,5 +1,6 @@
+import { AppAlert } from '@/components/gate/AppAlert';
 import React from 'react';
-import { Alert, AppState } from 'react-native';
+import { AppState } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import api from '@/services/api';
 import { useLanguageStore } from '@/i18n';
@@ -35,7 +36,7 @@ describe('Gate queue', () => {
     useLanguageStore.setState({ lang: 'en' });
     mockQueue({ ready: [ready], waiting: [waiting] });
     (api.patch as jest.Mock).mockResolvedValue({});
-    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    alertSpy = jest.spyOn(AppAlert, 'show').mockImplementation(() => {});
   });
   afterEach(() => alertSpy.mockRestore());
 
