@@ -31,6 +31,16 @@ emergency double tap could send two alarms; "जानवर का खतरा
 real camera scan of a guest QR, pre-approval QR and staff QR; pre-approved cab/delivery shortcut; waiting-screen
 45 s timeout buttons; sending a real emergency alarm; English-mode walk; the whole of Part 7.
 
+## Test log — 16 Oct 2026, against Render (new backend deployed)
+
+**Working on the phone with the new backend:** Home with flat bordered cards; New visitor in two steps; Guest and Other both open the flat step
+(photo first, tower chips and flat grid from the new /gate/flats endpoint); compact details screen (name with microphone, reason, photo, Send);
+Cab asks for the car's last 4 digits; resident approval shows "मंजूरी मिल गई" and the guard taps "अब अंदर भेजें" to record entry; Inside rose 0 → 1.
+Local-QA file s-gate-guard-main/.env.local (pointing the app at 127.0.0.1:4101) was renamed to .env.local.disabled so the app uses Render.
+
+**Still to test:** spoken name (microphone) on this build, Service category screen, Daily help scanner, the red Stopped section, a real two-person queue,
+photo upload while choosing the flat, English-mode walk, real camera scans (pre-approval and staff QR).
+
 ## Part 1 — Look and feel (Home, scanner, result)
 
 - [ ] Home shows the gold **Scan QR** card and dark **New visitor** card with gradients, rounded corners and shadows (no flat/unstyled buttons)
