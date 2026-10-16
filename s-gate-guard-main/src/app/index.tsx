@@ -3,30 +3,24 @@ import { LiveDot } from '@/components/gate/LiveDot';
 import { Pressy } from '@/components/gate/Pressy';
 import { GuardColors, GuardFonts, GuardGradients, GuardSemantic, guardShadow } from '@/constants/theme';
 import { useT } from '@/i18n';
-import api from '@/services/api';
 import { loadFlatDirectory } from '@/services/flatDirectory';
-import { fetchRecentStopped } from '@/services/gateQueue';
+import { fetchQueue } from '@/services/gateQueue';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated as RNAnimated, Easing, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { AppState, Animated as RNAnimated, Easing, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const HOLD_MS = 2000;
 const POLL_MS = 15000;
+/** Consecutive failed queue calls before Home shows "No connection". */
+const OFFLINE_AFTER_FAILURES = 3;
 
 type Route = '/new-entry' | '/scan-verify' | '/today-entries' | '/approvals' | '/profile' | '/emergencies';
-
-/** People inside right now: visitors checked in and staff who haven't checked out. */
-function countInside(data: any): number {
-  const entries: any[] = Array.isArray(data?.entries) ? data.entries : [];
-  const staff: any[] = Array.isArray(data?.staffAttendances) ? data.staffAttendances : [];
-  return entries.filter((e) => e?.status === 'CHECKED_IN').length + staff.filter((a) => !a?.checkOutTime).length;
-}
 
 /** Staggered rise-in so the screen settles instead of popping. */
 const rise = (i: number) => FadeInDown.delay(i * 70).duration(420);
@@ -87,35 +81,38 @@ export default function GuardDashboard() {
   const [readyCount, setReadyCount] = useState(0);
   const [stoppedCount, setStoppedCount] = useState(0);
   const [insideCount, setInsideCount] = useState(0);
-  const focused = useRef(true);
+  const [offline, setOffline] = useState(false);
+  const failures = useRef(0);
+  const inFlight = useRef(false);
 
-  const refresh = useCallback(() => {
-    api.get('/api/v1/gate/entry-requests?status=PENDING&limit=1').then((res) => {
-      const payload = res.data?.data;
-      const entries: unknown[] = Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
-      setPendingCount(payload?.pagination?.total ?? (Array.isArray(entries) ? entries.length : 0));
-    }).catch(() => undefined);
-    api.get('/api/v1/gate/entry-requests?status=APPROVED&awaitingEntry=true&limit=1').then((res) => {
-      setReadyCount(res.data?.data?.pagination?.total ?? 0);
-    }).catch(() => undefined);
-    fetchRecentStopped().then((items) => setStoppedCount(items.length)).catch(() => undefined);
-    api.get('/api/v1/guard/today').then((res) => {
-      setInsideCount(countInside(res.data?.data));
-    }).catch(() => undefined);
+  // One /queue call for every number on this screen. On failure the last-known
+  // counts stay; after a few misses in a row a small "No connection" chip shows.
+  const refresh = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    try {
+      const queue = await fetchQueue();
+      setPendingCount(queue.waiting.length);
+      setReadyCount(queue.ready.length);
+      setStoppedCount(queue.stopped.length);
+      setInsideCount(queue.insideCount);
+      failures.current = 0;
+      setOffline(false);
+    } catch {
+      failures.current += 1;
+      if (failures.current >= OFFLINE_AFTER_FAILURES) setOffline(true);
+    } finally {
+      inFlight.current = false;
+    }
   }, []);
 
-  useFocusEffect(useCallback(() => {
-    focused.current = true;
-    refresh();
-    if (user?.id) void loadFlatDirectory(user.id).catch(() => undefined);
-    return () => { focused.current = false; };
-  }, [refresh, user?.id]));
-
   // A visitor can arrive any time, so keep the counts fresh while this screen is showing.
-  useEffect(() => {
-    const timer = setInterval(() => { if (focused.current) refresh(); }, POLL_MS);
+  useFocusEffect(useCallback(() => {
+    void refresh();
+    if (user?.id) void loadFlatDirectory(user.id).catch(() => undefined);
+    const timer = setInterval(() => { if (AppState.currentState === 'active') void refresh(); }, POLL_MS);
     return () => clearInterval(timer);
-  }, [refresh]);
+  }, [refresh, user?.id]));
 
   const open = (route: Route) => router.push(route);
 
@@ -139,9 +136,17 @@ export default function GuardDashboard() {
           <LanguageSwitch compact />
         </Animated.View>
 
-        <Animated.View entering={rise(1)} style={styles.dutyChip}>
-          <LiveDot color={GuardColors.green} size={8} />
-          <Text style={styles.dutyText} numberOfLines={1}>{t('home.onDutyAt', { gate: user?.gate ?? 'Main Gate' }) + '\u00A0'}</Text>
+        <Animated.View entering={rise(1)} style={styles.chipRow}>
+          <View style={styles.dutyChip}>
+            <LiveDot color={GuardColors.green} size={8} />
+            <Text style={styles.dutyText} numberOfLines={1}>{t('home.onDutyAt', { gate: user?.gate ?? 'Main Gate' }) + '\u00A0'}</Text>
+          </View>
+          {offline ? (
+            <View style={styles.offlineChip} accessibilityLabel={t('home.offline')}>
+              <Ionicons name="cloud-offline" size={16} color={GuardColors.red} />
+              <Text style={styles.offlineText} numberOfLines={1}>{t('home.offline') + '\u00A0'}</Text>
+            </View>
+          ) : null}
         </Animated.View>
 
         {stoppedCount > 0 ? (
@@ -242,7 +247,10 @@ const styles = StyleSheet.create({
   hello: { color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: 16, lineHeight: 22, fontWeight: '600' },
   name: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 30, lineHeight: 38, fontWeight: '900', letterSpacing: -0.6 },
 
-  dutyChip: { marginTop: 14, marginBottom: 20, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 999, paddingLeft: 10, paddingRight: 16, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
+  chipRow: { marginTop: 14, marginBottom: 20, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  offlineChip: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: GuardColors.redBg, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: GuardColors.red },
+  offlineText: { color: GuardColors.red, fontFamily: GuardFonts.bold, fontSize: 15, lineHeight: 22, fontWeight: '800' },
+  dutyChip: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 999, paddingLeft: 10, paddingRight: 16, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
   dutyText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 15, lineHeight: 22, fontWeight: '800' },
   readyBanner: { minHeight: 72, marginBottom: 14, paddingHorizontal: 18, borderRadius: 22, backgroundColor: GuardColors.greenBg, borderWidth: 2, borderColor: GuardColors.green, flexDirection: 'row', alignItems: 'center', gap: 12 },
   stoppedBanner: { minHeight: 72, marginBottom: 14, paddingHorizontal: 18, borderRadius: 22, backgroundColor: GuardColors.redBg, borderWidth: 2, borderColor: GuardColors.red, flexDirection: 'row', alignItems: 'center', gap: 12 },

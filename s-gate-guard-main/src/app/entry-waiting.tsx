@@ -4,6 +4,7 @@ import { ResultScreen } from '@/components/gate/ResultScreen';
 import { GuardColors, GuardFonts, GuardTouch, GuardType, guardShadow } from '@/constants/theme';
 import { useT } from '@/i18n';
 import api from '@/services/api';
+import { BACKOFF_START_MS, backoffDelay } from '@/utils/backoff';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
@@ -33,7 +34,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const PHOTO_SIZE = 150;
-const POLL_MS    = 3000;
+const POLL_MS    = BACKOFF_START_MS;
 const TIMEOUT_S  = 45;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -116,9 +117,13 @@ export default function EntryWaitingScreen() {
     const [cancelling, setCancelling] = useState(false);
     const actioningRef = useRef(false); // blocks a second override tap before re-render
 
-    const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+    const pollRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
     const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
     const settled   = useRef(false);
+    const stopped   = useRef(false);   // polling switched off (settled or left the screen)
+    const inFlight  = useRef(false);
+    const delayRef  = useRef(POLL_MS); // 3 s, backs off to 12 s on errors
+    const failures  = useRef(0);
 
     // The time bar drains over the wait.
     const bar = useSharedValue(1);
@@ -128,7 +133,8 @@ export default function EntryWaitingScreen() {
     const barStyle = useAnimatedStyle(() => ({ width: `${bar.value * 100}%` }));
 
     const stopAll = useCallback(() => {
-        if (pollRef.current)  clearInterval(pollRef.current);
+        stopped.current = true;
+        if (pollRef.current)  clearTimeout(pollRef.current);
         if (timerRef.current) clearInterval(timerRef.current);
     }, []);
 
@@ -144,38 +150,26 @@ export default function EntryWaitingScreen() {
         );
     }, [stopAll]);
 
-    // ── Poll single entry / fallback to list ──────────────────────────────────
+    // ── Poll this one request ─────────────────────────────────────────────────
+    // Only GET /entry-requests/:id. On any error (offline, 429, 5xx) the screen stays
+    // as it is and the next poll waits longer (3 s → 6 s → 12 s); a success resets it.
     const poll = useCallback(async () => {
-        if (settled.current) return;
+        if (settled.current || inFlight.current) return;
+        inFlight.current = true;
         try {
             const res = await api.get(`/api/v1/gate/entry-requests/${id}`);
+            failures.current = 0;
+            delayRef.current = POLL_MS;
             const status: string =
                 res.data?.data?.status ?? res.data?.data?.entryRequest?.status ?? '';
             const entryId: string | null = res.data?.data?.entryId ?? res.data?.data?.entryRequest?.entryId ?? null;
             const resolved = resolvePhase(status, entryId);
             if (resolved) settle(resolved);
         } catch {
-            // Fallback: check pending list
-            try {
-                const listRes = await api.get('/api/v1/gate/entry-requests?status=PENDING');
-                const payload = listRes.data?.data;
-                const requests: any[] =
-                    Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
-                const match = requests.find((r: any) => r.id === id);
-                if (match) {
-                    const resolved = resolvePhase(match.status);
-                    if (resolved) settle(resolved);
-                } else {
-                    // No longer pending → was approved/denied, check entries log
-                    const entriesRes = await api.get('/api/v1/gate/entries?limit=20&page=1');
-                    const entries: any[] = entriesRes.data?.data?.entries ?? [];
-                    const found = entries.find((e: any) => e.entryRequestId === id || e.id === id);
-                    if (found) {
-                        const resolved = resolvePhase(found.status);
-                        if (resolved) settle(resolved);
-                    }
-                }
-            } catch { /* ignore */ }
+            failures.current += 1;
+            delayRef.current = backoffDelay(failures.current);
+        } finally {
+            inFlight.current = false;
         }
     }, [id, settle]);
 
@@ -194,17 +188,26 @@ export default function EntryWaitingScreen() {
         return stopAll;
     }, [stopAll]);
 
-    // ── Polling interval ──────────────────────────────────────────────────────
+    // ── Polling loop (setTimeout chain so the delay can back off) ─────────────
     useEffect(() => {
-        poll();
-        pollRef.current = setInterval(poll, POLL_MS);
-        return () => { if (pollRef.current) clearInterval(pollRef.current); };
-    }, [poll]);
+        if (!id) return;
+        stopped.current = false;
+        const loop = async () => {
+            await poll();
+            if (stopped.current || settled.current) return;
+            pollRef.current = setTimeout(loop, delayRef.current);
+        };
+        void loop();
+        return () => {
+            stopped.current = true;
+            if (pollRef.current) clearTimeout(pollRef.current);
+        };
+    }, [id, poll]);
 
     // ── AppState — resume polling when app comes to foreground ────────────────
     useEffect(() => {
         const sub = AppState.addEventListener('change', (state) => {
-            if (state === 'active' && !settled.current) poll();
+            if (state === 'active' && !settled.current && !stopped.current) poll();
         });
         return () => sub.remove();
     }, [poll]);

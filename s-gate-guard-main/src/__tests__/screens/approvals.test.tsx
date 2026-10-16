@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert } from 'react-native';
+import { Alert, AppState } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import api from '@/services/api';
 import { useLanguageStore } from '@/i18n';
@@ -14,6 +14,13 @@ const oldEnough = new Date(Date.now() - 60_000).toISOString();
 const ready = { id: 'ready-1', visitorName: 'Asha Rao', type: 'VISITOR', flatLabel: 'A101', createdAt: oldEnough, status: 'APPROVED', entryId: null };
 const waiting = { id: 'wait-1', visitorName: 'Ravi', type: 'DELIVERY', flatLabel: 'B204', createdAt: oldEnough, status: 'PENDING' };
 
+const QUEUE_URL = '/api/v1/gate/entry-requests/queue';
+const mockQueue = ({ ready = [] as unknown[], waiting = [] as unknown[], stopped = [] as unknown[] } = {}) => {
+  (api.get as jest.Mock).mockImplementation((url: string) => url === QUEUE_URL
+    ? Promise.resolve({ data: { data: { ready, waiting, stopped, insideCount: 0 } } })
+    : Promise.reject(new Error(`unexpected GET ${url}`)));
+};
+
 const screen = async () => {
   const result = render(<ApprovalsScreen />);
   await act(async () => {});
@@ -26,11 +33,7 @@ describe('Gate queue', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useLanguageStore.setState({ lang: 'en' });
-    (api.get as jest.Mock).mockImplementation((url: string) => Promise.resolve({ data: { data: {
-      entryRequests: url.includes('status=REJECTED') || url.includes('status=EXPIRED') ? []
-        : url.includes('awaitingEntry=true') ? [ready] : [waiting],
-      pagination: { pages: 1, total: 1 },
-    } } }));
+    mockQueue({ ready: [ready], waiting: [waiting] });
     (api.patch as jest.Mock).mockResolvedValue({});
     alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   });
@@ -72,16 +75,47 @@ describe('Gate queue', () => {
   });
 
   it('keeps a recent resident denial visible as a red stopped decision', async () => {
-    (api.get as jest.Mock).mockImplementation((url: string) => Promise.resolve({ data: { data: {
-      entryRequests: url.includes('status=REJECTED')
-        ? [{ ...waiting, id: 'denied-1', visitorName: 'Denied guest', status: 'REJECTED', rejectionReason: 'Not expected' }]
-        : url.includes('status=EXPIRED') ? []
-        : url.includes('awaitingEntry=true') ? [ready] : [waiting],
-      pagination: { pages: 1, total: 1 },
-    } } }));
+    mockQueue({
+      ready: [ready],
+      waiting: [waiting],
+      stopped: [{ ...waiting, id: 'denied-1', visitorName: 'Denied guest', status: 'REJECTED', rejectionReason: 'Not expected' }],
+    });
     const result = await screen();
     expect(result.getByText('Denied guest')).toBeTruthy();
     expect(result.getByText('Not expected')).toBeTruthy();
     expect(result.getByText('Stopped · 1')).toBeTruthy();
+  });
+
+  it("never lists the guard's own stops under Stopped", async () => {
+    mockQueue({
+      stopped: [
+        { ...waiting, id: 'own-1', visitorName: 'Own stop', status: 'REJECTED', rejectionReason: 'Stopped by guard' },
+        { ...waiting, id: 'own-2', visitorName: 'Left', status: 'EXPIRED', rejectionReason: 'Visitor left before entering' },
+      ],
+    });
+    const result = await screen();
+    expect(result.queryByText('Own stop')).toBeNull();
+    expect(result.queryByText('Left')).toBeNull();
+    expect(result.getByText('Stopped · 0')).toBeTruthy();
+  });
+
+  it('uses one queue call, every 5 s, only while the app is in front', async () => {
+    jest.useFakeTimers();
+    const appState = AppState as unknown as { currentState: unknown };
+    const previousState = appState.currentState;
+    try {
+      appState.currentState = 'active';
+      mockQueue({ ready: [ready], waiting: [waiting] });
+      await screen();
+      expect((api.get as jest.Mock).mock.calls).toEqual([[QUEUE_URL]]);
+      await act(async () => { jest.advanceTimersByTime(5000); });
+      expect(api.get).toHaveBeenCalledTimes(2);
+      appState.currentState = 'background';
+      await act(async () => { jest.advanceTimersByTime(15000); });
+      expect(api.get).toHaveBeenCalledTimes(2);
+    } finally {
+      appState.currentState = previousState;
+      jest.useRealTimers();
+    }
   });
 });

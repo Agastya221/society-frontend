@@ -116,11 +116,14 @@ export default function TodayEntriesScreen() {
                 status: attendance.checkOutTime ? 'CHECKED_OUT' : 'CHECKED_IN',
             }));
 
-            const todayEntries = [...visitorEntries, ...staffEntries]
-                .filter((entry) => entry.checkInTime && isToday(entry.checkInTime))
+            // /guard/today also returns people still inside from earlier days (checked-in
+            // visitors, staff not checked out), so the today-only filter is applied to the
+            // "All today" view below, never to "Inside now".
+            const allEntries = [...visitorEntries, ...staffEntries]
+                .filter((entry) => entry.checkInTime)
                 .sort((a, b) => new Date(b.checkInTime).getTime() - new Date(a.checkInTime).getTime());
 
-            setEntries(todayEntries);
+            setEntries(allEntries);
         } catch (err: any) {
             console.error('Failed to fetch entries:', err);
         } finally {
@@ -131,7 +134,8 @@ export default function TodayEntriesScreen() {
 
     const visibleEntries = useMemo(() => {
         if (!showAll) return entries.filter((entry) => entry.status === 'CHECKED_IN');
-        return filter === 'ALL' ? entries : entries.filter((entry) => entry.type === filter);
+        const today = entries.filter((entry) => isToday(entry.checkInTime));
+        return filter === 'ALL' ? today : today.filter((entry) => entry.type === filter);
     }, [entries, filter, showAll]);
 
     // Refresh every time the screen is focused; the spinner only shows on the first

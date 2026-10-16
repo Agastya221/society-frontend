@@ -17,6 +17,7 @@ export const home: Strings = {
     'home.emergencyHold': 'दबाकर रखें',
     'home.emergencyHint': 'आपातकाल के लिए बटन को 2 सेकंड दबाकर रखें',
     'home.profile': 'प्रोफाइल',
+    'home.offline': 'इंटरनेट नहीं है',
   },
   en: {
     'home.hello': 'Hello,',
@@ -34,5 +35,6 @@ export const home: Strings = {
     'home.emergencyHold': 'Press and hold',
     'home.emergencyHint': 'Press and hold the button for 2 seconds',
     'home.profile': 'Profile',
+    'home.offline': 'No connection',
   },
 };

@@ -4,7 +4,7 @@ import { ScreenEmpty, ScreenLoading } from '@/components/ScreenState';
 import { GuardColors, GuardFonts, GuardType } from '@/constants/theme';
 import { useT } from '@/i18n';
 import api from '@/services/api';
-import { fetchRecentStopped, type QueueItem } from '@/services/gateQueue';
+import { fetchQueue, type QueueItem } from '@/services/gateQueue';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
@@ -12,24 +12,8 @@ import React, { useCallback, useRef, useState } from 'react';
 import { Alert, AppState, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 const OVERRIDE_WAIT_MS = 45_000;
-const POLL_MS = 3_000;
-
-async function fetchStatus(status: 'PENDING' | 'APPROVED'): Promise<QueueItem[]> {
-  const all: QueueItem[] = [];
-  let page = 1;
-  let pages = 1;
-  while (page <= pages) {
-    const query = `status=${status}&order=oldest&limit=100&page=${page}${status === 'APPROVED' ? '&awaitingEntry=true' : ''}`;
-    const res = await api.get(`/api/v1/gate/entry-requests?${query}`);
-    const data = res.data?.data;
-    const rows: QueueItem[] = data?.entryRequests ?? [];
-    all.push(...rows);
-    pages = Math.min(data?.pagination?.pages ?? 1, 10);
-    if (rows.length === 0) break;
-    page++;
-  }
-  return [...new Map(all.map((item) => [item.id, item])).values()];
-}
+/** One /queue call this often — only while this screen is focused and the app is in front. */
+const POLL_MS = 5_000;
 
 export default function ApprovalsScreen() {
   const t = useT();
@@ -50,7 +34,7 @@ export default function ApprovalsScreen() {
     if (inFlight.current) return;
     inFlight.current = true;
     try {
-      const [nextReady, nextPending, nextStopped] = await Promise.all([fetchStatus('APPROVED'), fetchStatus('PENDING'), fetchRecentStopped()]);
+      const { ready: nextReady, waiting: nextPending, stopped: nextStopped } = await fetchQueue();
       if (knownReady.current && nextReady.some((item) => !knownReady.current!.has(item.id))) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
@@ -76,7 +60,9 @@ export default function ApprovalsScreen() {
     refresh();
     const poll = setInterval(() => { if (AppState.currentState === 'active') refresh(); }, POLL_MS);
     const clock = setInterval(() => setNow(Date.now()), 1_000);
-    return () => { clearInterval(poll); clearInterval(clock); };
+    // Coming back to the app: refresh at once instead of waiting for the next tick.
+    const sub = AppState.addEventListener('change', (state) => { if (state === 'active') refresh(); });
+    return () => { clearInterval(poll); clearInterval(clock); sub.remove(); };
   }, [refresh]));
 
   const act = async (id: string, action: 'admit' | 'no-show' | 'approve' | 'reject') => {

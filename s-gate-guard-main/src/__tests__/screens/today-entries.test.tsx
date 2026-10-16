@@ -108,6 +108,27 @@ describe('TodayEntriesScreen (who is inside)', () => {
     expect(getByText('Waiting')).toBeTruthy();
   });
 
+  it('keeps people still inside from earlier days under Inside now, but not under All today', async () => {
+    const yesterday = new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString();
+    (api.get as jest.Mock).mockResolvedValue({ data: { data: {
+      entries: [
+        ...TODAY.entries,
+        { id: 'old-in', visitorName: 'Night Guest', type: 'VISITOR', flat: { flatNumber: 'D402' }, status: 'CHECKED_IN', checkInTime: yesterday, checkOutTime: null },
+      ],
+      staffAttendances: [
+        ...TODAY.staffAttendances,
+        { id: 'old-st', domesticStaff: { name: 'Night Nurse', staffType: 'NURSE' }, flat: { flatNumber: 'D402' }, checkInTime: yesterday, checkOutTime: null },
+      ],
+    } } });
+    const { getByTestId, getByText, queryByText } = await renderScreen();
+    expect(getByText('Night Guest')).toBeTruthy();
+    expect(getByText('Night Nurse')).toBeTruthy();
+    fireEvent.press(getByTestId('view-all'));
+    expect(queryByText('Night Guest')).toBeNull();
+    expect(queryByText('Night Nurse')).toBeNull();
+    expect(getByText('Ravi Courier')).toBeTruthy();
+  });
+
   it('filters the full list by kind', async () => {
     const { getByTestId, getByText, queryByText } = await renderScreen();
     fireEvent.press(getByTestId('view-all'));

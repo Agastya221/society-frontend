@@ -84,17 +84,31 @@ describe('EntryWaitingScreen', () => {
     expect(getByText('Guest')).toBeTruthy();
   });
 
-  it('falls back to the pending list (flat array shape) when the single lookup fails', async () => {
-    (api.get as jest.Mock).mockImplementation((url: string) => {
-      if (url === '/api/v1/gate/entry-requests/er-1') return Promise.reject(new Error('404'));
-      if (url === '/api/v1/gate/entry-requests?status=PENDING') {
-        return Promise.resolve({ data: { data: [{ id: 'er-1', status: 'REJECTED' }] } });
-      }
-      return Promise.resolve({ data: { data: { entries: [] } } });
-    });
+  it('polls only this request and backs off 3 s → 6 s → 12 s on errors (429), keeping the screen', async () => {
+    (api.get as jest.Mock).mockRejectedValue({ response: { status: 429 } });
+    const tick = async (ms: number) => { await act(async () => { jest.advanceTimersByTime(ms); }); };
     const { getByText } = await renderScreen();
-    expect(getByText('Stop')).toBeTruthy();
-    expect(getByText('Ask the visitor to leave')).toBeTruthy();
+    expect(api.get).toHaveBeenCalledTimes(1);           // t=0, 1st failure → wait 3 s
+    await tick(3000);
+    expect(api.get).toHaveBeenCalledTimes(2);           // t=3, 2nd failure → wait 6 s
+    await tick(5900);
+    expect(api.get).toHaveBeenCalledTimes(2);
+    await tick(100);
+    expect(api.get).toHaveBeenCalledTimes(3);           // t=9, 3rd failure → wait 12 s
+    await tick(11900);
+    expect(api.get).toHaveBeenCalledTimes(3);
+    await tick(100);
+    expect(api.get).toHaveBeenCalledTimes(4);           // t=21, capped at 12 s
+    // Only the single-request endpoint — no fallback list calls on error.
+    for (const [url] of (api.get as jest.Mock).mock.calls) expect(url).toBe('/api/v1/gate/entry-requests/er-1');
+    expect(getByText('Notifying resident')).toBeTruthy();
+
+    // A success resets the delay to 3 s.
+    (api.get as jest.Mock).mockResolvedValue(pending);
+    await tick(12000);
+    expect(api.get).toHaveBeenCalledTimes(5);
+    await tick(3000);
+    expect(api.get).toHaveBeenCalledTimes(6);
   });
 
   it('does not mark the person inside until the guard confirms entry', async () => {
