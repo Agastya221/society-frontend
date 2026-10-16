@@ -9,6 +9,30 @@ import { ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView, Platform, 
 // RN's SafeAreaView is deprecated and ignores Android insets under edge-to-edge.
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+/** Message from the OTP widget's reply, when it gave one. */
+const widgetMessage = (reply: any, fallback: string) =>
+  typeof reply?.message === 'string' && reply.message.trim() && !reply.message.startsWith('eyJ') ? reply.message.trim() : fallback;
+
+const isNetworkError = (error: any) =>
+  !error?.response && (error?.code === 'ERR_NETWORK' || error?.code === 'ECONNABORTED' || error?.request != null
+    || /network|internet|timeout|failed to fetch/i.test(String(error?.message ?? '')));
+
+/**
+ * What to tell the staff member when sign-in fails: the backend's own message
+ * (wrong/expired OTP, number not registered, profile inactive…) wins; with no
+ * response at all it is a connection problem.
+ */
+function loginError(error: any): { title: string; message: string } {
+  const serverMessage = error?.response?.data?.message;
+  if (typeof serverMessage === 'string' && serverMessage.trim()) {
+    const status = error.response.status;
+    return { title: status === 403 || status === 404 ? 'Account not ready' : 'Could not sign in', message: serverMessage.trim() };
+  }
+  if (isNetworkError(error)) return { title: 'No internet', message: 'Check your internet connection and try again.' };
+  if (error?.response) return { title: 'Could not sign in', message: 'Something went wrong. Please try again.' };
+  return { title: 'Could not sign in', message: error?.message || 'Please try again.' };
+}
+
 export default function Login() {
   const signIn = useAuth((s) => s.signIn);
   const [phone, setPhone] = useState(''); const [otp, setOtp] = useState(''); const [reqId, setReqId] = useState('');
@@ -35,19 +59,20 @@ export default function Login() {
     try {
       if (step === 'phone') {
         const sent = await OTPWidget.sendOTP({ identifier: `91${cleaned}` });
-        if (sent?.type === 'error' || sent?.success === false) throw new Error('Could not send OTP');
+        if (sent?.type === 'error' || sent?.success === false) throw new Error(widgetMessage(sent, 'Could not send OTP. Please try again.'));
         setReqId(sent?.reqId ?? sent?.message ?? ''); setStep('otp'); return;
       }
       if (otp.length !== 6) return Alert.alert('Enter the 6-digit OTP');
       const verified = await OTPWidget.verifyOTP({ reqId, otp });
       const success = verified?.message?.toUpperCase() === 'SUCCESS' || verified?.type === 'success';
-      if (!success) throw new Error('Incorrect OTP');
+      if (!success) throw new Error(widgetMessage(verified, 'Incorrect or expired OTP. Check the code and try again.'));
       const widgetToken = typeof verified?.message === 'string' && verified.message.startsWith('eyJ') ? verified.message : verified?.reqId ?? reqId;
       const res = await api.post('/staff-app/auth/otp/verify', { widgetToken });
       const data = res.data.data;
       await signIn(data.accessToken, data.refreshToken, data.staff);
     } catch (error: any) {
-      Alert.alert('Account not ready', error.response?.data?.message ?? 'Ask your society admin to register and verify this number.');
+      const { title, message } = loginError(error);
+      Alert.alert(title, message);
     } finally { busyRef.current = false; setLoading(false); }
   };
   return (
