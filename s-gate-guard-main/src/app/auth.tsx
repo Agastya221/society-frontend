@@ -9,7 +9,7 @@ import { GiantButton } from '@/components/gate/GiantButton';
 import { LanguageSwitch } from '@/components/gate/LanguageSwitch';
 import { useKeyboardHeight } from '@/components/gate/useKeyboardHeight';
 import { GuardBrandMark } from '@/components/GuardBrandMark';
-import { GuardColors, GuardFonts, GuardGradients, GuardTouch, GuardType, guardShadow } from '@/constants/theme';
+import { GuardColors, GuardFonts, GuardGradients, GuardTouch, GuardType } from '@/constants/theme';
 import { MSG91_TOKEN_AUTH, MSG91_WIDGET_ID } from '@/constants/msg91';
 import { useT } from '@/i18n';
 import api from '@/services/api';
@@ -125,7 +125,7 @@ export default function AuthScreen() {
             <Text style={styles.subtitle}>{screen === 'phone' ? t('auth.welcomeSub') : t('auth.sentTo', { phone })}</Text>
           </View>
 
-          <View style={[styles.card, guardShadow('#0D0F14', 2)]}>
+          <View style={styles.card}>
             <View style={styles.secureRow}><Ionicons name="shield-checkmark" size={18} color={GuardColors.green} /><Text style={styles.secureText}>{t('auth.secure')}</Text></View>
             {screen === 'otp' && (
               <TouchableOpacity activeOpacity={0.7} onPress={() => { setScreen('phone'); setOtp(''); setError(''); }} style={styles.backRow}>
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   eyebrow: { fontFamily: GuardFonts.semibold, fontWeight: '800', fontSize: 13, lineHeight: 18, letterSpacing: 1.6, color: GuardColors.goldDeep },
   title: { marginTop: 8, fontFamily: GuardFonts.bold, fontWeight: '900', fontSize: 34, lineHeight: 44, letterSpacing: -0.8, color: GuardColors.t1 },
   subtitle: { marginTop: 8, fontFamily: GuardFonts.medium, fontSize: GuardType.body, lineHeight: 26, fontWeight: '500', color: GuardColors.t2 },
-  card: { backgroundColor: GuardColors.card, borderRadius: 30, padding: 20 },
+  card: { backgroundColor: GuardColors.card, borderRadius: 30, borderWidth: 1, borderColor: GuardColors.border, padding: 20 },
   secureRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 18 },
   secureText: { fontFamily: GuardFonts.semibold, fontWeight: '800', fontSize: 13, lineHeight: 18, letterSpacing: 1, color: GuardColors.green },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', minHeight: GuardTouch.min, marginBottom: 6 },

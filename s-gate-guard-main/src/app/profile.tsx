@@ -105,7 +105,7 @@ export default function ProfileScreen() {
     };
 
     const languageCard = (
-        <View style={[styles.card, guardShadow('#0D0F14', 1)]}>
+        <View style={styles.card}>
             <Text style={styles.cardLabel}>{t('profile.language')}</Text>
             <LanguageSwitch />
         </View>
@@ -141,7 +141,7 @@ export default function ProfileScreen() {
                             </View>
                         </LinearGradient>
 
-                        <View style={[styles.card, guardShadow('#0D0F14', 1)]}>
+                        <View style={styles.card}>
                             <Row icon="call" label={t('profile.phone')} value={profile.phone} />
                             {profile.society?.name ? (
                                 <Row icon="business" label={t('profile.society')} value={[profile.society.name, profile.society.city].filter(Boolean).join(', ')} />
@@ -156,7 +156,7 @@ export default function ProfileScreen() {
                         </View>
                     </>
                 ) : (
-                    <View style={[styles.card, styles.errorCard, guardShadow('#0D0F14', 1)]}>
+                    <View style={[styles.card, styles.errorCard]}>
                         <Ionicons name="alert-circle-outline" size={48} color={GuardColors.t3} />
                         <Text style={styles.errorText}>{t('profile.couldNotLoad')}</Text>
                         {/* A network blip shouldn't push the guard toward logging out — offer a retry first. */}
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     dutyChip: { marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 999, paddingLeft: 10, paddingRight: 16, paddingVertical: 4 },
     dutyText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 15, lineHeight: 22, fontWeight: '800' },
 
-    card: { backgroundColor: GuardColors.card, borderRadius: 28, padding: 18, gap: 16 },
+    card: { backgroundColor: GuardColors.card, borderRadius: 28, borderWidth: 1, borderColor: GuardColors.border, padding: 18, gap: 16 },
     cardLabel: { color: GuardColors.t3, fontFamily: GuardFonts.bold, fontSize: GuardType.min, lineHeight: 22, fontWeight: '800', letterSpacing: 0.6 },
     row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
     rowIcon: { width: 50, height: 50, borderRadius: 18, backgroundColor: GuardColors.goldPale, alignItems: 'center', justifyContent: 'center' },

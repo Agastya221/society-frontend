@@ -28,9 +28,10 @@ interface EntryRequest {
     type: string;
     visitorName?: string;
     providerTag?: string;
+    purpose?: string;
     photoKey?: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
-    flat: { flatNumber: string };
+    flat: { flatNumber?: string; number?: string };
     createdAt: string;
     expiresAt: string;
 }
@@ -42,8 +43,8 @@ function typeLabel(type: string, providerTag?: string): string {
     const base =
         type === 'DELIVERY_PERSON' || type === 'DELIVERY' ? 'Delivery' :
         type === 'CAB'     ? 'Cab'     :
-        type === 'SERVICE' ? 'Service' :
-        type === 'GUEST'   ? 'Guest'   :
+        type === 'SERVICE' || type === 'VENDOR' ? 'Service' :
+        type === 'GUEST' || type === 'VISITOR' ? 'Guest'   :
         type.replace(/_/g, ' ');
     return providerTag ? `${base} • ${providerTag}` : base;
 }
@@ -51,14 +52,14 @@ function typeLabel(type: string, providerTag?: string): string {
 function typeIconName(type: string): any {
     if (type?.includes('DELIVERY')) return 'cube-outline';
     if (type === 'CAB')     return 'car-outline';
-    if (type === 'SERVICE') return 'construct-outline';
+    if (type === 'SERVICE' || type === 'VENDOR') return 'construct-outline';
     return 'person-outline';
 }
 
 function typeColor(type: string): string {
     if (type?.includes('DELIVERY')) return '#F97316';
     if (type === 'CAB')     return '#8B5CF6';
-    if (type === 'SERVICE') return '#0EA5E9';
+    if (type === 'SERVICE' || type === 'VENDOR') return '#0EA5E9';
     return SgateColors.goldDeep;
 }
 
@@ -107,8 +108,10 @@ export default function ApprovalsScreen() {
     const fetchRequests = useCallback(async (silent = false) => {
         try {
             if (!silent) setError(null);
-            const res = await api.get('/gate/entry-requests?status=PENDING');
-            setRequests(res.data?.data || []);
+            const res = await api.get('/gate/entry-requests?status=PENDING&limit=100');
+            const payload = res.data?.data;
+            const rows = Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
+            setRequests(Array.isArray(rows) ? rows : []);
         } catch (err: any) {
             if (!silent) setError(err?.response?.data?.message || 'Failed to fetch pending requests');
         } finally {
@@ -205,9 +208,10 @@ export default function ApprovalsScreen() {
                                 )}
                             </View>
 
-                            {item.flat?.flatNumber && (
-                                <Text style={styles.flatText}>Flat {item.flat.flatNumber}</Text>
+                            {(item.flat?.flatNumber || item.flat?.number) && (
+                                <Text style={styles.flatText}>Flat {item.flat.flatNumber || item.flat.number}</Text>
                             )}
+                            {item.purpose ? <Text style={styles.flatText} numberOfLines={2}>Purpose: {item.purpose}</Text> : null}
                             <Text style={styles.timeText}>
                                 {new Date(item.createdAt).toLocaleTimeString([], {
                                     hour: '2-digit',
@@ -240,7 +244,7 @@ export default function ApprovalsScreen() {
                                 ) : (
                                     <>
                                         <Feather name="check" size={15} color={SgateColors.gold} />
-                                        <Text style={styles.approveText}>Allow Entry</Text>
+                                        <Text style={styles.approveText}>Approve Visitor</Text>
                                     </>
                                 )}
                             </TouchableOpacity>

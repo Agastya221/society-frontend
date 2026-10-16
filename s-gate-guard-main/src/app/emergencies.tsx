@@ -138,7 +138,7 @@ export default function EmergenciesScreen() {
                             accessibilityLabel={t(`emergency.${e.apiType}`)}
                             disabled={onCooldown || !!raising}
                             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setConfirm(e); }}
-                            style={[styles.tile, guardShadow('#0D0F14', 1), onCooldown && styles.tileOff]}
+                            style={[styles.tile, onCooldown && styles.tileOff]}
                         >
                             <View style={[styles.tileIcon, { backgroundColor: onCooldown ? GuardColors.surface : e.bg }]}>
                                 <Ionicons name={e.icon} size={38} color={onCooldown ? GuardColors.t3 : e.color} />
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
 
     grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: 20, paddingTop: 6 },
     tileWrap: { width: '47.6%' },
-    tile: { minHeight: 150, borderRadius: 28, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 8, paddingVertical: 14 },
+    tile: { minHeight: 150, borderRadius: 28, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 8, paddingVertical: 14 },
     tileOff: { opacity: 0.7 },
     tileIcon: { width: 70, height: 70, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
     tileLabel: { alignSelf: 'stretch', color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 20, lineHeight: 26, fontWeight: '800', textAlign: 'center' },

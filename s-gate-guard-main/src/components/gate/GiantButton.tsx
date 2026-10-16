@@ -65,7 +65,11 @@ export function GiantButton({
   );
 
   // Android only draws the elevation shadow of a view that has a background colour.
-  const frame = [styles.base, { minHeight, borderRadius: giant ? 32 : 26, backgroundColor: t.colors ? t.colors[1] : GuardColors.card }, guardShadow(t.glow, giant ? 3 : 2)];
+  const frame = [
+    styles.base,
+    { minHeight, borderRadius: giant ? 32 : 26, backgroundColor: t.colors ? t.colors[1] : GuardColors.card },
+    tone === 'light' ? styles.light : guardShadow(t.glow, giant ? 3 : 2),
+  ];
 
   return (
     <Pressy
@@ -74,7 +78,7 @@ export function GiantButton({
       disabled={inactive}
       onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onPress(); }}
       wrapStyle={[styles.wrap, disabled && { opacity: 0.45 }]}
-      style={[frame, !t.colors && styles.light, style]}
+      style={[frame, style]}
     >
       {t.colors ? (
         <LinearGradient colors={t.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: giant ? 32 : 26 }]} />

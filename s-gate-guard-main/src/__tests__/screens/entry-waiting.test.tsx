@@ -74,11 +74,11 @@ describe('EntryWaitingScreen', () => {
     expect(getByText('40s remaining')).toBeTruthy();
   });
 
-  it('shows the green result when polling sees APPROVED', async () => {
+  it('shows ready for entry when polling sees APPROVED', async () => {
     (api.get as jest.Mock).mockResolvedValue({ data: { data: { status: 'APPROVED' } } });
     const { getByText } = await renderScreen();
-    expect(getByText('Let in')).toBeTruthy();
-    expect(getByText('Let the visitor through')).toBeTruthy();
+    expect(getByText('Approved at gate')).toBeTruthy();
+    expect(getByText('Let in now')).toBeTruthy();
     expect(getByText('Asha Rao')).toBeTruthy();
     expect(getByText('Flat Tower A-A101')).toBeTruthy();
     expect(getByText('Guest')).toBeTruthy();
@@ -97,17 +97,21 @@ describe('EntryWaitingScreen', () => {
     expect(getByText('Ask the visitor to leave')).toBeTruthy();
   });
 
-  it('returns to the dashboard by itself after the result', async () => {
+  it('does not mark the person inside until the guard confirms entry', async () => {
     (api.get as jest.Mock).mockResolvedValue({ data: { data: { status: 'APPROVED' } } });
-    await renderScreen();
+    const utils = await renderScreen();
     act(() => { jest.advanceTimersByTime(8100); });
-    expect(mockRouter.dismissAll).toHaveBeenCalled();
+    expect(mockRouter.dismissAll).not.toHaveBeenCalled();
+    expect(api.patch).not.toHaveBeenCalled();
+    await act(async () => { fireEvent.press(utils.getByText('Let in now')); });
+    expect(api.patch).toHaveBeenCalledWith('/api/v1/gate/entry-requests/er-1/admit');
+    expect(utils.getByText('Let in')).toBeTruthy();
   });
 
   it('opens a fresh New visitor from the result', async () => {
     (api.get as jest.Mock).mockResolvedValue({ data: { data: { status: 'APPROVED' } } });
     const { getByText } = await renderScreen();
-    fireEvent.press(getByText('New visitor'));
+    fireEvent.press(getByText('Next visitor'));
     expect(mockRouter.dismissAll).toHaveBeenCalled();
     expect(mockRouter.push).toHaveBeenCalledWith('/new-entry');
   });
@@ -133,7 +137,7 @@ describe('EntryWaitingScreen', () => {
       waitOutTimeout();
       await act(async () => { fireEvent.press(utils.getByText('Let in anyway')); });
       expect(api.patch).toHaveBeenCalledWith('/api/v1/gate/entry-requests/er-1/approve');
-      expect(utils.getByText('Let the visitor through')).toBeTruthy();
+      expect(utils.getByText('Let in now')).toBeTruthy();
     });
 
     it('lets the guard send the visitor away', async () => {

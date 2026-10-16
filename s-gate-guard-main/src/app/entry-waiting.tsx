@@ -37,7 +37,7 @@ const TIMEOUT_S  = 45;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Phase = 'waiting' | 'timeout' | 'approved' | 'denied';
+type Phase = 'waiting' | 'timeout' | 'approved' | 'admitted' | 'denied';
 
 function typeLabelKey(type?: string): string | null {
     if (!type) return 'common.guest';
@@ -57,10 +57,11 @@ function typeIcon(type?: string): keyof typeof Ionicons.glyphMap {
     return 'person';
 }
 
-function resolvePhase(status: string): Phase | null {
+function resolvePhase(status: string, entryId?: string | null): Phase | null {
     const s = status?.toUpperCase();
-    if (['APPROVED', 'INSIDE', 'CHECKED_IN'].includes(s)) return 'approved';
-    if (['REJECTED', 'DENIED'].includes(s))               return 'denied';
+    if (s === 'APPROVED') return entryId ? 'admitted' : 'approved';
+    if (['INSIDE', 'CHECKED_IN'].includes(s)) return 'admitted';
+    if (['REJECTED', 'DENIED', 'EXPIRED'].includes(s)) return 'denied';
     return null;
 }
 
@@ -148,7 +149,8 @@ export default function EntryWaitingScreen() {
             const res = await api.get(`/api/v1/gate/entry-requests/${id}`);
             const status: string =
                 res.data?.data?.status ?? res.data?.data?.entryRequest?.status ?? '';
-            const resolved = resolvePhase(status);
+            const entryId: string | null = res.data?.data?.entryId ?? res.data?.data?.entryRequest?.entryId ?? null;
+            const resolved = resolvePhase(status, entryId);
             if (resolved) settle(resolved);
         } catch {
             // Fallback: check pending list
@@ -207,6 +209,7 @@ export default function EntryWaitingScreen() {
 
     // ── Cancel request when X is tapped ───────────────────────────────────────
     const handleClose = () => {
+        if (phase === 'approved') { stopAll(); goDashboard(); return; }
         Alert.alert(
             t('waiting.cancelTitle'),
             t('waiting.cancelText'),
@@ -254,6 +257,23 @@ export default function EntryWaitingScreen() {
         }
     };
 
+    const admit = async () => {
+        if (actioningRef.current) return;
+        actioningRef.current = true;
+        setActioning(true);
+        try {
+            await api.patch(`/api/v1/gate/entry-requests/${id}/admit`);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setPhase('admitted');
+        } catch (err: any) {
+            Alert.alert(t('waiting.couldNotUpdate'), err?.response?.data?.message ?? t('waiting.tryAgain'));
+            goDashboard();
+        } finally {
+            actioningRef.current = false;
+            setActioning(false);
+        }
+    };
+
     // Stack here is [index, new-entry (still holding the submitted form), entry-waiting].
     // replace() used to leave that stale form (and a second dashboard) underneath, so
     // Android back resurfaced it. Pop back to the dashboard first, then open a fresh screen.
@@ -266,7 +286,7 @@ export default function EntryWaitingScreen() {
     useEffect(() => {
         const sub = BackHandler.addEventListener('hardwareBackPress', () => {
             if (!id) goApprovals();
-            else if (phase === 'approved' || phase === 'denied') goDashboard();
+            else if (phase === 'approved' || phase === 'admitted' || phase === 'denied') goDashboard();
             else if (!cancelling) handleClose();
             return true;
         });
@@ -289,8 +309,26 @@ export default function EntryWaitingScreen() {
         );
     }
 
-    if (phase === 'approved' || phase === 'denied') {
-        const ok = phase === 'approved';
+    if (phase === 'approved') {
+        return (
+            <ResultScreen
+                kind="wait"
+                title={t('waiting.ready')}
+                reason={t('waiting.confirmAtGate')}
+                name={visitorName ?? typeText}
+                flat={flat ? `${t('common.flat')} ${flat}` : undefined}
+                typeLabel={visitorName ? typeText : undefined}
+                primaryLabel={t('waiting.admit')}
+                onPrimary={admit}
+                busy={actioning}
+                secondaryLabel={t('waiting.next')}
+                onSecondary={handleNextVisitor}
+            />
+        );
+    }
+
+    if (phase === 'admitted' || phase === 'denied') {
+        const ok = phase === 'admitted';
         return (
             <ResultScreen
                 kind={ok ? 'allow' : 'deny'}

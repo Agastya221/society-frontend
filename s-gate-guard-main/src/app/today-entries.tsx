@@ -1,7 +1,7 @@
 import { HomeButton } from '@/components/gate/HomeButton';
 import { Pressy } from '@/components/gate/Pressy';
 import { ScreenEmpty, ScreenLoading } from '@/components/ScreenState';
-import { GuardColors, GuardFonts, GuardSemantic, GuardTouch, GuardType, guardShadow } from '@/constants/theme';
+import { GuardColors, GuardFonts, GuardSemantic, GuardTouch, GuardType } from '@/constants/theme';
 import { useT } from '@/i18n';
 import api from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -287,7 +287,7 @@ const EntryCard = memo(function EntryCard({
         : entry.companyName ?? cleanLabel(entry.visitorType) ?? cleanLabel(entry.type);
 
     return (
-        <View style={[styles.card, guardShadow('#0D0F14', 1)]}>
+        <View style={styles.card}>
             <View style={styles.cardHeader}>
                 <View style={[styles.typeIcon, { backgroundColor: meta.bg }]}>
                     <Ionicons name={meta.icon} size={28} color={meta.color} />
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     listContent: { padding: 16, gap: 12 },
     listEmpty: { flexGrow: 1 },
 
-    card: { backgroundColor: GuardColors.card, borderRadius: 28, padding: 16, gap: 12 },
+    card: { backgroundColor: GuardColors.card, borderRadius: 28, borderWidth: 1, borderColor: GuardColors.border, padding: 16, gap: 12 },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     typeIcon: { width: 54, height: 54, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
     cardHeaderText: { flex: 1, gap: 2 },

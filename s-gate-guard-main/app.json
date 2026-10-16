@@ -42,6 +42,13 @@
       ],
       "expo-secure-store",
       [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow S-Gate Guard to hear a visitor's name when the guard taps the microphone.",
+          "speechRecognitionPermission": "Allow S-Gate Guard to write a visitor's spoken name."
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./src/assets/images/icon.png",

@@ -4,6 +4,8 @@ import { Pressy } from '@/components/gate/Pressy';
 import { GuardColors, GuardFonts, GuardGradients, GuardSemantic, guardShadow } from '@/constants/theme';
 import { useT } from '@/i18n';
 import api from '@/services/api';
+import { loadFlatDirectory } from '@/services/flatDirectory';
+import { fetchRecentStopped } from '@/services/gateQueue';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -82,15 +84,21 @@ export default function GuardDashboard() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const [pendingCount, setPendingCount] = useState(0);
+  const [readyCount, setReadyCount] = useState(0);
+  const [stoppedCount, setStoppedCount] = useState(0);
   const [insideCount, setInsideCount] = useState(0);
   const focused = useRef(true);
 
   const refresh = useCallback(() => {
-    api.get('/api/v1/gate/entry-requests?status=PENDING').then((res) => {
+    api.get('/api/v1/gate/entry-requests?status=PENDING&limit=1').then((res) => {
       const payload = res.data?.data;
       const entries: unknown[] = Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
-      setPendingCount(Array.isArray(entries) ? entries.length : 0);
+      setPendingCount(payload?.pagination?.total ?? (Array.isArray(entries) ? entries.length : 0));
     }).catch(() => undefined);
+    api.get('/api/v1/gate/entry-requests?status=APPROVED&awaitingEntry=true&limit=1').then((res) => {
+      setReadyCount(res.data?.data?.pagination?.total ?? 0);
+    }).catch(() => undefined);
+    fetchRecentStopped().then((items) => setStoppedCount(items.length)).catch(() => undefined);
     api.get('/api/v1/guard/today').then((res) => {
       setInsideCount(countInside(res.data?.data));
     }).catch(() => undefined);
@@ -99,8 +107,9 @@ export default function GuardDashboard() {
   useFocusEffect(useCallback(() => {
     focused.current = true;
     refresh();
+    if (user?.id) void loadFlatDirectory(user.id).catch(() => undefined);
     return () => { focused.current = false; };
-  }, [refresh]));
+  }, [refresh, user?.id]));
 
   // A visitor can arrive any time, so keep the counts fresh while this screen is showing.
   useEffect(() => {
@@ -134,6 +143,22 @@ export default function GuardDashboard() {
           <LiveDot color={GuardColors.green} size={8} />
           <Text style={styles.dutyText} numberOfLines={1}>{t('home.onDutyAt', { gate: user?.gate ?? 'Main Gate' }) + '\u00A0'}</Text>
         </Animated.View>
+
+        {stoppedCount > 0 ? (
+          <Pressy accessibilityLabel={t('home.stoppedNow', { n: stoppedCount })} onPress={() => open('/approvals')} style={styles.stoppedBanner}>
+            <Ionicons name="close-circle" size={28} color={GuardColors.red} />
+            <Text style={styles.readyText}>{t('home.stoppedNow', { n: stoppedCount })}</Text>
+            <Ionicons name="arrow-forward" size={24} color={GuardColors.t1} />
+          </Pressy>
+        ) : null}
+
+        {readyCount > 0 ? (
+          <Pressy accessibilityLabel={t('home.readyNow', { n: readyCount })} onPress={() => open('/approvals')} style={styles.readyBanner}>
+            <Ionicons name="checkmark-circle" size={28} color={GuardColors.green} />
+            <Text style={styles.readyText}>{t('home.readyNow', { n: readyCount })}</Text>
+            <Ionicons name="arrow-forward" size={24} color={GuardColors.t1} />
+          </Pressy>
+        ) : null}
 
         {/* Hero: scan */}
         <Animated.View entering={rise(2)}>
@@ -170,7 +195,7 @@ export default function GuardDashboard() {
             wrapStyle={styles.statWrap}
             accessibilityLabel={`${t('home.statInside')} ${insideCount}`}
             onPress={() => open('/today-entries')}
-            style={[styles.stat, guardShadow('#0D0F14', 1)]}
+            style={styles.stat}
           >
             <View style={[styles.statIcon, { backgroundColor: GuardColors.blueBg }]}><Ionicons name="people" size={24} color={GuardColors.blue} /></View>
             <Text style={styles.statNumber}>{insideCount}</Text>
@@ -180,7 +205,7 @@ export default function GuardDashboard() {
             wrapStyle={styles.statWrap}
             accessibilityLabel={`${t('home.statWaiting')} ${pendingCount}`}
             onPress={() => open('/approvals')}
-            style={[styles.stat, waiting && styles.statAlert, guardShadow(waiting ? '#FFB300' : '#0D0F14', waiting ? 2 : 1)]}
+            style={[styles.stat, waiting && styles.statAlert]}
           >
             {waiting && <LinearGradient colors={GuardGradients.wait} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} />}
             <View style={styles.statTop}>
@@ -195,7 +220,7 @@ export default function GuardDashboard() {
         {/* Dock */}
         <Animated.View entering={rise(5)} style={styles.dock}>
           <EmergencyHold onTrigger={() => open('/emergencies')} />
-          <Pressy wrapStyle={styles.profileWrap} accessibilityLabel={t('home.profile')} onPress={() => open('/profile')} style={[styles.profile, guardShadow('#0D0F14', 1)]}>
+          <Pressy wrapStyle={styles.profileWrap} accessibilityLabel={t('home.profile')} onPress={() => open('/profile')} style={styles.profile}>
             <Ionicons name="person-circle" size={30} color={GuardColors.t1} />
             <Text style={styles.profileText}>{t('home.profile')}</Text>
           </Pressy>
@@ -219,6 +244,9 @@ const styles = StyleSheet.create({
 
   dutyChip: { marginTop: 14, marginBottom: 20, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 999, paddingLeft: 10, paddingRight: 16, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
   dutyText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 15, lineHeight: 22, fontWeight: '800' },
+  readyBanner: { minHeight: 72, marginBottom: 14, paddingHorizontal: 18, borderRadius: 22, backgroundColor: GuardColors.greenBg, borderWidth: 2, borderColor: GuardColors.green, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  stoppedBanner: { minHeight: 72, marginBottom: 14, paddingHorizontal: 18, borderRadius: 22, backgroundColor: GuardColors.redBg, borderWidth: 2, borderColor: GuardColors.red, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  readyText: { flex: 1, color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 19 },
 
   hero: { height: 216, borderRadius: 34, backgroundColor: '#FFB800', padding: 22, overflow: 'hidden', justifyContent: 'space-between' },
   heroWatermark: { position: 'absolute', right: -34, top: -26, transform: [{ rotate: '-12deg' }] },
@@ -237,7 +265,7 @@ const styles = StyleSheet.create({
 
   stats: { marginTop: 14, flexDirection: 'row', gap: 14 },
   statWrap: { flex: 1 },
-  stat: { minHeight: 148, borderRadius: 28, backgroundColor: GuardColors.card, padding: 18, justifyContent: 'space-between' },
+  stat: { minHeight: 148, borderRadius: 28, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, padding: 18, justifyContent: 'space-between' },
   statAlert: { backgroundColor: '#FFC933' },
   statTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   statIcon: { width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
@@ -254,6 +282,6 @@ const styles = StyleSheet.create({
   emergencySub: { color: 'rgba(255,255,255,0.85)', fontFamily: GuardFonts.medium, fontSize: 15, lineHeight: 20, fontWeight: '600' },
   hint: { marginTop: 8, color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: 15, lineHeight: 21, fontWeight: '600' },
   profileWrap: { flex: 1 },
-  profile: { minHeight: 76, borderRadius: 26, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center', gap: 2 },
+  profile: { minHeight: 76, borderRadius: 26, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center', gap: 2 },
   profileText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 15, lineHeight: 20, fontWeight: '800' },
 });

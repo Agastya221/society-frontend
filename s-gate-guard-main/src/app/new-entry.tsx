@@ -1,6 +1,7 @@
 import { GiantButton } from '@/components/gate/GiantButton';
 import { KeyGrid } from '@/components/gate/KeyGrid';
 import { useKeyboardHeight } from '@/components/gate/useKeyboardHeight';
+import { VoiceNameInput } from '@/components/gate/VoiceNameInput';
 import { PassPicker } from '@/components/gate/PassPicker';
 import { Pressy } from '@/components/gate/Pressy';
 import { ResultScreen } from '@/components/gate/ResultScreen';
@@ -8,20 +9,21 @@ import { ListedPass, Match, conflictTitle } from '@/components/PreApprovedPass';
 import { GuardColors, GuardFonts, GuardTouch, GuardType, guardShadow } from '@/constants/theme';
 import { useT } from '@/i18n';
 import api from '@/services/api';
+import { loadFlatDirectory, type GuardFlat } from '@/services/flatDirectory';
+import { useAuthStore } from '@/store/useAuthStore';
+import { toEnglishName } from '@/utils/englishName';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
     BackHandler,
-    KeyboardAvoidingView,
     Linking,
     Modal,
-    Platform,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -47,7 +49,14 @@ const VISITOR_TYPES: { type: VType; labelKey: string; icon: keyof typeof Ionicon
 ];
 
 /** Visitor kinds a resident can pre-approve; for these the guard checks for a pass before bothering the resident. */
-const PRE_APPROVABLE: Partial<Record<VType, 'CAB' | 'DELIVERY' | 'HELP'>> = { CAB: 'CAB', DELIVERY: 'DELIVERY', HELP: 'HELP' };
+const PRE_APPROVABLE: Partial<Record<VType, 'CAB' | 'DELIVERY' | 'HELP'>> = { CAB: 'CAB', DELIVERY: 'DELIVERY', SERVICE: 'HELP' };
+
+type ServiceCategory = 'PLUMBER' | 'ELECTRICIAN' | 'APPLIANCE_REPAIR' | 'PEST_CONTROL' | 'CARPENTER' | 'PAINTER' | 'COOK' | 'TUTOR' | 'FITNESS_TRAINER' | 'BEAUTICIAN' | 'PHYSIOTHERAPIST' | 'OTHER';
+const SERVICE_CATEGORIES: ServiceCategory[] = [
+    'PLUMBER', 'ELECTRICIAN', 'APPLIANCE_REPAIR', 'PEST_CONTROL',
+    'CARPENTER', 'PAINTER', 'COOK', 'TUTOR',
+    'FITNESS_TRAINER', 'BEAUTICIAN', 'PHYSIOTHERAPIST', 'OTHER',
+];
 
 type ProviderTag = 'SWIGGY' | 'ZOMATO' | 'AMAZON' | 'BLINKIT' | 'FLIPKART' | 'BIGBASKET' | 'DUNZO' | 'OTHER';
 
@@ -62,16 +71,9 @@ const PROVIDERS: { tag: ProviderTag; label: string; color: string; bg: string; i
     { tag: 'OTHER',     label: '',           color: '#6B7280', bg: '#F3F4F6', icon: 'cube-outline' },
 ];
 
-interface FlatResult {
-    id: string;
-    flatNumber: string;
-    block?: { name: string };
-    wing?: string;
-    floor?: number;
-    residents?: { name: string }[];
-}
+type FlatResult = GuardFlat;
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2;
 
 type PrePhase =
     | { kind: 'form' }
@@ -83,9 +85,10 @@ type PrePhase =
 // Keep the most recently selected units available while the guard app is open.
 // This makes a queue for the same building much faster without another API call.
 let recentFlatsCache: FlatResult[] = [];
+let recentGuardId: string | null = null;
 
-async function uploadEntryPhoto(uri: string): Promise<string> {
-    const localResponse = await fetch(uri);
+async function uploadEntryPhoto(uri: string, signal?: AbortSignal): Promise<string> {
+    const localResponse = await fetch(uri, { signal });
     const blob = await localResponse.blob();
     const mimeType = blob.type || 'image/jpeg';
     const fileName = `visitor-${Date.now()}.jpg`;
@@ -94,7 +97,7 @@ async function uploadEntryPhoto(uri: string): Promise<string> {
         fileName,
         mimeType,
         fileSize: blob.size,
-    });
+    }, { signal });
     const { uploadUrl, s3Key } = presigned.data?.data ?? {};
     if (!uploadUrl || !s3Key) throw new Error('Photo upload could not be prepared');
 
@@ -102,6 +105,7 @@ async function uploadEntryPhoto(uri: string): Promise<string> {
         method: 'PUT',
         headers: { 'Content-Type': mimeType },
         body: blob,
+        signal,
     });
     if (!uploaded.ok) throw new Error('Photo upload failed');
     return s3Key;
@@ -226,7 +230,7 @@ function StepHeader({ step, title, onBack }: { step: Step; title: string; onBack
             </TouchableOpacity>
             <Text style={S.headerTitle} numberOfLines={1}>{title}</Text>
             <View style={S.dots}>
-                {[1, 2, 3].map((n) => <View key={n} style={[S.dot, n === step && S.dotActive, n < step && S.dotDone]} />)}
+                {[1, 2].map((n) => <View key={n} style={[S.dot, n === step && S.dotActive, n < step && S.dotDone]} />)}
             </View>
         </View>
     );
@@ -239,31 +243,97 @@ export default function NewEntryScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const keyboardHeight = useKeyboardHeight();
+    const guardId = useAuthStore((state) => state.user?.id ?? 'guard');
 
     const [step, setStep] = useState<Step>(1);
 
     // Visitor type
     const [type, setType] = useState<VType>('GUEST');
     const [provider, setProvider] = useState<ProviderTag | null>(null);
-    const [choosingProvider, setChoosingProvider] = useState(false);
+    const [serviceCategory, setServiceCategory] = useState<ServiceCategory | null>(null);
+    const [helpManual, setHelpManual] = useState(false);
+    const [cabStage, setCabStage] = useState<'digits' | 'flat'>('digits');
+    const [cabDigits, setCabDigits] = useState('');
+    const [otherPurpose, setOtherPurpose] = useState('');
 
     // Flat picking with big keys
     const [flatQuery, setFlatQuery] = useState('');
     const [selectedFlat, setSelectedFlat] = useState<FlatResult | null>(null);
+    const detailsScroll = useRef<ScrollView>(null);
+    useEffect(() => {
+        if (keyboardHeight > 0 && selectedFlat) {
+            const timer = setTimeout(() => detailsScroll.current?.scrollToEnd({ animated: true }), 80);
+            return () => clearTimeout(timer);
+        }
+    }, [keyboardHeight, selectedFlat]);
     const [flatResults, setFlatResults] = useState<FlatResult[]>([]);
     const [searchingFlat, setSearchingFlat] = useState(false);
+    const [allFlats, setAllFlats] = useState<FlatResult[]>([]);
+    const [loadingDirectory, setLoadingDirectory] = useState(false);
+    const [showKeypad, setShowKeypad] = useState(false);
+    const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
     const [recentFlats, setRecentFlats] = useState<FlatResult[]>(recentFlatsCache);
+
+    useEffect(() => {
+        if (recentGuardId !== guardId) {
+            recentGuardId = guardId;
+            recentFlatsCache = [];
+            setRecentFlats([]);
+        }
+    }, [guardId]);
+
+    useEffect(() => {
+        if (step !== 2 || selectedFlat) return;
+        let cancelled = false;
+        setLoadingDirectory(true);
+        loadFlatDirectory(guardId).then((flats) => {
+            if (cancelled) return;
+            setAllFlats(flats);
+            setSelectedBlock((current) => current ?? recentFlatsCache[0]?.block?.name ?? flats[0]?.block?.name ?? '');
+        }).catch(() => { if (!cancelled) setShowKeypad(true); })
+          .finally(() => { if (!cancelled) setLoadingDirectory(false); });
+        return () => { cancelled = true; };
+    }, [step, selectedFlat, guardId]);
+
+    const blocks = useMemo(() => [...new Set(allFlats.map((flat) => flat.block?.name ?? ''))], [allFlats]);
+    const blockFlats = useMemo(() => allFlats.filter((flat) => (flat.block?.name ?? '') === selectedBlock), [allFlats, selectedBlock]);
 
     // Visitor name — optional, but residents see "Visitor" when it's left blank.
     const [visitorName, setVisitorName] = useState('');
-    const [nameOpen, setNameOpen] = useState(false);
 
     // Photo
     const [photoUri, setPhotoUri] = useState<string | null>(null);
     const [cameraOpen, setCameraOpen] = useState(false);
+    const [photoUploading, setPhotoUploading] = useState(false);
+    const [photoUploadFailed, setPhotoUploadFailed] = useState(false);
+    const photoUploadRef = useRef<{ uri: string; promise: Promise<string | null>; controller: AbortController } | null>(null);
+
+    const handlePhotoCapture = (uri: string) => {
+        photoUploadRef.current?.controller.abort();
+        setPhotoUri(uri);
+        setPhotoUploading(true);
+        setPhotoUploadFailed(false);
+        const controller = new AbortController();
+        const promise = uploadEntryPhoto(uri, controller.signal).catch(() => {
+            if (photoUploadRef.current?.uri === uri) setPhotoUploadFailed(true);
+            return null;
+        }).finally(() => {
+            if (photoUploadRef.current?.uri === uri) setPhotoUploading(false);
+        });
+        photoUploadRef.current = { uri, promise, controller };
+    };
+
+    const removePhoto = () => {
+        photoUploadRef.current?.controller.abort();
+        photoUploadRef.current = null;
+        setPhotoUri(null);
+        setPhotoUploading(false);
+        setPhotoUploadFailed(false);
+    };
 
     // A resident may already have pre-approved this cab / delivery / helper.
     const [pre, setPre] = useState<PrePhase>({ kind: 'form' });
+    const [preCheckFailed, setPreCheckFailed] = useState(false);
     const [windows, setWindows] = useState<Record<string, ListedPass>>({});
     const [allowingId, setAllowingId] = useState<string | null>(null);
     const allowRef = useRef(false);
@@ -298,28 +368,41 @@ export default function NewEntryScreen() {
         setStep(1);
         setType('GUEST');
         setProvider(null);
-        setChoosingProvider(false);
+        setServiceCategory(null);
+        setHelpManual(false);
+        setCabStage('digits');
+        setCabDigits('');
+        setOtherPurpose('');
         setFlatQuery('');
+        setShowKeypad(false);
         setSelectedFlat(null);
         setFlatResults([]);
         setVisitorName('');
-        setNameOpen(false);
+        photoUploadRef.current?.controller.abort();
         setPhotoUri(null);
+        photoUploadRef.current = null;
+        setPhotoUploading(false);
+        setPhotoUploadFailed(false);
         setPre({ kind: 'form' });
+        setPreCheckFailed(false);
         setWindows({});
     }, []);
+
+    useEffect(() => () => photoUploadRef.current?.controller.abort(), []);
 
     const goBack = useCallback(() => {
         if (submittingRef.current || allowRef.current) return true;
         if (pre.kind === 'checking') return true;
-        if (pre.kind === 'pass' || pre.kind === 'denied') { setPre({ kind: 'form' }); setStep(3); return true; }
+        if (pre.kind === 'pass' || pre.kind === 'denied') { setPre({ kind: 'form' }); return true; }
         if (pre.kind === 'allowed') { reset(); return true; }
-        if (step === 3) { setStep(2); setSelectedFlat(null); return true; }
+        if (step === 2 && selectedFlat) { setSelectedFlat(null); return true; }
+        if (step === 2 && type === 'CAB' && cabStage === 'flat') { setCabStage('digits'); return true; }
+        if (step === 2 && type === 'SERVICE' && serviceCategory) { setServiceCategory(null); return true; }
+        if (step === 2 && type === 'HELP' && helpManual) { setHelpManual(false); return true; }
         if (step === 2) { setStep(1); setFlatQuery(''); return true; }
-        if (choosingProvider) { setChoosingProvider(false); setProvider(null); return true; }
         router.back();
         return true;
-    }, [pre.kind, step, choosingProvider, reset, router]);
+    }, [pre.kind, step, selectedFlat, type, cabStage, serviceCategory, helpManual, reset, router]);
 
     // Hardware back goes one step back instead of dropping a half-filled visitor.
     useEffect(() => {
@@ -332,25 +415,36 @@ export default function NewEntryScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setType(v);
         setProvider(null);
-        if (v === 'DELIVERY') { setChoosingProvider(true); return; }
+        setServiceCategory(null);
+        setHelpManual(false);
+        setCabStage('digits');
+        setCabDigits('');
+        setOtherPurpose('');
+        setPreCheckFailed(false);
+        setShowKeypad(false);
         setStep(2);
     };
 
     const handlePickProvider = (tag: ProviderTag) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setProvider(tag);
-        setChoosingProvider(false);
-        setStep(2);
+        if (selectedFlat) checkForPreApproval(selectedFlat, tag);
     };
 
     // ── Step 2: flat ──────────────────────────────────────────────────────────
-    const checkForPreApproval = async (flat: FlatResult) => {
+    const checkForPreApproval = async (flat: FlatResult, selectedProvider?: ProviderTag) => {
         const preType = PRE_APPROVABLE[type];
-        if (!preType) { setStep(3); return; }
+        if (!preType) return;
+        setPreCheckFailed(false);
         setPre({ kind: 'checking' });
         try {
             const [res, list] = await Promise.all([
-                api.post('/api/v1/guard/pre-approved/validate', { flatId: flat.id, type: preType }),
+                api.post('/api/v1/guard/pre-approved/validate', {
+                    flatId: flat.id,
+                    type: preType,
+                    ...(type === 'SERVICE' && serviceCategory ? { category: serviceCategory } : {}),
+                    ...(type === 'DELIVERY' && selectedProvider && selectedProvider !== 'OTHER' ? { companyName: selectedProvider } : {}),
+                }),
                 api.get(`/api/v1/guard/pre-approved?type=${preType}&limit=100&flatId=${flat.id}`).catch(() => null),
             ]);
             const rawList = list?.data?.data?.entries;
@@ -363,10 +457,10 @@ export default function NewEntryScreen() {
                 return;
             }
         } catch {
-            // No pass, or the check failed: the resident can still be asked.
+            // A network failure is different from a confirmed missing pass.
+            setPreCheckFailed(true);
         }
         setPre({ kind: 'form' });
-        setStep(3);
     };
 
     const handleSelectFlat = (flat: FlatResult) => {
@@ -374,7 +468,22 @@ export default function NewEntryScreen() {
         setSelectedFlat(flat);
         recentFlatsCache = [flat, ...recentFlatsCache.filter((item) => item.id !== flat.id)].slice(0, 4);
         setRecentFlats(recentFlatsCache);
-        checkForPreApproval(flat);
+        if (type !== 'DELIVERY') checkForPreApproval(flat);
+    };
+
+    const checkCabDigits = async () => {
+        if (!/^\d{4}$/.test(cabDigits)) return;
+        setPre({ kind: 'checking' });
+        try {
+            const res = await api.post('/api/v1/guard/pre-approved/validate', { vehicleLast4: cabDigits });
+            const result: Match = res.data?.data ?? { allowed: false, isPrivate: false };
+            if (result.allowed) {
+                setPre({ kind: 'pass', matches: result.matches?.length ? result.matches : [result], message: result.message?.trim() || undefined });
+                return;
+            }
+        } catch { setPreCheckFailed(true); }
+        setPre({ kind: 'form' });
+        setCabStage('flat');
     };
 
     const handleAllowPass = useCallback(async (match: Match) => {
@@ -414,11 +523,19 @@ export default function NewEntryScreen() {
                 flatId: selectedFlat!.id,
             };
             if (type === 'DELIVERY' && provider) payload.providerTag = provider;
-            const name = visitorName.trim().replace(/\s+/g, ' ');
+            if (type === 'SERVICE' && serviceCategory) payload.purpose = serviceCategory.replace(/_/g, ' ');
+            if (type === 'HELP') payload.purpose = 'Unregistered daily help';
+            if (type === 'CAB' && cabDigits) payload.purpose = `Cab ${cabDigits}`;
+            if (type === 'OTHER' && otherPurpose.trim()) payload.purpose = otherPurpose.trim().slice(0, 100);
+            const name = toEnglishName(visitorName);
             if (name) payload.visitorName = name.slice(0, 100);
 
             if (photoUri) {
-                payload.photoKey = await uploadEntryPhoto(photoUri);
+                const key = photoUploadRef.current?.uri === photoUri
+                    ? await photoUploadRef.current.promise
+                    : await uploadEntryPhoto(photoUri);
+                if (!key) throw new Error(t('visitor.photoUploadFailed'));
+                payload.photoKey = key;
             }
             const res = await api.post('/api/v1/gate/entry-requests', payload);
             const entryId = res.data?.data?.entryRequest?.id ?? res.data?.data?.id ?? null;
@@ -437,7 +554,7 @@ export default function NewEntryScreen() {
             });
         } catch (err: any) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert(t('visitor.failed'), err?.response?.data?.message ?? t('visitor.failedText'));
+            Alert.alert(t('visitor.failed'), err?.response?.data?.message ?? err?.message ?? t('visitor.failedText'));
         } finally {
             submittingRef.current = false;
             setSubmitting(false);
@@ -445,7 +562,6 @@ export default function NewEntryScreen() {
     };
 
     const typeInfo = VISITOR_TYPES.find((v) => v.type === type)!;
-    const providerInfo = PROVIDERS.find((p) => p.tag === provider);
     const passName = (m: Match) => (m.entryId ? windows[m.entryId]?.visitorName : null) ?? m.displayLabel;
     const passFlat = (m: Match) => (m.isPrivate ? t('scan.privateFlat') : m.flatNumber ? `${t('common.flat')} ${m.flatNumber === 'OFFICE' ? t('scan.office') : m.flatNumber}` : undefined);
 
@@ -509,7 +625,11 @@ export default function NewEntryScreen() {
         );
     }
 
-    const title = step === 1 ? (choosingProvider ? t('visitor.deliveryFrom') : t('visitor.stepWho')) : step === 2 ? t('visitor.stepFlat') : t('visitor.stepPhoto');
+    const title = step === 1 ? t('visitor.stepWho')
+        : type === 'CAB' && cabStage === 'digits' ? t('visitor.cabDigitsTitle')
+        : type === 'SERVICE' && !serviceCategory ? t('visitor.serviceCategoryTitle')
+        : type === 'HELP' && !helpManual ? t('visitor.helpTitle')
+        : selectedFlat ? t('visitor.stepPhoto') : t('visitor.stepFlat');
 
     return (
         <View style={S.root}>
@@ -517,7 +637,7 @@ export default function NewEntryScreen() {
             <StepHeader step={step} title={title} onBack={goBack} />
 
             {/* ── Step 1: who is it ─────────────────────────────────────────── */}
-            {step === 1 && !choosingProvider && (
+            {step === 1 && (
                 <Animated.View key="who" entering={FadeInDown.duration(260)} style={S.body}>
                     <View style={S.typeGrid}>
                         {VISITOR_TYPES.map((v) => (
@@ -527,7 +647,7 @@ export default function NewEntryScreen() {
                                 testID={`type-${v.type}`}
                                 accessibilityLabel={t(v.labelKey)}
                                 onPress={() => handlePickType(v.type)}
-                                style={[S.typeCard, guardShadow('#0D0F14', 1)]}
+                                style={S.typeCard}
                             >
                                 <View style={[S.typeIcon, { backgroundColor: v.bg }]}>
                                     <Ionicons name={v.icon} size={36} color={v.tint} />
@@ -539,33 +659,65 @@ export default function NewEntryScreen() {
                 </Animated.View>
             )}
 
-            {step === 1 && choosingProvider && (
-                <Animated.View key="provider" entering={FadeInDown.duration(260)} style={S.body}>
-                    <View style={S.typeGrid}>
-                        {PROVIDERS.map((p) => (
-                            <Pressy
-                                key={p.tag}
-                                wrapStyle={S.providerWrap}
-                                testID={`provider-${p.tag}`}
-                                accessibilityLabel={p.label || t('common.other')}
-                                onPress={() => handlePickProvider(p.tag)}
-                                style={[S.providerCard, guardShadow('#0D0F14', 1)]}
-                            >
-                                <View style={[S.providerIcon, { backgroundColor: p.bg }]}>
-                                    <Ionicons name={p.icon} size={30} color={p.color} />
-                                </View>
-                                <Text style={S.providerLabel} numberOfLines={1}>{p.label || t('common.other')}</Text>
-                            </Pressy>
+            {step === 2 && type === 'CAB' && cabStage === 'digits' && (
+                <View style={S.specialBody}>
+                    <Text style={S.specialHint}>{t('visitor.cabDigitsHint')}</Text>
+                    <TextInput
+                        testID="cab-last4"
+                        style={S.cabInput}
+                        value={cabDigits}
+                        onChangeText={(value) => setCabDigits(value.replace(/\D/g, '').slice(0, 4))}
+                        keyboardType="number-pad"
+                        maxLength={4}
+                        placeholder="0000"
+                        placeholderTextColor={GuardColors.t3}
+                    />
+                    <GiantButton label={t('visitor.checkCabPass')} icon="shield-checkmark" disabled={cabDigits.length !== 4} onPress={checkCabDigits} />
+                    <GiantButton label={t('visitor.cabNoDigits')} icon="home" tone="light" onPress={() => setCabStage('flat')} />
+                </View>
+            )}
+
+            {step === 2 && type === 'SERVICE' && !serviceCategory && (
+                <ScrollView style={S.body} contentContainerStyle={[S.specialScroll, { paddingBottom: insets.bottom + 20 }]}>
+                    <Text style={S.specialHint}>{t('visitor.serviceCategoryHint')}</Text>
+                    <View style={S.serviceGrid}>
+                        {SERVICE_CATEGORIES.map((category) => (
+                            <TouchableOpacity key={category} testID={`service-${category}`} style={S.serviceTile} onPress={() => setServiceCategory(category)}>
+                                <Text style={S.serviceTileText}>{t(`visitor.service.${category}`)}</Text>
+                            </TouchableOpacity>
                         ))}
                     </View>
-                </Animated.View>
+                </ScrollView>
+            )}
+
+            {step === 2 && type === 'HELP' && !helpManual && (
+                <View style={S.specialBody}>
+                    <Text style={S.specialHint}>{t('visitor.helpHint')}</Text>
+                    <GiantButton label={t('visitor.scanStaffPass')} icon="qr-code" onPress={() => router.replace('/scan-verify')} />
+                    <GiantButton label={t('visitor.unregisteredHelp')} icon="person-add" tone="light" onPress={() => setHelpManual(true)} />
+                </View>
             )}
 
             {/* ── Step 2: which flat ────────────────────────────────────────── */}
-            {step === 2 && (
+            {step === 2 && !selectedFlat && (type !== 'CAB' || cabStage === 'flat') && (type !== 'SERVICE' || !!serviceCategory) && (type !== 'HELP' || helpManual) && (
                 <Animated.View key="flat" entering={FadeInDown.duration(260)} style={[S.body, S.flatBody, { paddingBottom: insets.bottom + 12 }]}>
+                    <TouchableOpacity testID="early-photo" accessibilityRole="button" style={S.earlyPhoto} onPress={() => setCameraOpen(true)}>
+                        {photoUri ? <Image source={{ uri: photoUri }} style={S.earlyPhotoThumb} contentFit="cover" />
+                            : <View style={S.earlyPhotoIcon}><Ionicons name="camera" size={27} color={GuardColors.t1} /></View>}
+                        <View style={{ flex: 1 }}>
+                            <Text style={S.earlyPhotoTitle}>{t(photoUri ? 'visitor.retake' : 'visitor.takePhoto')}</Text>
+                            <Text style={[S.earlyPhotoSub, photoUploadFailed && S.preWarning]}>{t(photoUploadFailed ? 'visitor.photoUploadFailed' : photoUploading ? 'visitor.photoUploading' : 'visitor.photoOptional')}</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={22} color={GuardColors.t2} />
+                    </TouchableOpacity>
+                    <TouchableOpacity testID="toggle-flat-search" accessibilityRole="button" style={S.searchToggle} onPress={() => { setShowKeypad((value) => !value); setFlatQuery(''); }}>
+                        <Ionicons name={showKeypad ? 'grid' : 'keypad'} size={24} color={GuardColors.t1} />
+                        <Text style={S.searchToggleText}>{t(showKeypad ? 'visitor.chooseFromList' : 'visitor.typeFlat')}</Text>
+                    </TouchableOpacity>
+
+                    {showKeypad ? <>
                     <View style={S.displayRow}>
-                        <View style={[S.display, guardShadow('#FFB300', 1)]}>
+                        <View style={S.display}>
                             <Text testID="flat-display" style={[S.displayText, !flatQuery && S.displayPlaceholder]} numberOfLines={1} adjustsFontSizeToFit>
                                 {flatQuery || t('visitor.pressFlat')}
                             </Text>
@@ -579,7 +731,7 @@ export default function NewEntryScreen() {
                             disabled={!flatQuery}
                             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setFlatQuery((q) => q.slice(0, -1)); }}
                             onLongPress={() => setFlatQuery('')}
-                            style={[S.deleteKey, !flatQuery && { opacity: 0.4 }, guardShadow('#0D0F14', 1)]}
+                            style={[S.deleteKey, !flatQuery && { opacity: 0.4 }]}
                         >
                             <Ionicons name="backspace-outline" size={30} color={GuardColors.t1} />
                         </TouchableOpacity>
@@ -604,7 +756,7 @@ export default function NewEntryScreen() {
                             <Text style={S.noFlats}>{t('visitor.noFlats')}</Text>
                         )}
                         {flatResults.map((item) => (
-                            <TouchableOpacity key={item.id} testID={`flat-${item.id}`} activeOpacity={0.75} style={[S.flatTile, guardShadow('#0D0F14', 1)]} onPress={() => handleSelectFlat(item)}>
+                            <TouchableOpacity key={item.id} testID={`flat-${item.id}`} activeOpacity={0.75} style={S.flatTile} onPress={() => handleSelectFlat(item)}>
                                 <View style={S.flatTileIcon}><Ionicons name="home" size={22} color={GuardColors.goldDeep} /></View>
                                 <View style={{ flex: 1 }}>
                                     <Text style={S.flatTileTitle}>{flatLabel(item)}</Text>
@@ -616,82 +768,110 @@ export default function NewEntryScreen() {
                     </ScrollView>
 
                     <KeyGrid keyHeight={50} onKey={(c) => setFlatQuery((q) => (q.length < 20 ? q + c : q))} />
+                    </> : <>
+                        {recentFlats.length > 0 ? (
+                            <View style={S.recentSection}>
+                                <Text style={S.resultsLabel}>{t('visitor.recent')}</Text>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.recentRow}>
+                                    {recentFlats.map((flat) => (
+                                        <TouchableOpacity key={flat.id} testID={`recent-${flat.id}`} style={S.recentChip} onPress={() => handleSelectFlat(flat)}>
+                                            <Text style={S.recentChipText}>{flatLabel(flat)}</Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        ) : null}
+                        {loadingDirectory && allFlats.length === 0 ? <ActivityIndicator style={{ marginTop: 24 }} color={GuardColors.goldDeep} /> : null}
+                        {blocks.length > 1 ? (
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={S.blockScroll} contentContainerStyle={S.blockRow}>
+                                {blocks.map((block) => (
+                                    <TouchableOpacity key={block} accessibilityRole="button" testID={`block-${block}`} style={[S.blockChip, selectedBlock === block && S.blockChipSelected]} onPress={() => setSelectedBlock(block)}>
+                                        <Text style={[S.blockChipText, selectedBlock === block && S.blockChipTextSelected]}>{block || t('common.other')}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        ) : null}
+                        <ScrollView style={S.results} contentContainerStyle={S.gridResults} showsVerticalScrollIndicator={false}>
+                            <Text style={S.resultsLabel}>{t('visitor.chooseFlat')}</Text>
+                            <View style={S.flatGrid}>
+                                {blockFlats.map((flat) => (
+                                    <TouchableOpacity key={flat.id} accessibilityRole="button" testID={`flat-${flat.id}`} style={S.gridTile} onPress={() => handleSelectFlat(flat)}>
+                                        <Text style={S.gridNumber} numberOfLines={1}>{flat.flatNumber}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </ScrollView>
+                    </>}
                 </Animated.View>
             )}
 
-            {/* ── Step 3: photo and notify ─────────────────────────────────── */}
-            {step === 3 && (
-                <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-                    <Animated.View key="photo" entering={FadeInDown.duration(260)} style={{ flex: 1 }}>
-                        <ScrollView contentContainerStyle={[S.step3, { paddingBottom: insets.bottom + 20 + keyboardHeight }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                            <View style={[S.summary, guardShadow('#0D0F14', 1)]}>
-                                <View style={[S.summaryIcon, { backgroundColor: typeInfo.bg }]}>
-                                    <Ionicons name={providerInfo && type === 'DELIVERY' ? providerInfo.icon : typeInfo.icon} size={30} color={providerInfo && type === 'DELIVERY' ? providerInfo.color : typeInfo.tint} />
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={S.summaryType}>{type === 'DELIVERY' && providerInfo ? `${t(typeInfo.labelKey)} · ${providerInfo.label || t('common.other')}` : t(typeInfo.labelKey)}</Text>
-                                    <Text style={S.summaryFlat}>{t('visitor.toFlat')} {selectedFlat ? flatLabel(selectedFlat) : ''}</Text>
-                                </View>
+            {/* ── Same flat screen: optional details and one Send action ─── */}
+            {step === 2 && !!selectedFlat && (
+                <Animated.View key="details" entering={FadeInDown.duration(220)} style={S.body}>
+                    <ScrollView ref={detailsScroll} contentContainerStyle={[S.quickDetails, { paddingBottom: insets.bottom + keyboardHeight + 24 }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                        <View style={S.summary}>
+                            <View style={[S.summaryIcon, { backgroundColor: typeInfo.bg }]}>
+                                <Ionicons name={typeInfo.icon} size={30} color={typeInfo.tint} />
                             </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={S.summaryType}>{t(typeInfo.labelKey)}</Text>
+                                <Text style={S.summaryFlat}>{flatLabel(selectedFlat)}</Text>
+                            </View>
+                            <TouchableOpacity testID="change-flat" accessibilityRole="button" accessibilityLabel={t('visitor.changeFlat')} style={S.changeFlat} onPress={() => setSelectedFlat(null)}>
+                                <Ionicons name="pencil" size={22} color={GuardColors.t1} />
+                            </TouchableOpacity>
+                        </View>
 
-                            {photoUri ? (
-                                <View style={S.photoWrap}>
-                                    <Image source={{ uri: photoUri }} style={S.photo} contentFit="cover" />
-                                    <View style={S.photoActions}>
-                                        <TouchableOpacity style={S.photoAction} onPress={() => setCameraOpen(true)} activeOpacity={0.8}>
-                                            <Ionicons name="camera-reverse" size={22} color="#fff" />
-                                            <Text style={S.photoActionText}>{t('visitor.retake')}</Text>
+                        {type === 'DELIVERY' ? (
+                            <View>
+                                <Text style={S.optionLabel}>{t('visitor.deliveryFrom')}</Text>
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.providerChips}>
+                                    {PROVIDERS.map((item) => (
+                                        <TouchableOpacity key={item.tag} testID={`provider-${item.tag}`} accessibilityRole="button" style={[S.providerChip, provider === item.tag && S.providerChipSelected]} onPress={() => handlePickProvider(item.tag)}>
+                                            <Text style={S.providerChipText}>{item.label || t('common.other')}</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={S.photoAction} onPress={() => setPhotoUri(null)} activeOpacity={0.8}>
-                                            <Ionicons name="trash" size={22} color="#fff" />
-                                            <Text style={S.photoActionText}>{t('visitor.removePhoto')}</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View>
-                            ) : (
-                                <GiantButton label={t('visitor.takePhoto')} sub={t('visitor.takePhotoSub')} icon="camera" tone="light" onPress={() => setCameraOpen(true)} />
-                            )}
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        ) : null}
 
-                            {nameOpen ? (
-                                <View style={[S.nameBox, guardShadow('#0D0F14', 1)]}>
-                                    <Ionicons name="person" size={22} color={GuardColors.t3} />
-                                    <TextInput
-                                        style={S.nameInput}
-                                        placeholder={type === 'DELIVERY' ? t('visitor.deliveryNamePlaceholder') : t('visitor.namePlaceholder')}
-                                        placeholderTextColor={GuardColors.t3}
-                                        value={visitorName}
-                                        onChangeText={setVisitorName}
-                                        autoCapitalize="words"
-                                        autoCorrect={false}
-                                        maxLength={100}
-                                        returnKeyType="done"
-                                    />
-                                </View>
-                            ) : (
-                                <TouchableOpacity testID="add-name" style={S.addName} activeOpacity={0.7} onPress={() => setNameOpen(true)}>
-                                    <Ionicons name="add-circle" size={26} color={GuardColors.goldDeep} />
-                                    {/* One Text (not two in a row): Devanagari in an auto-width row was clipped to its first word. */}
-                                    <Text style={S.addNameText}>{t('visitor.addName')}<Text style={S.addNameSub}>{`  ${t('visitor.addNameSub')}`}</Text></Text>
-                                </TouchableOpacity>
-                            )}
+                        <VoiceNameInput value={visitorName} onChange={setVisitorName} />
 
-                            <GiantButton
-                                label={t('visitor.notify')}
-                                icon="notifications"
-                                tone="gold"
-                                loading={submitting}
-                                disabled={!canSubmit}
-                                onPress={handleSubmit}
-                                style={{ marginTop: 6 }}
-                            />
-                        </ScrollView>
-                    </Animated.View>
-                </KeyboardAvoidingView>
+                        {type === 'OTHER' ? (
+                            <View>
+                                <Text style={S.optionLabel}>{t('visitor.otherPurpose')}</Text>
+                                <TextInput style={S.purposeInput} value={otherPurpose} onChangeText={setOtherPurpose} maxLength={100} placeholder={t('visitor.otherPurposeHint')} placeholderTextColor={GuardColors.t3} />
+                            </View>
+                        ) : null}
+
+                        {type === 'SERVICE' && serviceCategory ? <Text style={S.purposeLabel}>{t(`visitor.service.${serviceCategory}`)}</Text> : null}
+                        {type === 'CAB' && cabDigits ? <Text style={S.purposeLabel}>{t('visitor.cabEnding', { digits: cabDigits })}</Text> : null}
+
+                        {preCheckFailed ? <Text style={S.preWarning}>{t('visitor.passCheckFailed')}</Text> : null}
+
+                        {photoUri ? (
+                            <View style={S.quickPhotoRow}>
+                                <Image source={{ uri: photoUri }} style={S.quickPhoto} contentFit="cover" />
+                                <TouchableOpacity style={S.quickPhotoAction} onPress={() => setCameraOpen(true)}><Text style={S.quickPhotoText}>{t('visitor.retake')}</Text></TouchableOpacity>
+                                <TouchableOpacity style={S.quickPhotoAction} onPress={removePhoto}><Text style={S.quickPhotoText}>{t('visitor.removePhoto')}</Text></TouchableOpacity>
+                            </View>
+                        ) : (
+                            <TouchableOpacity testID="take-photo" accessibilityRole="button" style={S.quickPhotoButton} onPress={() => setCameraOpen(true)}>
+                                <Ionicons name="camera" size={24} color={GuardColors.t1} />
+                                <Text style={S.quickPhotoText}>{t('visitor.photoOptional')}</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {photoUploadFailed ? <Text style={S.preWarning}>{t('visitor.photoUploadFailed')}</Text> : null}
+
+                        <GiantButton label={t('visitor.notify')} icon="notifications" tone="gold" loading={submitting} disabled={!canSubmit} onPress={handleSubmit} />
+                    </ScrollView>
+                </Animated.View>
             )}
 
             <CameraModal
                 visible={cameraOpen}
-                onCapture={(uri) => setPhotoUri(uri)}
+                onCapture={handlePhotoCapture}
                 onClose={() => setCameraOpen(false)}
             />
         </View>
@@ -703,7 +883,32 @@ export default function NewEntryScreen() {
 const S = StyleSheet.create({
     root: { flex: 1, backgroundColor: GuardColors.bg },
     body: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
+    specialBody: { flex: 1, paddingHorizontal: 20, paddingTop: 20, gap: 18 },
+    specialScroll: { paddingTop: 12, gap: 18 },
+    specialHint: { color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: 18, lineHeight: 27 },
+    cabInput: { minHeight: 90, borderRadius: 24, backgroundColor: GuardColors.card, borderWidth: 2, borderColor: GuardColors.gold, color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 42, textAlign: 'center', letterSpacing: 14 },
+    serviceGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    serviceTile: { width: '48%', minHeight: 75, borderRadius: 20, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
+    serviceTileText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 18, lineHeight: 25, textAlign: 'center' },
     flatBody: { paddingTop: 4 },
+    earlyPhoto: { minHeight: 76, borderRadius: 23, backgroundColor: GuardColors.card, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 13, marginBottom: 12, borderWidth: 1, borderColor: GuardColors.border },
+    earlyPhotoIcon: { width: 54, height: 54, borderRadius: 16, backgroundColor: GuardColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+    earlyPhotoThumb: { width: 54, height: 54, borderRadius: 16 },
+    earlyPhotoTitle: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 19 },
+    earlyPhotoSub: { color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: 15 },
+    searchToggle: { alignSelf: 'flex-end', minHeight: GuardTouch.min, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, marginBottom: 8, borderRadius: 16, backgroundColor: GuardColors.card },
+    searchToggleText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 17 },
+    recentSection: { marginBottom: 10, gap: 7 },
+    blockScroll: { flexGrow: 0, marginBottom: 10 },
+    blockRow: { gap: 9, paddingRight: 12 },
+    blockChip: { minHeight: GuardTouch.min, minWidth: 85, borderRadius: 18, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 15 },
+    blockChipSelected: { backgroundColor: GuardColors.gold, borderColor: GuardColors.goldDeep },
+    blockChipText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 17 },
+    blockChipTextSelected: { color: GuardColors.black },
+    gridResults: { paddingBottom: 20, gap: 10 },
+    flatGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    gridTile: { width: '31%', minHeight: 77, borderRadius: 20, borderWidth: 1, borderColor: GuardColors.border, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center' },
+    gridNumber: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 23 },
 
     header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingBottom: 10 },
     backBtn: { width: GuardTouch.min, height: GuardTouch.min, borderRadius: GuardTouch.min / 2, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center', ...guardShadow('#0D0F14', 1) },
@@ -716,7 +921,7 @@ const S = StyleSheet.create({
     // Step 1
     typeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingTop: 8 },
     typeWrap: { width: '47.6%' },
-    typeCard: { height: 150, borderRadius: 30, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center', gap: 12 },
+    typeCard: { height: 150, borderRadius: 30, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center', gap: 12 },
     typeIcon: { width: 72, height: 72, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
     typeLabel: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 21, lineHeight: 28, fontWeight: '800' },
     providerWrap: { width: '47.6%' },
@@ -730,7 +935,7 @@ const S = StyleSheet.create({
     displayText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 36, lineHeight: 44, fontWeight: '900', letterSpacing: 4 },
     displayPlaceholder: { fontSize: 20, lineHeight: 28, letterSpacing: 0, color: GuardColors.t3, fontWeight: '700' },
     displayHint: { color: GuardColors.t3, fontFamily: GuardFonts.medium, fontSize: GuardType.min, lineHeight: 20, fontWeight: '600' },
-    deleteKey: { width: 76, height: 76, borderRadius: 24, backgroundColor: GuardColors.card, alignItems: 'center', justifyContent: 'center' },
+    deleteKey: { width: 76, height: 76, borderRadius: 24, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center' },
     results: { flex: 1, marginVertical: 10 },
     resultsContent: { gap: 10, paddingBottom: 6 },
     resultsLabel: { color: GuardColors.t3, fontFamily: GuardFonts.bold, fontSize: GuardType.min, lineHeight: 22, fontWeight: '800', letterSpacing: 0.5 },
@@ -738,17 +943,32 @@ const S = StyleSheet.create({
     recentChip: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: GuardTouch.min, paddingHorizontal: 16, borderRadius: 999, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border },
     recentChipText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: GuardType.body, lineHeight: 26, fontWeight: '800' },
     noFlats: { marginTop: 12, textAlign: 'center', color: GuardColors.t3, fontFamily: GuardFonts.bold, fontSize: GuardType.body, lineHeight: 26, fontWeight: '700' },
-    flatTile: { minHeight: 72, borderRadius: 24, backgroundColor: GuardColors.card, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 10 },
+    flatTile: { minHeight: 72, borderRadius: 24, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 10 },
     flatTileIcon: { width: 46, height: 46, borderRadius: 16, backgroundColor: GuardColors.goldPale, alignItems: 'center', justifyContent: 'center' },
     flatTileTitle: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 22, lineHeight: 28, fontWeight: '900' },
     flatTileSub: { color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: GuardType.min + 1, lineHeight: 22, fontWeight: '600' },
 
     // Step 3
     step3: { paddingHorizontal: 20, paddingTop: 8, gap: 14 },
-    summary: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: GuardColors.card, borderRadius: 26, padding: 16 },
+    summary: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: GuardColors.card, borderRadius: 26, borderWidth: 1, borderColor: GuardColors.border, padding: 16 },
     summaryIcon: { width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
     summaryType: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: GuardType.body, lineHeight: 26, fontWeight: '800' },
     summaryFlat: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 24, lineHeight: 32, fontWeight: '900' },
+    quickDetails: { gap: 18, paddingTop: 8 },
+    changeFlat: { width: GuardTouch.min, height: GuardTouch.min, alignItems: 'center', justifyContent: 'center', borderRadius: 18, backgroundColor: GuardColors.goldPale },
+    optionLabel: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: 16, marginBottom: 8 },
+    purposeInput: { minHeight: GuardTouch.min, borderRadius: 18, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, paddingHorizontal: 16, color: GuardColors.t1, fontFamily: GuardFonts.medium, fontSize: 18 },
+    purposeLabel: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: 18 },
+    providerChips: { gap: 8, paddingRight: 12 },
+    providerChip: { minHeight: GuardTouch.min, borderRadius: 18, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, paddingHorizontal: 18, justifyContent: 'center' },
+    providerChipSelected: { backgroundColor: GuardColors.goldPale, borderColor: GuardColors.goldDeep, borderWidth: 2 },
+    providerChipText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 17 },
+    quickPhotoButton: { minHeight: GuardTouch.min, borderRadius: 18, backgroundColor: GuardColors.card, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16 },
+    quickPhotoRow: { minHeight: 74, borderRadius: 18, backgroundColor: GuardColors.card, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 10 },
+    quickPhoto: { width: 58, height: 58, borderRadius: 12 },
+    quickPhotoAction: { minHeight: GuardTouch.min, justifyContent: 'center', paddingHorizontal: 4 },
+    quickPhotoText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 17 },
+    preWarning: { color: GuardColors.red, fontFamily: GuardFonts.bold, fontSize: 16, lineHeight: 23 },
     photoWrap: { borderRadius: 28, overflow: 'hidden', backgroundColor: '#000' },
     photo: { width: '100%', height: 260 },
     photoActions: { position: 'absolute', left: 12, right: 12, bottom: 12, flexDirection: 'row', gap: 10 },

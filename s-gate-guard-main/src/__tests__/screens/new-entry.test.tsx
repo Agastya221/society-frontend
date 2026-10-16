@@ -32,8 +32,7 @@ const pressKeys = (utils: Utils, keys: string) => {
 
 /** Types part of a flat number, waits for the result tile and taps it. */
 const pickFlat = async (utils: Utils) => {
-  pressKeys(utils, 'A10');
-  await waitFor(() => expect(utils.getByText('Meera')).toBeTruthy());
+  await waitFor(() => expect(utils.getByTestId('flat-flat-1')).toBeTruthy());
   await act(async () => { fireEvent.press(utils.getByTestId('flat-flat-1')); });
 };
 
@@ -42,15 +41,20 @@ const entryPosts = () => (api.post as jest.Mock).mock.calls.filter((c) => c[0] =
 /** Guest → flat → on the "tell the resident" step. */
 const toNotifyStep = async (utils: Utils, type = 'GUEST') => {
   pickType(utils, type);
-  if (type === 'DELIVERY') fireEvent.press(utils.getByTestId('provider-SWIGGY'));
+  if (type === 'SERVICE') fireEvent.press(utils.getByTestId('service-PLUMBER'));
+  if (type === 'CAB') fireEvent.press(utils.getByText('No digits? Choose flat'));
   await pickFlat(utils);
+  if (type === 'DELIVERY') fireEvent.press(utils.getByTestId('provider-SWIGGY'));
+  await waitFor(() => expect(utils.getByText('Notify resident')).toBeTruthy());
 };
 
 describe('NewEntryScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useLanguageStore.setState({ lang: 'en' });
-    (api.get as jest.Mock).mockResolvedValue({ data: { data: [FLAT] } });
+    (api.get as jest.Mock).mockImplementation((url: string) => Promise.resolve({ data: { data:
+      url.includes('/gate/flats?') ? { flats: [FLAT], pagination: { pages: 1 } } : [FLAT],
+    } }));
     (api.post as jest.Mock).mockResolvedValue({ data: { data: { entryRequest: { id: 'er-1' } } } });
   });
 
@@ -75,12 +79,14 @@ describe('NewEntryScreen', () => {
       expect(utils.getByText('Which flat?')).toBeTruthy();
     });
 
-    it('asks which company for a delivery before the flat', () => {
+    it('keeps delivery company on the same quick details screen', async () => {
       const utils = render(<NewEntryScreen />);
       pickType(utils, 'DELIVERY');
+      expect(utils.getByText('Which flat?')).toBeTruthy();
+      await pickFlat(utils);
       expect(utils.getByText('From which company?')).toBeTruthy();
       fireEvent.press(utils.getByTestId('provider-SWIGGY'));
-      expect(utils.getByText('Which flat?')).toBeTruthy();
+      await waitFor(() => expect(utils.getByText('Notify resident')).toBeTruthy());
     });
   });
 
@@ -89,6 +95,7 @@ describe('NewEntryScreen', () => {
     it('builds the flat number from the big keys and searches as it goes', async () => {
       const utils = render(<NewEntryScreen />);
       pickType(utils, 'GUEST');
+      fireEvent.press(utils.getByTestId('toggle-flat-search'));
       pressKeys(utils, 'A10');
       expect(utils.getByTestId('flat-display').props.children).toBe('A10');
       await waitFor(() => expect(api.get).toHaveBeenCalledWith('/api/v1/gate/flats/search?query=A10'));
@@ -98,6 +105,7 @@ describe('NewEntryScreen', () => {
     it('deletes the last key and clears on a long press', () => {
       const utils = render(<NewEntryScreen />);
       pickType(utils, 'GUEST');
+      fireEvent.press(utils.getByTestId('toggle-flat-search'));
       pressKeys(utils, '101');
       fireEvent.press(utils.getByTestId('flat-delete'));
       expect(utils.getByTestId('flat-display').props.children).toBe('10');
@@ -109,6 +117,7 @@ describe('NewEntryScreen', () => {
       (api.get as jest.Mock).mockResolvedValue({ data: { data: [] } });
       const utils = render(<NewEntryScreen />);
       pickType(utils, 'GUEST');
+      fireEvent.press(utils.getByTestId('toggle-flat-search'));
       pressKeys(utils, 'Z9');
       await waitFor(() => expect(utils.getByText('No flats found')).toBeTruthy());
     });
@@ -144,8 +153,8 @@ describe('NewEntryScreen', () => {
       const utils = render(<NewEntryScreen />);
       await toNotifyStep(utils);
       expect(utils.getByText('Tell the resident')).toBeTruthy();
-      expect(utils.getByText(`Flat ${FLAT_LABEL}`)).toBeTruthy();
-      expect(utils.getByText('Take photo')).toBeTruthy();
+      expect(utils.getByText(FLAT_LABEL)).toBeTruthy();
+      expect(utils.getByText('Photo (optional)')).toBeTruthy();
       expect(utils.getByText('Notify resident')).toBeTruthy();
     });
 
@@ -164,7 +173,6 @@ describe('NewEntryScreen', () => {
     it('sends a trimmed, collapsed visitor name', async () => {
       const utils = render(<NewEntryScreen />);
       await toNotifyStep(utils);
-      fireEvent.press(utils.getByTestId('add-name'));
       fireEvent.changeText(utils.getByPlaceholderText('Name shown to the resident'), '  Asha   Rao ');
       await act(async () => { fireEvent.press(utils.getByText('Notify resident')); });
       expect(entryPosts()[0][1]).toEqual({ type: 'VISITOR', flatId: 'flat-1', visitorName: 'Asha Rao' });
@@ -173,7 +181,6 @@ describe('NewEntryScreen', () => {
     it('leaves the name out when it is blank', async () => {
       const utils = render(<NewEntryScreen />);
       await toNotifyStep(utils);
-      fireEvent.press(utils.getByTestId('add-name'));
       fireEvent.changeText(utils.getByPlaceholderText('Name shown to the resident'), '   ');
       await act(async () => { fireEvent.press(utils.getByText('Notify resident')); });
       expect(entryPosts()[0][1]).not.toHaveProperty('visitorName');
@@ -186,7 +193,7 @@ describe('NewEntryScreen', () => {
         return Promise.resolve({ data: { data: { entryRequest: { id: 'er-1' } } } });
       });
       await toNotifyStep(utils, 'DELIVERY');
-      expect(utils.getByText('Delivery · Swiggy')).toBeTruthy();
+      expect(utils.getByText('From which company?')).toBeTruthy();
       await act(async () => { fireEvent.press(utils.getByText('Notify resident')); });
       expect(entryPosts()[0][1]).toEqual({ type: 'DELIVERY', flatId: 'flat-1', providerTag: 'SWIGGY' });
     });
@@ -195,7 +202,7 @@ describe('NewEntryScreen', () => {
       const utils = render(<NewEntryScreen />);
       await toNotifyStep(utils, 'SERVICE');
       await act(async () => { fireEvent.press(utils.getByText('Notify resident')); });
-      expect(entryPosts()[0][1]).toEqual({ type: 'VENDOR', flatId: 'flat-1' });
+      expect(entryPosts()[0][1]).toEqual({ type: 'VENDOR', flatId: 'flat-1', purpose: 'PLUMBER' });
     });
 
     it('submits only once on a double tap', async () => {
@@ -239,6 +246,7 @@ describe('NewEntryScreen', () => {
       mockValidate(validMatch);
       const utils = render(<NewEntryScreen />);
       pickType(utils, 'CAB');
+      fireEvent.press(utils.getByText('No digits? Choose flat'));
       await pickFlat(utils);
 
       expect(api.post).toHaveBeenCalledWith('/api/v1/guard/pre-approved/validate', { flatId: 'flat-1', type: 'CAB' });
@@ -255,6 +263,7 @@ describe('NewEntryScreen', () => {
       mockValidate({ allowed: false, isPrivate: false, message: 'No pass' });
       const utils = render(<NewEntryScreen />);
       pickType(utils, 'CAB');
+      fireEvent.press(utils.getByText('No digits? Choose flat'));
       await pickFlat(utils);
       expect(utils.getByText('Tell the resident')).toBeTruthy();
     });
@@ -264,7 +273,8 @@ describe('NewEntryScreen', () => {
         url.includes('pre-approved/validate') ? Promise.reject(new Error('Network Error')) : Promise.resolve({ data: { data: {} } })
       ));
       const utils = render(<NewEntryScreen />);
-      pickType(utils, 'HELP');
+      pickType(utils, 'SERVICE');
+      fireEvent.press(utils.getByTestId('service-PLUMBER'));
       await pickFlat(utils);
       expect(utils.getByText('Tell the resident')).toBeTruthy();
     });
@@ -273,6 +283,7 @@ describe('NewEntryScreen', () => {
       mockValidate(validMatch);
       const utils = render(<NewEntryScreen />);
       pickType(utils, 'CAB');
+      fireEvent.press(utils.getByText('No digits? Choose flat'));
       await pickFlat(utils);
       fireEvent.press(utils.getByText('Ask the resident'));
       expect(utils.getByText('Tell the resident')).toBeTruthy();
@@ -288,11 +299,58 @@ describe('NewEntryScreen', () => {
       mockValidate(validMatch);
       const utils = render(<NewEntryScreen />);
       pickType(utils, 'CAB');
+      fireEvent.press(utils.getByText('No digits? Choose flat'));
       await pickFlat(utils);
       (api.post as jest.Mock).mockRejectedValueOnce({ response: { status: 409, data: { message: 'Already used at 10:02' } } });
       await act(async () => { fireEvent.press(utils.getByText('Allow entry')); });
       expect(utils.getByText('Pass already used')).toBeTruthy();
       expect(utils.getByText('Already used at 10:02')).toBeTruthy();
+    });
+
+    it('checks a private cab by vehicle digits before asking for a flat', async () => {
+      mockValidate({ allowed: true, entryId: 'safe-1', type: 'CAB', mode: 'SAFE', displayLabel: 'Cab Pickup', isPrivate: true });
+      const utils = render(<NewEntryScreen />);
+      pickType(utils, 'CAB');
+      fireEvent.changeText(utils.getByTestId('cab-last4'), '4521');
+      await act(async () => { fireEvent.press(utils.getByText('Check cab pass')); });
+      expect(api.post).toHaveBeenCalledWith('/api/v1/guard/pre-approved/validate', { vehicleLast4: '4521' });
+      expect(utils.getByText('Valid pass')).toBeTruthy();
+      expect(utils.queryByText('Which flat?')).toBeNull();
+    });
+
+    it('matches a service against the resident category', async () => {
+      mockValidate({ allowed: false, isPrivate: false });
+      const utils = render(<NewEntryScreen />);
+      pickType(utils, 'SERVICE');
+      fireEvent.press(utils.getByTestId('service-PLUMBER'));
+      await pickFlat(utils);
+      expect(api.post).toHaveBeenCalledWith('/api/v1/guard/pre-approved/validate', { flatId: 'flat-1', type: 'HELP', category: 'PLUMBER' });
+    });
+  });
+
+  describe('Distinct no-QR categories', () => {
+    it('sends registered daily help to the staff scanner', () => {
+      const utils = render(<NewEntryScreen />);
+      pickType(utils, 'HELP');
+      fireEvent.press(utils.getByText('Scan staff pass'));
+      expect(mockReplace).toHaveBeenCalledWith('/scan-verify');
+    });
+
+    it('asks the resident for an unregistered helper', async () => {
+      const utils = render(<NewEntryScreen />);
+      pickType(utils, 'HELP');
+      fireEvent.press(utils.getByText('No pass? Ask resident'));
+      await pickFlat(utils);
+      await act(async () => { fireEvent.press(utils.getByText('Notify resident')); });
+      expect(entryPosts()[0][1]).toEqual({ type: 'VISITOR', flatId: 'flat-1', purpose: 'Unregistered daily help' });
+    });
+
+    it('includes an optional reason for Other visitors', async () => {
+      const utils = render(<NewEntryScreen />);
+      await toNotifyStep(utils, 'OTHER');
+      fireEvent.changeText(utils.getByPlaceholderText('For example, deliver documents'), '  Drop documents  ');
+      await act(async () => { fireEvent.press(utils.getByText('Notify resident')); });
+      expect(entryPosts()[0][1]).toEqual({ type: 'VISITOR', flatId: 'flat-1', purpose: 'Drop documents' });
     });
   });
 

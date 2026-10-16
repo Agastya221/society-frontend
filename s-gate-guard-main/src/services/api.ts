@@ -1,7 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
-const BASE_URL = 'https://society-gate-backend-gsrq.onrender.com';
+// Local device QA can point at a backend on the host via `adb reverse`.
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://society-gate-backend-gsrq.onrender.com';
 
 const api: AxiosInstance = axios.create({
     baseURL: BASE_URL,

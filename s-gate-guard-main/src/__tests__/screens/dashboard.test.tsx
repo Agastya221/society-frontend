@@ -25,8 +25,10 @@ const mockGuard = {
 };
 
 /** Answers the two calls Home makes: waiting visitors and today's gate activity. */
-const mockCounts = ({ pending = [] as unknown, today = { entries: [], staffAttendances: [] } as unknown } = {}) => {
+const mockCounts = ({ pending = [] as unknown, ready = 0, today = { entries: [], staffAttendances: [] } as unknown } = {}) => {
   (api.get as jest.Mock).mockImplementation((url: string) => {
+    if (url.includes('awaitingEntry=true')) return Promise.resolve({ data: { data: { pagination: { total: ready } } } });
+    if (url.includes('status=REJECTED') || url.includes('status=EXPIRED')) return Promise.resolve({ data: { data: { entryRequests: [] } } });
     if (url.includes('entry-requests')) return Promise.resolve({ data: { data: { entries: pending } } });
     if (url.includes('guard/today')) return Promise.resolve({ data: { data: today } });
     return Promise.reject(new Error(`unexpected GET ${url}`));
@@ -116,6 +118,12 @@ describe('Guard Dashboard (index)', () => {
 
   // ── Waiting visitors ────────────────────────────────────────────────────────
   describe('Waiting at gate', () => {
+    it('shows the ready queue above the primary actions', async () => {
+      mockCounts({ ready: 3 });
+      const { getByText } = await renderDashboard();
+      fireEvent.press(getByText('3 ready to enter'));
+      expect(mockPush).toHaveBeenCalledWith('/approvals');
+    });
     it('shows zero and the plain label when nobody is waiting', async () => {
       const { getByLabelText, queryByText } = await renderDashboard();
       expect(getByLabelText('Waiting 0')).toBeTruthy();
@@ -133,6 +141,7 @@ describe('Guard Dashboard (index)', () => {
 
     it('handles the entryRequests and flat array response shapes', async () => {
       (api.get as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('status=REJECTED') || url.includes('status=EXPIRED')) return Promise.resolve({ data: { data: { entryRequests: [] } } });
         if (url.includes('entry-requests')) return Promise.resolve({ data: { data: { entryRequests: [{ id: 'a' }, { id: 'b' }] } } });
         return Promise.resolve({ data: { data: {} } });
       });
@@ -141,6 +150,7 @@ describe('Guard Dashboard (index)', () => {
       first.unmount();
 
       (api.get as jest.Mock).mockImplementation((url: string) => {
+        if (url.includes('status=REJECTED') || url.includes('status=EXPIRED')) return Promise.resolve({ data: { data: { entryRequests: [] } } });
         if (url.includes('entry-requests')) return Promise.resolve({ data: { data: [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }] } });
         return Promise.resolve({ data: { data: {} } });
       });
@@ -183,7 +193,8 @@ describe('Guard Dashboard (index)', () => {
   describe('API', () => {
     it('fetches waiting visitors and today activity on focus', async () => {
       await renderDashboard();
-      expect(api.get).toHaveBeenCalledWith('/api/v1/gate/entry-requests?status=PENDING');
+      expect(api.get).toHaveBeenCalledWith('/api/v1/gate/entry-requests?status=PENDING&limit=1');
+      expect(api.get).toHaveBeenCalledWith('/api/v1/gate/entry-requests?status=APPROVED&awaitingEntry=true&limit=1');
       expect(api.get).toHaveBeenCalledWith('/api/v1/guard/today');
     });
 
