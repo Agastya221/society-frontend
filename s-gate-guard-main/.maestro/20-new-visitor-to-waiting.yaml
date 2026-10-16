@@ -1,0 +1,22 @@
+# A walk-in visitor: type -> flat -> Send; the waiting screen appears; then cancel so no request is left behind.
+appId: com.sgate.guard
+---
+- startRecording: recordings/20-new-visitor-to-waiting
+- runFlow: _go-home.yaml
+- tapOn: "New visitor"
+- assertVisible: "Who is it?"
+- tapOn: "Other"
+- assertVisible: "Which flat?"
+- extendedWaitUntil:
+    visible: "A101"
+    timeout: 20000
+- tapOn: "A101"
+- assertVisible: "Notify resident"
+- tapOn: "Notify resident"
+- extendedWaitUntil:
+    visible: "Notifying resident"
+    timeout: 20000
+- tapOn:
+    id: "wait-close"
+- tapOn: "Cancel request"
+- assertVisible: "Scan QR"

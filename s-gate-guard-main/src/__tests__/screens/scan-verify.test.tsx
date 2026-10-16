@@ -37,7 +37,7 @@ const scan = async (utils: ReturnType<typeof renderScreen>, data: string) => {
 
 const typeCode = (utils: ReturnType<typeof renderScreen>, code: string) => {
   fireEvent.press(utils.getByText('No QR? Type code'));
-  for (const c of code.toUpperCase()) fireEvent.press(utils.getByTestId(`key-${c}`));
+  fireEvent.changeText(utils.getByTestId('code-input'), code);
 };
 
 const enterCode = async (utils: ReturnType<typeof renderScreen>, code: string) => {
@@ -139,14 +139,10 @@ describe('ScanVerifyScreen', () => {
       expect(api.post).toHaveBeenCalledWith('/api/v1/guard/scan', { qrToken: 'K7M2QX9' });
     });
 
-    it('builds the code from the big keys, with delete and clear', () => {
+    it('types the code in one big field, upper-cased and cleaned', () => {
       const utils = renderScreen();
-      typeCode(utils, 'k7m2');
-      expect(utils.getByTestId('code-display').props.children).toBe('K7M2');
-      fireEvent.press(utils.getByTestId('key-delete'));
-      expect(utils.getByTestId('code-display').props.children).toBe('K7M');
-      fireEvent(utils.getByTestId('key-delete'), 'longPress');
-      expect(utils.getByTestId('code-display').props.children).not.toBe('K7M');
+      typeCode(utils, 'k7-m2 ');
+      expect(utils.getByTestId('code-input').props.value).toBe('K7M2');
     });
 
     it('keeps Check disabled until the code is long enough', async () => {
@@ -160,7 +156,7 @@ describe('ScanVerifyScreen', () => {
       const utils = renderScreen();
       typeCode(utils, 'K7M');
       fireEvent.press(utils.getByTestId('code-close'));
-      expect(utils.queryByTestId('code-display')).toBeNull();
+      expect(utils.queryByTestId('code-input')).toBeNull();
       expect(api.post).not.toHaveBeenCalled();
     });
 

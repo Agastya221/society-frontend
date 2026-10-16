@@ -1,5 +1,4 @@
 import { GiantButton } from '@/components/gate/GiantButton';
-import { KeyGrid } from '@/components/gate/KeyGrid';
 import { useKeyboardHeight } from '@/components/gate/useKeyboardHeight';
 import { VoiceNameInput } from '@/components/gate/VoiceNameInput';
 import { PassPicker } from '@/components/gate/PassPicker';
@@ -700,7 +699,7 @@ export default function NewEntryScreen() {
 
             {/* ── Step 2: which flat ────────────────────────────────────────── */}
             {step === 2 && !selectedFlat && (type !== 'CAB' || cabStage === 'flat') && (type !== 'SERVICE' || !!serviceCategory) && (type !== 'HELP' || helpManual) && (
-                <Animated.View key="flat" entering={FadeInDown.duration(260)} style={[S.body, S.flatBody, { paddingBottom: insets.bottom + 12 }]}>
+                <Animated.View key="flat" entering={FadeInDown.duration(260)} style={[S.body, S.flatBody, { paddingBottom: insets.bottom + 12 + keyboardHeight }]}>
                     <TouchableOpacity testID="early-photo" accessibilityRole="button" style={S.earlyPhoto} onPress={() => setCameraOpen(true)}>
                         {photoUri ? <Image source={{ uri: photoUri }} style={S.earlyPhotoThumb} contentFit="cover" />
                             : <View style={S.earlyPhotoIcon}><Ionicons name="camera" size={27} color={GuardColors.t1} /></View>}
@@ -716,26 +715,20 @@ export default function NewEntryScreen() {
                     </TouchableOpacity>
 
                     {showKeypad ? <>
-                    <View style={S.displayRow}>
-                        <View style={S.display}>
-                            <Text testID="flat-display" style={[S.displayText, !flatQuery && S.displayPlaceholder]} numberOfLines={1} adjustsFontSizeToFit>
-                                {flatQuery || t('visitor.pressFlat')}
-                            </Text>
-                            {!flatQuery && <Text style={S.displayHint}>{t('visitor.pressFlatHint')}</Text>}
-                        </View>
-                        <TouchableOpacity
-                            testID="flat-delete"
-                            accessibilityRole="button"
-                            accessibilityLabel={t('scan.delete')}
-                            activeOpacity={0.6}
-                            disabled={!flatQuery}
-                            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setFlatQuery((q) => q.slice(0, -1)); }}
-                            onLongPress={() => setFlatQuery('')}
-                            style={[S.deleteKey, !flatQuery && { opacity: 0.4 }]}
-                        >
-                            <Ionicons name="backspace-outline" size={30} color={GuardColors.t1} />
-                        </TouchableOpacity>
-                    </View>
+                    <TextInput
+                        testID="flat-input"
+                        value={flatQuery}
+                        onChangeText={(text) => setFlatQuery(text.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase().slice(0, 20))}
+                        placeholder={t('visitor.pressFlatHint')}
+                        placeholderTextColor={GuardColors.t4}
+                        autoFocus
+                        autoCapitalize="characters"
+                        autoCorrect={false}
+                        spellCheck={false}
+                        autoComplete="off"
+                        returnKeyType="search"
+                        style={S.flatInput}
+                    />
 
                     <ScrollView style={S.results} contentContainerStyle={S.resultsContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                         {!flatQuery && recentFlats.length > 0 && (
@@ -767,7 +760,6 @@ export default function NewEntryScreen() {
                         ))}
                     </ScrollView>
 
-                    <KeyGrid keyHeight={50} onKey={(c) => setFlatQuery((q) => (q.length < 20 ? q + c : q))} />
                     </> : <>
                         {recentFlats.length > 0 ? (
                             <View style={S.recentSection}>
@@ -930,6 +922,7 @@ const S = StyleSheet.create({
     providerLabel: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 18, lineHeight: 24, fontWeight: '800' },
 
     // Step 2
+    flatInput: { minHeight: 76, borderRadius: 24, backgroundColor: GuardColors.card, borderWidth: 2, borderColor: GuardColors.gold, textAlign: 'center', color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 34, fontWeight: '900', letterSpacing: 6, paddingHorizontal: 12, marginTop: 4 },
     displayRow: { flexDirection: 'row', gap: 12, alignItems: 'center' },
     display: { flex: 1, minHeight: 76, borderRadius: 24, backgroundColor: GuardColors.card, borderWidth: 2, borderColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
     displayText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 36, lineHeight: 44, fontWeight: '900', letterSpacing: 4 },

@@ -1,0 +1,36 @@
+name: App tests
+
+# Runs the free automated checks (type check + jest) for the apps on every push and pull request,
+# so a break is caught before it reaches a phone.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [s-gate-master, s-gate-guard-main]
+    defaults:
+      run:
+        working-directory: ${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+      - run: npm ci
+      - name: Type check (app source only)
+        # The guard app's old e2e/ folder has known type errors; src/ must stay clean.
+        run: |
+          npx tsc --noEmit > tsc.log || true
+          cat tsc.log | head -50
+          if grep -E "^src/" tsc.log; then echo "Type errors in src/"; exit 1; fi
+      - name: Unit and screen tests
+        run: npm test -- --ci

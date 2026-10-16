@@ -26,9 +26,7 @@ type Utils = ReturnType<typeof render>;
 
 const pickType = (utils: Utils, type: string) => fireEvent.press(utils.getByTestId(`type-${type}`));
 
-const pressKeys = (utils: Utils, keys: string) => {
-  for (const c of keys.toUpperCase()) fireEvent.press(utils.getByTestId(`key-${c}`));
-};
+const typeFlat = (utils: Utils, text: string) => fireEvent.changeText(utils.getByTestId('flat-input'), text);
 
 /** Types part of a flat number, waits for the result tile and taps it. */
 const pickFlat = async (utils: Utils) => {
@@ -92,25 +90,22 @@ describe('NewEntryScreen', () => {
 
   // ── Step 2 ──────────────────────────────────────────────────────────────────
   describe('Which flat', () => {
-    it('builds the flat number from the big keys and searches as it goes', async () => {
+    it('lets the guard type the flat in a big field and searches as it goes', async () => {
       const utils = render(<NewEntryScreen />);
       pickType(utils, 'GUEST');
       fireEvent.press(utils.getByTestId('toggle-flat-search'));
-      pressKeys(utils, 'A10');
-      expect(utils.getByTestId('flat-display').props.children).toBe('A10');
+      typeFlat(utils, 'a10');
+      expect(utils.getByTestId('flat-input').props.value).toBe('A10');
       await waitFor(() => expect(api.get).toHaveBeenCalledWith('/api/v1/gate/flats/search?query=A10'));
       expect(utils.getByText('Meera')).toBeTruthy();
     });
 
-    it('deletes the last key and clears on a long press', () => {
+    it('keeps only letters, digits and dashes in the typed flat', () => {
       const utils = render(<NewEntryScreen />);
       pickType(utils, 'GUEST');
       fireEvent.press(utils.getByTestId('toggle-flat-search'));
-      pressKeys(utils, '101');
-      fireEvent.press(utils.getByTestId('flat-delete'));
-      expect(utils.getByTestId('flat-display').props.children).toBe('10');
-      fireEvent(utils.getByTestId('flat-delete'), 'longPress');
-      expect(utils.getByText('Press the flat number')).toBeTruthy();
+      typeFlat(utils, 'a-1 0/1');
+      expect(utils.getByTestId('flat-input').props.value).toBe('A-101');
     });
 
     it('says when no flat matches', async () => {
@@ -118,7 +113,7 @@ describe('NewEntryScreen', () => {
       const utils = render(<NewEntryScreen />);
       pickType(utils, 'GUEST');
       fireEvent.press(utils.getByTestId('toggle-flat-search'));
-      pressKeys(utils, 'Z9');
+      typeFlat(utils, 'Z9');
       await waitFor(() => expect(utils.getByText('No flats found')).toBeTruthy());
     });
 

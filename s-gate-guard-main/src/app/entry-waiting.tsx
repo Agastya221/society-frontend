@@ -1,4 +1,5 @@
 import { GiantButton } from '@/components/gate/GiantButton';
+import { E2E } from '@/utils/e2e';
 import { ResultScreen } from '@/components/gate/ResultScreen';
 import { GuardColors, GuardFonts, GuardTouch, GuardType, guardShadow } from '@/constants/theme';
 import { useT } from '@/i18n';
@@ -72,6 +73,7 @@ function PulseRing({ delay = 0 }: { delay?: number }) {
     const opacity = useSharedValue(0.45);
 
     useEffect(() => {
+        if (E2E) return;
         const loop = (from: number, to: number) => withDelay(delay, withRepeat(
             withSequence(withTiming(from, { duration: 0 }), withTiming(to, { duration: 1800, easing: Easing.out(Easing.ease) })),
             -1, false,

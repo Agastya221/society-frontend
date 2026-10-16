@@ -1,5 +1,6 @@
 import { GiantButton } from '@/components/gate/GiantButton';
-import { KeyGrid } from '@/components/gate/KeyGrid';
+import { useKeyboardHeight } from '@/components/gate/useKeyboardHeight';
+import { E2E } from '@/utils/e2e';
 import { PassPicker } from '@/components/gate/PassPicker';
 import { ResultScreen } from '@/components/gate/ResultScreen';
 import {
@@ -24,6 +25,7 @@ import {
     StatusBar,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -106,6 +108,7 @@ function prePhaseFrom(result: Match, listed: Record<string, ListedPass>): PrePha
 function ScanLine() {
     const y = useSharedValue(0);
     useEffect(() => {
+        if (E2E) return;
         y.value = withRepeat(withTiming(1, { duration: 1900, easing: Easing.inOut(Easing.quad) }), -1, true);
     }, [y]);
     const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.value * (FRAME_SIZE - 28) + 8 }] }));
@@ -142,7 +145,7 @@ function PermissionView({ onRequest, onBack }: { onRequest: () => void; onBack: 
     );
 }
 
-// ─── Code entry (big keys, no system keyboard) ───────────────────────────────
+// ─── Code entry (big field, normal phone keyboard) ───────────────────────────
 
 function CodeEntry({
     value, busy, bottomInset, onChange, onVerify, onClose,
@@ -155,15 +158,12 @@ function CodeEntry({
     onClose: () => void;
 }) {
     const t = useT();
+    const keyboardHeight = useKeyboardHeight();
     const ready = value.length >= MIN_CODE_LENGTH && !busy;
-    const press = (c: string) => {
-        if (busy || value.length >= MAX_CODE_LENGTH) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        onChange(value + c);
-    };
     return (
         <View style={S.codeWrap} pointerEvents="box-none">
-            <View style={[S.codeCard, { paddingBottom: Math.max(bottomInset, 12) + 12 }]}>
+            {/* The window does not resize for the keyboard on Android (edge-to-edge), so lift the sheet by hand. */}
+            <View style={[S.codeCard, { marginBottom: keyboardHeight, paddingBottom: (keyboardHeight ? 12 : Math.max(bottomInset, 12)) + 12 }]}>
                 <View style={S.handle} />
                 <View style={S.codeHead}>
                     <View style={{ flex: 1 }}>
@@ -175,37 +175,32 @@ function CodeEntry({
                     </Pressable>
                 </View>
 
-                <View style={S.codeDisplay}>
-                    <Text testID="code-display" style={[S.codeText, !value && S.codePlaceholder]} numberOfLines={1} adjustsFontSizeToFit>
-                        {value || '– – – – – –'}
-                    </Text>
-                </View>
+                <TextInput
+                    testID="code-input"
+                    value={value}
+                    onChangeText={(text) => onChange(text.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, MAX_CODE_LENGTH))}
+                    placeholder="– – – – – –"
+                    placeholderTextColor={GuardColors.t4}
+                    autoFocus
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    spellCheck={false}
+                    autoComplete="off"
+                    editable={!busy}
+                    returnKeyType="done"
+                    onSubmitEditing={() => { if (ready) onVerify(); }}
+                    style={S.codeInput}
+                />
 
-                <View style={{ marginTop: 14 }}><KeyGrid disabled={busy} onKey={press} /></View>
-
-                <View style={S.codeActions}>
-                    <TouchableOpacity
-                        activeOpacity={0.6}
-                        testID="key-delete"
-                        accessibilityRole="button"
-                        accessibilityLabel={t('scan.delete')}
-                        disabled={busy || !value}
-                        style={[S.deleteKey, (!value || busy) && { opacity: 0.4 }]}
-                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onChange(value.slice(0, -1)); }}
-                        onLongPress={() => onChange('')}
-                    >
-                        <Ionicons name="backspace-outline" size={30} color={GuardColors.t1} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <GiantButton
-                            label={t('scan.verify')}
-                            icon="shield-checkmark"
-                            tone="allow"
-                            loading={busy}
-                            disabled={!ready}
-                            onPress={onVerify}
-                        />
-                    </View>
+                <View style={{ marginTop: 14 }}>
+                    <GiantButton
+                        label={t('scan.verify')}
+                        icon="shield-checkmark"
+                        tone="allow"
+                        loading={busy}
+                        disabled={!ready}
+                        onPress={onVerify}
+                    />
                 </View>
             </View>
         </View>
@@ -635,6 +630,7 @@ const S = StyleSheet.create({
     codeTitle: { fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '900', color: GuardColors.t1 },
     codeSub: { marginTop: 2, fontFamily: GuardFonts.medium, fontSize: GuardType.min + 1, fontWeight: '600', color: GuardColors.t2 },
     codeClose: { width: GuardTouch.min, height: GuardTouch.min, borderRadius: GuardTouch.min / 2, backgroundColor: GuardColors.surface, alignItems: 'center', justifyContent: 'center' },
+    codeInput: { marginTop: 14, minHeight: 80, borderRadius: 24, backgroundColor: GuardColors.card, borderWidth: 2, borderColor: GuardColors.gold, textAlign: 'center', color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 38, fontWeight: '900', letterSpacing: 8, paddingHorizontal: 12, ...guardShadow('#FFB300', 1) },
     codeDisplay: { marginTop: 14, minHeight: 76, borderRadius: 24, backgroundColor: GuardColors.card, borderWidth: 2, borderColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12, ...guardShadow('#FFB300', 1) },
     codeText: { fontFamily: GuardFonts.bold, fontSize: 38, fontWeight: '900', letterSpacing: 6, color: GuardColors.t1 },
     codePlaceholder: { color: GuardColors.t4, letterSpacing: 4 },
