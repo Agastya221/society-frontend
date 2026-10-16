@@ -31,6 +31,7 @@ import {
 } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { backOrHome } from '@/utils/navigation';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 const FRAME_SIZE = SW * 0.7;
@@ -419,7 +420,7 @@ export default function ScanVerifyScreen() {
 
     if (!permission.granted) {
         // Once the user picks "Don't allow" twice Android stops showing the prompt — send them to Settings instead.
-        return <PermissionView onRequest={permission.canAskAgain ? requestPermission : () => Linking.openSettings()} onBack={() => router.back()} />;
+        return <PermissionView onRequest={permission.canAskAgain ? requestPermission : () => Linking.openSettings()} onBack={() => backOrHome(router)} />;
     }
 
     // ── Verdict screens ───────────────────────────────────────────────────────
@@ -548,7 +549,7 @@ export default function ScanVerifyScreen() {
 
             {/* Header bar */}
             <View style={[S.headerBar, { paddingTop: insets.top + 8 }]}>
-                <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} style={S.backBtn} onPress={() => router.back()}>
+                <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} style={S.backBtn} onPress={() => backOrHome(router)}>
                     <Ionicons name="arrow-back" size={28} color="#fff" />
                 </Pressable>
                 <Text style={S.headerTitle}>{t('scan.title')}</Text>

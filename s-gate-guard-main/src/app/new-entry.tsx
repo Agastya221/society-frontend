@@ -33,6 +33,7 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { backOrHome } from '@/utils/navigation';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -430,7 +431,7 @@ export default function NewEntryScreen() {
         if (step === 2 && type === 'SERVICE' && serviceCategory) { setServiceCategory(null); return true; }
         if (step === 2 && type === 'HELP' && helpManual) { setHelpManual(false); return true; }
         if (step === 2) { setStep(1); setFlatQuery(''); return true; }
-        router.back();
+        backOrHome(router);
         return true;
     }, [pre.kind, step, selectedFlat, type, cabStage, serviceCategory, helpManual, reset, router]);
 
