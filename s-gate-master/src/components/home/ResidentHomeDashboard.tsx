@@ -85,7 +85,7 @@ export default function ResidentHomeDashboard({
                     />
                 }
             >
-                <SocietyStatusCard residentName={getFirstName(user?.name)} />
+                <SocietyStatusCard residentName={getFirstName(user?.name)} waitingCount={pendingRequests.length} />
                 <AtAGlanceSection
                     waitingCount={pendingRequests.length}
                     deliveryCount={deliveryCount}

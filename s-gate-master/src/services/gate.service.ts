@@ -40,7 +40,8 @@ export const approveEntryRequest = async (id: string): Promise<void> => {
 };
 
 export const rejectEntryRequest = async (id: string, reason?: string): Promise<void> => {
-    await api.patch(`/gate/entry-requests/${id}/reject`, reason ? { reason } : undefined);
+    // Always send a body: the server reads `reason` from it (with no body Express 5 crashed with a 500).
+    await api.patch(`/gate/entry-requests/${id}/reject`, reason ? { reason } : {});
 };
 
 export const getEntryRequestPhoto = async (id: string): Promise<{ viewUrl: string }> => {

@@ -3,11 +3,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
+    AppState,
     RefreshControl,
     ScrollView,
     StyleSheet,
     View,
 } from 'react-native';
+
+// How often Home looks for visitors at the gate while it is open.
+const PENDING_POLL_MS = 10_000;
 import Animated, {
     FadeInDown,
     FadeOutLeft,
@@ -284,6 +288,23 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
             fetchContexts();
             if (isAdmin) fetchAdminData();
         }, [fetchSharedData, fetchContexts, fetchAdminData, isAdmin])
+    );
+
+    // A visitor at the gate must show up even when no push arrives (push missed, or not set up):
+    // while Home is open, check every 10 s, and at once when the app comes back to the front.
+    useFocusEffect(
+        useCallback(() => {
+            const poll = setInterval(() => {
+                if (AppState.currentState === 'active') fetchPendingRequests();
+            }, PENDING_POLL_MS);
+            const sub = AppState.addEventListener('change', (state) => {
+                if (state === 'active') fetchPendingRequests();
+            });
+            return () => {
+                clearInterval(poll);
+                sub.remove();
+            };
+        }, [fetchPendingRequests])
     );
 
     const handleRefresh = useCallback(async () => {

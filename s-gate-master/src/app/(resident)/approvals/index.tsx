@@ -249,12 +249,12 @@ export default function ApprovalsScreen() {
                         <View style={styles.requestInfo}>
                             <View style={styles.requestNameRow}>
                                 <Text style={[styles.typeLabel, { color }]} numberOfLines={1}>
-                                    {typeLabel(item.type, item.providerTag)}
+                                    {item.visitorName || typeLabel(item.type, item.providerTag)}
                                 </Text>
                                 {!isExpired ? (
                                     <View style={[styles.timerBadge, isUrgent && styles.timerBadgeUrgent]}>
                                         <Text style={[styles.timerText, isUrgent && styles.timerTextUrgent]}>
-                                            {minsLeft > 0 ? `${minsLeft}m` : `${secsLeft}s`}
+                                            {minsLeft > 0 ? `${minsLeft}m left` : `${secsLeft}s left`}
                                         </Text>
                                     </View>
                                 ) : (
@@ -265,7 +265,9 @@ export default function ApprovalsScreen() {
                             </View>
 
                             {(item.flat?.flatNumber || item.flat?.number) && (
-                                <Text style={styles.flatText}>Flat {item.flat.flatNumber || item.flat.number}</Text>
+                                <Text style={styles.flatText}>
+                                    {item.visitorName ? `${typeLabel(item.type, item.providerTag)} · ` : ''}Flat {item.flat.flatNumber || item.flat.number}
+                                </Text>
                             )}
                             {item.purpose ? <Text style={styles.flatText} numberOfLines={2}>Purpose: {item.purpose}</Text> : null}
                             <Text style={styles.timeText}>
@@ -376,7 +378,7 @@ export default function ApprovalsScreen() {
                     <View style={styles.modalCard}>
                         <Text style={styles.modalTitle}>Deny Entry?</Text>
                         <Text style={styles.modalSub}>
-                            {typeLabel(rejectTarget?.type ?? '', rejectTarget?.providerTag)}
+                            {rejectTarget?.visitorName || typeLabel(rejectTarget?.type ?? '', rejectTarget?.providerTag)}
                             {rejectTarget?.flat?.flatNumber ? ` · Flat ${rejectTarget.flat.flatNumber}` : ''}
                         </Text>
                         <TextInput
