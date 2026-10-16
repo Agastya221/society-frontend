@@ -1,14 +1,15 @@
 # Shared start: jump to Home with the app's own link (about a second). Only if that does not land on Home
 # (app crashed or closed) fall back to a full restart of the dev build.
+# Hindi labels end in an invisible no-break space (it stops Android clipping the last word), so text checks end in ".*".
 appId: com.sgate.guard
 ---
 - openLink: "sgateguard://"
 - runFlow:
     when:
-      notVisible: "Scan QR|QR स्कैन करें"
+      notVisible: "(Scan QR|QR स्कैन करें).*"
     commands:
       - stopApp
       - openLink: "exp+s-gate-guard://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8082"
       - extendedWaitUntil:
-          visible: "Scan QR|QR स्कैन करें"
+          visible: "(Scan QR|QR स्कैन करें).*"
           timeout: 90000

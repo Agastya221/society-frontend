@@ -96,7 +96,17 @@ describe('Gate queue', () => {
     const result = await screen();
     expect(result.queryByText('Own stop')).toBeNull();
     expect(result.queryByText('Left')).toBeNull();
-    expect(result.getByText('Stopped · 0')).toBeTruthy();
+    // Nothing left to show anywhere, so the screen says so instead of three empty headings
+    expect(result.getByText('All clear')).toBeTruthy();
+    expect(result.queryByText('Stopped · 0')).toBeNull();
+  });
+
+  it('keeps the section headings when anything is in the queue', async () => {
+    mockQueue({ waiting: [waiting] });
+    const result = await screen();
+    expect(result.getByText('Waiting for resident · 1')).toBeTruthy();
+    expect(result.getByText('Ready to enter · 0')).toBeTruthy();
+    expect(result.queryByText('All clear')).toBeNull();
   });
 
   it('uses one queue call, every 5 s, only while the app is in front', async () => {

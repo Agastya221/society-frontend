@@ -5,8 +5,8 @@ appId: com.sgate.guard
 - runFlow: _go-home.yaml
 - tapOn: "Profile"
 - assertVisible: "Security guard"
-- tapOn: "हिंदी"
-- assertVisible: "सिक्योरिटी गार्ड"
+- tapOn: "हिंदी.*"
+- assertVisible: "सिक्योरिटी गार्ड.*"
 - tapOn: "English"
 - assertVisible: "Security guard"
 - tapOn: "Home"

@@ -91,7 +91,8 @@ export default function ApprovalsScreen() {
     ]);
   };
 
-  const rows: Array<{ kind: 'heading' | 'item'; section: 'ready' | 'pending' | 'stopped'; item?: QueueItem }> = [
+  // With nothing anywhere, show only the "All clear" card: three empty headings look like a broken screen.
+  const rows: Array<{ kind: 'heading' | 'item'; section: 'ready' | 'pending' | 'stopped'; item?: QueueItem }> = ready.length + pending.length + stopped.length === 0 ? [] : [
     { kind: 'heading', section: 'ready' },
     ...ready.map((item) => ({ kind: 'item' as const, section: 'ready' as const, item })),
     { kind: 'heading', section: 'pending' },
@@ -120,7 +121,7 @@ export default function ApprovalsScreen() {
               onOverride={() => act(row.item!.id, 'approve')}
               onStop={() => confirm(row.item!.id, 'reject')}
             />}
-        ListEmptyComponent={<ScreenEmpty icon="checkmark-done-circle-outline" title={t('queue.empty')} message={t('queue.emptyText')} />}
+        ListEmptyComponent={<ScreenEmpty icon="checkmark-done-circle-outline" title={t('approvals.allClear')} message={t('queue.emptyText')} />}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); refresh(); }} tintColor={GuardColors.goldDeep} />}
       />
