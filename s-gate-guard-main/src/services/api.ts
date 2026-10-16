@@ -1,8 +1,10 @@
 import axios, { AxiosInstance } from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
+import { BASE_URL } from '../constants/api';
 
-// Local device QA can point at a backend on the host via `adb reverse`.
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://society-gate-backend-gsrq.onrender.com';
+// Re-exported so other call sites (useAuthStore's refresh/logout, which use plain
+// fetch to dodge the axios interceptor) never hard-code a second copy of this URL.
+export { BASE_URL };
 
 const api: AxiosInstance = axios.create({
     baseURL: BASE_URL,
@@ -64,7 +66,10 @@ api.interceptors.response.use(
             }
 
             try {
-                // Call refresh endpoint stored in zustand
+                // Call refresh endpoint stored in zustand. refreshAccessToken() itself
+                // decides whether this failure logs the guard out (only on a 401/403
+                // from the refresh call) — a network error/timeout/5xx here must not
+                // sign the guard out just because the connection hiccupped.
                 const newAccessToken = await refreshAccessToken();
                 drainQueue(newAccessToken);
 
@@ -73,7 +78,6 @@ api.interceptors.response.use(
                 return api(originalRequest);
             } catch (refreshError) {
                 drainQueue(null, refreshError);
-                await logout();
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;

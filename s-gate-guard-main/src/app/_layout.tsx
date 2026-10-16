@@ -59,7 +59,7 @@ export default function RootLayout() {
         if (status !== 'granted') return;
         const tokenData = await Notifications.getDevicePushTokenAsync();
         const fcmToken = tokenData.data as string;
-        await api.patch('/users/guard-app/fcm-token', {
+        await api.patch('/api/v1/users/guard-app/fcm-token', {
           fcmToken,
           deviceType: Platform.OS,
         });
@@ -138,13 +138,6 @@ export default function RootLayout() {
             headerShown: true,
             title: t('title.staffScan'),
           }} 
-        />
-        <Stack.Screen
-          name="pre-approved"
-          options={{
-            headerShown: true,
-            title: t('title.preApproved'),
-          }}
         />
         <Stack.Screen
           name="scan-verify"
