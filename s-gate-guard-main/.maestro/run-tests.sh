@@ -6,6 +6,8 @@
 # Results: .maestro/reports/ (HTML report + failure screenshots) and .maestro/recordings/*.mp4 (video of every flow).
 # Run one flow only:  ./run-tests.sh 25-type-the-flat.yaml
 # Force a clean code server:  FRESH=1 ./run-tests.sh
+# Two-person flows (tag needs-tokens) also act as the resident; tokens.js signs their tokens with the
+# backend secret on this computer, and they are skipped when the backend folder is not here.
 set -u
 cd "$(dirname "$0")"
 APP_DIR="$(cd .. && pwd)"
@@ -57,7 +59,14 @@ fi
 echo "== flows"
 mkdir -p reports recordings
 TARGET="${1:-.}"
-maestro test --no-reinstall-driver --format HTML-DETAILED --output reports/report.html --debug-output reports/debug --flatten-debug-output "$TARGET"
+# Two-person flows act as the resident too; they need tokens signed with the backend's secret (tokens.js).
+TOKEN_ARGS=()
+while IFS= read -r LINE; do [ -n "$LINE" ] && TOKEN_ARGS+=(-e "$LINE"); done < <(node tokens.js 2>/dev/null | tr -d '\r')
+if [ ${#TOKEN_ARGS[@]} -eq 0 ]; then
+  echo "   no backend secret on this computer: skipping two-person flows"
+  TOKEN_ARGS=(--exclude-tags needs-tokens)
+fi
+maestro test --no-reinstall-driver --format HTML-DETAILED --output reports/report.html --debug-output reports/debug --flatten-debug-output "${TOKEN_ARGS[@]}" "$TARGET"
 STATUS=$?
 # Maestro files each video deep inside the debug folder; gather them in one place.
 find reports/debug -name "*.mp4" -exec cp {} recordings/ \; 2>/dev/null
