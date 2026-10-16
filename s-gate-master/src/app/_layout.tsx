@@ -15,6 +15,7 @@ import { useSoraFonts } from "../hooks/useFonts";
 import { useAuthStore } from "../store/useAuthStore";
 import { useOnboardingStore } from "../store/useOnboardingStore";
 import { useGateStore } from "../store/useGateStore";
+import { isGatePushType } from '@/utils/gateRequestStatus';
 import api from "../services/api";
 import { AppAlertProvider, AppAlert } from "../components/ui/AppAlert";
 import { AppLoader } from "../components/ui/AppLoader";
@@ -220,10 +221,20 @@ export default function RootLayout() {
           router.push('/(admin)/approval-requests' as any);
         } else if (role === 'RESIDENT' && !requiresOnboarding) {
           if (current[0] === '(resident)' && current[1] === 'approvals') {
-            useGateStore.getState().fetchPendingRequests();
+            useGateStore.getState().onGatePush();
             return;
           }
           router.push('/(resident)/approvals' as any);
+        }
+      } else if (isGatePushType(data.type)) {
+        // GATE_APPROVED / GATE_DENIED / GATE_EXPIRED (no-show uses GATE_DENIED):
+        // the resident's Approvals screen shows how the request ended.
+        if (role === 'RESIDENT' && !requiresOnboarding) {
+          useGateStore.getState().onGatePush();
+          if (current[0] === '(resident)' && current[1] === 'approvals') return;
+          router.push('/(resident)/approvals' as any);
+        } else if (role === 'ADMIN') {
+          useGateStore.getState().onGatePush();
         }
       } else if (data.type === 'ONBOARDING_STATUS' && (role === 'ADMIN' || role === 'SUPER_ADMIN')) {
         router.push({
@@ -278,16 +289,17 @@ export default function RootLayout() {
     if (response) handleNotificationResponse(response);
   }, [isLoading, onboardingChecked, isAuthenticated, role, requiresOnboarding, segments, handleNotificationResponse]);
 
-  // A GATE_REQUEST arriving in the foreground must NOT navigate — the user may
-  // be mid-form. The system banner still shows (see setNotificationHandler)
-  // and tapping it routes via the response listener; here we only refresh the
-  // pending list so Home's waiting card picks the request up immediately.
+  // A gate push (GATE_REQUEST, GATE_APPROVED, GATE_DENIED, GATE_EXPIRED…)
+  // arriving in the foreground must NOT navigate — the user may be mid-form.
+  // The system banner still shows (see setNotificationHandler) and tapping it
+  // routes via the response listener; here we only refresh, so Home's waiting
+  // card and an open Approvals screen pick the change up immediately.
   useEffect(() => {
     const sub = Notifications.addNotificationReceivedListener((notification) => {
       const data = notification.request.content.data as Record<string, any>;
-      if (data?.type !== 'GATE_REQUEST' || !isAuthenticated) return;
+      if (!isGatePushType(data?.type) || !isAuthenticated) return;
       if (role === 'ADMIN' || (role === 'RESIDENT' && !requiresOnboarding)) {
-        useGateStore.getState().fetchPendingRequests();
+        useGateStore.getState().onGatePush();
       }
     });
     return () => sub.remove();

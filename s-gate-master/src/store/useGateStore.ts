@@ -10,6 +10,8 @@ interface GateState {
     isLoading: boolean;
     /** True once the first fetch has settled; screens show skeletons only before that. */
     hasLoaded: boolean;
+    /** Bumped on every GATE_* push so open screens (Approvals) refetch at once. */
+    gatePushAt: number;
 
     // ── Actions ────────────────────────────────────────────────────────────
     fetchPendingRequests: () => Promise<void>;
@@ -17,6 +19,8 @@ interface GateState {
     fetchInvitePasses: () => Promise<void>;
     approveRequest: (id: string) => Promise<void>;
     rejectRequest: (id: string, reason?: string) => Promise<void>;
+    /** A GATE_* push arrived: refresh the pending list and tell open screens. */
+    onGatePush: () => void;
     reset: () => void;
 }
 
@@ -26,6 +30,12 @@ export const useGateStore = create<GateState>((set, get) => ({
     invitePasses: [],
     isLoading: false,
     hasLoaded: false,
+    gatePushAt: 0,
+
+    onGatePush: () => {
+        set({ gatePushAt: Date.now() });
+        void get().fetchPendingRequests();
+    },
 
     reset: () =>
         set({
@@ -34,6 +44,7 @@ export const useGateStore = create<GateState>((set, get) => ({
             invitePasses: [],
             isLoading: false,
             hasLoaded: false,
+            gatePushAt: 0,
         }),
 
     fetchPendingRequests: async () => {

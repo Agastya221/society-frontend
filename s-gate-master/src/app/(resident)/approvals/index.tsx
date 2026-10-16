@@ -20,6 +20,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SgateColors, SgateFonts } from '@/constants/Sgate-theme';
 import api from '@/services/api';
+import { useGateStore } from '@/store/useGateStore';
+import { gateRequestStatus, type GateStatusTone } from '@/utils/gateRequestStatus';
 import { AppAlert } from '../../../components/ui/AppAlert';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -34,9 +36,22 @@ interface EntryRequest {
     flat: { flatNumber?: string; number?: string };
     createdAt: string;
     expiresAt: string;
+    entryId?: string | null;
+    rejectionReason?: string | null;
 }
 
 const POLL_MS = 5000;
+/** How far back "Recent" decisions go, and how many are shown. */
+const RECENT_WINDOW_MS = 12 * 60 * 60 * 1000;
+const RECENT_LIMIT = 20;
+
+const TONE_STYLE: Record<GateStatusTone, { bg: string; fg: string }> = {
+    pending: { bg: '#FFF4DC', fg: '#B07A00' },
+    waiting: { bg: '#E8F1FF', fg: '#2563EB' },
+    entered: { bg: '#E5FAF4', fg: '#078463' },
+    denied:  { bg: '#FDECEC', fg: '#C62828' },
+    ended:   { bg: '#F1F1F1', fg: '#6B7280' },
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function typeLabel(type: string, providerTag?: string): string {
@@ -90,11 +105,41 @@ function PhotoCell({ id, type, photoKey, color }: { id: string; type: string; ph
     );
 }
 
+// ─── Recent decision row ──────────────────────────────────────────────────────
+function RecentRow({ item }: { item: EntryRequest }) {
+    const status = gateRequestStatus(item);
+    const tone = TONE_STYLE[status.tone];
+    const color = typeColor(item.type);
+    const flat = item.flat?.flatNumber || item.flat?.number;
+    return (
+        <View style={styles.recentRow} testID={`recent-${item.id}`}>
+            <View style={[styles.recentIcon, { backgroundColor: color + '18' }]}>
+                <Ionicons name={typeIconName(item.type)} size={20} color={color} />
+            </View>
+            <View style={styles.recentInfo}>
+                <Text style={styles.recentName} numberOfLines={1}>
+                    {item.visitorName || typeLabel(item.type, item.providerTag)}
+                </Text>
+                <Text style={styles.recentMeta} numberOfLines={1}>
+                    {flat ? `Flat ${flat} · ` : ''}
+                    {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+                {status.detail ? <Text style={styles.recentMeta} numberOfLines={2}>{status.detail}</Text> : null}
+            </View>
+            <View style={[styles.recentPill, { backgroundColor: tone.bg }]}>
+                <Text style={[styles.recentPillText, { color: tone.fg }]} numberOfLines={2}>{status.label}</Text>
+            </View>
+        </View>
+    );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ApprovalsScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const [requests, setRequests]     = useState<EntryRequest[]>([]);
+    const [recent, setRecent]         = useState<EntryRequest[]>([]);
+    const gatePushAt = useGateStore((state) => state.gatePushAt);
     const [loading, setLoading]       = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError]           = useState<string | null>(null);
@@ -108,10 +153,16 @@ export default function ApprovalsScreen() {
     const fetchRequests = useCallback(async (silent = false) => {
         try {
             if (!silent) setError(null);
-            const res = await api.get('/gate/entry-requests?status=PENDING&limit=100');
+            // One call for both lists: everything for my flats from the last few hours.
+            // Pending ones need an answer; the rest show how each request ended up
+            // (approved and waiting for the guard, entered, left, expired, denied).
+            const since = encodeURIComponent(new Date(Date.now() - RECENT_WINDOW_MS).toISOString());
+            const res = await api.get(`/gate/entry-requests?since=${since}&order=newest&limit=100`);
             const payload = res.data?.data;
-            const rows = Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
-            setRequests(Array.isArray(rows) ? rows : []);
+            const rows: EntryRequest[] = Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
+            const list = Array.isArray(rows) ? rows : [];
+            setRequests(list.filter((r) => r.status === 'PENDING'));
+            setRecent(list.filter((r) => r.status !== 'PENDING').slice(0, RECENT_LIMIT));
         } catch (err: any) {
             if (!silent) setError(err?.response?.data?.message || 'Failed to fetch pending requests');
         } finally {
@@ -127,6 +178,11 @@ export default function ApprovalsScreen() {
             return () => { if (pollRef.current) clearInterval(pollRef.current); };
         }, [fetchRequests])
     );
+
+    // A gate push (approved / denied / expired / new request) refreshes at once.
+    useEffect(() => {
+        if (gatePushAt) fetchRequests(true);
+    }, [gatePushAt, fetchRequests]);
 
     // Re-poll when app comes back to foreground
     useEffect(() => {
@@ -301,6 +357,12 @@ export default function ApprovalsScreen() {
                         description="No pending approvals at the moment."
                     />
                 }
+                ListFooterComponent={recent.length > 0 ? (
+                    <View style={styles.recentSection}>
+                        <Text style={styles.recentHeading}>Recent</Text>
+                        {recent.map((item) => <RecentRow key={item.id} item={item} />)}
+                    </View>
+                ) : null}
             />
 
             {/* Deny modal */}
@@ -445,6 +507,19 @@ const styles = StyleSheet.create({
     },
 
     // Status pill
+    recentSection: { marginTop: 20, gap: 10 },
+    recentHeading: { fontFamily: SgateFonts.bold, fontSize: 16, color: SgateColors.t1, marginBottom: 2 },
+    recentRow: {
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        backgroundColor: '#FFFFFF', borderRadius: 16, padding: 12,
+        borderWidth: 1, borderColor: '#EEECE7',
+    },
+    recentIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    recentInfo: { flex: 1 },
+    recentName: { fontFamily: SgateFonts.semibold, fontSize: 14, color: SgateColors.t1 },
+    recentMeta: { fontFamily: SgateFonts.regular, fontSize: 12, color: SgateColors.t3, marginTop: 2 },
+    recentPill: { maxWidth: 150, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 5 },
+    recentPillText: { fontFamily: SgateFonts.semibold, fontSize: 11, textAlign: 'center' },
     statusPill: {
         borderRadius: 10,
         paddingHorizontal: 8,
