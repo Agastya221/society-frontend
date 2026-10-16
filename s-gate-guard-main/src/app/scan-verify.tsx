@@ -34,11 +34,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 const FRAME_SIZE = SW * 0.7;
+/** Resident guest/party pass code → /guard/verify-code. */
 const PASSCODE_RE = /^[A-Z0-9]{6}$/;
+/** Staff pass code (spoken/typed when the QR won't scan) → /guard/scan { qrToken }. */
+const STAFF_PASS_CODE_RE = /^[A-Z0-9]{8}$/;
 /** A result goes back to Home by itself after this long, so the next guard action starts clean. */
 const AUTO_RETURN_SECONDS = 8;
+/** Typed codes: 6 (resident pass) or 8 (staff pass); longer values are pasted tokens. */
 const MIN_CODE_LENGTH = 6;
 const MAX_CODE_LENGTH = 64;
+/** The camera keeps reporting a QR it can still see; the same value is ignored for this long. */
+const SAME_SCAN_IGNORE_MS = 10_000;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -274,13 +280,15 @@ export default function ScanVerifyScreen() {
                         flatNumber: d.flatNumber,
                     };
                 } else {
+                    // Signed QR tokens are case-sensitive; only an 8-char staff pass code is upper-cased.
+                    const qrToken = STAFF_PASS_CODE_RE.test(code.toUpperCase()) ? code.toUpperCase() : code;
                     const res = await api.post<{
                         success: boolean;
                         message?: string;
                         data: { type: string; allowed: boolean; pass?: Record<string, any> };
                     }>(
                         '/api/v1/guard/scan',
-                        { qrToken: code }
+                        { qrToken }
                     );
                     const scan = res.data?.data;
                     if (scan?.type === 'PRE_APPROVED') {
@@ -366,7 +374,18 @@ export default function ScanVerifyScreen() {
         return () => sub.remove();
     }, [manualOpen, verifying]);
 
-    const handleBarcode = useCallback(({ data }: { data: string }) => { verify(data); }, [verify]);
+    // After "Scan next" the camera re-arms in ~800 ms while the same QR is often still in
+    // front of it — ignore an identical camera value for 10 s. Typed codes skip this.
+    const lastScanRef = useRef<{ value: string; at: number } | null>(null);
+    const handleBarcode = useCallback(({ data }: { data: string }) => {
+        const value = (data ?? '').trim();
+        if (!value || cooldownRef.current) return;
+        const now = Date.now();
+        const last = lastScanRef.current;
+        if (last && last.value === value && now - last.at < SAME_SCAN_IGNORE_MS) return;
+        lastScanRef.current = { value, at: now };
+        verify(value);
+    }, [verify]);
 
     const handleScanAgain = useCallback(() => {
         if (allowRef.current) return;

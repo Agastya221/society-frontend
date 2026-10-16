@@ -139,6 +139,17 @@ describe('ScanVerifyScreen', () => {
       expect(api.post).toHaveBeenCalledWith('/api/v1/guard/scan', { qrToken: 'K7M2QX9' });
     });
 
+    it('sends a typed 8-char staff pass code to /guard/scan as qrToken', async () => {
+      (api.post as jest.Mock).mockResolvedValueOnce({
+        data: { success: true, data: { type: 'DOMESTIC_STAFF', allowed: true, pass: { name: 'Sunita', staffType: 'MAID', attendanceAction: 'CHECKED_IN' } } },
+      });
+      const utils = renderScreen();
+      await enterCode(utils, 'ab3d5f7h');
+      expect(api.post).toHaveBeenCalledWith('/api/v1/guard/scan', { qrToken: 'AB3D5F7H' });
+      expect(postedUrls()).not.toContain('/api/v1/guard/verify-code');
+      expect(utils.getByText('Checked in')).toBeTruthy();
+    });
+
     it('types the code in one big field, upper-cased and cleaned', () => {
       const utils = renderScreen();
       typeCode(utils, 'k7-m2 ');
@@ -223,6 +234,41 @@ describe('ScanVerifyScreen', () => {
         await scan(utils, 'BBBBBB');
         expect(api.post).toHaveBeenCalledTimes(2);
         expect(api.post).toHaveBeenLastCalledWith('/api/v1/guard/verify-code', { code: 'BBBBBB' });
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('ignores the same camera QR for 10 s after Scan next, but not a typed code', async () => {
+      jest.useFakeTimers();
+      try {
+        (api.post as jest.Mock).mockResolvedValue({ data: { success: true, data: { type: 'DOMESTIC_STAFF', allowed: true, pass: { name: 'Sunita' } } } });
+        const utils = renderScreen();
+        await scan(utils, GATE_PASS_QR);
+        expect(api.post).toHaveBeenCalledTimes(1);
+
+        const scanNext = () => {
+          fireEvent.press(utils.getByText('Scan next'));
+          act(() => { jest.advanceTimersByTime(800); });
+        };
+
+        // Same QR still in front of the camera when it re-arms → ignored.
+        scanNext();
+        await scan(utils, GATE_PASS_QR);
+        expect(api.post).toHaveBeenCalledTimes(1);
+
+        // A typed code is never de-duplicated.
+        await enterCode(utils, 'AB3D5F7H');
+        expect(api.post).toHaveBeenCalledTimes(2);
+        scanNext();
+        await enterCode(utils, 'AB3D5F7H');
+        expect(api.post).toHaveBeenCalledTimes(3);
+
+        // After 10 s the same QR counts again.
+        scanNext();
+        act(() => { jest.advanceTimersByTime(10_000); });
+        await scan(utils, GATE_PASS_QR);
+        expect(api.post).toHaveBeenCalledTimes(4);
       } finally {
         jest.useRealTimers();
       }

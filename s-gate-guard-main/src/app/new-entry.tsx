@@ -110,6 +110,33 @@ async function uploadEntryPhoto(uri: string, signal?: AbortSignal): Promise<stri
     return s3Key;
 }
 
+/** How long Notify waits on a still-running background upload, and on the one retry. */
+const PHOTO_WAIT_MS = 15_000;
+
+/** Resolves to the promise's value, or null if it takes longer than `ms`. */
+function settleWithin<T>(promise: Promise<T | null>, ms: number): Promise<T | null> {
+    return new Promise((resolve) => {
+        const timer = setTimeout(() => resolve(null), ms);
+        promise.then(
+            (value) => { clearTimeout(timer); resolve(value); },
+            () => { clearTimeout(timer); resolve(null); },
+        );
+    });
+}
+
+/** One upload attempt that gives up after PHOTO_WAIT_MS; null on any failure. */
+async function uploadWithTimeout(uri: string): Promise<string | null> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PHOTO_WAIT_MS);
+    try {
+        return await uploadEntryPhoto(uri, controller.signal);
+    } catch {
+        return null;
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
 function flatLabel(f: FlatResult): string {
     if (f.flatNumber === 'OFFICE') return 'Admin Office';
     const block = f.block?.name ? `${f.block.name}-` : '';
@@ -144,7 +171,8 @@ function CameraModal({
         setTaking(true);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         try {
-            const photo = await cameraRef.current.takePictureAsync({ quality: 0.6, skipProcessing: true });
+            // ~0.5 keeps a phone photo well under the server's 5 MB upload cap.
+            const photo = await cameraRef.current.takePictureAsync({ quality: 0.5, skipProcessing: true });
             if (photo?.uri) setCaptured(photo.uri);
         } finally {
             setTaking(false);
@@ -199,6 +227,7 @@ function CameraModal({
                         </View>
                         <View style={[cam.shutterRow, { paddingBottom: insets.bottom + 32 }]}>
                             <TouchableOpacity
+                                testID="camera-shutter"
                                 style={cam.shutterBtn}
                                 onPress={handleCapture}
                                 disabled={taking}
@@ -253,6 +282,7 @@ export default function NewEntryScreen() {
     const [helpManual, setHelpManual] = useState(false);
     const [cabStage, setCabStage] = useState<'digits' | 'flat'>('digits');
     const [cabDigits, setCabDigits] = useState('');
+    const [cabAmbiguous, setCabAmbiguous] = useState(false);
     const [otherPurpose, setOtherPurpose] = useState('');
 
     // Flat picking with big keys
@@ -371,6 +401,7 @@ export default function NewEntryScreen() {
         setHelpManual(false);
         setCabStage('digits');
         setCabDigits('');
+        setCabAmbiguous(false);
         setOtherPurpose('');
         setFlatQuery('');
         setShowKeypad(false);
@@ -418,6 +449,7 @@ export default function NewEntryScreen() {
         setHelpManual(false);
         setCabStage('digits');
         setCabDigits('');
+        setCabAmbiguous(false);
         setOtherPurpose('');
         setPreCheckFailed(false);
         setShowKeypad(false);
@@ -472,12 +504,21 @@ export default function NewEntryScreen() {
 
     const checkCabDigits = async () => {
         if (!/^\d{4}$/.test(cabDigits)) return;
+        setCabAmbiguous(false);
         setPre({ kind: 'checking' });
         try {
             const res = await api.post('/api/v1/guard/pre-approved/validate', { vehicleLast4: cabDigits });
             const result: Match = res.data?.data ?? { allowed: false, isPrivate: false };
             if (result.allowed) {
                 setPre({ kind: 'pass', matches: result.matches?.length ? result.matches : [result], message: result.message?.trim() || undefined });
+                return;
+            }
+            if (result.reason === 'AMBIGUOUS') {
+                // Several Safe Pickup passes share these digits: the flat is private, so
+                // picking a flat can't help — stay here and ask for the QR instead.
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                setCabAmbiguous(true);
+                setPre({ kind: 'form' });
                 return;
             }
         } catch { setPreCheckFailed(true); }
@@ -529,12 +570,16 @@ export default function NewEntryScreen() {
             const name = toEnglishName(visitorName);
             if (name) payload.visitorName = name.slice(0, 100);
 
+            // The photo never blocks Notify: use the background upload if it finished,
+            // otherwise try once more, and if that fails too send without the photo.
+            let photoSkipped = false;
             if (photoUri) {
-                const key = photoUploadRef.current?.uri === photoUri
-                    ? await photoUploadRef.current.promise
-                    : await uploadEntryPhoto(photoUri);
-                if (!key) throw new Error(t('visitor.photoUploadFailed'));
-                payload.photoKey = key;
+                let key = photoUploadRef.current?.uri === photoUri
+                    ? await settleWithin(photoUploadRef.current.promise, PHOTO_WAIT_MS)
+                    : null;
+                if (!key) key = await uploadWithTimeout(photoUri);
+                if (key) payload.photoKey = key;
+                else photoSkipped = true;
             }
             const res = await api.post('/api/v1/gate/entry-requests', payload);
             const entryId = res.data?.data?.entryRequest?.id ?? res.data?.data?.id ?? null;
@@ -549,6 +594,7 @@ export default function NewEntryScreen() {
                     name:  name,
                     type:  type,
                     photo: photoUri ?? '',
+                    ...(photoSkipped ? { photoSkipped: '1' } : {}),
                 },
             });
         } catch (err: any) {
@@ -665,12 +711,16 @@ export default function NewEntryScreen() {
                         testID="cab-last4"
                         style={S.cabInput}
                         value={cabDigits}
-                        onChangeText={(value) => setCabDigits(value.replace(/\D/g, '').slice(0, 4))}
+                        onChangeText={(value) => { setCabDigits(value.replace(/\D/g, '').slice(0, 4)); setCabAmbiguous(false); }}
                         keyboardType="number-pad"
                         maxLength={4}
                         placeholder="0000"
                         placeholderTextColor={GuardColors.t3}
                     />
+                    {cabAmbiguous ? <>
+                        <Text testID="cab-ambiguous" style={S.preWarning}>{t('visitor.cabAskQr')}</Text>
+                        <GiantButton label={t('visitor.scanCabQr')} icon="qr-code" tone="allow" onPress={() => router.replace('/scan-verify')} />
+                    </> : null}
                     <GiantButton label={t('visitor.checkCabPass')} icon="shield-checkmark" disabled={cabDigits.length !== 4} onPress={checkCabDigits} />
                     <GiantButton label={t('visitor.cabNoDigits')} icon="home" tone="light" onPress={() => setCabStage('flat')} />
                 </View>

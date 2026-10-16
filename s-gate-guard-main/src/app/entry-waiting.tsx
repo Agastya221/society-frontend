@@ -102,10 +102,11 @@ export default function EntryWaitingScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const params = useLocalSearchParams<{
-        id: string; flat: string; name: string; type: string; photo: string;
+        id: string; flat: string; name: string; type: string; photo: string; photoSkipped?: string;
     }>();
 
     const { id, flat, type, photo, name } = params;
+    const photoSkipped = params.photoSkipped === '1';
     const visitorName = name?.trim() || null;
     const photoUri = photo && photo.length > 0 ? decodeURIComponent(photo) : null;
     const typeKey = typeLabelKey(type);
@@ -411,6 +412,12 @@ export default function EntryWaitingScreen() {
                             <Text style={S.flatLabel}>{t('common.flat')} {flat}</Text>
                         </View>
                     </View>
+                    {photoSkipped ? (
+                        <View style={S.photoNotice}>
+                            <Ionicons name="image-outline" size={18} color={GuardColors.t2} />
+                            <Text style={S.photoNoticeText}>{t('waiting.photoSkipped')}</Text>
+                        </View>
+                    ) : null}
                 </View>
 
                 {/* ── Status ─────────────────────────────────────────────── */}
@@ -467,6 +474,8 @@ const S = StyleSheet.create({
     flatLabel: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 22, lineHeight: 30, fontWeight: '900' },
 
     status: { alignSelf: 'stretch', alignItems: 'center', gap: 10 },
+    photoNotice: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
+    photoNoticeText: { flex: 1, color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: 15, lineHeight: 22, fontWeight: '600' },
     statusText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: GuardType.button, lineHeight: 28, fontWeight: '800', textAlign: 'center' },
     statusSub: { color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: GuardType.body, lineHeight: 26, fontWeight: '600', textAlign: 'center' },
     track: { alignSelf: 'stretch', height: 8, borderRadius: 4, backgroundColor: 'rgba(13,15,20,0.15)', overflow: 'hidden' },

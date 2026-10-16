@@ -60,6 +60,13 @@ describe('EntryWaitingScreen', () => {
     expect(api.get).toHaveBeenCalledWith('/api/v1/gate/entry-requests/er-1');
   });
 
+  it('shows a small notice when the request went without the photo', async () => {
+    (useLocalSearchParams as jest.Mock).mockReturnValue({ ...PARAMS, photoSkipped: '1' });
+    const { getByText } = await renderScreen();
+    expect(getByText('Photo could not upload — sent without it')).toBeTruthy();
+    expect(getByText('Notifying resident')).toBeTruthy();
+  });
+
   it('speaks Hindi for guards by default', async () => {
     useLanguageStore.setState({ lang: 'hi' });
     const { getByText } = await renderScreen();

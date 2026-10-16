@@ -6,6 +6,16 @@ import { useLanguageStore } from '@/i18n';
 
 import NewEntryScreen from '../../app/new-entry';
 
+// A camera whose ref can take a picture, so the photo → upload → Notify path can run.
+jest.mock('expo-camera', () => {
+  const ReactLib = require('react');
+  class CameraView extends ReactLib.Component {
+    takePictureAsync() { return Promise.resolve({ uri: 'file:///visitor.jpg' }); }
+    render() { return null; }
+  }
+  return { CameraView, useCameraPermissions: jest.fn(() => [{ granted: true }, jest.fn()]) };
+});
+
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
@@ -212,6 +222,46 @@ describe('NewEntryScreen', () => {
       expect(mockPush).toHaveBeenCalledTimes(1);
     });
 
+    it('never blocks Notify on a failed photo upload: retries once, then sends without the photo', async () => {
+      (global.fetch as jest.Mock).mockReset();
+      (global.fetch as jest.Mock).mockRejectedValue(new Error('Network request failed'));
+      const utils = render(<NewEntryScreen />);
+      await toNotifyStep(utils);
+      fireEvent.press(utils.getByTestId('take-photo'));
+      await act(async () => { fireEvent.press(utils.getByTestId('camera-shutter')); });
+      await act(async () => { fireEvent.press(utils.getByText('Use photo')); });
+      await waitFor(() => expect(utils.getByText('Photo not sent yet. It will be tried again when you notify.')).toBeTruthy());
+      expect(utils.queryByText(/Retake or remove/)).toBeNull();
+
+      const fetchesBefore = (global.fetch as jest.Mock).mock.calls.length;
+      await act(async () => { fireEvent.press(utils.getByText('Notify resident')); });
+      expect((global.fetch as jest.Mock).mock.calls.length).toBe(fetchesBefore + 1); // the one retry
+      expect(entryPosts()).toHaveLength(1);
+      expect(entryPosts()[0][1]).toEqual({ type: 'VISITOR', flatId: 'flat-1' });
+      expect(mockPush).toHaveBeenCalledWith(expect.objectContaining({
+        pathname: '/entry-waiting',
+        params: expect.objectContaining({ id: 'er-1', photoSkipped: '1' }),
+      }));
+    });
+
+    it('sends the photo key when the background upload worked', async () => {
+      (global.fetch as jest.Mock).mockReset();
+      (global.fetch as jest.Mock).mockImplementation((url: string) => (url === 'file:///visitor.jpg'
+        ? Promise.resolve({ blob: () => Promise.resolve({ type: 'image/jpeg', size: 1000 }) })
+        : Promise.resolve({ ok: true })));
+      (api.post as jest.Mock).mockImplementation((url: string) => Promise.resolve(url === '/api/v1/upload/presigned-url'
+        ? { data: { data: { uploadUrl: 'https://s3/put', s3Key: 'entries/visitor.jpg' } } }
+        : { data: { data: { entryRequest: { id: 'er-1' } } } }));
+      const utils = render(<NewEntryScreen />);
+      await toNotifyStep(utils);
+      fireEvent.press(utils.getByTestId('take-photo'));
+      await act(async () => { fireEvent.press(utils.getByTestId('camera-shutter')); });
+      await act(async () => { fireEvent.press(utils.getByText('Use photo')); });
+      await act(async () => { fireEvent.press(utils.getByText('Notify resident')); });
+      expect(entryPosts()[0][1]).toEqual({ type: 'VISITOR', flatId: 'flat-1', photoKey: 'entries/visitor.jpg' });
+      expect(mockPush.mock.calls[0][0].params).not.toHaveProperty('photoSkipped');
+    });
+
     it('shows an alert and stays on the step when the request fails', async () => {
       const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
       const utils = render(<NewEntryScreen />);
@@ -311,6 +361,19 @@ describe('NewEntryScreen', () => {
       expect(api.post).toHaveBeenCalledWith('/api/v1/guard/pre-approved/validate', { vehicleLast4: '4521' });
       expect(utils.getByText('Valid pass')).toBeTruthy();
       expect(utils.queryByText('Which flat?')).toBeNull();
+    });
+
+    it('asks for the QR when several Safe Pickup passes share the cab digits', async () => {
+      mockValidate({ allowed: false, isPrivate: true, reason: 'AMBIGUOUS', message: 'Several Safe Pickup passes use these digits. Ask for the QR code.' });
+      const utils = render(<NewEntryScreen />);
+      pickType(utils, 'CAB');
+      fireEvent.changeText(utils.getByTestId('cab-last4'), '4521');
+      await act(async () => { fireEvent.press(utils.getByText('Check cab pass')); });
+      expect(utils.getByTestId('cab-ambiguous')).toBeTruthy();
+      expect(utils.getByText('Several Safe Pickup passes match these digits. Ask for the QR code.')).toBeTruthy();
+      expect(utils.queryByTestId('flat-flat-1')).toBeNull(); // did not fall through to the flat picker
+      fireEvent.press(utils.getByText('Scan QR'));
+      expect(mockReplace).toHaveBeenCalledWith('/scan-verify');
     });
 
     it('matches a service against the resident category', async () => {
