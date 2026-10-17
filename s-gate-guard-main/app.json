@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "package": "com.sgate.guard",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

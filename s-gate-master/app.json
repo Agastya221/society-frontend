@@ -29,6 +29,7 @@
       }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "package": "com.sgate.app",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",

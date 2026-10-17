@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "270857703275",
+    "project_id": "society-gate-3f48d",
+    "storage_bucket": "society-gate-3f48d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:270857703275:android:d79de419a816ef51d5462e",
+        "android_client_info": {
+          "package_name": "com.sgate.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdvhZJ3QKQXPdS1dv1FaiRwYY0RC6QKxo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:270857703275:android:581633d470aaefb9d5462e",
+        "android_client_info": {
+          "package_name": "com.sgate.guard"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdvhZJ3QKQXPdS1dv1FaiRwYY0RC6QKxo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:270857703275:android:a18736e3fec3ba93d5462e",
+        "android_client_info": {
+          "package_name": "com.sgate.staff"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdvhZJ3QKQXPdS1dv1FaiRwYY0RC6QKxo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
