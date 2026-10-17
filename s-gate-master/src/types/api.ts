@@ -247,6 +247,8 @@ export interface EntryRequest {
     visitorName: string;
     visitorPhone?: string;
     providerTag?: ProviderTag;
+    /** What the visit is for, as the guard typed or chose it (e.g. 'Meeting', 'AC repair'). */
+    purpose?: string | null;
     status: EntryRequestStatus;
     flatId: string;
     flat?: { number: string; block?: { name: string } };

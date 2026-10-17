@@ -40,6 +40,7 @@ import { GuestInviteTypeStep } from './sheet/steps/GuestInviteTypeStep';
 import { ManageGuestsStep } from './sheet/steps/ManageGuestsStep';
 import { SelectGuestsStep } from './sheet/steps/SelectGuestsStep';
 import { SuccessStep } from './sheet/steps/SuccessStep';
+import { onceScheduleIst } from '@/utils/istTime';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -611,9 +612,26 @@ function ServiceCategoryField({ state }: { state: FormState }) {
                 }}
                 title="Service Category"
             />
+            {/* The backend requires a description for OTHER (customCategory). */}
+            {state.serviceCategory === 'OTHER' ? (
+                <>
+                    <Text style={S.fieldLabel}>WHAT SERVICE?</Text>
+                    <TextInput
+                        style={[S.dropRow, { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1 }]}
+                        placeholder="e.g. AC service, Gardener"
+                        placeholderTextColor={SgateColors.t4}
+                        value={state.customCategory}
+                        onChangeText={(v) => state.setCustomCategory(v.slice(0, CUSTOM_CATEGORY_MAX))}
+                        maxLength={CUSTOM_CATEGORY_MAX}
+                    />
+                </>
+            ) : null}
         </>
     );
 }
+
+/** Same cap as the backend's customCategory (z.string().max(100)). */
+const CUSTOM_CATEGORY_MAX = 100;
 
 // ─── Service Once ────────────────────────────────────────────────────────────
 function ServiceOnce({ state }: { state: FormState }) {
@@ -769,6 +787,7 @@ interface FormState {
     timeFrom: string; setTimeFrom: (v: string) => void;
     timeUntil: string; setTimeUntil: (v: string) => void;
     serviceCategory: HelpCategory | null; setServiceCategory: (v: HelpCategory | null) => void;
+    customCategory: string; setCustomCategory: (v: string) => void;
     showPrivateInfo: boolean; setShowPrivateInfo: (v: boolean) => void;
 }
 
@@ -1486,6 +1505,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
     const [timeFrom,         setTimeFrom]         = useState('00:00 am');
     const [timeUntil,        setTimeUntil]        = useState('11:59 pm');
     const [serviceCategory,  setServiceCategory]  = useState<HelpCategory | null>(null);
+    const [customCategory,   setCustomCategory]   = useState('');
     const [submitting,       setSubmitting]       = useState(false);
     const partyInFlight = useRef(false);
 
@@ -1535,6 +1555,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
         setCompany('');
         setSafeMode(true);
         setServiceCategory(null);
+        setCustomCategory('');
         setSelectedDays('All days of Week');
         setSelectedGuestsToManage([]);
         setValidityDays(30);
@@ -1694,9 +1715,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         type: 'CAB',
                         mode: safeMode ? 'SAFE' : 'NORMAL',
                         scheduleType: 'ONCE',
-                        date: w.validFrom.slice(0, 10),
-                        startTime: new Date(w.validFrom).toTimeString().slice(0, 5),
-                        endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
+                        ...onceScheduleIst(w),
                         vehicleLast4Digits: digs,
                     });
                 } else {
@@ -1722,9 +1741,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         type: 'DELIVERY',
                         mode: surpriseDelivery ? 'SURPRISE' : 'NORMAL',
                         scheduleType: 'ONCE',
-                        date: w.validFrom.slice(0, 10),
-                        startTime: new Date(w.validFrom).toTimeString().slice(0, 5),
-                        endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
+                        ...onceScheduleIst(w),
                         companyName: company || undefined,
                         isSurprise: surpriseDelivery,
                     });
@@ -1748,16 +1765,19 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
             } else {
                 // SERVICE → HELP
                 if (!serviceCategory) { AppAlert.show('Required', 'Please select a service category.'); setSubmitting(false); return; }
+                const custom = customCategory.trim();
+                if (serviceCategory === 'OTHER' && !custom) { AppAlert.show('Required', 'Describe the service (for example "AC service").'); setSubmitting(false); return; }
+                const categoryFields = serviceCategory === 'OTHER'
+                    ? { category: serviceCategory, customCategory: custom.slice(0, CUSTOM_CATEGORY_MAX) }
+                    : { category: serviceCategory };
                 if (tab === 'once') {
                     const w = buildOnceWindow();
                     result = await createEntry({
                         type: 'HELP',
                         mode: 'NORMAL',
                         scheduleType: 'ONCE',
-                        date: w.validFrom.slice(0, 10),
-                        startTime: new Date(w.validFrom).toTimeString().slice(0, 5),
-                        endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
-                        category: serviceCategory,
+                        ...onceScheduleIst(w),
+                        ...categoryFields,
                     });
                 } else {
                     const w = buildFreqWindow();
@@ -1771,7 +1791,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         timeFrom: parseTime(timeFrom),
                         timeTo: parseTime(timeUntil),
                         entriesPerDay: maxUses < 0 ? 10 : maxUses,
-                        category: serviceCategory,
+                        ...categoryFields,
                     });
                 }
             }
@@ -1870,6 +1890,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
         selectedDays, setSelectedDays, entriesLabel, setEntriesLabel,
         company, setCompany, timeFrom, setTimeFrom, timeUntil, setTimeUntil,
         serviceCategory, setServiceCategory,
+        customCategory, setCustomCategory,
         showPrivateInfo, setShowPrivateInfo,
     };
 

@@ -1,17 +1,24 @@
+import { GiantButton } from '@/components/gate/GiantButton';
+import { HomeButton } from '@/components/gate/HomeButton';
+import { LanguageSwitch } from '@/components/gate/LanguageSwitch';
+import { LiveDot } from '@/components/gate/LiveDot';
+import { GuardColors, GuardFonts, GuardGradients, GuardSemantic, GuardTouch, GuardType, guardShadow } from '@/constants/theme';
+import { useT } from '@/i18n';
 import api from '@/services/api';
-import { GuardColors } from '@/constants/theme';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Pressable,
+    ActivityIndicator,
     ScrollView,
     StyleSheet,
     Text,
-    View
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { AppAlert } from '@/components/gate/AppAlert';
 
 interface Society {
     name: string;
@@ -33,7 +40,20 @@ interface GuardProfile {
     createdAt?: string;
 }
 
+function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }) {
+    return (
+        <View style={styles.row}>
+            <View style={styles.rowIcon}><Ionicons name={icon} size={24} color={GuardColors.goldDeep} /></View>
+            <View style={styles.rowCopy}>
+                <Text style={styles.rowLabel}>{label}</Text>
+                <Text style={styles.rowValue}>{value}</Text>
+            </View>
+        </View>
+    );
+}
+
 export default function ProfileScreen() {
+    const t = useT();
     const { logout } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<GuardProfile | null>(null);
@@ -67,13 +87,13 @@ export default function ProfileScreen() {
 
     const handleLogout = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Alert.alert(
-            'Logout',
-            'Are you sure you want to logout?',
+        AppAlert.show(
+            t('profile.logoutTitle'),
+            t('profile.logoutText'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Logout',
+                    text: t('profile.logout'),
                     style: 'destructive',
                     onPress: async () => {
                         await logout();
@@ -84,372 +104,100 @@ export default function ProfileScreen() {
         );
     };
 
+    const languageCard = (
+        <View style={styles.card}>
+            <Text style={styles.cardLabel}>{t('profile.language')}</Text>
+            <LanguageSwitch />
+        </View>
+    );
+
+    const logoutButton = (
+        <GiantButton label={t('profile.logout')} icon="log-out-outline" tone="light" onPress={handleLogout} />
+    );
+
     if (loading) {
         return (
-            <View style={styles.container}>
-                <View style={styles.scrollContent}>
-                    {/* Skeleton Header */}
-                    <View style={styles.profileHeader}>
-                        <View style={[styles.avatarContainer, { backgroundColor: '#F3F4F6', width: 96, height: 96, borderRadius: 48 }]} />
-                        <View style={{ width: 140, height: 24, backgroundColor: '#F3F4F6', borderRadius: 12, marginBottom: 8 }} />
-                        <View style={{ width: 100, height: 16, backgroundColor: '#F3F4F6', borderRadius: 8, marginBottom: 12 }} />
-                        <View style={{ width: 80, height: 28, backgroundColor: '#F3F4F6', borderRadius: 14 }} />
-                    </View>
-                    
-                    {/* Skeleton Card */}
-                    <View style={styles.infoCard}>
-                        <View style={{ width: 120, height: 12, backgroundColor: '#F3F4F6', borderRadius: 6, marginBottom: 20 }} />
-                        {[1, 2, 3].map((i) => (
-                            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-                                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: '#F3F4F6' }} />
-                                <View style={{ flex: 1 }}>
-                                    <View style={{ width: 80, height: 12, backgroundColor: '#F3F4F6', borderRadius: 6, marginBottom: 6 }} />
-                                    <View style={{ width: '80%', height: 18, backgroundColor: '#F3F4F6', borderRadius: 9 }} />
-                                </View>
-                            </View>
-                        ))}
-                    </View>
-                </View>
-            </View>
-        );
-    }
-
-    if (!profile) {
-        return (
             <View style={styles.centered}>
-                <Ionicons name="alert-circle-outline" size={48} color="#9CA3AF" />
-                <Text style={styles.errorText}>Could not load profile</Text>
-                {/* A network blip shouldn't push the guard toward logging out — offer a retry first. */}
-                <Pressable onPress={() => { setLoading(true); setReloadKey((k) => k + 1); }} style={styles.retryButton}>
-                    <Text style={styles.retryButtonText}>Try again</Text>
-                </Pressable>
-                <Pressable onPress={handleLogout} style={styles.logoutButtonSmall}>
-                    <Text style={styles.logoutButtonText}>Log Out</Text>
-                </Pressable>
+                <ActivityIndicator size="large" color={GuardColors.goldDeep} />
+                <Text style={styles.centeredText}>{t('profile.loading')}</Text>
             </View>
         );
     }
 
     return (
         <View style={styles.container}>
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-            >
-                <View>
-
-                    {/* Profile Header */}
-                    <View style={styles.profileHeader}>
-                        <View style={styles.avatarContainer}>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                {profile ? (
+                    <>
+                        <LinearGradient colors={GuardGradients.gold} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.hero, guardShadow('#FFB300', 2)]}>
                             <View style={styles.avatar}>
-                                <Ionicons name="person" size={48} color={GuardColors.goldDeep} />
+                                <Text style={styles.avatarText}>{(profile.name ?? 'G').charAt(0).toUpperCase()}</Text>
                             </View>
-                            <View style={styles.statusIndicator}>
-                                <View style={[styles.statusDot, { backgroundColor: profile.isActive ? '#10B981' : '#6B7280' }]} />
+                            <Text style={styles.name} numberOfLines={2}>{profile.name}</Text>
+                            <Text style={styles.role}>{t('profile.guard')}</Text>
+                            <View style={styles.dutyChip}>
+                                {profile.isActive ? <LiveDot color={GuardSemantic.allow} size={8} /> : <Ionicons name="pause-circle" size={18} color={GuardColors.t2} />}
+                                <Text style={styles.dutyText}>{(profile.isActive ? t('profile.onDuty') : t('profile.inactive')) + '\u00A0'}</Text>
                             </View>
-                        </View>
+                        </LinearGradient>
 
-                        <View style={styles.profileIdentity}>
-                            <Text style={styles.guardName}>{profile.name}</Text>
-                            <Text style={styles.guardId}>Security team · ID {profile.id.slice(0, 8).toUpperCase()}</Text>
-                            <View style={[styles.statusBadge, { backgroundColor: profile.isActive ? '#D1FAE5' : '#F3F4F6', borderColor: profile.isActive ? '#A7F3D0' : '#E5E7EB' }]}>
-                                <Text style={[styles.statusText, { color: profile.isActive ? '#047857' : '#374151' }]}>
-                                    {profile.isActive ? 'ON DUTY' : 'INACTIVE'}
-                                </Text>
-                            </View>
+                        <View style={styles.card}>
+                            <Row icon="call" label={t('profile.phone')} value={profile.phone} />
+                            {profile.society?.name ? (
+                                <Row icon="business" label={t('profile.society')} value={[profile.society.name, profile.society.city].filter(Boolean).join(', ')} />
+                            ) : null}
+                            {profile.lastLogin ? (
+                                <Row
+                                    icon="time"
+                                    label={t('profile.lastLogin')}
+                                    value={new Date(profile.lastLogin).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                />
+                            ) : null}
                         </View>
+                    </>
+                ) : (
+                    <View style={[styles.card, styles.errorCard]}>
+                        <Ionicons name="alert-circle-outline" size={48} color={GuardColors.t3} />
+                        <Text style={styles.errorText}>{t('profile.couldNotLoad')}</Text>
+                        {/* A network blip shouldn't push the guard toward logging out — offer a retry first. */}
+                        <TouchableOpacity activeOpacity={0.8} onPress={() => { setLoading(true); setReloadKey((k) => k + 1); }} style={styles.retry}>
+                            <Text style={styles.retryText}>{t('profile.tryAgain')}</Text>
+                        </TouchableOpacity>
                     </View>
+                )}
 
-                    {/* ASSIGNMENT DETAILS */}
-                    <View style={styles.infoCard}>
-                        <Text style={styles.sectionLabel}>ACCOUNT DETAILS</Text>
-
-                        <View style={styles.infoRow}>
-                            <View style={styles.infoIcon}>
-                                <Ionicons name="call" size={20} color={GuardColors.goldDeep} />
-                            </View>
-                            <View style={styles.infoContent}>
-                                <Text style={styles.infoLabel}>Contact Number</Text>
-                                <Text style={styles.infoValue}>{profile.phone}</Text>
-                            </View>
-                        </View>
-
-                        <View style={styles.divider} />
-
-                        <View style={styles.infoRow}>
-                            <View style={styles.infoIcon}>
-                                <Ionicons name="shield-checkmark" size={20} color={GuardColors.goldDeep} />
-                            </View>
-                            <View style={styles.infoContent}>
-                                <Text style={styles.infoLabel}>Role</Text>
-                                <Text style={styles.infoValue}>{profile.role}</Text>
-                            </View>
-                        </View>
-                        
-                        {profile.createdAt && (
-                            <>
-                                <View style={styles.divider} />
-                                <View style={styles.infoRow}>
-                                    <View style={styles.infoIcon}>
-                                        <Ionicons name="calendar-outline" size={20} color={GuardColors.goldDeep} />
-                                    </View>
-                                    <View style={styles.infoContent}>
-                                        <Text style={styles.infoLabel}>Join Date</Text>
-                                        <Text style={styles.infoValue}>{new Date(profile.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</Text>
-                                    </View>
-                                </View>
-                            </>
-                        )}
-                        
-                        {profile.lastLogin && (
-                            <>
-                                <View style={styles.divider} />
-                                <View style={styles.infoRow}>
-                                    <View style={styles.infoIcon}>
-                                        <Ionicons name="time" size={20} color={GuardColors.goldDeep} />
-                                    </View>
-                                    <View style={styles.infoContent}>
-                                        <Text style={styles.infoLabel}>Last Logged In</Text>
-                                        <Text style={styles.infoValue}>{new Date(profile.lastLogin).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</Text>
-                                    </View>
-                                </View>
-                            </>
-                        )}
-                    </View>
-
-                    {/* SOCIETY DETAILS */}
-                    {profile.society && (
-                        <View style={styles.infoCard}>
-                            <Text style={styles.sectionLabel}>SOCIETY DETAILS</Text>
-
-                            <View style={styles.infoRow}>
-                                <View style={styles.infoIcon}>
-                                    <Ionicons name="business" size={20} color={GuardColors.goldDeep} />
-                                </View>
-                                <View style={styles.infoContent}>
-                                    <Text style={styles.infoLabel}>Society Name</Text>
-                                    <Text style={styles.infoValue}>{profile.society.name}</Text>
-                                </View>
-                            </View>
-
-                            <View style={styles.divider} />
-
-                            <View style={styles.infoRow}>
-                                <View style={styles.infoIcon}>
-                                    <Ionicons name="location" size={20} color={GuardColors.goldDeep} />
-                                </View>
-                                <View style={styles.infoContent}>
-                                    <Text style={styles.infoLabel}>Address</Text>
-                                    <Text style={styles.infoValue}>{profile.society.address}, {profile.society.city}</Text>
-                                </View>
-                            </View>
-                        </View>
-                    )}
-
-                    <Pressable
-                        onPress={handleLogout}
-                        style={styles.logoutButton}
-                    >
-                        <Ionicons name="log-out-outline" size={22} color="#DC2626" />
-                        <Text style={styles.logoutButtonText}>Log Out</Text>
-                    </Pressable>
-
-                </View>
+                {languageCard}
+                {logoutButton}
             </ScrollView>
+            <HomeButton />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: GuardColors.bg,
-    },
-    centered: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 40,
-        gap: 16,
-    },
-    errorText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#4B5563',
-    },
-    scrollContent: {
-        padding: 20,
-        paddingBottom: 40,
-    },
-    profileHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 18,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 20,
-        marginBottom: 18,
-        borderWidth: 1,
-        borderColor: GuardColors.border,
-    },
-    avatarContainer: {
-        position: 'relative',
-        marginRight: 14,
-    },
-    avatar: {
-        width: 72,
-        height: 72,
-        borderRadius: 24,
-        backgroundColor: GuardColors.goldPale,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 2,
-        borderColor: '#FFFFFF',
-    },
-    statusIndicator: {
-        position: 'absolute',
-        bottom: 4,
-        right: 4,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        padding: 4,
-    },
-    statusDot: {
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-    },
-    profileIdentity: { flex: 1, alignItems: 'flex-start' },
-    guardName: {
-        fontSize: 21,
-        fontWeight: '900',
-        color: '#1F2937',
-        marginBottom: 4,
-        letterSpacing: -0.5,
-    },
-    guardId: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: '#6B7280',
-        marginBottom: 9,
-    },
-    statusBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 14,
-        borderWidth: 1,
-    },
-    statusText: {
-        fontSize: 12,
-        fontWeight: '800',
-        letterSpacing: 1,
-    },
-    infoCard: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 18,
-        padding: 16,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: GuardColors.border,
-    },
-    sectionLabel: {
-        fontSize: 11,
-        fontWeight: '800',
-        color: '#6B7280',
-        letterSpacing: 1.5,
-        marginBottom: 16,
-    },
-    infoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 14,
-    },
-    infoIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 12,
-        backgroundColor: GuardColors.goldPale,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    infoContent: {
-        flex: 1,
-    },
-    infoLabel: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#6B7280',
-        marginBottom: 2,
-    },
-    infoValue: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: '#1F2937',
-        letterSpacing: -0.2,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: '#F3F4F6',
-        marginVertical: 16,
-    },
-    actionButton: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 16,
-        padding: 18,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-    },
-    actionButtonPressed: {
-        backgroundColor: '#F9FAFB',
-        transform: [{ scale: 0.98 }],
-    },
-    actionButtonText: {
-        flex: 1,
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#374151',
-    },
-    logoutButton: {
-        backgroundColor: '#FEF2F2',
-        borderRadius: 16,
-        padding: 18,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 10,
-        marginTop: 12,
-        borderWidth: 1.5,
-        borderColor: '#FEE2E2',
-    },
-    retryButton: {
-        backgroundColor: GuardColors.gold,
-        borderRadius: 12,
-        padding: 14,
-        paddingHorizontal: 32,
-    },
-    retryButtonText: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: GuardColors.black,
-    },
-    logoutButtonSmall: {
-        backgroundColor: '#FEF2F2',
-        borderRadius: 12,
-        padding: 14,
-        paddingHorizontal: 24,
-        borderWidth: 1,
-        borderColor: '#FEE2E2',
-    },
-    logoutButtonPressed: {
-        backgroundColor: '#FEE2E2',
-        transform: [{ scale: 0.98 }],
-    },
-    logoutButtonText: {
-        fontSize: 16,
-        fontWeight: '800',
-        color: '#DC2626',
-    },
+    container: { flex: 1, backgroundColor: GuardColors.bg },
+    scrollContent: { padding: 20, gap: 16, paddingBottom: 28 },
+    centered: { flex: 1, backgroundColor: GuardColors.bg, alignItems: 'center', justifyContent: 'center', gap: 14 },
+    centeredText: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: GuardType.button, lineHeight: 28, fontWeight: '800' },
+
+    hero: { borderRadius: 34, backgroundColor: '#FFB800', padding: 24, alignItems: 'center', gap: 6 },
+    avatar: { width: 92, height: 92, borderRadius: 46, backgroundColor: 'rgba(255,255,255,0.6)', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+    avatarText: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: 40, lineHeight: 50, fontWeight: '900' },
+    name: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: 30, lineHeight: 38, fontWeight: '900', letterSpacing: -0.5, textAlign: 'center' },
+    role: { color: 'rgba(60,40,0,0.78)', fontFamily: GuardFonts.bold, fontSize: GuardType.body, lineHeight: 26, fontWeight: '700' },
+    dutyChip: { marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.85)', borderRadius: 999, paddingLeft: 10, paddingRight: 16, paddingVertical: 4 },
+    dutyText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 15, lineHeight: 22, fontWeight: '800' },
+
+    card: { backgroundColor: GuardColors.card, borderRadius: 28, borderWidth: 1, borderColor: GuardColors.border, padding: 18, gap: 16 },
+    cardLabel: { color: GuardColors.t3, fontFamily: GuardFonts.bold, fontSize: GuardType.min, lineHeight: 22, fontWeight: '800', letterSpacing: 0.6 },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    rowIcon: { width: 50, height: 50, borderRadius: 18, backgroundColor: GuardColors.goldPale, alignItems: 'center', justifyContent: 'center' },
+    rowCopy: { flex: 1 },
+    rowLabel: { color: GuardColors.t3, fontFamily: GuardFonts.medium, fontSize: GuardType.min, lineHeight: 22, fontWeight: '600' },
+    rowValue: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: GuardType.body + 2, lineHeight: 28, fontWeight: '800' },
+
+    errorCard: { alignItems: 'center' },
+    errorText: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: GuardType.button, lineHeight: 28, fontWeight: '800', textAlign: 'center' },
+    retry: { minHeight: GuardTouch.button - 8, paddingHorizontal: 28, borderRadius: 24, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center' },
+    retryText: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: GuardType.button, lineHeight: 28, fontWeight: '900' },
 });

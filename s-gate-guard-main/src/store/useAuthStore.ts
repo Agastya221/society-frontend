@@ -1,10 +1,25 @@
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { User } from '../types/auth';
+import { BASE_URL } from '../constants/api';
 
 const TOKEN_KEY         = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 const USER_KEY          = 'auth_user';
+
+// Refresh/logout use plain fetch (to dodge the axios interceptor loop), so they need
+// their own timeout — an unbounded hang here would wedge every queued request.
+const AUTH_FETCH_TIMEOUT_MS = 15000;
+
+async function fetchWithTimeout(url: string, init: RequestInit): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), AUTH_FETCH_TIMEOUT_MS);
+    try {
+        return await fetch(url, { ...init, signal: controller.signal });
+    } finally {
+        clearTimeout(timer);
+    }
+}
 
 export interface AuthState {
     accessToken: string | null;
@@ -42,51 +57,58 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     refreshAccessToken: async () => {
         const { refreshToken, logout } = get();
         if (!refreshToken) {
+            // Nothing to refresh with — this is a broken local session, not a
+            // network hiccup, so it's treated the same as an explicit rejection.
             await logout();
             throw new Error('No refresh token available');
         }
 
-        try {
-            // Use basic fetch to avoid axios interceptor infinite loops
-            const response = await fetch('https://society-gate-backend-gsrq.onrender.com/api/v1/auth/refresh-token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken }),
-            });
+        // Use basic fetch to avoid axios interceptor infinite loops. A network error or
+        // timeout (AbortError) simply propagates: the refresh token was never judged
+        // invalid, so the session is kept and the caller's request just fails.
+        const response = await fetchWithTimeout(`${BASE_URL}/api/v1/auth/refresh-token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+        });
 
-            const data = await response.json();
-
-            if (!response.ok || !data?.success) {
-                throw new Error(data?.message || 'Failed to refresh token');
-            }
-
-            const newAccessToken = data.data.accessToken;
-            const newRefreshToken = data.data.refreshToken;
-
-            if (!newAccessToken || !newRefreshToken) {
-                throw new Error('Invalid tokens returned on refresh');
-            }
-
-            // Save new tokens
-            await SecureStore.setItemAsync(TOKEN_KEY, newAccessToken);
-            await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, newRefreshToken);
-
-            set({ accessToken: newAccessToken, refreshToken: newRefreshToken });
-
-            return newAccessToken;
-        } catch (error) {
+        // Only an explicit 401/403 from the refresh call itself means the refresh
+        // token is actually invalid/expired — that's the one case that logs out.
+        if (response.status === 401 || response.status === 403) {
             await logout();
-            throw error;
+            throw new Error('Session expired. Please sign in again.');
         }
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok || !data?.success) {
+            // 429/5xx/malformed body: not an auth rejection — keep the session.
+            throw new Error(data?.message || `Failed to refresh token (${response.status})`);
+        }
+
+        const newAccessToken = data.data?.accessToken;
+        const newRefreshToken = data.data?.refreshToken;
+
+        if (!newAccessToken || !newRefreshToken) {
+            throw new Error('Invalid tokens returned on refresh');
+        }
+
+        // Save new tokens
+        await SecureStore.setItemAsync(TOKEN_KEY, newAccessToken);
+        await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, newRefreshToken);
+
+        set({ accessToken: newAccessToken, refreshToken: newRefreshToken });
+
+        return newAccessToken;
     },
 
     logout: async () => {
         const { accessToken, refreshToken } = get();
 
-        // Inform backend
+        // Inform backend (best-effort — local sign-out below happens regardless)
         if (accessToken && refreshToken) {
             try {
-                await fetch('https://society-gate-backend-gsrq.onrender.com/api/v1/auth/logout', {
+                await fetchWithTimeout(`${BASE_URL}/api/v1/auth/logout`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -29,6 +29,7 @@
       }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "package": "com.sgate.app",
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
@@ -64,7 +65,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./src/assets/images/icon.png",
+          "icon": "./src/assets/images/notification-icon.png",
           "color": "#FFB800",
           "defaultChannel": "default"
         }

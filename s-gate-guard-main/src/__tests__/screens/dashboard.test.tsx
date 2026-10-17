@@ -1,15 +1,17 @@
 import React from 'react';
+import { AppState } from 'react-native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useLanguageStore } from '@/i18n';
 
 import GuardDashboard from '../../app/index';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn() }),
-  useFocusEffect: (cb: () => void) => {
-    require('react').useEffect(() => { cb(); }, []);
+  useFocusEffect: (cb: () => void | (() => void)) => {
+    require('react').useEffect(() => cb(), []);
   },
   useLocalSearchParams: () => ({}),
 }));
@@ -23,7 +25,19 @@ const mockGuard = {
   shift: 'MORNING',
 };
 
-/** Render the dashboard and flush the focus-effect API call. */
+const QUEUE_URL = '/api/v1/gate/entry-requests/queue';
+const item = (id: string, extra: Record<string, unknown> = {}) => ({ id, type: 'VISITOR', createdAt: new Date().toISOString(), status: 'PENDING', ...extra });
+
+/** Home makes one call for its numbers: the gate queue (plus the flat directory prefetch). */
+const mockCounts = ({ waiting = [] as unknown[], ready = [] as unknown[], stopped = [] as unknown[], insideCount = 0 } = {}) => {
+  (api.get as jest.Mock).mockImplementation((url: string) => {
+    if (url === QUEUE_URL) return Promise.resolve({ data: { data: { waiting, ready, stopped, insideCount } } });
+    if (url.startsWith('/api/v1/gate/flats')) return Promise.resolve({ data: { data: { flats: [] } } });
+    return Promise.reject(new Error(`unexpected GET ${url}`));
+  });
+};
+
+/** Render the dashboard and flush the focus-effect API calls. */
 const renderDashboard = async () => {
   const utils = render(<GuardDashboard />);
   await act(async () => {});
@@ -33,6 +47,7 @@ const renderDashboard = async () => {
 describe('Guard Dashboard (index)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useLanguageStore.setState({ lang: 'en' });
     useAuthStore.setState({
       accessToken: 'guard-token',
       refreshToken: 'guard-refresh',
@@ -40,186 +55,171 @@ describe('Guard Dashboard (index)', () => {
       user: mockGuard as any,
       isLoading: false,
     });
-    (api.get as jest.Mock).mockResolvedValue({ data: { data: { entries: [] } } });
+    mockCounts();
   });
 
   // ── Header ──────────────────────────────────────────────────────────────────
   describe('Header', () => {
-    it('renders the brand and security desk eyebrow', async () => {
+    it('greets the guard by first name and shows the gate they are on duty at', async () => {
       const { getByText } = await renderDashboard();
-      expect(getByText('S-GATE')).toBeTruthy();
-      expect(getByText('SECURITY DESK')).toBeTruthy();
-    });
-
-    it('greets the guard by first name', async () => {
-      const { getByText } = await renderDashboard();
-      expect(getByText(/Good to see you,\s*Ravi\./)).toBeTruthy();
-    });
-
-    it('shows the avatar initial', async () => {
-      const { getByText } = await renderDashboard();
+      expect(getByText('Hello,')).toBeTruthy();
+      expect(getByText('Ravi')).toBeTruthy();
+      expect(getByText('On duty · North Gate')).toBeTruthy();
       expect(getByText('R')).toBeTruthy();
     });
 
-    it('renders gate name from user', async () => {
+    it('falls back to "Main Gate" and "Guard"', async () => {
+      useAuthStore.setState({ user: { ...mockGuard, name: undefined, gate: undefined } as any });
       const { getByText } = await renderDashboard();
-      expect(getByText('North Gate')).toBeTruthy();
+      expect(getByText('Guard')).toBeTruthy();
+      expect(getByText('On duty · Main Gate')).toBeTruthy();
     });
 
-    it.each([
-      ['MORNING', 'Morning shift'],
-      ['EVENING', 'Evening shift'],
-      ['NIGHT', 'Night shift'],
-    ])('renders the %s shift chip', async (shift, label) => {
-      useAuthStore.setState({ user: { ...mockGuard, shift } as any });
+    it('speaks Hindi by default for guards', async () => {
+      useLanguageStore.setState({ lang: 'hi' });
       const { getByText } = await renderDashboard();
-      expect(getByText(label)).toBeTruthy();
+      expect(getByText('नमस्ते,')).toBeTruthy();
+      expect(getByText('QR स्कैन करें')).toBeTruthy();
+      expect(getByText('नया विज़िटर')).toBeTruthy();
+      expect(getByText('अभी अंदर')).toBeTruthy();
     });
 
-    it('shows "On duty" when no shift is set', async () => {
-      useAuthStore.setState({ user: { ...mockGuard, shift: undefined } as any });
+    it('switches language from the top bar', async () => {
+      useLanguageStore.setState({ lang: 'hi' });
       const { getByText } = await renderDashboard();
-      expect(getByText('On duty')).toBeTruthy();
-    });
-
-    it('falls back to "Main Gate" when gate is absent', async () => {
-      useAuthStore.setState({ user: { ...mockGuard, gate: undefined } as any });
-      const { getByText } = await renderDashboard();
-      expect(getByText('Main Gate')).toBeTruthy();
-    });
-
-    it('falls back to "Guard" and "G" when name is absent', async () => {
-      useAuthStore.setState({ user: { ...mockGuard, name: undefined } as any });
-      const { getByText } = await renderDashboard();
-      expect(getByText(/Good to see you,\s*Guard\./)).toBeTruthy();
-      expect(getByText('G')).toBeTruthy();
+      fireEvent.press(getByText('English'));
+      expect(getByText('Scan QR')).toBeTruthy();
+      expect(getByText('New visitor')).toBeTruthy();
     });
   });
 
-  // ── Sections and tiles ──────────────────────────────────────────────────────
-  describe('Sections and tiles', () => {
-    it('renders section headings', async () => {
-      const { getByText } = await renderDashboard();
-      expect(getByText('Gate operations')).toBeTruthy();
-      expect(getByText('QUICK ACCESS')).toBeTruthy();
+  // ── The two big actions ─────────────────────────────────────────────────────
+  describe('Main actions', () => {
+    it('shows only the two big gate actions, with plain words', async () => {
+      const { getByText, queryByText } = await renderDashboard();
+      expect(getByText('Scan QR')).toBeTruthy();
+      expect(getByText('New visitor')).toBeTruthy();
+      expect(queryByText('Pre-approved passes')).toBeNull();
+      expect(queryByText('Staff check-in')).toBeNull();
+      expect(queryByText('QUICK ACCESS')).toBeNull();
     });
 
-    it('renders primary gate actions', async () => {
-      const { getByText } = await renderDashboard();
-      expect(getByText('New entry')).toBeTruthy();
-      expect(getByText('Register a visitor')).toBeTruthy();
-      expect(getByText('Scan pass')).toBeTruthy();
-      expect(getByText('Verify QR access')).toBeTruthy();
-    });
-
-    it('renders the pre-approved passes card', async () => {
-      const { getByText } = await renderDashboard();
-      expect(getByText('Pre-approved passes')).toBeTruthy();
-      expect(getByText('Cab, delivery and help by flat or vehicle')).toBeTruthy();
-    });
-
-    it('renders all quick access tiles', async () => {
-      const { getByText } = await renderDashboard();
-      expect(getByText("Today's entries")).toBeTruthy();
-      expect(getByText('Approvals')).toBeTruthy();
-      expect(getByText('Staff check-in')).toBeTruthy();
-      expect(getByText('My profile')).toBeTruthy();
-    });
-
-    it('renders the emergency card', async () => {
-      const { getByText } = await renderDashboard();
-      expect(getByText('Emergency assistance')).toBeTruthy();
-      expect(getByText('Alert your society response team')).toBeTruthy();
-    });
-  });
-
-  // ── Navigation ──────────────────────────────────────────────────────────────
-  describe('Navigation', () => {
     it.each([
-      ['New entry', '/new-entry'],
-      ['Scan pass', '/scan-verify'],
-      ['Pre-approved passes', '/pre-approved'],
-      ["Today's entries", '/today-entries'],
-      ['Approvals', '/approvals'],
-      ['Staff check-in', '/staff-scan'],
-      ['My profile', '/profile'],
-      ['Emergency assistance', '/emergencies'],
+      ['Scan QR', '/scan-verify'],
+      ['New visitor', '/new-entry'],
+      ['Inside now', '/today-entries'],
+      ['Waiting', '/approvals'],
+      ['Profile', '/profile'],
     ])('pressing "%s" pushes %s', async (label, route) => {
       const { getByText } = await renderDashboard();
       fireEvent.press(getByText(label));
       expect(mockPush).toHaveBeenCalledTimes(1);
       expect(mockPush).toHaveBeenCalledWith(route);
     });
-
-    it('pressing the avatar opens the profile', async () => {
-      const { getByText } = await renderDashboard();
-      fireEvent.press(getByText('R'));
-      expect(mockPush).toHaveBeenCalledWith('/profile');
-    });
   });
 
-  // ── Pending approvals banner ─────────────────────────────────────────────────
-  describe('Pending approvals banner', () => {
-    it('does NOT show banner when nothing is pending', async () => {
-      const { queryByText } = await renderDashboard();
-      expect(queryByText(/waiting$/)).toBeNull();
-      expect(queryByText('Review resident approvals')).toBeNull();
-    });
-
-    it('shows plural banner and approvals badge with the count', async () => {
-      (api.get as jest.Mock).mockResolvedValueOnce({
-        data: { data: { entries: [{ id: 'e1' }, { id: 'e2' }, { id: 'e3' }] } },
-      });
+  // ── Waiting visitors ────────────────────────────────────────────────────────
+  describe('Waiting at gate', () => {
+    it('shows the ready queue above the primary actions', async () => {
+      mockCounts({ ready: [item('r1'), item('r2'), item('r3')] });
       const { getByText } = await renderDashboard();
-      expect(getByText('3 visitors waiting')).toBeTruthy();
-      expect(getByText('Review resident approvals')).toBeTruthy();
-      expect(getByText('3')).toBeTruthy();
-    });
-
-    it('uses the singular for one pending visitor', async () => {
-      (api.get as jest.Mock).mockResolvedValueOnce({ data: { data: { entries: [{ id: 'e1' }] } } });
-      const { getByText } = await renderDashboard();
-      expect(getByText('1 visitor waiting')).toBeTruthy();
-    });
-
-    it('navigates to /approvals when banner is pressed', async () => {
-      (api.get as jest.Mock).mockResolvedValueOnce({
-        data: { data: { entries: [{ id: 'e1' }, { id: 'e2' }] } },
-      });
-      const { getByText } = await renderDashboard();
-      fireEvent.press(getByText('2 visitors waiting'));
+      fireEvent.press(getByText('3 ready to enter'));
       expect(mockPush).toHaveBeenCalledWith('/approvals');
     });
+    it('shows zero and the plain label when nobody is waiting', async () => {
+      const { getByLabelText, queryByText } = await renderDashboard();
+      expect(getByLabelText('Waiting 0')).toBeTruthy();
+      expect(queryByText('Needs an answer')).toBeNull();
+    });
+
+    it('highlights the count and opens the waiting list', async () => {
+      mockCounts({ waiting: [item('e1'), item('e2'), item('e3')] });
+      const { getByText, getByLabelText } = await renderDashboard();
+      expect(getByLabelText('Waiting 3')).toBeTruthy();
+      expect(getByText('Needs an answer')).toBeTruthy();
+      fireEvent.press(getByText('Needs an answer'));
+      expect(mockPush).toHaveBeenCalledWith('/approvals');
+    });
+
+    it("shows resident stops but never the guard's own stops", async () => {
+      mockCounts({
+        stopped: [
+          item('s1', { status: 'REJECTED', rejectionReason: 'Not expected' }),
+          item('s2', { status: 'REJECTED', rejectionReason: 'Stopped by guard' }),
+          item('s3', { status: 'EXPIRED', rejectionReason: 'Approval expired before arrival' }),
+        ],
+      });
+      const { getByText } = await renderDashboard();
+      expect(getByText('1 visitors stopped')).toBeTruthy();
+    });
   });
 
-  // ── API behaviour ────────────────────────────────────────────────────────────
+  // ── Inside now ──────────────────────────────────────────────────────────────
+  describe('Inside now', () => {
+    it('shows the server inside count (visitors in + staff not checked out)', async () => {
+      mockCounts({ insideCount: 3 });
+      const { getByLabelText } = await renderDashboard();
+      expect(getByLabelText('Inside now 3')).toBeTruthy();
+    });
+  });
+
+  // ── Emergency ───────────────────────────────────────────────────────────────
+  describe('Emergency', () => {
+    it('only explains the hold on a short tap', async () => {
+      const { getByLabelText, getByText } = await renderDashboard();
+      fireEvent.press(getByLabelText('Emergency'));
+      expect(getByText('Press and hold the button for 2 seconds')).toBeTruthy();
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    it('opens the emergency screen on a long press', async () => {
+      const { getByLabelText } = await renderDashboard();
+      fireEvent(getByLabelText('Emergency'), 'longPress');
+      expect(mockPush).toHaveBeenCalledWith('/emergencies');
+    });
+  });
+
+  // ── API behaviour ───────────────────────────────────────────────────────────
   describe('API', () => {
-    it('fetches pending entry requests on focus', async () => {
+    it('makes one queue call on focus for all the numbers', async () => {
       await renderDashboard();
-      expect(api.get).toHaveBeenCalledWith('/api/v1/gate/entry-requests?status=PENDING');
+      const queueCalls = (api.get as jest.Mock).mock.calls.filter(([url]) => !String(url).startsWith('/api/v1/gate/flats'));
+      expect(queueCalls).toEqual([[QUEUE_URL]]);
     });
 
     it('handles API errors without crashing', async () => {
-      (api.get as jest.Mock).mockRejectedValueOnce(new Error('Server error'));
-      const { getByText, queryByText } = await renderDashboard();
-      expect(getByText('North Gate')).toBeTruthy();
-      expect(queryByText('Review resident approvals')).toBeNull();
+      (api.get as jest.Mock).mockRejectedValue(new Error('Server error'));
+      const { getByText, getByLabelText, queryByText } = await renderDashboard();
+      expect(getByText('Ravi')).toBeTruthy();
+      expect(getByLabelText('Waiting 0')).toBeTruthy();
+      expect(queryByText('No connection')).toBeNull(); // one miss is not "offline"
     });
 
-    it('handles the entryRequests response shape', async () => {
-      (api.get as jest.Mock).mockResolvedValueOnce({
-        data: { data: { entryRequests: [{ id: 'e1' }, { id: 'e2' }] } },
-      });
-      const { getByText } = await renderDashboard();
-      expect(getByText('2 visitors waiting')).toBeTruthy();
-    });
+    it('polls every 15 s, keeps last counts and shows No connection after 3 misses in a row', async () => {
+      jest.useFakeTimers();
+      const appState = AppState as unknown as { currentState: unknown };
+      const previousState = appState.currentState;
+      appState.currentState = 'active';
+      try {
+        mockCounts({ waiting: [item('e1'), item('e2')] });
+        const { getByLabelText, queryByText } = await renderDashboard();
+        expect(getByLabelText('Waiting 2')).toBeTruthy();
 
-    it('handles a flat array response shape', async () => {
-      (api.get as jest.Mock).mockResolvedValueOnce({
-        data: { data: [{ id: 'e1' }, { id: 'e2' }] },
-      });
-      const { getByText } = await renderDashboard();
-      expect(getByText('2 visitors waiting')).toBeTruthy();
+        (api.get as jest.Mock).mockRejectedValue(new Error('offline'));
+        for (let i = 0; i < 2; i++) await act(async () => { jest.advanceTimersByTime(15000); });
+        expect(queryByText('No connection')).toBeNull();
+        await act(async () => { jest.advanceTimersByTime(15000); });
+        expect(queryByText('No connection')).toBeTruthy();
+        expect(getByLabelText('Waiting 2')).toBeTruthy(); // last-known count kept
+
+        mockCounts({ waiting: [item('e1')] });
+        await act(async () => { jest.advanceTimersByTime(15000); });
+        expect(queryByText('No connection')).toBeNull();
+        expect(getByLabelText('Waiting 1')).toBeTruthy();
+      } finally {
+        appState.currentState = previousState;
+        jest.useRealTimers();
+      }
     });
   });
 });

@@ -3,12 +3,14 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 import { useCameraPermissions } from 'expo-camera';
 import { Linking } from 'react-native';
 import api from '@/services/api';
+import { useLanguageStore } from '@/i18n';
 
 import ScanVerifyScreen from '../../app/scan-verify';
 
 const mockBack = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: mockBack }),
+  useRouter: () => ({ push: jest.fn(), replace: mockReplace, back: mockBack }),
 }));
 
 const b64url = (obj: unknown) =>
@@ -33,10 +35,14 @@ const scan = async (utils: ReturnType<typeof renderScreen>, data: string) => {
   await act(async () => { camera.props.onBarcodeScanned({ data }); });
 };
 
+const typeCode = (utils: ReturnType<typeof renderScreen>, code: string) => {
+  fireEvent.press(utils.getByText('No QR? Type code'));
+  fireEvent.changeText(utils.getByTestId('code-input'), code);
+};
+
 const enterCode = async (utils: ReturnType<typeof renderScreen>, code: string) => {
-  fireEvent.press(utils.getByText('Enter code instead'));
-  fireEvent.changeText(utils.getByPlaceholderText('e.g. K7M2QX'), code);
-  await act(async () => { fireEvent.press(utils.getByText('Verify')); });
+  typeCode(utils, code);
+  await act(async () => { fireEvent.press(utils.getByText('Check')); });
 };
 
 const postedUrls = () => (api.post as jest.Mock).mock.calls.map((c) => c[0]);
@@ -44,6 +50,7 @@ const postedUrls = () => (api.post as jest.Mock).mock.calls.map((c) => c[0]);
 describe('ScanVerifyScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useLanguageStore.setState({ lang: 'en' });
     (useCameraPermissions as jest.Mock).mockReturnValue([{ granted: true }, jest.fn()]);
   });
 
@@ -53,8 +60,8 @@ describe('ScanVerifyScreen', () => {
       const request = jest.fn();
       (useCameraPermissions as jest.Mock).mockReturnValue([{ granted: false, canAskAgain: true }, request]);
       const { getByText } = renderScreen();
-      expect(getByText('Camera Access Needed')).toBeTruthy();
-      fireEvent.press(getByText('Allow Camera'));
+      expect(getByText('Camera access needed')).toBeTruthy();
+      fireEvent.press(getByText('Turn on camera'));
       expect(request).toHaveBeenCalled();
     });
 
@@ -63,7 +70,7 @@ describe('ScanVerifyScreen', () => {
       const request = jest.fn();
       (useCameraPermissions as jest.Mock).mockReturnValue([{ granted: false, canAskAgain: false }, request]);
       const { getByText } = renderScreen();
-      fireEvent.press(getByText('Allow Camera'));
+      fireEvent.press(getByText('Turn on camera'));
       expect(openSettings).toHaveBeenCalled();
       expect(request).not.toHaveBeenCalled();
       openSettings.mockRestore();
@@ -71,8 +78,16 @@ describe('ScanVerifyScreen', () => {
 
     it('renders the scanner when access is granted', () => {
       const { getByText } = renderScreen();
-      expect(getByText('Scan QR Code')).toBeTruthy();
-      expect(getByText('Point camera at a visitor or staff QR code')).toBeTruthy();
+      expect(getByText('Scan QR')).toBeTruthy();
+      expect(getByText('Keep the QR inside the box')).toBeTruthy();
+      expect(getByText('No QR? Type code')).toBeTruthy();
+    });
+
+    it('shows the hint in Hindi for guards by default', () => {
+      useLanguageStore.setState({ lang: 'hi' });
+      const { getByText } = renderScreen();
+      expect(getByText('QR को डिब्बे के अंदर रखें')).toBeTruthy();
+      expect(getByText('QR नहीं है? कोड लिखें')).toBeTruthy();
     });
   });
 
@@ -88,10 +103,10 @@ describe('ScanVerifyScreen', () => {
       expect(api.post).toHaveBeenCalledTimes(1);
       expect(api.post).toHaveBeenCalledWith('/api/v1/guard/verify-code', { code: 'K7M2QX' });
       expect(postedUrls()).not.toContain('/api/v1/guard/scan');
-      expect(utils.getByText('Entry Allowed')).toBeTruthy();
+      expect(utils.getByText('Let in')).toBeTruthy();
       expect(utils.getByText('Asha')).toBeTruthy();
-      expect(utils.getByText('A-101')).toBeTruthy();
-      expect(utils.getByText('GUEST')).toBeTruthy();
+      expect(utils.getByText('Flat A-101')).toBeTruthy();
+      expect(utils.getByText('Guest')).toBeTruthy();
     });
 
     it('sends a scanned 6-char passcode QR to /guard/verify-code', async () => {
@@ -112,11 +127,9 @@ describe('ScanVerifyScreen', () => {
       expect(api.post).toHaveBeenCalledTimes(1);
       expect(api.post).toHaveBeenCalledWith('/api/v1/guard/scan', { qrToken: GATE_PASS_QR });
       expect(postedUrls()).not.toContain('/api/v1/guard/verify-code');
-      expect(utils.getByText('Entry Allowed')).toBeTruthy();
-      expect(utils.getByText('B-204')).toBeTruthy();
+      expect(utils.getByText('Let in')).toBeTruthy();
+      expect(utils.getByText('Flat B-204')).toBeTruthy();
       expect(utils.getByText('GATE PASS')).toBeTruthy();
-      // NORMAL mode is not shown
-      expect(utils.queryByText('Mode')).toBeNull();
     });
 
     it('sends codes that are not exactly 6 alphanumerics to /guard/scan', async () => {
@@ -126,11 +139,36 @@ describe('ScanVerifyScreen', () => {
       expect(api.post).toHaveBeenCalledWith('/api/v1/guard/scan', { qrToken: 'K7M2QX9' });
     });
 
-    it('strips non-alphanumerics from the manual code input', () => {
+    it('sends a typed 8-char staff pass code to /guard/scan as qrToken', async () => {
+      (api.post as jest.Mock).mockResolvedValueOnce({
+        data: { success: true, data: { type: 'DOMESTIC_STAFF', allowed: true, pass: { name: 'Sunita', staffType: 'MAID', attendanceAction: 'CHECKED_IN' } } },
+      });
       const utils = renderScreen();
-      fireEvent.press(utils.getByText('Enter code instead'));
-      fireEvent.changeText(utils.getByPlaceholderText('e.g. K7M2QX'), 'k7-m2 qx');
-      expect(utils.getByPlaceholderText('e.g. K7M2QX').props.value).toBe('K7M2QX');
+      await enterCode(utils, 'ab3d5f7h');
+      expect(api.post).toHaveBeenCalledWith('/api/v1/guard/scan', { qrToken: 'AB3D5F7H' });
+      expect(postedUrls()).not.toContain('/api/v1/guard/verify-code');
+      expect(utils.getByText('Checked in')).toBeTruthy();
+    });
+
+    it('types the code in one big field, upper-cased and cleaned', () => {
+      const utils = renderScreen();
+      typeCode(utils, 'k7-m2 ');
+      expect(utils.getByTestId('code-input').props.value).toBe('K7M2');
+    });
+
+    it('keeps Check disabled until the code is long enough', async () => {
+      const utils = renderScreen();
+      typeCode(utils, 'K7M');
+      await act(async () => { fireEvent.press(utils.getByText('Check')); });
+      expect(api.post).not.toHaveBeenCalled();
+    });
+
+    it('closes the code keys without sending anything', () => {
+      const utils = renderScreen();
+      typeCode(utils, 'K7M');
+      fireEvent.press(utils.getByTestId('code-close'));
+      expect(utils.queryByTestId('code-input')).toBeNull();
+      expect(api.post).not.toHaveBeenCalled();
     });
 
     it('shows the denial reason from verify-code', async () => {
@@ -139,7 +177,7 @@ describe('ScanVerifyScreen', () => {
       });
       const utils = renderScreen();
       await enterCode(utils, 'K7M2QX');
-      expect(utils.getByText('Entry Denied')).toBeTruthy();
+      expect(utils.getByText('Stop')).toBeTruthy();
       expect(utils.getByText('Pass expired')).toBeTruthy();
     });
 
@@ -147,7 +185,7 @@ describe('ScanVerifyScreen', () => {
       (api.post as jest.Mock).mockRejectedValueOnce({ response: { status: 400, data: { message: 'Invalid or expired QR' } } });
       const utils = renderScreen();
       await scan(utils, GATE_PASS_QR);
-      expect(utils.getByText('Entry Denied')).toBeTruthy();
+      expect(utils.getByText('Stop')).toBeTruthy();
       expect(utils.getByText('Invalid or expired QR')).toBeTruthy();
     });
 
@@ -155,7 +193,7 @@ describe('ScanVerifyScreen', () => {
       (api.post as jest.Mock).mockRejectedValueOnce(new Error('Network Error'));
       const utils = renderScreen();
       await enterCode(utils, 'K7M2QX');
-      expect(utils.getByText('Network error. Check the connection and try again.')).toBeTruthy();
+      expect(utils.getByText('No network. Check the connection and try again.')).toBeTruthy();
     });
 
     it('labels a staff scan as a check-in / check-out', async () => {
@@ -164,10 +202,20 @@ describe('ScanVerifyScreen', () => {
       });
       const utils = renderScreen();
       await scan(utils, 'staff-token-xyz');
-      expect(utils.getByText('Staff Checked In')).toBeTruthy();
-      expect(utils.getByText('Sunita')).toBeTruthy();
-      expect(utils.getByText('HOUSE HELP')).toBeTruthy();
       expect(utils.getByText('Checked in')).toBeTruthy();
+      expect(utils.getByText('Attendance recorded')).toBeTruthy();
+      expect(utils.getByText('Sunita')).toBeTruthy();
+      expect(utils.getByText('House Help')).toBeTruthy();
+    });
+
+    it('labels a staff check-out', async () => {
+      (api.post as jest.Mock).mockResolvedValueOnce({
+        data: { success: true, data: { type: 'DOMESTIC_STAFF', allowed: true, pass: { name: 'Sunita', staffType: 'MAID', attendanceAction: 'CHECKED_OUT' } } },
+      });
+      const utils = renderScreen();
+      await scan(utils, 'staff-token-xyz');
+      expect(utils.getByText('Checked out')).toBeTruthy();
+      expect(utils.getByText('Leaving recorded')).toBeTruthy();
     });
 
     it('ignores further scans while a result is shown, and accepts them after Scan Again', async () => {
@@ -181,11 +229,46 @@ describe('ScanVerifyScreen', () => {
         // Camera callback is detached while the result card is up.
         expect(utils.UNSAFE_getByType('CameraView' as any).props.onBarcodeScanned).toBeUndefined();
 
-        fireEvent.press(utils.getByText('Scan Again'));
+        fireEvent.press(utils.getByText('Scan next'));
         act(() => { jest.advanceTimersByTime(800); });
         await scan(utils, 'BBBBBB');
         expect(api.post).toHaveBeenCalledTimes(2);
         expect(api.post).toHaveBeenLastCalledWith('/api/v1/guard/verify-code', { code: 'BBBBBB' });
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it('ignores the same camera QR for 10 s after Scan next, but not a typed code', async () => {
+      jest.useFakeTimers();
+      try {
+        (api.post as jest.Mock).mockResolvedValue({ data: { success: true, data: { type: 'DOMESTIC_STAFF', allowed: true, pass: { name: 'Sunita' } } } });
+        const utils = renderScreen();
+        await scan(utils, GATE_PASS_QR);
+        expect(api.post).toHaveBeenCalledTimes(1);
+
+        const scanNext = () => {
+          fireEvent.press(utils.getByText('Scan next'));
+          act(() => { jest.advanceTimersByTime(800); });
+        };
+
+        // Same QR still in front of the camera when it re-arms → ignored.
+        scanNext();
+        await scan(utils, GATE_PASS_QR);
+        expect(api.post).toHaveBeenCalledTimes(1);
+
+        // A typed code is never de-duplicated.
+        await enterCode(utils, 'AB3D5F7H');
+        expect(api.post).toHaveBeenCalledTimes(2);
+        scanNext();
+        await enterCode(utils, 'AB3D5F7H');
+        expect(api.post).toHaveBeenCalledTimes(3);
+
+        // After 10 s the same QR counts again.
+        scanNext();
+        act(() => { jest.advanceTimersByTime(10_000); });
+        await scan(utils, GATE_PASS_QR);
+        expect(api.post).toHaveBeenCalledTimes(4);
       } finally {
         jest.useRealTimers();
       }
@@ -220,9 +303,8 @@ describe('ScanVerifyScreen', () => {
       expect(postedUrls()).not.toContain('/api/v1/guard/verify-code');
 
       expect(utils.getByText('Valid pass')).toBeTruthy();
-      expect(utils.getByText('Swiggy delivery')).toBeTruthy();
       expect(utils.getByText('Raju')).toBeTruthy();
-      expect(utils.getByText('Daily · 09:00 – 18:00')).toBeTruthy();
+      expect(utils.getByText('Flat A-101')).toBeTruthy();
       expect(utils.getByText('Allow entry')).toBeTruthy();
       // Nothing is recorded until the guard taps Allow entry.
       expect(postedUrls()).not.toContain('/api/v1/guard/pre-approved/pa-1/use');
@@ -237,7 +319,7 @@ describe('ScanVerifyScreen', () => {
       await scan(utils, PRE_APPROVED_QR);
       expect(utils.getByText('No valid pass')).toBeTruthy();
       expect(utils.getByText('Pass is not valid right now')).toBeTruthy();
-      expect(utils.getByText('Too early')).toBeTruthy();
+      expect(utils.getByText(/Too early/)).toBeTruthy();
       expect(utils.queryByText('Allow entry')).toBeNull();
     });
 
@@ -250,7 +332,8 @@ describe('ScanVerifyScreen', () => {
       await act(async () => { fireEvent.press(utils.getByText('Allow entry')); });
 
       expect(api.post).toHaveBeenCalledWith('/api/v1/guard/pre-approved/pa-1/use', {});
-      expect(utils.getByText('Entry allowed')).toBeTruthy();
+      expect(utils.getByText('Let in')).toBeTruthy();
+      expect(utils.getByText('Entry recorded and the resident has been told')).toBeTruthy();
       expect(utils.queryByText('Allow entry')).toBeNull();
     });
 
@@ -268,7 +351,7 @@ describe('ScanVerifyScreen', () => {
 
       await act(async () => { use.resolve({ data: { success: true } }); });
       expect(postedUrls().filter((u) => u.endsWith('/use'))).toEqual(['/api/v1/guard/pre-approved/pa-1/use']);
-      expect(utils.getByText('Entry allowed')).toBeTruthy();
+      expect(utils.getByText('Let in')).toBeTruthy();
     });
 
     it('shows "Pass already used" when another guard used it first (409)', async () => {
@@ -291,8 +374,50 @@ describe('ScanVerifyScreen', () => {
       expect(api.post).toHaveBeenCalledWith('/api/v1/guard/scan', { qrToken: 'opaque.server.token' });
       expect(utils.getByText('Valid pass')).toBeTruthy();
       expect(utils.getByText('Uber pickup')).toBeTruthy();
-      expect(utils.getByText('Hidden (private pickup)')).toBeTruthy();
+      expect(utils.getByText('Flat hidden')).toBeTruthy();
       expect(utils.getByText('Allow entry')).toBeTruthy();
+    });
+
+    it('lets the guard pick when several passes are valid', async () => {
+      mockValidate({
+        allowed: true, isPrivate: false,
+        matches: [
+          { allowed: true, entryId: 'pa-1', type: 'DELIVERY', displayLabel: 'Swiggy delivery', isPrivate: false, flatNumber: 'A-101' },
+          { allowed: true, entryId: 'pa-2', type: 'CAB', displayLabel: 'Uber pickup', isPrivate: false, flatNumber: 'A-101' },
+        ],
+      });
+      const utils = renderScreen();
+      await scan(utils, PRE_APPROVED_QR);
+      expect(utils.getByText('2 valid passes')).toBeTruthy();
+
+      (api.post as jest.Mock).mockResolvedValueOnce({ data: { success: true } });
+      await act(async () => { fireEvent.press(utils.getByText('Uber pickup')); });
+      expect(api.post).toHaveBeenCalledWith('/api/v1/guard/pre-approved/pa-2/use', {});
+    });
+  });
+
+  // ── Result screen behaviour ─────────────────────────────────────────────────
+  describe('Result screen', () => {
+    it('goes Home from the result', async () => {
+      (api.post as jest.Mock).mockResolvedValueOnce({ data: { success: true, data: { allowed: true } } });
+      const utils = renderScreen();
+      await scan(utils, 'AAAAAA');
+      fireEvent.press(utils.getByText('Home'));
+      expect(mockReplace).toHaveBeenCalledWith('/');
+    });
+
+    it('returns Home by itself after a few seconds', async () => {
+      jest.useFakeTimers();
+      try {
+        (api.post as jest.Mock).mockResolvedValueOnce({ data: { success: true, data: { allowed: true } } });
+        const utils = renderScreen();
+        await scan(utils, 'AAAAAA');
+        expect(mockReplace).not.toHaveBeenCalled();
+        act(() => { jest.advanceTimersByTime(8100); });
+        expect(mockReplace).toHaveBeenCalledWith('/');
+      } finally {
+        jest.useRealTimers();
+      }
     });
   });
 });

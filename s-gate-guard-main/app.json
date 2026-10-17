@@ -12,6 +12,7 @@
       "supportsTablet": true
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "package": "com.sgate.guard",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -42,10 +43,17 @@
       ],
       "expo-secure-store",
       [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow S-Gate Guard to hear a visitor's name when the guard taps the microphone.",
+          "speechRecognitionPermission": "Allow S-Gate Guard to write a visitor's spoken name."
+        }
+      ],
+      [
         "expo-notifications",
         {
-          "icon": "./src/assets/images/icon.png",
-          "color": "#2563EB",
+          "icon": "./src/assets/images/notification-icon.png",
+          "color": "#FFB800",
           "defaultChannel": "default"
         }
       ]

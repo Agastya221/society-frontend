@@ -1,0 +1,14 @@
+# The two lists open from Home and each has a way back.
+appId: com.sgate.guard
+---
+- startRecording: recordings/40-inside-and-waiting-lists
+- runFlow: _go-home.yaml
+- tapOn: "Inside now"
+- assertVisible: "Who is inside"
+- tapOn: "All today"
+- assertVisible: "Guests"
+- tapOn: "Home"
+- tapOn: "Waiting"
+- assertVisible: "All clear|Stop"
+- tapOn: "Home"
+- assertVisible: "Scan QR"

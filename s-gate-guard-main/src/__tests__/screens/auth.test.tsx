@@ -1,10 +1,11 @@
+import { AppAlert } from '@/components/gate/AppAlert';
 import React from 'react';
-import { Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import * as SecureStore from 'expo-secure-store';
 import { OTPWidget } from '@msg91comm/sendotp-react-native';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useLanguageStore } from '@/i18n';
 
 import AuthScreen from '../../app/auth';
 
@@ -32,6 +33,7 @@ const backendLogin = (user: Record<string, unknown>, tokens = { accessToken: 'ac
 describe('Guard AuthScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    useLanguageStore.setState({ lang: 'en' });
     (SecureStore.setItemAsync as jest.Mock).mockResolvedValue(undefined);
     useAuthStore.setState({
       accessToken: null, refreshToken: null,
@@ -48,6 +50,24 @@ describe('Guard AuthScreen', () => {
       expect(getByText('SECURE STAFF SIGN IN')).toBeTruthy();
       expect(getByText('MOBILE NUMBER')).toBeTruthy();
       expect(getByText('+91')).toBeTruthy();
+    });
+
+    it('speaks Hindi for guards by default', () => {
+      useLanguageStore.setState({ lang: 'hi' });
+      const { getByText, getByPlaceholderText } = render(<AuthScreen />);
+      expect(getByText('स्वागत है, गार्ड जी')).toBeTruthy();
+      expect(getByText('मोबाइल नंबर')).toBeTruthy();
+      expect(getByText('आगे बढ़ें')).toBeTruthy();
+      expect(getByPlaceholderText('रजिस्टर्ड नंबर डालें')).toBeTruthy();
+    });
+
+    it('switches language from the sign-in screen', () => {
+      useLanguageStore.setState({ lang: 'hi' });
+      const { getByText } = render(<AuthScreen />);
+      fireEvent.press(getByText('English'));
+      expect(getByText('Welcome, guard.')).toBeTruthy();
+      fireEvent.press(getByText('हिंदी'));
+      expect(getByText('स्वागत है, गार्ड जी')).toBeTruthy();
     });
 
     it('initialises the MSG91 widget on mount', () => {
@@ -222,7 +242,7 @@ describe('Guard AuthScreen', () => {
     });
 
     it('shows the backend error message and an alert when no guard account exists', async () => {
-      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+      const alertSpy = jest.spyOn(AppAlert, 'show').mockImplementation(() => {});
       (OTPWidget.verifyOTP as jest.Mock).mockResolvedValueOnce({ type: 'success', message: MOCK_JWT });
       (api.post as jest.Mock).mockRejectedValueOnce({
         response: { status: 404, data: { message: 'No guard account found' } },
@@ -269,7 +289,7 @@ describe('Guard AuthScreen', () => {
     );
 
     it('maps the server 403 "guards only" rejection to the guard-only message', async () => {
-      const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+      const alertSpy = jest.spyOn(AppAlert, 'show').mockImplementation(() => {});
       const utils = await verifyAs(() => {
         (api.post as jest.Mock).mockRejectedValueOnce({
           response: { status: 403, data: { message: 'This login is for guards only.' } },

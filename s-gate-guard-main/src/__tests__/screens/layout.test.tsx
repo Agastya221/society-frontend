@@ -27,7 +27,7 @@ jest.mock('../../global.css', () => ({}), { virtual: true });
 
 const PROTECTED_SCREENS = [
   'index', 'new-entry', 'today-entries', 'approvals', 'staff-scan',
-  'pre-approved', 'scan-verify', 'entry-waiting', 'emergencies', 'profile',
+  'scan-verify', 'entry-waiting', 'emergencies', 'profile',
 ];
 
 const guardUser = { id: 'g-1', name: 'Ravi', role: 'GUARD', gate: 'Main Gate', shift: 'MORNING' };
@@ -98,7 +98,7 @@ describe('RootLayout (auth routing)', () => {
     setAuth({ isAuthenticated: true, accessToken: 'tok', user: guardUser as any });
     await renderLayout();
     expect((Notifications as any).getDevicePushTokenAsync).toHaveBeenCalled();
-    expect(api.patch).toHaveBeenCalledWith('/users/guard-app/fcm-token', {
+    expect(api.patch).toHaveBeenCalledWith('/api/v1/users/guard-app/fcm-token', {
       fcmToken: 'fcm-device-token',
       deviceType: Platform.OS,
     });

@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
@@ -11,13 +12,11 @@ export default function AdminTabsLayout() {
         <Tabs
             tabBar={(props) => <AdminTabBar {...props} />}
             backBehavior="history"
+            // Screens swap instantly; ScreenTransition slides the new one in (the old fade left a ghost on Back)
+            screenLayout={({ children }) => <ScreenTransition>{children}</ScreenTransition>}
             screenOptions={{
                 headerShown: false,
-                animation: 'fade',
-                transitionSpec: {
-                    animation: 'timing',
-                    config: { duration: 180 },
-                },
+                animation: 'none',
                 sceneStyle: { backgroundColor: SgateColors.bg },
             }}
         >

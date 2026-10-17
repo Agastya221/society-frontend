@@ -1,225 +1,191 @@
-import api from '@/services/api';
-import { GuardColors } from '@/constants/theme';
+import { GiantButton } from '@/components/gate/GiantButton';
+import { HomeButton } from '@/components/gate/HomeButton';
 import { ScreenEmpty, ScreenLoading } from '@/components/ScreenState';
+import { GuardColors, GuardFonts, GuardType } from '@/constants/theme';
+import { useT } from '@/i18n';
+import api from '@/services/api';
+import { fetchQueue, type QueueItem } from '@/services/gateQueue';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
-import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    View,
-} from 'react-native';
+import { AppState, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { AppAlert } from '@/components/gate/AppAlert';
 
-interface PendingEntry {
-    id: string;
-    visitorName: string;
-    type: string;
-    flat?: { flatNumber?: string; number?: string; resident?: { name: string } };
-    flatNumber?: string;
-    flatLabel?: string;
-    purpose?: string;
-    createdAt: string;
-    status: string;
-    rejectionReason?: string;
-}
-
-// Backend entry types are VISITOR / DELIVERY / CAB / VENDOR (new-entry maps
-// Guest→VISITOR, Service→VENDOR); GUEST/SERVICE kept for older records.
-const TYPE_META: Record<string, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
-    VISITOR:  { label: 'Guest',    color: '#3B82F6', icon: 'person' },
-    GUEST:    { label: 'Guest',    color: '#3B82F6', icon: 'person' },
-    DELIVERY: { label: 'Delivery', color: '#F59E0B', icon: 'cube' },
-    CAB:      { label: 'Cab',      color: '#10B981', icon: 'car' },
-    VENDOR:   { label: 'Service',  color: '#8B5CF6', icon: 'construct' },
-    SERVICE:  { label: 'Service',  color: '#8B5CF6', icon: 'construct' },
-};
+const OVERRIDE_WAIT_MS = 45_000;
+/** One /queue call this often — only while this screen is focused and the app is in front. */
+const POLL_MS = 5_000;
 
 export default function ApprovalsScreen() {
-    const [entries, setEntries] = useState<PendingEntry[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [actioning, setActioning] = useState<string | null>(null);
+  const t = useT();
+  const [ready, setReady] = useState<QueueItem[]>([]);
+  const [pending, setPending] = useState<QueueItem[]>([]);
+  const [stopped, setStopped] = useState<QueueItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(false);
+  const [actioning, setActioning] = useState<string | null>(null);
+  const [now, setNow] = useState(Date.now());
+  const inFlight = useRef(false);
+  const actioningRef = useRef(false);
+  const knownReady = useRef<Set<string> | null>(null);
+  const knownStopped = useRef<Set<string> | null>(null);
 
-    const fetchPending = useCallback(async () => {
-        try {
-            const res = await api.get('/api/v1/gate/entry-requests?status=PENDING');
-            const payload = res.data?.data;
-            const pendingEntries = Array.isArray(payload) ? payload : (payload?.entryRequests ?? payload?.entries ?? []);
-            setEntries(Array.isArray(pendingEntries) ? pendingEntries : []);
-        } catch (err: any) {
-            console.error('Failed to fetch pending approvals:', err);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, []);
+  const refresh = useCallback(async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    try {
+      const { ready: nextReady, waiting: nextPending, stopped: nextStopped } = await fetchQueue();
+      if (knownReady.current && nextReady.some((item) => !knownReady.current!.has(item.id))) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      knownReady.current = new Set(nextReady.map((item) => item.id));
+      if (knownStopped.current && nextStopped.some((item) => !knownStopped.current!.has(item.id))) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+      knownStopped.current = new Set(nextStopped.map((item) => item.id));
+      setReady(nextReady);
+      setPending(nextPending);
+      setStopped(nextStopped);
+      setError(false);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+      inFlight.current = false;
+    }
+  }, []);
 
-    useFocusEffect(useCallback(() => { fetchPending(); }, [fetchPending]));
+  useFocusEffect(useCallback(() => {
+    refresh();
+    const poll = setInterval(() => { if (AppState.currentState === 'active') refresh(); }, POLL_MS);
+    const clock = setInterval(() => setNow(Date.now()), 1_000);
+    // Coming back to the app: refresh at once instead of waiting for the next tick.
+    const sub = AppState.addEventListener('change', (state) => { if (state === 'active') refresh(); });
+    return () => { clearInterval(poll); clearInterval(clock); sub.remove(); };
+  }, [refresh]));
 
-    // Ref guard: a double tap fires twice before `actioning` disables the buttons.
-    const busyRef = useRef(false);
+  const act = async (id: string, action: 'admit' | 'no-show' | 'approve' | 'reject') => {
+    if (actioningRef.current) return;
+    actioningRef.current = true;
+    setActioning(`${id}:${action}`);
+    try {
+      await api.patch(`/api/v1/gate/entry-requests/${id}/${action}`);
+      Haptics.notificationAsync(action === 'reject' || action === 'no-show'
+        ? Haptics.NotificationFeedbackType.Warning
+        : Haptics.NotificationFeedbackType.Success);
+      await refresh();
+    } catch (err: any) {
+      AppAlert.show(t('queue.changed'), err?.response?.data?.message ?? t('queue.tryAgain'));
+      await refresh();
+    } finally {
+      actioningRef.current = false;
+      setActioning(null);
+    }
+  };
 
-    const handleApprove = async (id: string) => {
-        if (busyRef.current) return;
-        busyRef.current = true;
-        setActioning(id + '_approve');
-        try {
-            await api.patch(`/api/v1/gate/entry-requests/${id}/approve`);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setEntries((prev) => prev.filter((e) => e.id !== id));
-        } catch (err: any) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', err?.response?.data?.message ?? 'Failed to approve.');
-            fetchPending(); // it may have been answered/expired meanwhile — don't leave a stale card
-        } finally {
-            busyRef.current = false;
-            setActioning(null);
-        }
-    };
+  const confirm = (id: string, action: 'no-show' | 'reject') => {
+    AppAlert.show(t(action === 'no-show' ? 'queue.leftTitle' : 'queue.stopTitle'), t(action === 'no-show' ? 'queue.leftText' : 'queue.stopText'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t(action === 'no-show' ? 'queue.left' : 'queue.stop'), style: 'destructive', onPress: () => act(id, action) },
+    ]);
+  };
 
-    const handleReject = async (id: string) => {
-        Alert.alert('Reject Entry', 'Are you sure you want to reject this visitor?', [
-            { text: 'Cancel', style: 'cancel' },
-            {
-                text: 'Reject', style: 'destructive', onPress: async () => {
-                    if (busyRef.current) return;
-                    busyRef.current = true;
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                    setActioning(id + '_reject');
-                    try {
-                        await api.patch(`/api/v1/gate/entry-requests/${id}/reject`);
-                        setEntries((prev) => prev.filter((e) => e.id !== id));
-                    } catch (err: any) {
-                        Alert.alert('Error', err?.response?.data?.message ?? 'Failed to reject.');
-                        fetchPending();
-                    } finally {
-                        busyRef.current = false;
-                        setActioning(null);
-                    }
-                }
-            },
-        ]);
-    };
+  // With nothing anywhere, show only the "All clear" card: three empty headings look like a broken screen.
+  const rows: Array<{ kind: 'heading' | 'item'; section: 'ready' | 'pending' | 'stopped'; item?: QueueItem }> = ready.length + pending.length + stopped.length === 0 ? [] : [
+    { kind: 'heading', section: 'ready' },
+    ...ready.map((item) => ({ kind: 'item' as const, section: 'ready' as const, item })),
+    { kind: 'heading', section: 'pending' },
+    ...pending.map((item) => ({ kind: 'item' as const, section: 'pending' as const, item })),
+    { kind: 'heading', section: 'stopped' },
+    ...stopped.map((item) => ({ kind: 'item' as const, section: 'stopped' as const, item })),
+  ];
 
-    return (
-        <View style={styles.container}>
-            {loading ? (
-                <ScreenLoading label="Checking pending approvals…" />
-            ) : (
-                // Empty state lives inside the list so pull-to-refresh still works when it's all clear.
-                <FlatList
-                    data={entries}
-                    ListEmptyComponent={<ScreenEmpty icon="checkmark-done-outline" title="All clear" message="There are no visitors waiting for resident approval." />}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <ApprovalCard
-                            entry={item}
-                            isApproving={actioning === item.id + '_approve'}
-                            isRejecting={actioning === item.id + '_reject'}
-                            onApprove={() => handleApprove(item.id)}
-                            onReject={() => handleReject(item.id)}
-                        />
-                    )}
-                    contentContainerStyle={[styles.listContent, entries.length === 0 && styles.listEmpty]}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchPending(); }} tintColor={GuardColors.goldDeep} />}
-                />
-            )}
-        </View>
-    );
+  if (loading) return <ScreenLoading label={t('queue.loading')} />;
+
+  return (
+    <View style={styles.root}>
+      {error ? <Text style={styles.error}>{t('queue.networkError')}</Text> : null}
+      <FlatList
+        data={rows}
+        keyExtractor={(row, index) => row.kind === 'heading' ? row.section : row.item?.id ?? String(index)}
+        renderItem={({ item: row }) => row.kind === 'heading'
+          ? <Text style={styles.heading}>{t(row.section === 'ready' ? 'queue.ready' : row.section === 'pending' ? 'queue.waiting' : 'queue.stopped')} · {row.section === 'ready' ? ready.length : row.section === 'pending' ? pending.length : stopped.length}</Text>
+          : <QueueCard
+              item={row.item!}
+              now={now}
+              busy={!!actioning}
+              actioning={actioning}
+              onAdmit={() => act(row.item!.id, 'admit')}
+              onNoShow={() => confirm(row.item!.id, 'no-show')}
+              onOverride={() => act(row.item!.id, 'approve')}
+              onStop={() => confirm(row.item!.id, 'reject')}
+            />}
+        ListEmptyComponent={<ScreenEmpty icon="checkmark-done-circle-outline" title={t('approvals.allClear')} message={t('queue.emptyText')} />}
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); refresh(); }} tintColor={GuardColors.goldDeep} />}
+      />
+      <HomeButton />
+    </View>
+  );
 }
 
-function ApprovalCard({ entry, isApproving, isRejecting, onApprove, onReject }: {
-    entry: PendingEntry;
-    isApproving: boolean; isRejecting: boolean;
-    onApprove: () => void; onReject: () => void;
+function QueueCard({ item, now, busy, actioning, onAdmit, onNoShow, onOverride, onStop }: {
+  item: QueueItem; now: number; busy: boolean; actioning: string | null;
+  onAdmit: () => void; onNoShow: () => void; onOverride: () => void; onStop: () => void;
 }) {
-    const meta = TYPE_META[entry.type] ?? { label: entry.type?.replace(/_/g, ' ') ?? 'Visitor', color: '#6B7280', icon: 'person' as const };
-    const color = meta.color;
-    const rawFlat = entry.flatLabel || entry.flat?.flatNumber || entry.flat?.number || entry.flatNumber || '—';
-    const flatLabel = rawFlat === 'OFFICE' ? 'Admin Office' : rawFlat;
-    const residentName = entry.flat?.resident?.name;
-
-    return (
-        <View style={[styles.card, { borderLeftColor: color }]}>
-            {/* Header */}
-            <View style={styles.cardHeader}>
-                <View style={[styles.typeIcon, { backgroundColor: color + '18' }]}>
-                    <Ionicons name={meta.icon} size={20} color={color} />
-                </View>
-                <View style={styles.cardHeaderText}>
-                    <Text style={styles.visitorName} numberOfLines={1}>{entry.visitorName || meta.label}</Text>
-                    <Text style={styles.visitorDetails}>
-                        {entry.visitorName ? `${meta.label} • ` : ''}Flat {flatLabel}
-                        {residentName ? ` (${residentName})` : ''}
-                    </Text>
-                    {entry.purpose ? <Text style={styles.purposeText}>{entry.purpose}</Text> : null}
-                </View>
-                <View style={styles.pendingBadge}>
-                    <Ionicons name="time" size={13} color="#D97706" />
-                    <Text style={styles.pendingText}>WAITING</Text>
-                </View>
-            </View>
-
-            <Text style={styles.timestamp}>
-                {new Date(entry.createdAt).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-            </Text>
-
-            {/* Action Buttons */}
-            <View style={styles.actions}>
-                <Pressable
-                    onPress={onReject}
-                    disabled={isApproving || isRejecting}
-                    style={styles.rejectBtn}
-                >
-                    {isRejecting ? <ActivityIndicator size="small" color="#DC2626" /> : (
-                        <>
-                            <Ionicons name="close-circle-outline" size={19} color="#DC2626" />
-                            <Text style={styles.rejectText}>Reject</Text>
-                        </>
-                    )}
-                </Pressable>
-                <Pressable
-                    onPress={onApprove}
-                    disabled={isApproving || isRejecting}
-                    style={styles.approveBtn}
-                >
-                    {isApproving ? <ActivityIndicator size="small" color="#fff" /> : (
-                        <>
-                            <Ionicons name="checkmark-circle-outline" size={19} color="#fff" />
-                            <Text style={styles.approveText}>Approve & Let In</Text>
-                        </>
-                    )}
-                </Pressable>
-            </View>
+  const t = useT();
+  const ready = item.status === 'APPROVED';
+  const stopped = item.status === 'REJECTED' || item.status === 'EXPIRED';
+  const elapsed = Math.max(0, now - new Date(item.createdAt).getTime());
+  const remaining = Math.max(0, Math.ceil((OVERRIDE_WAIT_MS - elapsed) / 1000));
+  const flat = item.flatLabel || item.flat?.number || '—';
+  const type = ({ VISITOR: t('common.guest'), DELIVERY: t('common.delivery'), CAB: t('common.cab'), DOMESTIC_STAFF: t('common.help'), VENDOR: t('common.service') } as Record<string, string>)[item.type] ?? item.type;
+  return (
+    <View style={[styles.card, ready && styles.readyCard, stopped && styles.stoppedCard]}>
+      <View style={styles.titleRow}>
+        <View style={[styles.icon, { backgroundColor: ready ? GuardColors.greenBg : stopped ? GuardColors.redBg : GuardColors.goldPale }]}>
+          <Ionicons name={ready ? 'checkmark-circle' : stopped ? 'close-circle' : 'time'} size={29} color={ready ? GuardColors.green : stopped ? GuardColors.red : GuardColors.goldDeep} />
         </View>
-    );
+        <View style={styles.titleCopy}>
+          <Text style={styles.name} numberOfLines={1}>{item.visitorName || type}</Text>
+          <Text style={styles.detail} numberOfLines={2}>{type}{item.providerTag ? ` · ${item.providerTag}` : ''}{item.purpose ? ` · ${item.purpose}` : ''} · {t('common.flat')} {flat}</Text>
+        </View>
+      </View>
+      <Text style={styles.age}>{ready ? t('queue.approved') : stopped ? t('queue.stopped') : t('queue.awaitingResident')} · {Math.floor(elapsed / 60_000)} {t('queue.minutes')}</Text>
+      {stopped && item.rejectionReason ? <Text style={styles.stoppedReason}>{item.rejectionReason}</Text> : null}
+      {ready ? (
+        <View style={styles.actions}>
+          <GiantButton label={t('queue.admit')} icon="checkmark-circle" tone="allow" loading={actioning === `${item.id}:admit`} disabled={busy} onPress={onAdmit} />
+          <GiantButton label={t('queue.left')} icon="close-circle" tone="light" disabled={busy} onPress={onNoShow} />
+        </View>
+      ) : stopped ? null : (
+        <View style={styles.actions}>
+          <Text style={styles.waitNote}>{remaining > 0 ? t('queue.overrideIn', { n: remaining }) : t('queue.noAnswer')}</Text>
+          <GiantButton label={t('queue.override')} icon="checkmark-circle" tone="light" loading={actioning === `${item.id}:approve`} disabled={busy || remaining > 0} onPress={onOverride} />
+          <GiantButton label={t('queue.stop')} icon="close-circle" tone="deny" disabled={busy} onPress={onStop} />
+        </View>
+      )}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, width: '100%', height: '100%', backgroundColor: GuardColors.bg },
-    listContent: { padding: 20, paddingBottom: 40 },
-    listEmpty: { flexGrow: 1 },
-    card: { backgroundColor: GuardColors.card, borderRadius: 18, padding: 16, marginBottom: 12, borderLeftWidth: 3, borderWidth: 1, borderColor: GuardColors.border },
-    cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
-    typeIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-    cardHeaderText: { flex: 1 },
-    visitorName: { fontSize: 17, fontWeight: '800', color: '#1F2937', marginBottom: 2 },
-    visitorDetails: { fontSize: 13, fontWeight: '600', color: '#6B7280' },
-    purposeText: { fontSize: 13, fontWeight: '500', color: '#9CA3AF', marginTop: 2 },
-    pendingBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#FEF3C7', borderWidth: 1, borderColor: '#FDE68A', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10 },
-    pendingText: { fontSize: 10, fontWeight: '800', color: '#D97706', letterSpacing: 0.5 },
-    timestamp: { fontSize: 12, fontWeight: '600', color: '#9CA3AF', marginBottom: 14 },
-    actions: { flexDirection: 'row', gap: 10 },
-    rejectBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: '#FECACA', backgroundColor: '#FEF2F2' },
-    approveBtn: { flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13, borderRadius: 12, backgroundColor: GuardColors.green },
-    btnPressed: { opacity: 0.75, transform: [{ scale: 0.97 }] },
-    rejectText: { fontSize: 14, fontWeight: '800', color: '#DC2626' },
-    approveText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  root: { flex: 1, backgroundColor: GuardColors.bg },
+  list: { paddingHorizontal: 18, paddingTop: 10, paddingBottom: 120, gap: 12 },
+  heading: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 23, marginTop: 16, marginBottom: 2 },
+  card: { backgroundColor: GuardColors.card, borderRadius: 26, padding: 18, gap: 13, borderWidth: 1, borderColor: GuardColors.border },
+  readyCard: { borderWidth: 2, borderColor: GuardColors.green },
+  stoppedCard: { borderWidth: 2, borderColor: GuardColors.red },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  icon: { width: 54, height: 54, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  titleCopy: { flex: 1 },
+  name: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 24 },
+  detail: { color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: GuardType.body, marginTop: 3 },
+  age: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: 15 },
+  actions: { gap: 9 },
+  waitNote: { color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: 16 },
+  stoppedReason: { color: GuardColors.red, fontFamily: GuardFonts.bold, fontSize: 17 },
+  error: { color: GuardColors.red, fontFamily: GuardFonts.bold, fontSize: 16, paddingHorizontal: 20, paddingTop: 12 },
 });

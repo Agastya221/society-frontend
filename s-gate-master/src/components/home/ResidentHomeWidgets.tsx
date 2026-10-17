@@ -35,7 +35,9 @@ export function SectionHeading({ title, onViewAll }: { title: string; onViewAll?
     );
 }
 
-export function SocietyStatusCard({ residentName }: { residentName: string }) {
+export function SocietyStatusCard({ residentName, waitingCount = 0 }: { residentName: string; waitingCount?: number }) {
+    // Someone at the gate is the one thing that is not "all good": say so instead.
+    const waiting = waitingCount > 0;
     const hour = new Date().getHours();
     const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
@@ -43,12 +45,16 @@ export function SocietyStatusCard({ residentName }: { residentName: string }) {
         <View style={styles.hero}>
             <View style={styles.heroCopy}>
                 <Text style={styles.greeting} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.84}>{greeting}, {residentName} <Text style={styles.wave}>👋</Text></Text>
-                <Text style={styles.heroTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>Everything looks good</Text>
+                <Text style={styles.heroTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>
+                    {waiting ? `${waitingCount} visitor${waitingCount > 1 ? 's' : ''} at the gate` : 'Everything looks good'}
+                </Text>
                 <View style={styles.statusPill}>
-                    <View style={styles.statusCheck}>
-                        <MaterialCommunityIcons name="check" size={17} color={ResidentHomeColors.card} />
+                    <View style={[styles.statusCheck, waiting && styles.statusWait]}>
+                        <MaterialCommunityIcons name={waiting ? 'clock-outline' : 'check'} size={17} color={ResidentHomeColors.card} />
                     </View>
-                    <Text style={styles.statusText}>Society is running smoothly</Text>
+                    <Text style={[styles.statusText, waiting && styles.statusWaitText]}>
+                        {waiting ? 'Allow or decline below' : 'Society is running smoothly'}
+                    </Text>
                 </View>
             </View>
             <BuildingScene />
@@ -257,7 +263,7 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
             <Avatar name={request.visitorName} size={50} />
             <View style={styles.visitorCopy}>
                 <Text style={styles.visitorName} numberOfLines={1}>{request.visitorName || 'Visitor'}</Text>
-                <Text style={styles.visitorType}>{formatVisitorType(request.type)} • {request.gate ?? 'Gate 1'}</Text>
+                <Text style={styles.visitorType} numberOfLines={1}>{[formatVisitorType(request.type), request.providerTag, request.purpose, request.gate].filter(Boolean).join(' • ')}</Text>
                 <View style={styles.waitingTime}>
                     <MaterialCommunityIcons name="clock-outline" size={15} color={ResidentHomeColors.danger} />
                     <Text style={styles.waitingTimeText}>Waiting {timeAgo(request.createdAt)}</Text>
@@ -429,6 +435,8 @@ const styles = StyleSheet.create({
     statusPill: { alignSelf: 'flex-start', marginTop: ResidentHomeSpacing.xs, minHeight: 30, borderRadius: ResidentHomeRadius.full, paddingLeft: ResidentHomeSpacing.xxs, paddingRight: ResidentHomeSpacing.sm, backgroundColor: ResidentHomeColors.card, flexDirection: 'row', alignItems: 'center', gap: 6 },
     statusCheck: { width: 22, height: 22, borderRadius: 11, backgroundColor: ResidentHomeColors.success, alignItems: 'center', justifyContent: 'center' },
     statusText: { fontSize: 10, fontFamily: SgateFonts.semibold, color: ResidentHomeColors.successText },
+    statusWait: { backgroundColor: ResidentHomeColors.orange },
+    statusWaitText: { color: ResidentHomeColors.orange },
     scene: { width: 146, height: '100%', position: 'absolute', right: 8, bottom: 0, overflow: 'hidden', opacity: 0.9 },
     sun: { position: 'absolute', top: 14, left: 58, width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFC43D' },
     buildingGroup: { position: 'absolute', left: 24, bottom: 0, flexDirection: 'row', alignItems: 'flex-end', gap: 3 },

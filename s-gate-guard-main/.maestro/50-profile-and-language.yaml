@@ -1,0 +1,13 @@
+# Profile shows the guard; the language switch changes the whole app and can be switched back.
+appId: com.sgate.guard
+---
+- startRecording: recordings/50-profile-and-language
+- runFlow: _go-home.yaml
+- tapOn: "Profile"
+- assertVisible: "Security guard"
+- tapOn: "हिंदी.*"
+- assertVisible: "सिक्योरिटी गार्ड.*"
+- tapOn: "English"
+- assertVisible: "Security guard"
+- tapOn: "Home"
+- assertVisible: "Scan QR"
