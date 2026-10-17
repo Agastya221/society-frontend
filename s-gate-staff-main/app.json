@@ -30,7 +30,14 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#FFB800",
+          "defaultChannel": "default"
+        }
+      ],
       "expo-font"
     ],
     "experiments": {

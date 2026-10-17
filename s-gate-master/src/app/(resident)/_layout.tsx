@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
 import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 import { Tabs } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
@@ -103,13 +104,11 @@ function ResidentLayoutInner() {
       <Tabs
         tabBar={(props) => <SgateTabBar {...props} />}
         backBehavior="history"
+        // Screens swap instantly; ScreenTransition slides the new one in (the old fade left a ghost on Back)
+        screenLayout={({ children }) => <ScreenTransition>{children}</ScreenTransition>}
         screenOptions={{
           headerShown: false,
-          animation: 'fade',
-          transitionSpec: {
-            animation: 'timing',
-            config: { duration: 180 },
-          },
+          animation: 'none',
           sceneStyle: { backgroundColor: SgateColors.bg },
         }}
       >
