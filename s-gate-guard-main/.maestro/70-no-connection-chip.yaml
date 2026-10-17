@@ -1,0 +1,18 @@
+# With no internet the Home counts can't update: after 3 failed checks Home says "No connection"
+# instead of silently showing old numbers, and the chip goes away once the network is back.
+# Uses airplane mode; adb and the code server keep working over USB.
+appId: com.sgate.guard
+---
+- startRecording: recordings/70-no-connection-chip
+- runFlow: _go-home.yaml
+- assertNotVisible: "No connection"
+- setAirplaneMode: enabled
+# Home checks every 15 s and shows the chip after the 3rd failure
+- extendedWaitUntil:
+    visible: "No connection"
+    timeout: 75000
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible: "No connection"
+    timeout: 60000
+- assertVisible: "Scan QR"
