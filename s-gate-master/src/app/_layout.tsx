@@ -17,6 +17,7 @@ import { useOnboardingStore } from "../store/useOnboardingStore";
 import { useGateStore } from "../store/useGateStore";
 import { isGatePushType } from '@/utils/gateRequestStatus';
 import api from "../services/api";
+import { LiveAlertHost } from '@/components/alerts/LiveAlertHost';
 import { AppAlertProvider, AppAlert } from "../components/ui/AppAlert";
 import { AppLoader } from "../components/ui/AppLoader";
 
@@ -41,6 +42,26 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+// Loud channel for alerts that must catch attention (visitor at the gate, emergencies).
+// The server's push names this channel id and sound; the id is versioned because Android
+// keeps a channel's sound forever once it exists.
+export const URGENT_CHANNEL_ID = 'gate-alert-v1';
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync(URGENT_CHANNEL_ID, {
+    name: 'Gate alerts & emergencies',
+    importance: Notifications.AndroidImportance.MAX,
+    sound: 'gate_alert.wav',
+    vibrationPattern: [0, 700, 300, 700, 300, 700, 300, 700],
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    enableLights: true,
+    lightColor: '#FFB800',
+    audioAttributes: {
+      usage: Notifications.AndroidAudioUsage.ALARM,
+      contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+    },
+  }).catch(() => {});
+}
 
 const ONBOARDING_SEEN_KEY = "onboarding_seen";
 
@@ -236,6 +257,13 @@ export default function RootLayout() {
         } else if (role === 'ADMIN') {
           useGateStore.getState().onGatePush();
         }
+      } else if (data.type === 'PAYMENT_SUBMITTED' && role === 'ADMIN') {
+        // A resident reported a UPI payment: the admin checks it against the bank statement
+        if (current[0] === '(admin)' && current[1] === 'payment-review') return;
+        router.push('/(admin)/payment-review' as any);
+      } else if ((data.type === 'PAYMENT_CONFIRMED' || data.type === 'PAYMENT_REJECTED') && data.invoiceId) {
+        // The admin answered the resident's payment: open that due
+        router.push({ pathname: '/(resident)/society-dues/[id]', params: { id: data.invoiceId } } as any);
       } else if (data.type === 'ONBOARDING_STATUS' && (role === 'ADMIN' || role === 'SUPER_ADMIN')) {
         router.push({
           pathname: '/(admin)/onboarding-requests',
@@ -424,6 +452,7 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: "#F8F7F4" },
               }}
             />
+            <LiveAlertHost onOpen={openNotificationTarget} />
           </AppAlertProvider>
           <StatusBar style="dark" />
         </SafeAreaProvider>

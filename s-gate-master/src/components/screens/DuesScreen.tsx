@@ -22,6 +22,8 @@ interface DueItem {
   status: DueStatus;
   totalAmount: number;
   paidOn?: string;
+  /** Latest I-paid report (UPI) for this due, when there is one */
+  submissionStatus?: 'SUBMITTED' | 'CONFIRMED' | 'REJECTED';
 }
 
 interface SocietyDueItem {
@@ -82,6 +84,7 @@ function normaliseDue(raw: any): DueItem {
     status,
     totalAmount: raw.totalAmount ?? raw.amount ?? 0,
     paidOn:      raw.paidAt ?? raw.paidOn ?? undefined,
+    submissionStatus: raw.submission?.status ?? undefined,
   };
 }
 
@@ -180,6 +183,18 @@ function DueCard({ item, index, onPress }: { item: DueItem; index: number; onPre
               <View style={S.paidOnRow}>
                 <Feather name="check-circle" size={12} color={SgateColors.green} />
                 <Text style={S.paidOnText}>Paid on {formatDate(item.paidOn)}</Text>
+              </View>
+            )}
+            {item.status !== 'PAID' && item.submissionStatus === 'SUBMITTED' && (
+              <View style={S.paidOnRow}>
+                <Feather name="clock" size={12} color="#996300" />
+                <Text style={[S.paidOnText, { color: '#996300' }]}>Payment under review</Text>
+              </View>
+            )}
+            {item.status !== 'PAID' && item.submissionStatus === 'REJECTED' && (
+              <View style={S.paidOnRow}>
+                <Feather name="alert-circle" size={12} color={SgateColors.red} />
+                <Text style={[S.paidOnText, { color: SgateColors.red }]}>Payment not confirmed - open to submit again</Text>
               </View>
             )}
           </View>

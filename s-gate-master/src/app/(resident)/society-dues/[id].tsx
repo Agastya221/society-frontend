@@ -6,8 +6,14 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   ActivityIndicator,
-  Platform
+  Platform,
+  AppState,
+  Linking,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { AppLoader } from '@/components/ui/AppLoader';
 import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -29,6 +35,14 @@ import {
 
 
 import { withResetOnBlur } from '@/components/layout/withResetOnBlur';
+import {
+  buildUpiLink,
+  cleanUtr,
+  isValidUtr,
+  submitDuePayment,
+  type PaymentSubmission,
+  type UpiPayee,
+} from '../../../services/duePayments';
 // ─── Constants ──────────────────────────────────────────────────────────────
 const BRAND_YELLOW = '#FFD60A';
 const BRAND_YELLOW_BG = '#FFFBE6';
@@ -56,6 +70,10 @@ interface DueItem {
   paidOn?: string; 
   paidVia?: string; 
   paymentHistory?: PaymentRecord[];
+  /** Where to pay: the society UPI ID (null until the admin sets it up) */
+  upi: UpiPayee | null;
+  /** The resident reported payment for this due: latest submission */
+  submission: PaymentSubmission | null;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -123,6 +141,8 @@ function normaliseDetailedDue(raw: any, userProfile: any): DueItem {
     paidOn: raw.paidAt ?? raw.paidOn ?? undefined,
     paidVia: raw.paidVia || raw.paymentMethod || undefined,
     paymentHistory: raw.paymentHistory || raw.history || [],
+    upi: raw.payment?.upi ?? null,
+    submission: raw.payment?.submission ?? null,
   };
 }
 
@@ -163,6 +183,11 @@ function SocietyDueDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [paying, setPaying] = useState(false);
+  // UPI: after the UPI app was opened, the reference number sheet opens by itself when the resident returns
+  const [refSheetOpen, setRefSheetOpen] = useState(false);
+  const [refValue, setRefValue] = useState('');
+  const [submittingRef, setSubmittingRef] = useState(false);
+  const waitingForUpiApp = React.useRef(false);
 
 
   const fetchDueDetail = useCallback(async (showLoader = false) => {
@@ -265,6 +290,57 @@ function SocietyDueDetailScreen() {
       AppAlert.show('Payment Error', getErrorMessage(err), [{ text: 'OK' }]);
     }
   }, [due, fetchDueDetail, id, syncDueAfterPayment]);
+
+  // Back from the UPI app: ask for the reference number (the app cannot see the result of the payment)
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && waitingForUpiApp.current) {
+        waitingForUpiApp.current = false;
+        setRefSheetOpen(true);
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  const payWithUpi = useCallback(async () => {
+    if (!due?.upi) return;
+    const link = buildUpiLink(due.upi, due.totalAmount, `${due.month} ${due.year} dues ${due.flat}`);
+    try {
+      waitingForUpiApp.current = true;
+      // Android lists the installed UPI apps (GPay, PhonePe, Paytm, bank apps) for this link
+      await Linking.openURL(link);
+    } catch {
+      waitingForUpiApp.current = false;
+      AppAlert.show(
+        'No UPI app found',
+        `Pay ${formatAmount(due.totalAmount)} to ${due.upi.upiId} from any UPI app, then come back and enter the reference number.`,
+        [
+          { text: 'Copy UPI ID', onPress: () => { void Clipboard.setStringAsync(due.upi!.upiId); } },
+          { text: 'I have paid', onPress: () => setRefSheetOpen(true) },
+        ],
+      );
+    }
+  }, [due]);
+
+  const submitReference = useCallback(async () => {
+    if (!due || submittingRef) return;
+    if (!isValidUtr(refValue)) {
+      AppAlert.show('Check the reference number', 'It is 12 digits in most UPI apps (shown as UPI Ref. No. or UTR). Use 8 to 22 letters or digits.');
+      return;
+    }
+    try {
+      setSubmittingRef(true);
+      await submitDuePayment(due.id, refValue);
+      setRefSheetOpen(false);
+      setRefValue('');
+      await fetchDueDetail(false);
+      AppAlert.show('Payment submitted', 'The society admin will check it and confirm. You will get a notification.');
+    } catch (err: any) {
+      AppAlert.show('Could not submit', getErrorMessage(err));
+    } finally {
+      setSubmittingRef(false);
+    }
+  }, [due, refValue, submittingRef, fetchDueDetail]);
 
   const generateAndShareReceipt = async () => {
     if (!due) return;
@@ -374,14 +450,79 @@ function SocietyDueDetailScreen() {
       </ScrollView>
 
       {/* Bottom Bar */}
-      {isActionable && !ONLINE_PAYMENTS_ENABLED && (
+      {isActionable && !ONLINE_PAYMENTS_ENABLED && due.submission?.status === 'SUBMITTED' && (
         <View style={styles.bottomActions}>
           <View style={styles.payOfflineNote}>
-            <Feather name="info" size={18} color={SgateColors.t2} />
-            <Text style={styles.payOfflineNoteText}>{ONLINE_PAYMENTS_DISABLED_MESSAGE}</Text>
+            <Feather name="clock" size={18} color="#996300" />
+            <Text style={styles.payOfflineNoteText}>
+              Payment submitted (ref {due.submission.utr}). Waiting for the society admin to confirm it.
+            </Text>
           </View>
         </View>
       )}
+
+      {isActionable && !ONLINE_PAYMENTS_ENABLED && due.submission?.status !== 'SUBMITTED' && !due.upi && (
+        <View style={styles.bottomActions}>
+          <View style={styles.payOfflineNote}>
+            <Feather name="info" size={18} color={SgateColors.t2} />
+            <Text style={styles.payOfflineNoteText}>
+              Your society has not set up UPI payments in the app yet. Please pay your society directly.
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {isActionable && !ONLINE_PAYMENTS_ENABLED && due.submission?.status !== 'SUBMITTED' && !!due.upi && (
+        <View style={styles.bottomActions}>
+          {due.submission?.status === 'REJECTED' && (
+            <View style={[styles.payOfflineNote, { backgroundColor: SgateColors.redBg, marginBottom: 10 }]}>
+              <Feather name="alert-circle" size={18} color={SgateColors.red} />
+              <Text style={[styles.payOfflineNoteText, { color: SgateColors.red }]}>
+                Your last payment was not confirmed: {due.submission.rejectionReason ?? 'reference not found'}. Check the number and submit again.
+              </Text>
+            </View>
+          )}
+          <TouchableOpacity style={styles.payMainBtn} activeOpacity={0.8} onPress={payWithUpi}>
+            <Text style={styles.payMainBtnText}>Pay {formatAmount(due.totalAmount)} with UPI</Text>
+            <Feather name="arrow-right" size={20} color={SgateColors.black} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.alreadyPaidBtn} activeOpacity={0.7} onPress={() => setRefSheetOpen(true)}>
+            <Text style={styles.alreadyPaidText}>I have already paid - enter reference number</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <Modal visible={refSheetOpen} transparent animationType="slide" onRequestClose={() => setRefSheetOpen(false)}>
+        <KeyboardAvoidingView style={styles.sheetBackdrop} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setRefSheetOpen(false)} />
+          <View style={styles.sheet}>
+            <Text style={styles.sheetTitle}>Enter the reference number</Text>
+            <Text style={styles.sheetText}>
+              Open the payment in your UPI app. The number is shown as UPI Ref. No. or UTR (12 digits in most apps).
+              The society admin matches it with the bank statement.
+            </Text>
+            <TextInput
+              style={styles.sheetInput}
+              value={refValue}
+              onChangeText={(text) => setRefValue(cleanUtr(text).slice(0, 22))}
+              placeholder="e.g. 428163921047"
+              placeholderTextColor={SgateColors.t4}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              maxLength={22}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={[styles.payMainBtn, (submittingRef || !isValidUtr(refValue)) && styles.payMainBtnDisabled]}
+              activeOpacity={0.8}
+              disabled={submittingRef || !isValidUtr(refValue)}
+              onPress={submitReference}
+            >
+              {submittingRef ? <ActivityIndicator size="small" color={SgateColors.black} /> : <Text style={styles.payMainBtnText}>Submit payment</Text>}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {isActionable && ONLINE_PAYMENTS_ENABLED && (
         <View style={styles.bottomActions}>
@@ -572,6 +713,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: SgateFonts.semibold,
     color: SgateColors.t1,
+  },
+  alreadyPaidBtn: { alignItems: 'center', paddingVertical: 14 },
+  alreadyPaidText: { fontFamily: SgateFonts.semibold, fontSize: 13, color: SgateColors.t2, textDecorationLine: 'underline' },
+  sheetBackdrop: { flex: 1, backgroundColor: 'rgba(17,19,24,0.55)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, paddingBottom: 30, gap: 12 },
+  sheetTitle: { fontFamily: SgateFonts.extrabold, fontSize: 20, color: SgateColors.t1 },
+  sheetText: { fontFamily: SgateFonts.regular, fontSize: 13, lineHeight: 19, color: SgateColors.t2 },
+  sheetInput: {
+    borderWidth: 1.5, borderColor: SgateColors.border, borderRadius: 16, paddingHorizontal: 16, height: 56,
+    fontFamily: SgateFonts.bold, fontSize: 20, letterSpacing: 2, color: SgateColors.t1, backgroundColor: '#FAFAF8',
   },
   payOfflineNote: {
     flexDirection: 'row',

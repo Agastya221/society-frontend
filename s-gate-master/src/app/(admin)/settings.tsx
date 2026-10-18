@@ -20,6 +20,7 @@ import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constan
 import { SettingRow } from '@/components/ui/SettingRow';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getSocietySettings, updateSocietySettings, type SocietySettings } from '@/services/settings.service';
+import { UPI_ID_PATTERN } from '@/services/duePayments';
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function SettingsScreen() {
@@ -35,6 +36,10 @@ export default function SettingsScreen() {
     const [dueDayOfMonth, setDueDayOfMonth]   = useState('');
     const [gracePeriod, setGracePeriod]       = useState('');
     const [saving, setSaving]                 = useState(false);
+    // Where residents pay dues
+    const [upiId, setUpiId]                   = useState('');
+    const [payeeName, setPayeeName]           = useState('');
+    const [savingUpi, setSavingUpi]           = useState(false);
     const [server, setServer]                 = useState<SocietySettings | null>(null);
     /** null while loading; false when the server has no settings API yet. */
     const [available, setAvailable]           = useState<boolean | null>(null);
@@ -49,6 +54,8 @@ export default function SettingsScreen() {
         setMonthlyFee(data.maintenance.monthlyFee != null ? String(data.maintenance.monthlyFee) : '');
         setDueDayOfMonth(String(data.maintenance.dueDayOfMonth));
         setGracePeriod(String(data.maintenance.gracePeriodDays));
+        setUpiId(data.payments?.upiId ?? '');
+        setPayeeName(data.payments?.payeeName ?? '');
         setAutoStaff(data.autoApproval.domesticStaff);
         setAutoDelivery(data.autoApproval.delivery);
         setAutoCab(data.autoApproval.cab);
@@ -101,6 +108,20 @@ export default function SettingsScreen() {
         await save({ maintenance: { monthlyFee: fee, dueDayOfMonth: due, gracePeriodDays: grace } },
             'Society settings updated successfully.');
         setSaving(false);
+    };
+
+    const handleSaveUpi = async () => {
+        const id = upiId.trim();
+        if (id && !UPI_ID_PATTERN.test(id)) {
+            AppAlert.show('Check the UPI ID', 'A UPI ID looks like society@okhdfcbank: letters or numbers, then @, then the bank name.');
+            return;
+        }
+        setSavingUpi(true);
+        await save(
+            { payments: { upiId: id || null, payeeName: payeeName.trim() || null } },
+            id ? 'Residents will now pay their dues to this UPI ID.' : 'UPI payments are switched off. Residents can no longer pay from the app.',
+        );
+        setSavingUpi(false);
     };
 
     /** Flip a toggle right away, and roll it back if the server refuses. */
@@ -169,6 +190,40 @@ export default function SettingsScreen() {
                         </TouchableOpacity>
                     </View>
                     <Text style={styles.hint}>Used for the next maintenance invoices.</Text>
+                </Animated.View>
+
+                {/* ── Dues payment (UPI) ───────────────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(120).springify()}>
+                    <Text style={styles.sectionLabel}>DUES PAYMENT (UPI)</Text>
+                    <View style={styles.card}>
+                        <ConfigInput
+                            label="Society UPI ID"
+                            value={upiId}
+                            onChangeText={setUpiId}
+                            placeholder="e.g. dalmaheights@okhdfcbank"
+                            autoCapitalize="none"
+                        />
+                        <ConfigInput
+                            label="Name shown in the UPI app"
+                            value={payeeName}
+                            onChangeText={setPayeeName}
+                            placeholder={societyName !== '—' ? societyName : 'Society name'}
+                        />
+                        <TouchableOpacity
+                            style={[styles.saveBtn, savingUpi && styles.saveBtnDisabled]}
+                            onPress={handleSaveUpi}
+                            disabled={savingUpi}
+                        >
+                            {savingUpi
+                                ? <ActivityIndicator size="small" color="#FFF" />
+                                : <Text style={styles.saveBtnText}>Save UPI ID</Text>
+                            }
+                        </TouchableOpacity>
+                    </View>
+                    <Text style={styles.hint}>
+                        Residents pay this UPI ID straight from their own UPI app. After paying they enter the reference
+                        number, and you confirm it from Payments. Use the society's bank account UPI ID.
+                    </Text>
                 </Animated.View>
 
                 {/* ── Auto-Approval Rules ───────────────────────────────────── */}
@@ -257,9 +312,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     );
 }
 
-function ConfigInput({ label, value, onChangeText, keyboardType, placeholder }: {
+function ConfigInput({ label, value, onChangeText, keyboardType, placeholder, autoCapitalize }: {
     label: string; value: string; onChangeText: (t: string) => void;
-    keyboardType?: 'numeric' | 'default'; placeholder?: string;
+    keyboardType?: 'numeric' | 'default'; placeholder?: string; autoCapitalize?: 'none' | 'words';
 }) {
     return (
         <View style={styles.configInputWrap}>
@@ -271,6 +326,8 @@ function ConfigInput({ label, value, onChangeText, keyboardType, placeholder }: 
                 keyboardType={keyboardType ?? 'default'}
                 placeholder={placeholder}
                 placeholderTextColor={SgateColors.t4}
+                autoCapitalize={autoCapitalize}
+                autoCorrect={false}
             />
         </View>
     );

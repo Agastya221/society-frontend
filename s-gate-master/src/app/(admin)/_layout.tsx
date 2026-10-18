@@ -59,6 +59,7 @@ export default function AdminTabsLayout() {
             <Tabs.Screen name="approval-requests" options={{ href: null }} />
             <Tabs.Screen name="notices" options={{ href: null }} />
             <Tabs.Screen name="payments" options={{ href: null }} />
+            <Tabs.Screen name="payment-review" options={{ href: null }} />
             <Tabs.Screen name="residents" options={{ href: null }} />
             <Tabs.Screen name="settings" options={{ href: null }} />
             <Tabs.Screen name="onboarding-requests" options={{ href: null }} />

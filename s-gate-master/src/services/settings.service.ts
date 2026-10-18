@@ -4,11 +4,14 @@ export interface SocietySettings {
     society: { name: string | null; address: string | null; city: string | null };
     maintenance: { monthlyFee: number | null; dueDayOfMonth: number; gracePeriodDays: number };
     autoApproval: { domesticStaff: boolean; delivery: boolean; cab: boolean };
+    /** Where residents pay dues: the society's UPI ID (null until the admin sets it) */
+    payments: { upiId: string | null; payeeName: string | null };
 }
 
 export interface SocietySettingsUpdate {
     maintenance?: Partial<SocietySettings['maintenance']>;
     autoApproval?: Partial<SocietySettings['autoApproval']>;
+    payments?: Partial<SocietySettings['payments']>;
 }
 
 /** Society-level settings managed by the society admin. */
