@@ -35,10 +35,12 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#FFB800",
+          "sounds": ["./assets/sounds/gate_alert.wav"],
           "defaultChannel": "default"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true

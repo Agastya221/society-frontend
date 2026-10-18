@@ -67,6 +67,7 @@
         {
           "icon": "./src/assets/images/notification-icon.png",
           "color": "#FFB800",
+          "sounds": ["./assets/sounds/gate_alert.wav"],
           "defaultChannel": "default"
         }
       ],
@@ -76,7 +77,8 @@
           "locationAlwaysAndWhenInUsePermission": "Allow S-Gate to use your location to provide local society services."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true

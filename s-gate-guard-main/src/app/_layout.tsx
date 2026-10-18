@@ -10,6 +10,7 @@ import api from '@/services/api';
 import { GuardColors, GuardFonts } from '@/constants/theme';
 import { useLanguageStore, useT } from '@/i18n';
 import { AppAlertHost } from '@/components/gate/AppAlert';
+import { LiveAlertHost } from '@/components/alerts/LiveAlertHost';
 
 // Android measures a Text with one line-breaking strategy and draws it with another,
 // so Devanagari labels in auto-width boxes were drawn one word short ("ड्यूटी पर" showed
@@ -34,6 +35,25 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+// Loud channel for alerts that must catch attention (resident answered, emergencies). The server's
+// push names this channel id and sound; the id is versioned because Android keeps a channel's sound.
+export const URGENT_CHANNEL_ID = 'gate-alert-v1';
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync(URGENT_CHANNEL_ID, {
+    name: 'Gate alerts & emergencies',
+    importance: Notifications.AndroidImportance.MAX,
+    sound: 'gate_alert.wav',
+    vibrationPattern: [0, 700, 300, 700, 300, 700, 300, 700],
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    enableLights: true,
+    lightColor: '#FFB800',
+    audioAttributes: {
+      usage: Notifications.AndroidAudioUsage.ALARM,
+      contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+    },
+  }).catch(() => {});
+}
 
 export default function RootLayout() {
   const router = useRouter();
@@ -165,6 +185,7 @@ export default function RootLayout() {
       </Stack>
       <StatusBar style="dark" backgroundColor={GuardColors.card} />
       <AppAlertHost />
+      <LiveAlertHost />
     </>
   );
 }
