@@ -48,8 +48,10 @@ export const getStaffAttendance = async (date: string): Promise<StaffAttendance[
     return response.data.data;
 };
 
-export const createDomesticStaff = async (input: StaffInput): Promise<void> => {
-    await api.post('/staff/domestic', input);
+/** Returns the new staff member's id so flats can be assigned right away. */
+export const createDomesticStaff = async (input: StaffInput): Promise<string | undefined> => {
+    const res = await api.post('/staff/domestic', input);
+    return res.data?.data?.id;
 };
 
 export const updateDomesticStaff = async (
@@ -57,4 +59,29 @@ export const updateDomesticStaff = async (
     input: Partial<StaffInput> & { isActive?: boolean },
 ): Promise<void> => {
     await api.patch(`/staff/domestic/${id}`, input);
+};
+
+export interface AssignableFlat {
+    id: string;
+    flatNumber: string;
+    block?: { name: string } | null;
+}
+
+/** Occupied flats of the society, for picking where a staff member works. */
+export const getAssignableFlats = async (): Promise<AssignableFlat[]> => {
+    const flats: AssignableFlat[] = [];
+    let page = 1;
+    let pages = 1;
+    while (page <= pages && page <= 20) {
+        const res = await api.get(`/gate/flats?page=${page}&limit=100`);
+        const data = res.data?.data;
+        flats.push(...(data?.flats ?? []));
+        pages = data?.pagination?.pages ?? 1;
+        page += 1;
+    }
+    return flats;
+};
+
+export const assignStaffToFlat = async (domesticStaffId: string, flatId: string): Promise<void> => {
+    await api.post('/staff/domestic/assignments', { domesticStaffId, flatId });
 };
