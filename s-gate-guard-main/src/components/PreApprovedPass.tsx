@@ -29,6 +29,9 @@ export interface Match {
     type?: string;
     mode?: string;
     displayLabel?: string;
+    /** Cab plate the resident gave, and how many people the pass lets in */
+    vehicleNumber?: string | null;
+    guestCount?: number;
     isPrivate: boolean;
     flatNumber?: string;
     residentName?: string;

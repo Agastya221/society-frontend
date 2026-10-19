@@ -118,6 +118,8 @@ export interface CreatePreApprovedPayload {
     // DELIVERY
     companyName?: string;
     isSurprise?: boolean;
+    // CAB: the full plate (the last 4 digits are what the gate verifies)
+    vehicleNumber?: string;
     // HELP
     category?: HelpCategory;
     customCategory?: string;

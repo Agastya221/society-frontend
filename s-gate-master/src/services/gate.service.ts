@@ -105,6 +105,8 @@ export interface CreateInvitePassPayload {
     timeUntil?: string;
     maxUses?: number;
     isPrivate?: boolean;
+    /** People coming on this pass (1 = just the named guest) */
+    guestCount?: number;
 }
 
 /** Strip country code, spaces, dashes — always returns a plain 10-digit number */

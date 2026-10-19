@@ -54,6 +54,7 @@ interface VerifyResult {
     reason?: string;
     inviteType?: string;
     visitorName?: string;
+    guestCount?: number;
     flatNumber?: string;
     scheduleType?: string;
     mode?: string;
@@ -278,6 +279,7 @@ export default function ScanVerifyScreen() {
                         reason: res.data?.message,
                         inviteType: d.inviteType,
                         visitorName: d.visitorName,
+                        guestCount: typeof d.guestCount === 'number' ? d.guestCount : undefined,
                         flatNumber: d.flatNumber,
                     };
                 } else {
@@ -429,7 +431,7 @@ export default function ScanVerifyScreen() {
         if (!flat) return undefined;
         return `${t('common.flat')} ${flat === 'OFFICE' ? t('scan.office') : flat}`;
     };
-    const passName = (m: Match) => (m.entryId ? windows[m.entryId]?.visitorName : null) ?? m.displayLabel;
+    const passName = (m: Match) => `${(m.entryId ? windows[m.entryId]?.visitorName : null) ?? m.displayLabel ?? ''}${(m.guestCount ?? 1) > 1 ? `  +${(m.guestCount ?? 1) - 1}` : ''}${m.vehicleNumber ? ` · ${m.vehicleNumber}` : ''}`;
 
     const verdict = (() => {
         if (result) {
@@ -445,7 +447,7 @@ export default function ScanVerifyScreen() {
                     kind={result.allowed ? 'allow' : 'deny'}
                     title={!result.allowed ? t('common.deny') : staff ? t(out ? 'scan.staffOut' : 'scan.staffIn') : t('common.allow')}
                     reason={!result.allowed ? (result.reason || t('scan.noPassFound')) : staff ? t(out ? 'scan.staffOutSub' : 'scan.staffInSub') : undefined}
-                    name={result.allowed ? result.visitorName : undefined}
+                    name={result.allowed ? (result.visitorName && (result.guestCount ?? 1) > 1 ? `${result.visitorName}  +${(result.guestCount ?? 1) - 1}` : result.visitorName) : undefined}
                     flat={result.allowed ? flatText(result.flatNumber) : undefined}
                     typeLabel={result.allowed ? typeLabel || undefined : undefined}
                     primaryLabel={t('scan.scanNext')}

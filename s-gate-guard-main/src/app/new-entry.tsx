@@ -617,7 +617,7 @@ export default function NewEntryScreen() {
     };
 
     const typeInfo = VISITOR_TYPES.find((v) => v.type === type)!;
-    const passName = (m: Match) => (m.entryId ? windows[m.entryId]?.visitorName : null) ?? m.displayLabel;
+    const passName = (m: Match) => `${(m.entryId ? windows[m.entryId]?.visitorName : null) ?? m.displayLabel ?? ''}${(m.guestCount ?? 1) > 1 ? `  +${(m.guestCount ?? 1) - 1}` : ''}${m.vehicleNumber ? ` · ${m.vehicleNumber}` : ''}`;
     const passFlat = (m: Match) => (m.isPrivate ? t('scan.privateFlat') : m.flatNumber ? `${t('common.flat')} ${m.flatNumber === 'OFFICE' ? t('scan.office') : m.flatNumber}` : undefined);
 
     // ── Pre-approval results (full screen) ────────────────────────────────────
