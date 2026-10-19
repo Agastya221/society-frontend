@@ -304,6 +304,11 @@ export const rejectBooking = async (id: string, rejectionReason?: string): Promi
     return res.data.data;
 };
 
+/** The resident cancels a booking that has not happened yet; the helper is told. */
+export const cancelStaffBooking = async (id: string): Promise<void> => {
+    await api.patch(`/staff/domestic/bookings/${id}/cancel`, {});
+};
+
 export const completeBooking = async (
     id: string,
     actualDuration?: number,
@@ -325,13 +330,14 @@ export const getStaffReviews = async (staffId: string): Promise<StaffReview[]> =
 };
 
 export const addStaffReview = async (
-    staffId: string,
+    domesticStaffId: string,
+    flatId: string,
     rating: number,
-    comment?: string
+    review?: string
 ): Promise<StaffReview> => {
     const res = await api.post<{ success: boolean; data: StaffReview }>(
         '/staff/domestic/reviews',
-        { staffId, rating, comment }
+        { domesticStaffId, flatId, rating, review }
     );
     return res.data.data;
 };

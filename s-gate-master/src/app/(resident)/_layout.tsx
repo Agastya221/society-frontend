@@ -157,6 +157,7 @@ function ResidentLayoutInner() {
         {/* ── Hidden from tab bar — still navigable ─────────────────────── */}
         <Tabs.Screen name="local-directory/index"  options={{ href: null }} />
         <Tabs.Screen name="daily-help/index"       options={{ href: null }} />
+        <Tabs.Screen name="daily-help/my-bookings" options={{ href: null }} />
         <Tabs.Screen name="elections/index"        options={{ href: null }} />
         <Tabs.Screen name="society-dues/index"     options={{ href: null }} />
         <Tabs.Screen name="communication/index"    options={{ href: null }} />
