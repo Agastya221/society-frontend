@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   logo: { width: 60, height: 56 },
-  dutyCardWrap: { marginTop: 4, marginBottom: 6 },
+  dutyCardWrap: { marginTop: 2, marginBottom: 2 },
   gateChipBad: { backgroundColor: GuardColors.redBg },
   avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '900' },
