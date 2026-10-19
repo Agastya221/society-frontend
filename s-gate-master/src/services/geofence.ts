@@ -55,6 +55,8 @@ export interface AttendanceShift {
   gate: string | null;
   minutes: number;
   onDuty: boolean;
+  lateMinutes: number;
+  earlyMinutes: number;
 }
 
 export interface AttendanceGuard {
@@ -65,6 +67,9 @@ export interface AttendanceGuard {
   totalMinutes: number;
   shiftCount: number;
   onDutyNow: boolean;
+  scheduledShift: { name: string; startTime: string; endTime: string } | null;
+  lateCount: number;
+  earlyCount: number;
   shifts: AttendanceShift[];
 }
 
@@ -76,3 +81,43 @@ export interface AttendanceReport {
 /** month is YYYY-MM */
 export const getAttendance = async (month: string): Promise<AttendanceReport> =>
   (await api.get(`/admin/geofence/attendance?month=${month}`)).data?.data ?? { month, guards: [] };
+
+export interface ShiftGuard {
+  id: string;
+  name: string | null;
+  guardShiftId: string | null;
+}
+
+export interface ShiftItem {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  graceMinutes: number;
+  guards: { id: string; name: string | null }[];
+}
+
+export const listShiftsAndGuards = async (): Promise<{ shifts: ShiftItem[]; guards: ShiftGuard[] }> => {
+  const data = (await api.get('/admin/geofence/shifts')).data?.data;
+  return { shifts: data?.shifts ?? [], guards: data?.guards ?? [] };
+};
+
+/** Creates the shift (id null) or updates it; returns its id. */
+export const saveShift = async (
+  id: string | null,
+  body: { name: string; startTime: string; endTime: string; graceMinutes: number },
+): Promise<string> => {
+  if (id) {
+    await api.put(`/admin/geofence/shifts/${id}`, body);
+    return id;
+  }
+  return (await api.post('/admin/geofence/shifts', body)).data?.data?.id;
+};
+
+export const deleteShift = async (id: string): Promise<void> => {
+  await api.delete(`/admin/geofence/shifts/${id}`);
+};
+
+export const setShiftGuards = async (id: string, guardIds: string[]): Promise<void> => {
+  await api.put(`/admin/geofence/shifts/${id}/guards`, { guardIds });
+};

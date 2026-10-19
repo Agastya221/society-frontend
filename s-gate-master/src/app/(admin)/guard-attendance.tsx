@@ -64,6 +64,9 @@ export default function GuardAttendanceScreen() {
                                 <View style={{ flex: 1 }}>
                                     <Text style={styles.name} numberOfLines={1}>{g.name || 'Guard'}</Text>
                                     <Text style={styles.sub}>{g.daysPresent} {g.daysPresent === 1 ? 'day' : 'days'} · {hours(g.totalMinutes)}</Text>
+                                    {g.scheduledShift ? (
+                                        <Text style={styles.sub}>{g.scheduledShift.name} {g.scheduledShift.startTime}–{g.scheduledShift.endTime}{g.lateCount ? ` · ${g.lateCount} late` : ''}{g.earlyCount ? ` · ${g.earlyCount} left early` : ''}</Text>
+                                    ) : <Text style={styles.sub}>No shift assigned</Text>}
                                 </View>
                                 {g.onDutyNow ? <View style={styles.live}><Text style={styles.liveText}>On duty</Text></View> : null}
                                 <Ionicons name={open === g.guardId ? 'chevron-up' : 'chevron-down'} size={20} color={SgateColors.t3} />
@@ -76,6 +79,7 @@ export default function GuardAttendanceScreen() {
                                                 <Text style={styles.shiftDate}>{new Date(s.startedAt).toLocaleDateString([], { day: 'numeric', month: 'short' })}</Text>
                                                 <Text style={styles.shiftTime}>
                                                     {clock(s.startedAt)} – {s.endedAt ? clock(s.endedAt) : 'now'}{s.endedBy === 'AUTO' ? ' (auto)' : ''}
+                                                    {s.lateMinutes > 0 ? `  · Late ${s.lateMinutes} min` : ''}{s.earlyMinutes > 0 ? `  · Left ${s.earlyMinutes} min early` : ''}
                                                 </Text>
                                                 <Text style={styles.shiftHours}>{hours(s.minutes)}</Text>
                                             </View>
