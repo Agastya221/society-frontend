@@ -7,6 +7,7 @@ import { loadFlatDirectory } from '@/services/flatDirectory';
 import { fetchQueue } from '@/services/gateQueue';
 import { endDuty, fetchDuty, fetchGeofence, startDuty, type Duty, type GeofenceStatus } from '@/services/geofence';
 import { AppAlert } from '@/components/gate/AppAlert';
+import { DutyToggle } from '@/components/gate/DutyToggle';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -88,6 +89,7 @@ export default function GuardDashboard() {
   // undefined = unknown (older server), null = off duty, object = on duty
   const [duty, setDuty] = useState<Duty | null | undefined>(undefined);
   const dutyBusy = useRef(false);
+  const [dutyWorking, setDutyWorking] = useState(false);
   const failures = useRef(0);
   const inFlight = useRef(false);
 
@@ -122,6 +124,7 @@ export default function GuardDashboard() {
     if (dutyBusy.current || duty === undefined) return;
     const run = async (action: () => Promise<unknown>, failTitle?: string) => {
       dutyBusy.current = true;
+      setDutyWorking(true);
       try {
         await action();
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -130,6 +133,7 @@ export default function GuardDashboard() {
         AppAlert.show(failTitle ?? t('home.dutyFailed'), err?.response?.data?.message ?? err?.message ?? '');
       } finally {
         dutyBusy.current = false;
+        setDutyWorking(false);
       }
     };
     if (duty) {
@@ -172,33 +176,34 @@ export default function GuardDashboard() {
           <LanguageSwitch compact />
         </Animated.View>
 
+        {duty !== undefined ? (
+          <Animated.View entering={rise(1)} style={styles.dutyCardWrap}>
+            <DutyToggle
+              on={!!duty}
+              busy={dutyWorking}
+              title={duty ? t('home.dutyOn') : t('home.dutyOff')}
+              hint={duty
+                ? t('home.dutySince', { time: new Date(duty.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
+                : t('home.dutyOffHint')}
+              gateLine={geo?.enforced
+                ? (geo.ok
+                  ? t('home.atGate', { gate: geo.gateName ?? '' })
+                  : geo.code === 'GEOFENCE_OUTSIDE' ? t('home.notAtGate', { n: geo.distanceMeters ?? 0 })
+                  : geo.code === 'LOCATION_FAKED' ? t('home.locationFaked')
+                  : geo.code === 'LOCATION_REQUIRED' ? t('home.locationOff')
+                  : t('home.locationFinding'))
+                : null}
+              gateOk={!!geo?.ok}
+              onToggle={toggleDuty}
+            />
+          </Animated.View>
+        ) : null}
+
         <Animated.View entering={rise(1)} style={styles.chipRow}>
           {duty === undefined ? (
             <View style={styles.dutyChip}>
               <LiveDot color={GuardColors.green} size={8} />
               <Text style={styles.dutyText} numberOfLines={1}>{t('home.onDutyAt', { gate: user?.gate ?? 'Main Gate' }) + '\u00A0'}</Text>
-            </View>
-          ) : (
-            <Pressy testID="duty-chip" accessibilityRole="button" onPress={toggleDuty} style={[styles.dutyChip, !duty && styles.gateChipBad]}>
-              <LiveDot color={duty ? GuardColors.green : GuardColors.red} size={8} />
-              <Text style={[styles.dutyText, !duty && { color: GuardColors.red }]} numberOfLines={1}>
-                {(duty
-                  ? t('home.onDutySince', { time: new Date(duty.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
-                  : t('home.offDuty')) + '\u00A0'}
-              </Text>
-            </Pressy>
-          )}
-          {geo?.enforced ? (
-            <View style={[styles.dutyChip, !geo.ok && styles.gateChipBad]} testID="gate-chip">
-              <Ionicons name={geo.ok ? 'location' : 'location-outline'} size={16} color={geo.ok ? GuardColors.green : GuardColors.red} />
-              <Text style={[styles.dutyText, !geo.ok && { color: GuardColors.red }]} numberOfLines={1}>
-                {(geo.ok
-                  ? t('home.atGate', { gate: geo.gateName ?? '' })
-                  : geo.code === 'GEOFENCE_OUTSIDE' ? t('home.notAtGate', { n: geo.distanceMeters ?? 0 })
-                  : geo.code === 'LOCATION_FAKED' ? t('home.locationFaked')
-                  : geo.code === 'LOCATION_REQUIRED' ? t('home.locationOff')
-                  : t('home.locationFinding')) + ' '}
-              </Text>
             </View>
           ) : null}
           {offline ? (
@@ -302,6 +307,7 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   logo: { width: 60, height: 56 },
+  dutyCardWrap: { marginTop: 4, marginBottom: 6 },
   gateChipBad: { backgroundColor: GuardColors.redBg },
   avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '900' },
