@@ -30,6 +30,10 @@
     "plugins": [
       "expo-router",
       [
+        "expo-location",
+        { "locationWhenInUsePermission": "S-Gate Guard checks that you are at the gate before you let visitors in." }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./src/assets/images/splash-icon.png",

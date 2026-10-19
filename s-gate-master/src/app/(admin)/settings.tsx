@@ -271,6 +271,12 @@ export default function SettingsScreen() {
                             onPress={() => router.push('/(admin)/gate-points')}
                         />
                         <SettingRow
+                            icon="crosshairs-gps"
+                            title="Gate location"
+                            subtitle="Guards can only act from the gate"
+                            onPress={() => router.push('/(admin)/gate-location' as any)}
+                        />
+                        <SettingRow
                             icon="account-group-outline"
                             title="Guard Management"
                             subtitle="Add and manage security guards"

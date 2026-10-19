@@ -1,3 +1,11 @@
+// ── expo-location ─────────────────────────────────────────────────────────────
+jest.mock('expo-location', () => ({
+  getForegroundPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, canAskAgain: true })),
+  requestForegroundPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true })),
+  getCurrentPositionAsync: jest.fn(() => Promise.resolve({ coords: { latitude: 22.8, longitude: 86.2, accuracy: 10 }, timestamp: Date.now() })),
+  Accuracy: { High: 4 },
+}));
+
 // ── expo-secure-store ─────────────────────────────────────────────────────────
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(),

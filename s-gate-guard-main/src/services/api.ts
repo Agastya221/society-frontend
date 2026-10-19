@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 import { BASE_URL } from '../constants/api';
+import { geoHeaders } from './location';
 
 // Re-exported so other call sites (useAuthStore's refresh/logout, which use plain
 // fetch to dodge the axios interceptor) never hard-code a second copy of this URL.
@@ -14,9 +15,17 @@ const api: AxiosInstance = axios.create({
 
 // ── Request: attach access token ─────────────────────────────────────────────
 api.interceptors.request.use(
-    (config) => {
+    async (config) => {
         const accessToken = useAuthStore.getState().accessToken;
         if (accessToken) config.headers.Authorization = `Bearer ${accessToken}`;
+        // The server only accepts gate actions from a phone at the gate: every action (and the status check)
+        // carries where this phone is. Reads and the login calls do not need it.
+        const method = (config.method ?? 'get').toLowerCase();
+        const url = config.url ?? '';
+        const isAction = method !== 'get' && !url.includes('/auth/') && !url.includes('/upload/') && !url.includes('device');
+        if (isAction || url.includes('/geofence/status')) {
+            Object.entries(await geoHeaders()).forEach(([key, value]) => config.headers.set(key, value));
+        }
         console.log('🚀 API Request:', config.method?.toUpperCase(), `${BASE_URL}${config.url}`);
         return config;
     },

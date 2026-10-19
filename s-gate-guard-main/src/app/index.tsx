@@ -5,6 +5,7 @@ import { GuardColors, GuardFonts, GuardGradients, GuardSemantic, guardShadow } f
 import { useT } from '@/i18n';
 import { loadFlatDirectory } from '@/services/flatDirectory';
 import { fetchQueue } from '@/services/gateQueue';
+import { fetchGeofence, type GeofenceStatus } from '@/services/geofence';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -82,6 +83,7 @@ export default function GuardDashboard() {
   const [stoppedCount, setStoppedCount] = useState(0);
   const [insideCount, setInsideCount] = useState(0);
   const [offline, setOffline] = useState(false);
+  const [geo, setGeo] = useState<GeofenceStatus | null>(null);
   const failures = useRef(0);
   const inFlight = useRef(false);
 
@@ -106,13 +108,20 @@ export default function GuardDashboard() {
     }
   }, []);
 
+  // Is this phone at the gate? Also keeps a fresh location ready for the next action the guard takes.
+  const checkGate = useCallback(async () => {
+    try { setGeo(await fetchGeofence()); } catch { /* offline: the chip above already says so */ }
+  }, []);
+
   // A visitor can arrive any time, so keep the counts fresh while this screen is showing.
   useFocusEffect(useCallback(() => {
     void refresh();
+    void checkGate();
+    const gateTimer = setInterval(() => { if (AppState.currentState === 'active') void checkGate(); }, 20_000);
     if (user?.id) void loadFlatDirectory(user.id).catch(() => undefined);
     const timer = setInterval(() => { if (AppState.currentState === 'active') void refresh(); }, POLL_MS);
-    return () => clearInterval(timer);
-  }, [refresh, user?.id]));
+    return () => { clearInterval(timer); clearInterval(gateTimer); };
+  }, [refresh, checkGate, user?.id]));
 
   const open = (route: Route) => router.push(route);
 
@@ -139,6 +148,19 @@ export default function GuardDashboard() {
             <LiveDot color={GuardColors.green} size={8} />
             <Text style={styles.dutyText} numberOfLines={1}>{t('home.onDutyAt', { gate: user?.gate ?? 'Main Gate' }) + '\u00A0'}</Text>
           </View>
+          {geo?.enforced ? (
+            <View style={[styles.dutyChip, !geo.ok && styles.gateChipBad]} testID="gate-chip">
+              <Ionicons name={geo.ok ? 'location' : 'location-outline'} size={16} color={geo.ok ? GuardColors.green : GuardColors.red} />
+              <Text style={[styles.dutyText, !geo.ok && { color: GuardColors.red }]} numberOfLines={1}>
+                {(geo.ok
+                  ? t('home.atGate', { gate: geo.gateName ?? '' })
+                  : geo.code === 'GEOFENCE_OUTSIDE' ? t('home.notAtGate', { n: geo.distanceMeters ?? 0 })
+                  : geo.code === 'LOCATION_FAKED' ? t('home.locationFaked')
+                  : geo.code === 'LOCATION_REQUIRED' ? t('home.locationOff')
+                  : t('home.locationFinding')) + ' '}
+              </Text>
+            </View>
+          ) : null}
           {offline ? (
             <View style={styles.offlineChip} accessibilityLabel={t('home.offline')}>
               <Ionicons name="cloud-offline" size={16} color={GuardColors.red} />
@@ -240,6 +262,7 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   logo: { width: 60, height: 56 },
+  gateChipBad: { backgroundColor: GuardColors.redBg },
   avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '900' },
   headerCopy: { flex: 1 },
