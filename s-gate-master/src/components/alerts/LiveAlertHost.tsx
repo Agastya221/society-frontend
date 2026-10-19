@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -9,7 +9,8 @@ import { playSingleChime, startAlertSound, stopAlertSound } from '@/services/ale
 import { useGateStore } from '@/store/useGateStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getUnreadCount } from '@/services/notification.service';
-import { chooseHowManyToAllow, withGroup } from '@/services/groupApproval';
+import { withGroup } from '@/services/groupApproval';
+import { useVisitorPhoto } from '@/hooks/useVisitorPhoto';
 
 const SERVER_ROOT = 'https://society-gate-backend-gsrq.onrender.com';
 const BANNER_MS = 6000;
@@ -41,6 +42,8 @@ export function LiveAlertHost({ onOpen }: Props) {
   const [urgent, setUrgent] = useState<LiveAlert | null>(null);
   const [banner, setBanner] = useState<LiveAlert | null>(null);
   const [busy, setBusy] = useState(false);
+  // A group is asking how many to let in: shown inside this same card, not in a second dialog on top
+  const [choosing, setChoosing] = useState(false);
   const bannerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showAlert = useCallback(async (alert: LiveAlert): Promise<boolean> => {
@@ -115,6 +118,7 @@ export function LiveAlertHost({ onOpen }: Props) {
     stopAlertSound();
     setUrgent(null);
     setBusy(false);
+    setChoosing(false);
   }, []);
 
   const answer = useCallback(async (kind: 'approve' | 'reject', count?: number) => {
@@ -134,6 +138,12 @@ export function LiveAlertHost({ onOpen }: Props) {
   }, [urgent, busy, close]);
 
   const isGateRequest = urgent?.data.type === 'GATE_REQUEST' && !!urgent.data.entryRequestId;
+  const groupSize = Number(urgent?.data.peopleCount) || 1;
+  const photo = useVisitorPhoto(isGateRequest ? urgent?.data.entryRequestId : undefined);
+  const onAllow = () => {
+    if (groupSize > 1) { stopAlertSound(); setChoosing(true); return; }
+    void answer('approve');
+  };
 
   return (
     <>
@@ -158,19 +168,37 @@ export function LiveAlertHost({ onOpen }: Props) {
       <Modal visible={!!urgent} transparent animationType="fade" statusBarTranslucent onRequestClose={close}>
         <View style={styles.backdrop}>
           <Animated.View entering={FadeInDown.duration(260)} style={styles.card}>
-            <View style={styles.ringIcon}>
-              <Ionicons name={isGateRequest ? 'person' : 'alert-circle'} size={34} color={SgateColors.ink} />
-            </View>
-            <Text style={styles.kicker}>{isGateRequest ? 'VISITOR AT THE GATE' : 'IMPORTANT ALERT'}</Text>
-            <Text style={styles.title}>{urgent?.title}</Text>
-            <Text style={styles.body}>{urgent?.body}</Text>
+            {isGateRequest && photo ? (
+              <Image source={{ uri: photo }} style={styles.photoIcon} resizeMode="cover" accessibilityLabel="Visitor photo" />
+            ) : (
+              <View style={styles.ringIcon}>
+                <Ionicons name={isGateRequest ? 'person' : 'alert-circle'} size={34} color={SgateColors.ink} />
+              </View>
+            )}
+            <Text style={styles.kicker}>{isGateRequest ? (choosing ? 'LET IN HOW MANY?' : 'VISITOR AT THE GATE') : 'IMPORTANT ALERT'}</Text>
+            <Text style={styles.title}>{choosing ? `${groupSize} people are at the gate` : urgent?.title}</Text>
+            <Text style={styles.body}>{choosing ? 'Choose how many to let in. The others wait outside.' : urgent?.body}</Text>
 
-            {isGateRequest ? (
+            {isGateRequest && choosing ? (
+              <View style={styles.choices}>
+                <Pressable style={[styles.btn, styles.allow, styles.choiceBtn]} onPress={() => answer('approve')} disabled={busy} accessibilityRole="button">
+                  <Text style={styles.allowText}>Let all {groupSize} in</Text>
+                </Pressable>
+                {Array.from({ length: Math.min(groupSize - 1, 4) }, (_, i) => i + 1).map((n) => (
+                  <Pressable key={n} style={[styles.btn, styles.allowSoft, styles.choiceBtn]} onPress={() => answer('approve', n)} disabled={busy} accessibilityRole="button">
+                    <Text style={styles.allowText}>{n === 1 ? 'Only 1 person' : `Only ${n} people`}</Text>
+                  </Pressable>
+                ))}
+                <Pressable onPress={() => setChoosing(false)} hitSlop={12} accessibilityRole="button">
+                  <Text style={styles.silence}>Back</Text>
+                </Pressable>
+              </View>
+            ) : isGateRequest ? (
               <View style={styles.actions}>
                 <Pressable style={[styles.btn, styles.decline]} onPress={() => answer('reject')} disabled={busy} accessibilityRole="button">
                   <Text style={styles.declineText}>Decline</Text>
                 </Pressable>
-                <Pressable style={[styles.btn, styles.allow]} onPress={() => chooseHowManyToAllow({ name: urgent?.data.visitorName, peopleCount: Number(urgent?.data.peopleCount) || 1 }, (count) => answer('approve', count))} disabled={busy} accessibilityRole="button">
+                <Pressable style={[styles.btn, styles.allow]} onPress={onAllow} disabled={busy} accessibilityRole="button">
                   <Text style={styles.allowText}>Allow</Text>
                 </Pressable>
               </View>
@@ -189,11 +217,7 @@ export function LiveAlertHost({ onOpen }: Props) {
               </View>
             )}
 
-            {isGateRequest ? (
-              <Pressable onPress={close} hitSlop={12} accessibilityRole="button">
-                <Text style={styles.silence}>Decide later</Text>
-              </Pressable>
-            ) : (
+            {choosing ? null : (
               <Pressable onPress={stopAlertSound} hitSlop={12} accessibilityRole="button">
                 <Text style={styles.silence}>Silence the ring</Text>
               </Pressable>
@@ -218,6 +242,10 @@ const styles = StyleSheet.create({
 
   backdrop: { flex: 1, backgroundColor: 'rgba(17,19,24,0.72)', justifyContent: 'center', padding: 22 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 32, padding: 26, alignItems: 'center' },
+  photoIcon: { width: 96, height: 96, borderRadius: 30, backgroundColor: '#EEE' },
+  choices: { alignSelf: 'stretch', gap: 10, marginTop: 20, alignItems: 'center' },
+  choiceBtn: { flex: 0, alignSelf: 'stretch' },
+  allowSoft: { backgroundColor: SgateColors.goldPale },
   ringIcon: { width: 72, height: 72, borderRadius: 24, backgroundColor: SgateColors.gold, alignItems: 'center', justifyContent: 'center' },
   kicker: { marginTop: 18, fontFamily: SgateFonts.extrabold, fontSize: 12, letterSpacing: 2, color: SgateColors.goldDeep },
   title: { marginTop: 8, fontFamily: SgateFonts.extrabold, fontSize: 24, color: SgateColors.ink, textAlign: 'center' },

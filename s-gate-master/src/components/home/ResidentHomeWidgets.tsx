@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import React, { useRef } from 'react';
 import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { chooseHowManyToAllow, withGroup } from '@/services/groupApproval';
+import { useVisitorPhoto } from '@/hooks/useVisitorPhoto';
 import Animated, { Easing, FadeInDown, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -235,6 +236,7 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
     const height = useSharedValue(-1);
     const opacity = useSharedValue(1);
     const leaving = useRef(false);
+    const photo = useVisitorPhoto(request.id, !!request.photoKey);
 
     const collapseThen = (action: (id: string, count?: number) => void, count?: number) => {
         if (leaving.current) return;
@@ -268,7 +270,7 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
             style={styles.waitingCard}
             onLayout={e => { if (!leaving.current) height.value = e.nativeEvent.layout.height + CARD_GAP; }}
         >
-            <Avatar name={request.visitorName} size={50} />
+            <Avatar name={request.visitorName} size={50} photoUrl={photo ?? undefined} />
             <View style={styles.visitorCopy}>
                 <Text style={styles.visitorName} numberOfLines={1}>{withGroup(request.visitorName || 'Visitor', request.peopleCount)}</Text>
                 <Text style={styles.visitorType} numberOfLines={1}>{[formatVisitorType(request.type), request.providerTag, request.purpose, request.vehicleNumber, request.gate].filter(Boolean).join(' • ')}</Text>
