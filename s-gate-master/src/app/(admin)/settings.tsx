@@ -271,6 +271,12 @@ export default function SettingsScreen() {
                             onPress={() => router.push('/(admin)/gate-points')}
                         />
                         <SettingRow
+                            icon="calendar-check-outline"
+                            title="Guard attendance"
+                            subtitle="Who was on duty, and for how long"
+                            onPress={() => router.push('/(admin)/guard-attendance' as any)}
+                        />
+                        <SettingRow
                             icon="crosshairs-gps"
                             title="Gate location"
                             subtitle="Guards can only act from the gate"

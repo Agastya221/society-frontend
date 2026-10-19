@@ -43,4 +43,36 @@ export const VIOLATION_TEXT: Record<string, string> = {
   LOCATION_FAKED: 'Used a fake location',
   LOCATION_STALE: 'Location was out of date',
   LOCATION_INACCURATE: 'Location was not accurate',
+  DUTY_NOT_STARTED: 'Tried to act without starting duty',
 };
+
+export interface AttendanceShift {
+  id: string;
+  date: string;
+  startedAt: string;
+  endedAt: string | null;
+  endedBy: 'GUARD' | 'AUTO' | null;
+  gate: string | null;
+  minutes: number;
+  onDuty: boolean;
+}
+
+export interface AttendanceGuard {
+  guardId: string;
+  name: string | null;
+  phone: string | null;
+  daysPresent: number;
+  totalMinutes: number;
+  shiftCount: number;
+  onDutyNow: boolean;
+  shifts: AttendanceShift[];
+}
+
+export interface AttendanceReport {
+  month: string;
+  guards: AttendanceGuard[];
+}
+
+/** month is YYYY-MM */
+export const getAttendance = async (month: string): Promise<AttendanceReport> =>
+  (await api.get(`/admin/geofence/attendance?month=${month}`)).data?.data ?? { month, guards: [] };

@@ -5,7 +5,8 @@ import { GuardColors, GuardFonts, GuardGradients, GuardSemantic, guardShadow } f
 import { useT } from '@/i18n';
 import { loadFlatDirectory } from '@/services/flatDirectory';
 import { fetchQueue } from '@/services/gateQueue';
-import { fetchGeofence, type GeofenceStatus } from '@/services/geofence';
+import { endDuty, fetchDuty, fetchGeofence, startDuty, type Duty, type GeofenceStatus } from '@/services/geofence';
+import { AppAlert } from '@/components/gate/AppAlert';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -84,6 +85,9 @@ export default function GuardDashboard() {
   const [insideCount, setInsideCount] = useState(0);
   const [offline, setOffline] = useState(false);
   const [geo, setGeo] = useState<GeofenceStatus | null>(null);
+  // undefined = unknown (older server), null = off duty, object = on duty
+  const [duty, setDuty] = useState<Duty | null | undefined>(undefined);
+  const dutyBusy = useRef(false);
   const failures = useRef(0);
   const inFlight = useRef(false);
 
@@ -111,7 +115,32 @@ export default function GuardDashboard() {
   // Is this phone at the gate? Also keeps a fresh location ready for the next action the guard takes.
   const checkGate = useCallback(async () => {
     try { setGeo(await fetchGeofence()); } catch { /* offline: the chip above already says so */ }
+    try { setDuty(await fetchDuty()); } catch { /* keep what we last knew */ }
   }, []);
+
+  const toggleDuty = useCallback(() => {
+    if (dutyBusy.current || duty === undefined) return;
+    const run = async (action: () => Promise<unknown>, failTitle?: string) => {
+      dutyBusy.current = true;
+      try {
+        await action();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setDuty(await fetchDuty());
+      } catch (err: any) {
+        AppAlert.show(failTitle ?? t('home.dutyFailed'), err?.response?.data?.message ?? err?.message ?? '');
+      } finally {
+        dutyBusy.current = false;
+      }
+    };
+    if (duty) {
+      AppAlert.show(t('home.endDutyTitle'), t('home.endDutyText'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('home.endDuty'), style: 'destructive', onPress: () => { void run(endDuty); } },
+      ]);
+    } else {
+      void run(startDuty);
+    }
+  }, [duty, t]);
 
   // A visitor can arrive any time, so keep the counts fresh while this screen is showing.
   useFocusEffect(useCallback(() => {
@@ -144,10 +173,21 @@ export default function GuardDashboard() {
         </Animated.View>
 
         <Animated.View entering={rise(1)} style={styles.chipRow}>
-          <View style={styles.dutyChip}>
-            <LiveDot color={GuardColors.green} size={8} />
-            <Text style={styles.dutyText} numberOfLines={1}>{t('home.onDutyAt', { gate: user?.gate ?? 'Main Gate' }) + '\u00A0'}</Text>
-          </View>
+          {duty === undefined ? (
+            <View style={styles.dutyChip}>
+              <LiveDot color={GuardColors.green} size={8} />
+              <Text style={styles.dutyText} numberOfLines={1}>{t('home.onDutyAt', { gate: user?.gate ?? 'Main Gate' }) + '\u00A0'}</Text>
+            </View>
+          ) : (
+            <Pressy testID="duty-chip" accessibilityRole="button" onPress={toggleDuty} style={[styles.dutyChip, !duty && styles.gateChipBad]}>
+              <LiveDot color={duty ? GuardColors.green : GuardColors.red} size={8} />
+              <Text style={[styles.dutyText, !duty && { color: GuardColors.red }]} numberOfLines={1}>
+                {(duty
+                  ? t('home.onDutySince', { time: new Date(duty.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })
+                  : t('home.offDuty')) + '\u00A0'}
+              </Text>
+            </Pressy>
+          )}
           {geo?.enforced ? (
             <View style={[styles.dutyChip, !geo.ok && styles.gateChipBad]} testID="gate-chip">
               <Ionicons name={geo.ok ? 'location' : 'location-outline'} size={16} color={geo.ok ? GuardColors.green : GuardColors.red} />

@@ -182,7 +182,7 @@ describe('Guard Dashboard (index)', () => {
   describe('API', () => {
     it('makes one queue call on focus for all the numbers', async () => {
       await renderDashboard();
-      const queueCalls = (api.get as jest.Mock).mock.calls.filter(([url]) => !String(url).startsWith('/api/v1/gate/flats') && !String(url).includes('/geofence/status'));
+      const queueCalls = (api.get as jest.Mock).mock.calls.filter(([url]) => !String(url).startsWith('/api/v1/gate/flats') && !String(url).includes('/geofence/status') && !String(url).includes('/guard/duty'));
       expect(queueCalls).toEqual([[QUEUE_URL]]);
     });
 

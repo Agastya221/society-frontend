@@ -15,3 +15,25 @@ export async function fetchGeofence(): Promise<GeofenceStatus> {
   const res = await api.get('/api/v1/guard/geofence/status');
   return res.data?.data ?? { enforced: false, ok: true };
 }
+
+export interface Duty {
+  id: string;
+  startedAt: string;
+  endedAt: string | null;
+}
+
+/** undefined = the server did not say (older server); null = off duty; object = on duty */
+export async function fetchDuty(): Promise<Duty | null | undefined> {
+  const res = await api.get('/api/v1/guard/duty');
+  const data = res.data?.data;
+  return data && 'duty' in data ? (data.duty as Duty | null) : undefined;
+}
+
+export async function startDuty(): Promise<Duty | null> {
+  const res = await api.post('/api/v1/guard/duty/start', {});
+  return res.data?.data?.duty ?? null;
+}
+
+export async function endDuty(): Promise<void> {
+  await api.post('/api/v1/guard/duty/end', {});
+}
