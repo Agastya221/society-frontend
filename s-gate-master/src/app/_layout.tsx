@@ -18,6 +18,7 @@ import { useGateStore } from "../store/useGateStore";
 import { isGatePushType } from '@/utils/gateRequestStatus';
 import api from "../services/api";
 import { LiveAlertHost, reopenGateRequest } from '@/components/alerts/LiveAlertHost';
+import { attachCallAlertForeground, registerCallAlert } from '@/services/callAlert';
 import { AppAlertProvider, AppAlert } from "../components/ui/AppAlert";
 import { AppLoader } from "../components/ui/AppLoader";
 
@@ -31,6 +32,9 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Call-style gate alerts: defined here, at module scope, so the background task exists when the app is woken by a push
+registerCallAlert();
 
 // Show notifications while app is in foreground
 Notifications.setNotificationHandler({
@@ -293,6 +297,12 @@ export default function RootLayout() {
     },
     [openNotificationTarget, isLoading, isAuthenticated]
   );
+
+  // The call-style gate alert: opening it (or its "Choose how many") shows the approval card in the app
+  useEffect(() => {
+    if (!isAuthenticated || isLoading) return;
+    return attachCallAlertForeground((data) => openNotificationTarget({ ...data, type: 'GATE_REQUEST' }));
+  }, [isAuthenticated, isLoading, openNotificationTarget]);
 
   // Navigate when a notification is TAPPED while the app is running/backgrounded
   useEffect(() => {

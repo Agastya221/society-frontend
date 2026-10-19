@@ -5,6 +5,24 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
 }));
 
+// ── notifee + task manager (call-style alert; native only) ───────────────────────
+jest.mock('@notifee/react-native', () => ({
+  __esModule: true,
+  default: {
+    createChannel: jest.fn(() => Promise.resolve('gate-call-v1')),
+    displayNotification: jest.fn(() => Promise.resolve('id')),
+    cancelNotification: jest.fn(() => Promise.resolve()),
+    getInitialNotification: jest.fn(() => Promise.resolve(null)),
+    onBackgroundEvent: jest.fn(),
+    onForegroundEvent: jest.fn(() => jest.fn()),
+  },
+  AndroidCategory: { CALL: 'call' },
+  AndroidImportance: { HIGH: 4 },
+  AndroidVisibility: { PUBLIC: 1 },
+  EventType: { PRESS: 1, ACTION_PRESS: 2, DISMISSED: 0 },
+}));
+jest.mock('expo-task-manager', () => ({ defineTask: jest.fn(), isTaskRegisteredAsync: jest.fn(() => Promise.resolve(false)) }));
+
 // ── expo-haptics ──────────────────────────────────────────────────────────────
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
@@ -23,6 +41,7 @@ jest.mock('expo-notifications', () => ({
   addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
   addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
   scheduleNotificationAsync: jest.fn(),
+  registerTaskAsync: jest.fn(() => Promise.resolve()),
   AndroidImportance: { MAX: 5 },
   setNotificationChannelAsync: jest.fn(),
 }));

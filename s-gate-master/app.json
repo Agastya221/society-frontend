@@ -78,7 +78,8 @@
         }
       ],
       "expo-web-browser",
-      "expo-audio"
+      "expo-audio",
+      "./plugins/withCallAlert"
     ],
     "experiments": {
       "typedRoutes": true
