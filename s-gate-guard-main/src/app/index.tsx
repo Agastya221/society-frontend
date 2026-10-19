@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Animated as RNAnimated, Easing, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { AppState, Animated as RNAnimated, Easing, Image, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -126,9 +126,7 @@ export default function GuardDashboard() {
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 14, paddingBottom: insets.bottom + 28 }]} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <Animated.View entering={rise(0)} style={styles.header}>
-          <LinearGradient colors={GuardGradients.gold} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.avatar}>
-            <Text style={styles.avatarText}>{firstName.charAt(0).toUpperCase()}</Text>
-          </LinearGradient>
+          <Image source={require('@/assets/images/s-gate-logo.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="S-Gate" />
           <View style={styles.headerCopy}>
             <Text style={styles.hello}>{t('home.hello')}</Text>
             <Text style={styles.name} numberOfLines={1}>{firstName}</Text>
@@ -241,6 +239,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20 },
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  logo: { width: 60, height: 56 },
   avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '900' },
   headerCopy: { flex: 1 },

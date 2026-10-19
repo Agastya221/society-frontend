@@ -72,7 +72,7 @@ describe('TodayEntriesScreen (who is inside)', () => {
   it('gives each visitor inside a big Exit button that records the exit', async () => {
     const { getByTestId, queryByText } = await renderScreen();
     await act(async () => { fireEvent.press(getByTestId('exit-in-1')); });
-    expect(api.patch).toHaveBeenCalledWith('/api/v1/guard/entries/in-1/checkout');
+    expect(api.patch).toHaveBeenCalledWith('/api/v1/guard/entries/in-1/checkout', {});
     expect(queryByText('Asha Rao')).toBeNull();
   });
 

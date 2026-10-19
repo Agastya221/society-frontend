@@ -35,8 +35,31 @@ export const getEntryRequests = async (params?: GetEntryRequestsParams): Promise
     return Array.isArray(data) ? data : (data?.requests ?? data?.entryRequests ?? []);
 };
 
-export const approveEntryRequest = async (id: string): Promise<void> => {
-    await api.patch(`/gate/entry-requests/${id}/approve`);
+/** `count` lets in fewer people than arrived; leave it out to allow everyone. */
+export const approveEntryRequest = async (id: string, count?: number): Promise<void> => {
+    await api.patch(`/gate/entry-requests/${id}/approve`, count ? { count } : {});
+};
+
+// ─── Always-allowed visitors ──────────────────────────────────────────────────
+export interface TrustedVisitor {
+    id: string;
+    name: string;
+    phone: string;
+    createdAt: string;
+}
+
+export const listTrustedVisitors = async (): Promise<TrustedVisitor[]> => {
+    const res = await api.get('/resident/trusted-visitors');
+    return res.data?.data ?? [];
+};
+
+export const trustVisitor = async (entryRequestId: string): Promise<TrustedVisitor> => {
+    const res = await api.post('/resident/trusted-visitors', { entryRequestId });
+    return res.data?.data;
+};
+
+export const removeTrustedVisitor = async (id: string): Promise<void> => {
+    await api.delete(`/resident/trusted-visitors/${id}`);
 };
 
 export const rejectEntryRequest = async (id: string, reason?: string): Promise<void> => {

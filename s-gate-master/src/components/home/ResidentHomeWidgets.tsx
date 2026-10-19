@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useRef } from 'react';
 import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { chooseHowManyToAllow, withGroup } from '@/services/groupApproval';
 import Animated, { Easing, FadeInDown, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -176,7 +177,7 @@ export function WaitingAtGateSection({
 }: {
     requests: EntryRequest[];
     isLoading: boolean;
-    onAllow: (id: string) => void;
+    onAllow: (id: string, count?: number) => void;
     onDecline: (id: string) => void;
     onViewAll: () => void;
 }) {
@@ -224,7 +225,7 @@ const CARD_GAP = 8;
 function VisitorRequestCard({ request, index, onAllow, onDecline }: {
     request: EntryRequest;
     index: number;
-    onAllow: (id: string) => void;
+    onAllow: (id: string, count?: number) => void;
     onDecline: (id: string) => void;
 }) {
     // On Allow/Decline the card fades and shrinks its own height before it is
@@ -235,17 +236,24 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
     const opacity = useSharedValue(1);
     const leaving = useRef(false);
 
-    const collapseThen = (action: (id: string) => void) => {
+    const collapseThen = (action: (id: string, count?: number) => void, count?: number) => {
         if (leaving.current) return;
         leaving.current = true;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        if (height.value <= 0) { action(request.id); return; }
+        const run = () => (count === undefined ? action(request.id) : action(request.id, count));
+        if (height.value <= 0) { run(); return; }
         const ease = Easing.out(Easing.cubic);
         opacity.value = withTiming(0, { duration: 160, easing: ease });
         height.value = withTiming(0, { duration: 240, easing: ease }, finished => {
-            if (finished) runOnJS(action)(request.id);
+            if (finished) runOnJS(run)();
         });
     };
+
+    // A group asks how many to let in first; the card only leaves once a choice is made
+    const allow = () => chooseHowManyToAllow(
+        { name: request.visitorName, peopleCount: request.peopleCount },
+        (count) => collapseThen(onAllow, count),
+    );
 
     const collapseStyle = useAnimatedStyle(() => (
         height.value < 0 ? { opacity: opacity.value } : { opacity: opacity.value, height: height.value }
@@ -262,8 +270,8 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
         >
             <Avatar name={request.visitorName} size={50} />
             <View style={styles.visitorCopy}>
-                <Text style={styles.visitorName} numberOfLines={1}>{request.visitorName || 'Visitor'}</Text>
-                <Text style={styles.visitorType} numberOfLines={1}>{[formatVisitorType(request.type), request.providerTag, request.purpose, request.gate].filter(Boolean).join(' • ')}</Text>
+                <Text style={styles.visitorName} numberOfLines={1}>{withGroup(request.visitorName || 'Visitor', request.peopleCount)}</Text>
+                <Text style={styles.visitorType} numberOfLines={1}>{[formatVisitorType(request.type), request.providerTag, request.purpose, request.vehicleNumber, request.gate].filter(Boolean).join(' • ')}</Text>
                 <View style={styles.waitingTime}>
                     <MaterialCommunityIcons name="clock-outline" size={15} color={ResidentHomeColors.danger} />
                     <Text style={styles.waitingTimeText}>Waiting {timeAgo(request.createdAt)}</Text>
@@ -282,7 +290,7 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
                 <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel="Allow visitor"
-                    onPress={() => collapseThen(onAllow)}
+                    onPress={allow}
                     activeOpacity={0.72}
                     style={styles.allowButton}
                 >

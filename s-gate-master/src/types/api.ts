@@ -255,6 +255,10 @@ export interface EntryRequest {
     gate?: string;
     createdAt: string;
     photoKey?: string;
+    /** People who arrived together, and how many were allowed (null/absent = everyone) */
+    peopleCount?: number;
+    approvedCount?: number | null;
+    vehicleNumber?: string | null;
 }
 
 export interface PreApproval {

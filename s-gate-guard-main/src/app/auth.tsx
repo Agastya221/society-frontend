@@ -3,7 +3,7 @@ import { OTPWidget } from '@msg91comm/sendotp-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useRef, useState } from 'react';
-import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { BackHandler, Image, KeyboardAvoidingView, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GiantButton } from '@/components/gate/GiantButton';
 import { LanguageSwitch } from '@/components/gate/LanguageSwitch';
@@ -121,6 +121,7 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.brandArea}>
+            <Image source={require('@/assets/images/s-gate-logo.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="S-Gate" />
             <Text style={styles.eyebrow}>{t('auth.eyebrow')}</Text>
             <Text style={styles.title}>{screen === 'phone' ? t('auth.welcome') : t('auth.verifyTitle')}</Text>
             <Text style={styles.subtitle}>{screen === 'phone' ? t('auth.welcomeSub') : t('auth.sentTo', { phone })}</Text>
@@ -186,6 +187,7 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 22, paddingVertical: 24 },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brandArea: { marginTop: 28, marginBottom: 22 },
+  logo: { width: 76, height: 71, marginBottom: 16 },
   eyebrow: { fontFamily: GuardFonts.semibold, fontWeight: '800', fontSize: 13, lineHeight: 18, letterSpacing: 1.6, color: GuardColors.goldDeep },
   title: { marginTop: 8, fontFamily: GuardFonts.bold, fontWeight: '900', fontSize: 34, lineHeight: 44, letterSpacing: -0.8, color: GuardColors.t1 },
   subtitle: { marginTop: 8, fontFamily: GuardFonts.medium, fontSize: GuardType.body, lineHeight: 26, fontWeight: '500', color: GuardColors.t2 },

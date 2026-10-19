@@ -317,10 +317,10 @@ export default function SharedHomeScreen({ role }: SharedHomeScreenProps) {
         setRefreshing(false);
     }, [fetchSharedData, fetchContexts, fetchAdminData, isAdmin]);
 
-    const handleApprove = async (id: string) => {
+    const handleApprove = async (id: string, count?: number) => {
         setExitDir(prev => ({ ...prev, [id]: 'right' }));
         try {
-            await approveRequest(id);
+            await approveRequest(id, count);
         } catch {
             AppAlert.show('Error', 'Failed to approve. Please try again.');
         }

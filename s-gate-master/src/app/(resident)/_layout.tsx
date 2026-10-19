@@ -166,6 +166,7 @@ function ResidentLayoutInner() {
         <Tabs.Screen name="search-vehicle/index"   options={{ href: null }} />
         <Tabs.Screen name="visitors"    options={{ href: null }} />
         <Tabs.Screen name="approvals/index"   options={{ href: null }} />
+        <Tabs.Screen name="trusted-visitors"  options={{ href: null }} />
         <Tabs.Screen name="complaints"  options={{ href: null }} />
         <Tabs.Screen name="emergency/index"   options={{ href: null }} />
         <Tabs.Screen name="family/index"      options={{ href: null }} />

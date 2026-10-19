@@ -34,6 +34,10 @@ interface Entry {
     checkInTime: string;
     checkOutTime: string | null;
     status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CHECKED_IN' | 'CHECKED_OUT';
+    /** Group visits: people who came in together and how many have already left */
+    peopleCount?: number;
+    peopleLeft?: number;
+    vehicleNumber?: string | null;
 }
 
 const TYPE_META: Record<string, { color: string; bg: string; icon: keyof typeof Ionicons.glyphMap }> = {
@@ -102,6 +106,9 @@ export default function TodayEntriesScreen() {
                 checkInTime: entry.checkInTime ?? entry.createdAt,
                 checkOutTime: entry.checkOutTime ?? entry.checkOutAt ?? null,
                 status: entry.status,
+                peopleCount: entry.peopleCount ?? 1,
+                peopleLeft: entry.peopleLeft ?? 0,
+                vehicleNumber: entry.vehicleNumber ?? null,
             }));
 
             const staffEntries: Entry[] = staffAttendances.map((attendance: any) => ({
@@ -151,18 +158,22 @@ export default function TodayEntriesScreen() {
     };
 
     const checkoutBusy = useRef(false);
-    const handleCheckOut = useCallback(async (id: string) => {
+    const doCheckOut = useCallback(async (id: string, count?: number) => {
         if (checkoutBusy.current) return; // double tap / second card while one is in flight
         checkoutBusy.current = true;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setCheckingOut(id);
         try {
-            await api.patch(`/api/v1/guard/entries/${id}/checkout`);
+            await api.patch(`/api/v1/guard/entries/${id}/checkout`, count ? { count } : {});
             // Optimistic update
             setEntries((prev) =>
-                prev.map((e) =>
-                    e.id === id ? { ...e, checkOutTime: new Date().toISOString(), status: 'CHECKED_OUT' } : e
-                )
+                prev.map((e) => {
+                    if (e.id !== id) return e;
+                    const inside = (e.peopleCount ?? 1) - (e.peopleLeft ?? 0);
+                    // part of a group left: the rest are still inside
+                    if (count && count < inside) return { ...e, peopleLeft: (e.peopleLeft ?? 0) + count };
+                    return { ...e, peopleLeft: e.peopleCount ?? 1, checkOutTime: new Date().toISOString(), status: 'CHECKED_OUT' as const };
+                })
             );
         } catch (err: any) {
             AppAlert.show(t('inside.exitFailed'), err?.response?.data?.message ?? t('waiting.tryAgain'));
@@ -172,6 +183,21 @@ export default function TodayEntriesScreen() {
             setCheckingOut(null);
         }
     }, [fetchEntries, t]);
+
+    // A group can leave in parts: ask how many are going when more than one is still inside
+    const handleCheckOut = useCallback((id: string) => {
+        const entry = entries.find((e) => e.id === id);
+        const inside = entry ? (entry.peopleCount ?? 1) - (entry.peopleLeft ?? 0) : 1;
+        if (inside <= 1) { void doCheckOut(id); return; }
+        const some = Array.from({ length: Math.min(inside - 1, 4) }, (_, i) => i + 1).map((n) => ({
+            text: t('inside.leavingSome', { n }), onPress: () => doCheckOut(id, n),
+        }));
+        AppAlert.show(t('inside.leavingTitle'), t('inside.stillInside', { n: inside }), [
+            { text: t('inside.leavingAll', { n: inside }), onPress: () => doCheckOut(id) },
+            ...some,
+            { text: t('common.cancel'), style: 'cancel' },
+        ]);
+    }, [entries, doCheckOut, t]);
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -297,9 +323,9 @@ const EntryCard = memo(function EntryCard({
                     <Ionicons name={meta.icon} size={28} color={meta.color} />
                 </View>
                 <View style={styles.cardHeaderText}>
-                    <Text style={styles.visitorName} numberOfLines={1}>{entry.visitorName}</Text>
+                    <Text style={styles.visitorName} numberOfLines={1}>{`${entry.visitorName}${(entry.peopleCount ?? 1) > 1 ? `  ${t('inside.ofGroup', { n: (entry.peopleCount ?? 1) - (entry.peopleLeft ?? 0) })}` : ''}`}</Text>
                     <Text style={styles.visitorDetails} numberOfLines={1}>
-                        {locationLabel}{typeLabel ? ` · ${typeLabel}` : ''}{entry.purpose ? ` · ${entry.purpose}` : ''}
+                        {locationLabel}{typeLabel ? ` · ${typeLabel}` : ''}{entry.purpose ? ` · ${entry.purpose}` : ''}{entry.vehicleNumber ? ` · ${entry.vehicleNumber}` : ''}
                     </Text>
                 </View>
                 {/* key: remount when the label changes, or Android keeps the old (narrower) width and clips Devanagari. */}

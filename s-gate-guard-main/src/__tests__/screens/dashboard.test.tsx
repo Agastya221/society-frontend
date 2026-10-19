@@ -65,7 +65,6 @@ describe('Guard Dashboard (index)', () => {
       expect(getByText('Hello,')).toBeTruthy();
       expect(getByText('Ravi')).toBeTruthy();
       expect(getByText('On duty · North Gate')).toBeTruthy();
-      expect(getByText('R')).toBeTruthy();
     });
 
     it('falls back to "Main Gate" and "Guard"', async () => {

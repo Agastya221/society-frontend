@@ -17,7 +17,7 @@ interface GateState {
     fetchPendingRequests: () => Promise<void>;
     fetchEntries: (params?: gateService.GetEntriesParams) => Promise<void>;
     fetchInvitePasses: () => Promise<void>;
-    approveRequest: (id: string) => Promise<void>;
+    approveRequest: (id: string, count?: number) => Promise<void>;
     rejectRequest: (id: string, reason?: string) => Promise<void>;
     /** A GATE_* push arrived: refresh the pending list and tell open screens. */
     onGatePush: () => void;
@@ -85,13 +85,13 @@ export const useGateStore = create<GateState>((set, get) => ({
         }
     },
 
-    approveRequest: async (id: string) => {
+    approveRequest: async (id: string, count?: number) => {
         // Optimistic remove
         set((state) => ({
             pendingRequests: state.pendingRequests.filter((r) => r.id !== id),
         }));
         try {
-            await gateService.approveEntryRequest(id);
+            await gateService.approveEntryRequest(id, count);
         } catch (err) {
             console.error('approveRequest failed:', err);
             // Revert by re-fetching

@@ -330,6 +330,9 @@ export default function NewEntryScreen() {
 
     // Visitor name — optional, but residents see "Visitor" when it's left blank.
     const [visitorName, setVisitorName] = useState('');
+    const [peopleCount, setPeopleCount] = useState(1);
+    const [vehicleNumber, setVehicleNumber] = useState('');
+    const [visitorPhone, setVisitorPhone] = useState('');
 
     // Photo
     const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -409,6 +412,9 @@ export default function NewEntryScreen() {
         setSelectedFlat(null);
         setFlatResults([]);
         setVisitorName('');
+        setPeopleCount(1);
+        setVehicleNumber('');
+        setVisitorPhone('');
         photoUploadRef.current?.controller.abort();
         setPhotoUri(null);
         photoUploadRef.current = null;
@@ -570,6 +576,9 @@ export default function NewEntryScreen() {
             if (type === 'OTHER' && otherPurpose.trim()) payload.purpose = otherPurpose.trim().slice(0, 100);
             const name = toEnglishName(visitorName);
             if (name) payload.visitorName = name.slice(0, 100);
+            if (peopleCount > 1) payload.peopleCount = peopleCount;
+            if (vehicleNumber.trim()) payload.vehicleNumber = vehicleNumber.trim().toUpperCase().slice(0, 20);
+            if (/^[6-9]\d{9}$/.test(visitorPhone)) payload.visitorPhone = visitorPhone;
 
             // The photo never blocks Notify: use the background upload if it finished,
             // otherwise try once more, and if that fails too send without the photo.
@@ -880,6 +889,36 @@ export default function NewEntryScreen() {
 
                         <VoiceNameInput value={visitorName} onChange={setVisitorName} />
 
+                        {type === 'GUEST' || type === 'OTHER' || type === 'HELP' ? (
+                            <View>
+                                <Text style={S.optionLabel}>{t('visitor.people')}</Text>
+                                <View style={S.peopleRow}>
+                                    <TouchableOpacity testID="people-minus" accessibilityRole="button" style={S.peopleBtn} disabled={peopleCount <= 1} onPress={() => setPeopleCount((n) => Math.max(1, n - 1))}>
+                                        <Ionicons name="remove" size={28} color={peopleCount <= 1 ? GuardColors.t3 : GuardColors.t1} />
+                                    </TouchableOpacity>
+                                    <Text style={S.peopleValue}>{peopleCount}</Text>
+                                    <TouchableOpacity testID="people-plus" accessibilityRole="button" style={S.peopleBtn} disabled={peopleCount >= 20} onPress={() => setPeopleCount((n) => Math.min(20, n + 1))}>
+                                        <Ionicons name="add" size={28} color={GuardColors.t1} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        ) : null}
+
+                        {type === 'GUEST' || type === 'OTHER' ? (
+                            <View>
+                                <Text style={S.optionLabel}>{t('visitor.phone')}</Text>
+                                <TextInput testID="visitor-phone" style={S.purposeInput} value={visitorPhone} onChangeText={(v) => setVisitorPhone(v.replace(/\D/g, '').slice(0, 10))} keyboardType="number-pad" maxLength={10} placeholder="98XXXXXXXX" placeholderTextColor={GuardColors.t3} />
+                                <Text style={S.fieldHint}>{t('visitor.phoneHint')}</Text>
+                            </View>
+                        ) : null}
+
+                        {type === 'GUEST' || type === 'OTHER' || type === 'SERVICE' ? (
+                            <View>
+                                <Text style={S.optionLabel}>{t('visitor.vehicle')}</Text>
+                                <TextInput testID="vehicle-number" style={S.purposeInput} value={vehicleNumber} onChangeText={(v) => setVehicleNumber(v.replace(/[^a-zA-Z0-9 -]/g, '').toUpperCase().slice(0, 20))} autoCapitalize="characters" maxLength={20} placeholder="JH05 AB 1234" placeholderTextColor={GuardColors.t3} />
+                            </View>
+                        ) : null}
+
                         {type === 'OTHER' ? (
                             <View>
                                 <Text style={S.optionLabel}>{t('visitor.otherPurpose')}</Text>
@@ -1002,6 +1041,10 @@ const S = StyleSheet.create({
     changeFlat: { width: GuardTouch.min, height: GuardTouch.min, alignItems: 'center', justifyContent: 'center', borderRadius: 18, backgroundColor: GuardColors.goldPale },
     optionLabel: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: 16, marginBottom: 8 },
     purposeInput: { minHeight: GuardTouch.min, borderRadius: 18, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, paddingHorizontal: 16, color: GuardColors.t1, fontFamily: GuardFonts.medium, fontSize: 18 },
+    peopleRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    peopleBtn: { width: 64, height: 64, borderRadius: 20, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, alignItems: 'center', justifyContent: 'center' },
+    peopleValue: { minWidth: 56, textAlign: 'center', color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 34 },
+    fieldHint: { color: GuardColors.t3, fontFamily: GuardFonts.medium, fontSize: 14, marginTop: 6 },
     purposeLabel: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: 18 },
     providerChips: { gap: 8, paddingRight: 12 },
     providerChip: { minHeight: GuardTouch.min, borderRadius: 18, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, paddingHorizontal: 18, justifyContent: 'center' },

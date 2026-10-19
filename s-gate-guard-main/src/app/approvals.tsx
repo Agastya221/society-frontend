@@ -9,7 +9,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useRef, useState } from 'react';
-import { AppState, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { AppState, FlatList, Modal, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { loadFlatDirectory, type GuardFlat } from '@/services/flatDirectory';
+import { useAuthStore } from '@/store/useAuthStore';
 import { AppAlert } from '@/components/gate/AppAlert';
 
 const OVERRIDE_WAIT_MS = 45_000;
@@ -26,6 +28,11 @@ export default function ApprovalsScreen() {
   const [error, setError] = useState(false);
   const [actioning, setActioning] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
+  const guardId = useAuthStore((state) => state.user?.id ?? 'guard');
+  // Wrong flat: pick the right one and the request moves there
+  const [moving, setMoving] = useState<QueueItem | null>(null);
+  const [moveQuery, setMoveQuery] = useState('');
+  const [flats, setFlats] = useState<GuardFlat[]>([]);
   const inFlight = useRef(false);
   const actioningRef = useRef(false);
   const knownReady = useRef<Set<string> | null>(null);
@@ -85,6 +92,61 @@ export default function ApprovalsScreen() {
     }
   };
 
+  // The resident let in fewer people than arrived: raise a new request for the others
+  const askForRest = async (item: QueueItem) => {
+    if (actioningRef.current || !item.flatId) return;
+    const rest = (item.peopleCount ?? 1) - (item.approvedCount ?? item.peopleCount ?? 1);
+    actioningRef.current = true;
+    setActioning(`${item.id}:rest`);
+    try {
+      await api.post('/api/v1/gate/entry-requests', {
+        type: item.type,
+        flatId: item.flatId,
+        visitorName: item.visitorName ?? undefined,
+        visitorPhone: item.visitorPhone ?? undefined,
+        purpose: item.purpose ?? undefined,
+        peopleCount: rest,
+        vehicleNumber: item.vehicleNumber ?? undefined,
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      AppAlert.show(t('queue.askedRest'));
+      await refresh();
+    } catch (err: any) {
+      AppAlert.show(t('queue.changed'), err?.response?.data?.message ?? t('queue.tryAgain'));
+    } finally {
+      actioningRef.current = false;
+      setActioning(null);
+    }
+  };
+
+  const openMove = (item: QueueItem) => {
+    setMoving(item);
+    setMoveQuery('');
+    loadFlatDirectory(guardId).then(setFlats).catch(() => setFlats([]));
+  };
+
+  const moveTo = async (flat: GuardFlat) => {
+    const item = moving;
+    if (!item || actioningRef.current) return;
+    actioningRef.current = true;
+    setActioning(`${item.id}:move`);
+    try {
+      await api.patch(`/api/v1/gate/entry-requests/${item.id}/move`, { flatId: flat.id });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setMoving(null);
+      await refresh();
+    } catch (err: any) {
+      AppAlert.show(t('queue.changed'), err?.response?.data?.message ?? t('queue.tryAgain'));
+    } finally {
+      actioningRef.current = false;
+      setActioning(null);
+    }
+  };
+
+  const moveMatches = moveQuery.trim()
+    ? flats.filter((f) => f.flatNumber.toUpperCase().includes(moveQuery.trim().toUpperCase())).slice(0, 8)
+    : [];
+
   const confirm = (id: string, action: 'no-show' | 'reject') => {
     AppAlert.show(t(action === 'no-show' ? 'queue.leftTitle' : 'queue.stopTitle'), t(action === 'no-show' ? 'queue.leftText' : 'queue.stopText'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -121,19 +183,45 @@ export default function ApprovalsScreen() {
               onNoShow={() => confirm(row.item!.id, 'no-show')}
               onOverride={() => act(row.item!.id, 'approve')}
               onStop={() => confirm(row.item!.id, 'reject')}
+              onAskRest={() => askForRest(row.item!)}
+              onWrongFlat={() => openMove(row.item!)}
             />}
         ListEmptyComponent={<ScreenEmpty icon="checkmark-done-circle-outline" title={t('approvals.allClear')} message={t('queue.emptyText')} />}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); refresh(); }} tintColor={GuardColors.goldDeep} />}
       />
+      <Modal visible={!!moving} transparent animationType="fade" onRequestClose={() => setMoving(null)}>
+        <View style={styles.modalWrap}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{t('queue.moveTitle')}</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={moveQuery}
+              onChangeText={(v) => setMoveQuery(v.replace(/[^a-zA-Z0-9-]/g, '').toUpperCase().slice(0, 20))}
+              placeholder={t('queue.moveHint')}
+              placeholderTextColor={GuardColors.t3}
+              autoCapitalize="characters"
+              autoFocus
+            />
+            {moveQuery.trim() && moveMatches.length === 0 ? <Text style={styles.waitNote}>{t('queue.moveNone')}</Text> : null}
+            {moveMatches.map((flat) => (
+              <TouchableOpacity key={flat.id} style={styles.flatTile} activeOpacity={0.75} onPress={() => moveTo(flat)}>
+                <Text style={styles.flatTileText}>{flat.block?.name ? `${flat.block.name} - ` : ''}{flat.flatNumber}</Text>
+              </TouchableOpacity>
+            ))}
+            <GiantButton label={t('common.cancel')} icon="close" tone="light" onPress={() => setMoving(null)} />
+          </View>
+        </View>
+      </Modal>
       <HomeButton />
     </View>
   );
 }
 
-function QueueCard({ item, now, busy, actioning, onAdmit, onNoShow, onOverride, onStop }: {
+function QueueCard({ item, now, busy, actioning, onAdmit, onNoShow, onOverride, onStop, onAskRest, onWrongFlat }: {
   item: QueueItem; now: number; busy: boolean; actioning: string | null;
   onAdmit: () => void; onNoShow: () => void; onOverride: () => void; onStop: () => void;
+  onAskRest: () => void; onWrongFlat: () => void;
 }) {
   const t = useT();
   const ready = item.status === 'APPROVED';
@@ -141,6 +229,9 @@ function QueueCard({ item, now, busy, actioning, onAdmit, onNoShow, onOverride, 
   const elapsed = Math.max(0, now - new Date(item.createdAt).getTime());
   const remaining = Math.max(0, Math.ceil((OVERRIDE_WAIT_MS - elapsed) / 1000));
   const flat = item.flatLabel || item.flat?.number || '—';
+  const people = item.peopleCount ?? 1;
+  const allowed = item.approvedCount ?? people;
+  const partial = ready && allowed < people;
   const type = ({ VISITOR: t('common.guest'), DELIVERY: t('common.delivery'), CAB: t('common.cab'), DOMESTIC_STAFF: t('common.help'), VENDOR: t('common.service') } as Record<string, string>)[item.type] ?? item.type;
   return (
     <View style={[styles.card, ready && styles.readyCard, stopped && styles.stoppedCard]}>
@@ -149,15 +240,17 @@ function QueueCard({ item, now, busy, actioning, onAdmit, onNoShow, onOverride, 
           <Ionicons name={ready ? 'checkmark-circle' : stopped ? 'close-circle' : 'time'} size={29} color={ready ? GuardColors.green : stopped ? GuardColors.red : GuardColors.goldDeep} />
         </View>
         <View style={styles.titleCopy}>
-          <Text style={styles.name} numberOfLines={1}>{item.visitorName || type}</Text>
+          <Text style={styles.name} numberOfLines={1}>{`${item.visitorName || type}${people > 1 ? `  ${t('queue.plus', { n: people - 1 })}` : ''}`}</Text>
           <Text style={styles.detail} numberOfLines={2}>{type}{item.providerTag ? ` · ${item.providerTag}` : ''}{item.purpose ? ` · ${item.purpose}` : ''} · {t('common.flat')} {flat}</Text>
         </View>
       </View>
       <Text style={styles.age}>{ready ? t('queue.approved') : stopped ? t('queue.stopped') : t('queue.awaitingResident')} · {Math.floor(elapsed / 60_000)} {t('queue.minutes')}</Text>
       {stopped && item.rejectionReason ? <Text style={styles.stoppedReason}>{item.rejectionReason}</Text> : null}
+      {partial ? <Text style={styles.partialNote}>{t('queue.allowedOf', { n: allowed, total: people })}</Text> : null}
       {ready ? (
         <View style={styles.actions}>
-          <GiantButton label={t('queue.admit')} icon="checkmark-circle" tone="allow" loading={actioning === `${item.id}:admit`} disabled={busy} onPress={onAdmit} />
+          <GiantButton label={allowed > 1 ? t('queue.admitN', { n: allowed }) : t('queue.admit')} icon="checkmark-circle" tone="allow" loading={actioning === `${item.id}:admit`} disabled={busy} onPress={onAdmit} />
+          {partial ? <GiantButton label={t('queue.askRest', { n: people - allowed })} icon="people" tone="light" loading={actioning === `${item.id}:rest`} disabled={busy} onPress={onAskRest} /> : null}
           <GiantButton label={t('queue.left')} icon="close-circle" tone="light" disabled={busy} onPress={onNoShow} />
         </View>
       ) : stopped ? null : (
@@ -165,6 +258,7 @@ function QueueCard({ item, now, busy, actioning, onAdmit, onNoShow, onOverride, 
           <Text style={styles.waitNote}>{remaining > 0 ? t('queue.overrideIn', { n: remaining }) : t('queue.noAnswer')}</Text>
           <GiantButton label={t('queue.override')} icon="checkmark-circle" tone="light" loading={actioning === `${item.id}:approve`} disabled={busy || remaining > 0} onPress={onOverride} />
           <GiantButton label={t('queue.stop')} icon="close-circle" tone="deny" disabled={busy} onPress={onStop} />
+          <GiantButton label={t('queue.wrongFlat')} icon="swap-horizontal" tone="light" loading={actioning === `${item.id}:move`} disabled={busy} onPress={onWrongFlat} />
         </View>
       )}
     </View>
@@ -187,5 +281,12 @@ const styles = StyleSheet.create({
   actions: { gap: 9 },
   waitNote: { color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: 16 },
   stoppedReason: { color: GuardColors.red, fontFamily: GuardFonts.bold, fontSize: 17 },
+  partialNote: { color: GuardColors.goldDeep, fontFamily: GuardFonts.bold, fontSize: 17 },
+  modalWrap: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 22 },
+  modalCard: { backgroundColor: GuardColors.card, borderRadius: 28, padding: 20, gap: 12 },
+  modalTitle: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 24 },
+  modalInput: { minHeight: 60, borderRadius: 18, backgroundColor: GuardColors.bg, borderWidth: 1, borderColor: GuardColors.border, paddingHorizontal: 16, color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 24 },
+  flatTile: { minHeight: 56, borderRadius: 16, backgroundColor: GuardColors.goldPale, justifyContent: 'center', paddingHorizontal: 16 },
+  flatTileText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 20 },
   error: { color: GuardColors.red, fontFamily: GuardFonts.bold, fontSize: 16, paddingHorizontal: 20, paddingTop: 12 },
 });

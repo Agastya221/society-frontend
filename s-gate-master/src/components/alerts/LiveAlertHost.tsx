@@ -9,6 +9,7 @@ import { playSingleChime, startAlertSound, stopAlertSound } from '@/services/ale
 import { useGateStore } from '@/store/useGateStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getUnreadCount } from '@/services/notification.service';
+import { chooseHowManyToAllow } from '@/services/groupApproval';
 
 const SERVER_ROOT = 'https://society-gate-backend-gsrq.onrender.com';
 const BANNER_MS = 6000;
@@ -72,13 +73,13 @@ export function LiveAlertHost({ onOpen }: Props) {
     setBusy(false);
   }, []);
 
-  const answer = useCallback(async (kind: 'approve' | 'reject') => {
+  const answer = useCallback(async (kind: 'approve' | 'reject', count?: number) => {
     const id = urgent?.data.entryRequestId;
     if (!id || busy) return;
     setBusy(true);
     stopAlertSound();
     try {
-      if (kind === 'approve') await useGateStore.getState().approveRequest(id);
+      if (kind === 'approve') await useGateStore.getState().approveRequest(id, count);
       else await useGateStore.getState().rejectRequest(id);
     } catch {
       // The request may already be answered (by another family member or the gate timing out);
@@ -125,7 +126,7 @@ export function LiveAlertHost({ onOpen }: Props) {
                 <Pressable style={[styles.btn, styles.decline]} onPress={() => answer('reject')} disabled={busy} accessibilityRole="button">
                   <Text style={styles.declineText}>Decline</Text>
                 </Pressable>
-                <Pressable style={[styles.btn, styles.allow]} onPress={() => answer('approve')} disabled={busy} accessibilityRole="button">
+                <Pressable style={[styles.btn, styles.allow]} onPress={() => chooseHowManyToAllow({ name: urgent?.data.visitorName, peopleCount: Number(urgent?.data.peopleCount) || 1 }, (count) => answer('approve', count))} disabled={busy} accessibilityRole="button">
                   <Text style={styles.allowText}>Allow</Text>
                 </Pressable>
               </View>

@@ -23,6 +23,8 @@ import api from '@/services/api';
 import { useGateStore } from '@/store/useGateStore';
 import { gateRequestStatus, type GateStatusTone } from '@/utils/gateRequestStatus';
 import { AppAlert } from '../../../components/ui/AppAlert';
+import { chooseHowManyToAllow, withGroup } from '@/services/groupApproval';
+import { trustVisitor } from '@/services/gate.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface EntryRequest {
@@ -38,6 +40,10 @@ interface EntryRequest {
     expiresAt: string;
     entryId?: string | null;
     rejectionReason?: string | null;
+    visitorPhone?: string | null;
+    peopleCount?: number;
+    approvedCount?: number | null;
+    vehicleNumber?: string | null;
 }
 
 const POLL_MS = 5000;
@@ -107,6 +113,21 @@ function PhotoCell({ id, type, photoKey, color }: { id: string; type: string; ph
 
 // ─── Recent decision row ──────────────────────────────────────────────────────
 function RecentRow({ item }: { item: EntryRequest }) {
+    const [saved, setSaved] = useState(false);
+    const canTrust = !!item.visitorPhone && (item.status === 'APPROVED') && !saved;
+    const alwaysAllow = () => {
+        AppAlert.show(
+            'Always allow this visitor?',
+            `${item.visitorName || 'This visitor'} will be let in without asking you each time. You can remove them any time from Always-allowed visitors.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Always allow', onPress: async () => {
+                    try { await trustVisitor(item.id); setSaved(true); AppAlert.show('Saved', 'They will be let in without asking.'); }
+                    catch (err: any) { AppAlert.show('Could not save', err?.response?.data?.message || 'Please try again.'); }
+                } },
+            ],
+        );
+    };
     const status = gateRequestStatus(item);
     const tone = TONE_STYLE[status.tone];
     const color = typeColor(item.type);
@@ -118,8 +139,16 @@ function RecentRow({ item }: { item: EntryRequest }) {
             </View>
             <View style={styles.recentInfo}>
                 <Text style={styles.recentName} numberOfLines={1}>
-                    {item.visitorName || typeLabel(item.type, item.providerTag)}
+                    {withGroup(item.visitorName || typeLabel(item.type, item.providerTag), item.peopleCount)}
                 </Text>
+                {item.approvedCount && item.peopleCount && item.approvedCount < item.peopleCount ? (
+                    <Text style={styles.recentMeta} numberOfLines={1}>You allowed {item.approvedCount} of {item.peopleCount}</Text>
+                ) : null}
+                {canTrust ? (
+                    <TouchableOpacity onPress={alwaysAllow} accessibilityRole="button" hitSlop={8}>
+                        <Text style={[styles.recentMeta, { color: SgateColors.goldDeep, fontFamily: SgateFonts.bold }]}>Always allow this visitor</Text>
+                    </TouchableOpacity>
+                ) : null}
                 <Text style={styles.recentMeta} numberOfLines={1}>
                     {flat ? `Flat ${flat} · ` : ''}
                     {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -193,13 +222,18 @@ export default function ApprovalsScreen() {
     }, [fetchRequests]);
 
     // ── Actions ──────────────────────────────────────────────────────────────
-    const handleApprove = async (item: EntryRequest) => {
+    const handleApprove = (item: EntryRequest) => {
+        if (actioning) return;
+        chooseHowManyToAllow({ name: item.visitorName, peopleCount: item.peopleCount }, (count) => { void doApprove(item, count); });
+    };
+
+    const doApprove = async (item: EntryRequest, count?: number) => {
         if (actioning) return;
         setActioning(item.id);
         const previous = [...requests];
         setRequests((prev) => prev.filter((r) => r.id !== item.id));
         try {
-            await api.patch(`/gate/entry-requests/${item.id}/approve`);
+            await api.patch(`/gate/entry-requests/${item.id}/approve`, count ? { count } : {});
         } catch (err: any) {
             setRequests(previous);
             AppAlert.show('Error', err?.response?.data?.message || 'Failed to approve request');
@@ -249,7 +283,7 @@ export default function ApprovalsScreen() {
                         <View style={styles.requestInfo}>
                             <View style={styles.requestNameRow}>
                                 <Text style={[styles.typeLabel, { color }]} numberOfLines={1}>
-                                    {item.visitorName || typeLabel(item.type, item.providerTag)}
+                                    {withGroup(item.visitorName || typeLabel(item.type, item.providerTag), item.peopleCount)}
                                 </Text>
                                 {!isExpired ? (
                                     <View style={[styles.timerBadge, isUrgent && styles.timerBadgeUrgent]}>
@@ -270,6 +304,7 @@ export default function ApprovalsScreen() {
                                 </Text>
                             )}
                             {item.purpose ? <Text style={styles.flatText} numberOfLines={2}>Purpose: {item.purpose}</Text> : null}
+                            {item.vehicleNumber ? <Text style={styles.flatText} numberOfLines={1}>Vehicle: {item.vehicleNumber}</Text> : null}
                             <Text style={styles.timeText}>
                                 {new Date(item.createdAt).toLocaleTimeString([], {
                                     hour: '2-digit',
@@ -342,7 +377,11 @@ export default function ApprovalsScreen() {
     return (
         <View style={styles.safe}>
             {/* Header — identical to Deliveries screen */}
-            <ScreenHeader title="Visitor Approvals" onBack={() => router.back()} />
+            <ScreenHeader title="Visitor Approvals" onBack={() => router.back()} rightAction={
+                <TouchableOpacity onPress={() => router.push('/(resident)/trusted-visitors' as any)} accessibilityRole="button" accessibilityLabel="Always-allowed visitors" hitSlop={8}>
+                    <Ionicons name="shield-checkmark-outline" size={24} color={SgateColors.ink} />
+                </TouchableOpacity>
+            } />
 
             <FlatList
                 data={requests}

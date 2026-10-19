@@ -12,6 +12,13 @@ export type QueueItem = {
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
   entryId?: string | null;
   rejectionReason?: string | null;
+  visitorPhone?: string | null;
+  flatId?: string;
+  /** People who arrived together, and how many the resident allowed (null = everyone) */
+  peopleCount?: number;
+  approvedCount?: number | null;
+  vehicleNumber?: string | null;
+  photoKey?: string | null;
 };
 
 export type GateQueue = {

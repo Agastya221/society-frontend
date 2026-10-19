@@ -31,7 +31,7 @@ interface ResidentHomeDashboardProps {
     onNotificationPress: () => void;
     onSosPress: () => void;
     onNavigate: (route: string) => void;
-    onAllow: (id: string) => void;
+    onAllow: (id: string, count?: number) => void;
     onDecline: (id: string) => void;
 }
 
