@@ -17,7 +17,7 @@ import { useOnboardingStore } from "../store/useOnboardingStore";
 import { useGateStore } from "../store/useGateStore";
 import { isGatePushType } from '@/utils/gateRequestStatus';
 import api from "../services/api";
-import { LiveAlertHost } from '@/components/alerts/LiveAlertHost';
+import { LiveAlertHost, reopenGateRequest } from '@/components/alerts/LiveAlertHost';
 import { AppAlertProvider, AppAlert } from "../components/ui/AppAlert";
 import { AppLoader } from "../components/ui/AppLoader";
 
@@ -241,10 +241,10 @@ export default function RootLayout() {
           if (current[0] === '(admin)' && current[1] === 'approval-requests') return;
           router.push('/(admin)/approval-requests' as any);
         } else if (role === 'RESIDENT' && !requiresOnboarding) {
-          if (current[0] === '(resident)' && current[1] === 'approvals') {
-            useGateStore.getState().onGatePush();
-            return;
-          }
+          // Tapping the notification pops the approval card up over whatever is open
+          reopenGateRequest(data.entryRequestId);
+          useGateStore.getState().onGatePush();
+          if (current[0] === '(resident)' && current[1] === 'approvals') return;
           router.push('/(resident)/approvals' as any);
         }
       } else if (isGatePushType(data.type)) {

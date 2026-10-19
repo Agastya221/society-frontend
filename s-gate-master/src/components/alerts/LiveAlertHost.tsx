@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppState, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -9,10 +9,20 @@ import { playSingleChime, startAlertSound, stopAlertSound } from '@/services/ale
 import { useGateStore } from '@/store/useGateStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getUnreadCount } from '@/services/notification.service';
-import { chooseHowManyToAllow } from '@/services/groupApproval';
+import { chooseHowManyToAllow, withGroup } from '@/services/groupApproval';
 
 const SERVER_ROOT = 'https://society-gate-backend-gsrq.onrender.com';
 const BANNER_MS = 6000;
+/** A request older than this is already over on the server (it expires after 15 minutes) */
+const REQUEST_LIVE_MS = 14 * 60 * 1000;
+
+/** Requests already put in front of the person, so a dismissed popup does not come back by itself */
+const promptedRequests = new Set<string>();
+
+/** Tapping a gate notification shows its approval popup again, even if it was dismissed before. */
+export function reopenGateRequest(entryRequestId?: string): void {
+  if (entryRequestId) promptedRequests.delete(entryRequestId);
+}
 
 interface Props {
   /** Opens the screen the alert is about (the same routing as tapping a push notification) */
@@ -38,6 +48,7 @@ export function LiveAlertHost({ onOpen }: Props) {
     if (alert.data.type?.startsWith('GATE_')) useGateStore.getState().onGatePush();
 
     if (alert.urgent) {
+      if (alert.data.entryRequestId) promptedRequests.add(alert.data.entryRequestId);
       setBanner(null);
       setUrgent(alert);
       await startAlertSound();
@@ -66,6 +77,39 @@ export function LiveAlertHost({ onOpen }: Props) {
       stopAlertSound();
     };
   }, [isAuthenticated, showAlert]);
+
+  // A visitor is waiting but no live alert reached us (app was closed, push tapped, family switched
+  // flats...): when the app is open, show the same approval popup instead of leaving it on the list.
+  const pendingRequests = useGateStore((s) => s.pendingRequests);
+  useEffect(() => {
+    if (!isAuthenticated || urgent || AppState.currentState !== 'active') return;
+    const next = pendingRequests.find((r) =>
+      !promptedRequests.has(r.id) && Date.now() - new Date(r.createdAt).getTime() < REQUEST_LIVE_MS);
+    if (!next) return;
+    promptedRequests.add(next.id);
+    const flat = next.flat?.number;
+    setUrgent({
+      title: `${withGroup(next.visitorName || 'A visitor', next.peopleCount)} is at the gate`,
+      body: [next.purpose, flat ? `Flat ${flat}` : null].filter(Boolean).join(' · ') || 'Waiting for your answer',
+      data: {
+        type: 'GATE_REQUEST',
+        entryRequestId: next.id,
+        visitorName: next.visitorName ?? '',
+        peopleCount: String(next.peopleCount ?? 1),
+      },
+      urgent: true,
+    });
+    void playSingleChime();
+  }, [pendingRequests, isAuthenticated, urgent]);
+
+  // Coming back to the app (or opening it from a notification): look for waiting visitors at once
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const refresh = () => { void useGateStore.getState().fetchPendingRequests(); };
+    refresh();
+    const sub = AppState.addEventListener('change', (state) => { if (state === 'active') refresh(); });
+    return () => sub.remove();
+  }, [isAuthenticated]);
 
   const close = useCallback(() => {
     stopAlertSound();
@@ -145,9 +189,15 @@ export function LiveAlertHost({ onOpen }: Props) {
               </View>
             )}
 
-            <Pressable onPress={stopAlertSound} hitSlop={12} accessibilityRole="button">
-              <Text style={styles.silence}>Silence the ring</Text>
-            </Pressable>
+            {isGateRequest ? (
+              <Pressable onPress={close} hitSlop={12} accessibilityRole="button">
+                <Text style={styles.silence}>Decide later</Text>
+              </Pressable>
+            ) : (
+              <Pressable onPress={stopAlertSound} hitSlop={12} accessibilityRole="button">
+                <Text style={styles.silence}>Silence the ring</Text>
+              </Pressable>
+            )}
           </Animated.View>
         </View>
       </Modal>
