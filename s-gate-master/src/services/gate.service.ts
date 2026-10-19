@@ -40,6 +40,32 @@ export const approveEntryRequest = async (id: string, count?: number): Promise<v
     await api.patch(`/gate/entry-requests/${id}/approve`, count ? { count } : {});
 };
 
+export interface GateRequestRow {
+    id: string;
+    type: EntryType;
+    visitorName?: string | null;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+    entryId?: string | null;
+    rejectionReason?: string | null;
+    createdAt: string;
+    peopleCount?: number;
+    flat?: { number?: string; flatNumber?: string };
+}
+
+/** Gate requests from the last `days` days (denied, expired, withdrawn, still open...). */
+export const getRecentGateRequests = async (days = 30): Promise<GateRequestRow[]> => {
+    const since = encodeURIComponent(new Date(Date.now() - days * 86_400_000).toISOString());
+    const res = await api.get(`/gate/entry-requests?since=${since}&order=newest&limit=100`);
+    const data = res.data?.data;
+    const rows = Array.isArray(data) ? data : (data?.entryRequests ?? []);
+    return Array.isArray(rows) ? rows : [];
+};
+
+/** Undo an approval before the guard has let the visitor in. */
+export const revokeEntryRequest = async (id: string): Promise<void> => {
+    await api.patch(`/gate/entry-requests/${id}/revoke`, {});
+};
+
 // ─── Always-allowed visitors ──────────────────────────────────────────────────
 export interface TrustedVisitor {
     id: string;

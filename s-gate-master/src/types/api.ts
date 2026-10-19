@@ -300,6 +300,10 @@ export interface Entry {
     createdAt: string;
     checkOutAt?: string;
     flat?: { number: string };
+    /** Group visits: people who came in together */
+    peopleCount?: number;
+    peopleLeft?: number;
+    vehicleNumber?: string | null;
 }
 
 export interface Notification {
