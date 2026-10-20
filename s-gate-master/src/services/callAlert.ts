@@ -23,6 +23,7 @@ export interface CallPayload {
   entryRequestId?: string;
   visitorName?: string;
   peopleCount?: string;
+  requestType?: string;
   title?: string;
   body?: string;
   [key: string]: unknown;
@@ -48,13 +49,21 @@ export function extractPayload(raw: unknown): CallPayload | null {
   return null;
 }
 
+const TYPE_TITLE: Record<string, string> = {
+  CAB: 'Cab at the gate',
+  DELIVERY: 'Delivery at the gate',
+  VENDOR: 'Service person at the gate',
+  DOMESTIC_STAFF: 'Help at the gate',
+  CAB_DRIVER: 'Cab at the gate',
+};
+
 /** What to draw. A group arriving together only gets Decline on the call screen: how many to let in is chosen in the app. */
 export function buildCallNotification(payload: CallPayload) {
   const group = Number(payload.peopleCount) > 1;
   const id = `gate-${payload.entryRequestId}`;
   return {
     id,
-    title: String(payload.title ?? 'Visitor at the gate'),
+    title: TYPE_TITLE[String(payload.requestType ?? '')] ?? String(payload.title ?? 'Visitor at the gate'),
     body: String(payload.body ?? 'Someone is waiting for your answer'),
     data: Object.fromEntries(Object.entries(payload).map(([k, v]) => [k, String(v)])) as Record<string, string>,
     android: {

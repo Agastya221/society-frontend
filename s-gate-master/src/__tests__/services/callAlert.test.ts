@@ -43,6 +43,15 @@ describe('buildCallNotification', () => {
     expect(n.android.actions.map((a) => a.title)).toEqual(['Decline', 'Choose how many']);
     expect(n.android.actions.some((a) => a.pressAction.id === 'allow')).toBe(false);
   });
+  it('names the visitor type on the call screen: cab, delivery, service, and Allow works for each', () => {
+    for (const [requestType, title] of [['CAB', 'Cab at the gate'], ['DELIVERY', 'Delivery at the gate'], ['VENDOR', 'Service person at the gate']]) {
+      const n = buildCallNotification({ ...push, requestType, visitorName: '', body: 'A cab is waiting at the gate' });
+      expect(n.title).toBe(title);
+      expect(n.android.actions.map((a) => a.title)).toEqual(['Decline', 'Allow']);
+    }
+    expect(buildCallNotification({ ...push, requestType: 'VISITOR' }).title).toBe(push.title);
+  });
+
   it('keeps the data as plain strings for the press handlers', () => {
     expect(buildCallNotification(push).data.entryRequestId).toBe('r1');
   });
