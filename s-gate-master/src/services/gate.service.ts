@@ -61,11 +61,6 @@ export const getRecentGateRequests = async (days = 30): Promise<GateRequestRow[]
     return Array.isArray(rows) ? rows : [];
 };
 
-/** Undo an approval before the guard has let the visitor in. */
-export const revokeEntryRequest = async (id: string): Promise<void> => {
-    await api.patch(`/gate/entry-requests/${id}/revoke`, {});
-};
-
 // ─── Always-allowed visitors ──────────────────────────────────────────────────
 export interface TrustedVisitor {
     id: string;

@@ -12,7 +12,6 @@ export const GATE_REASON = {
     STOPPED_BY_GUARD: 'Stopped by guard',
     VISITOR_LEFT: 'Visitor left before entering',
     APPROVAL_EXPIRED: 'Approval expired before arrival',
-    REVOKED: 'Approval withdrawn by resident',
 } as const;
 
 export type GateStatusTone = 'pending' | 'waiting' | 'entered' | 'denied' | 'ended';
@@ -39,7 +38,6 @@ export function gateRequestStatus(request: GateRequestLike): { label: string; to
         case 'REJECTED':
             if (reason === GATE_REASON.CANCELLED_BY_GUARD) return { label: 'Withdrawn by the gate', tone: 'ended' };
             if (reason === GATE_REASON.STOPPED_BY_GUARD) return { label: 'Stopped at the gate', tone: 'denied' };
-            if (reason === GATE_REASON.REVOKED) return { label: 'You withdrew your approval', tone: 'ended' };
             return { label: 'Denied', tone: 'denied', detail: reason };
         default:
             return { label: String(request.status ?? '').replace(/_/g, ' ').toLowerCase(), tone: 'ended' };

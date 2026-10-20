@@ -24,7 +24,7 @@ import { useGateStore } from '@/store/useGateStore';
 import { gateRequestStatus, type GateStatusTone } from '@/utils/gateRequestStatus';
 import { AppAlert } from '../../../components/ui/AppAlert';
 import { chooseHowManyToAllow, withGroup } from '@/services/groupApproval';
-import { revokeEntryRequest, trustVisitor } from '@/services/gate.service';
+import { trustVisitor } from '@/services/gate.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface EntryRequest {
@@ -112,22 +112,8 @@ function PhotoCell({ id, type, photoKey, color }: { id: string; type: string; ph
 }
 
 // ─── Recent decision row ──────────────────────────────────────────────────────
-function RecentRow({ item, onChanged }: { item: EntryRequest; onChanged: () => void }) {
+function RecentRow({ item }: { item: EntryRequest }) {
     const [saved, setSaved] = useState(false);
-    const canUndo = item.status === 'APPROVED' && !item.entryId;
-    const undo = () => {
-        AppAlert.show(
-            'Withdraw your approval?',
-            `${item.visitorName || 'This visitor'} will not be let in. The guard is told straight away.`,
-            [
-                { text: 'Keep it', style: 'cancel' },
-                { text: 'Withdraw', style: 'destructive', onPress: async () => {
-                    try { await revokeEntryRequest(item.id); onChanged(); }
-                    catch (err: any) { AppAlert.show('Could not withdraw', err?.response?.data?.message || 'Please try again.'); onChanged(); }
-                } },
-            ],
-        );
-    };
     const canTrust = !!item.visitorPhone && (item.status === 'APPROVED') && !saved;
     const alwaysAllow = () => {
         AppAlert.show(
@@ -157,11 +143,6 @@ function RecentRow({ item, onChanged }: { item: EntryRequest; onChanged: () => v
                 </Text>
                 {item.approvedCount && item.peopleCount && item.approvedCount < item.peopleCount ? (
                     <Text style={styles.recentMeta} numberOfLines={1}>You allowed {item.approvedCount} of {item.peopleCount}</Text>
-                ) : null}
-                {canUndo ? (
-                    <TouchableOpacity onPress={undo} accessibilityRole="button" hitSlop={8}>
-                        <Text style={[styles.recentMeta, { color: '#C62828', fontFamily: SgateFonts.bold }]}>Undo approval</Text>
-                    </TouchableOpacity>
                 ) : null}
                 {canTrust ? (
                     <TouchableOpacity onPress={alwaysAllow} accessibilityRole="button" hitSlop={8}>
@@ -420,7 +401,7 @@ export default function ApprovalsScreen() {
                 ListFooterComponent={recent.length > 0 ? (
                     <View style={styles.recentSection}>
                         <Text style={styles.recentHeading}>Recent</Text>
-                        {recent.map((item) => <RecentRow key={item.id} item={item} onChanged={() => fetchRequests(true)} />)}
+                        {recent.map((item) => <RecentRow key={item.id} item={item} />)}
                     </View>
                 ) : null}
             />
