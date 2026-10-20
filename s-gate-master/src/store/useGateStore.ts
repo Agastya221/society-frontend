@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import type { Entry, EntryRequest, InvitePass } from '../types/api';
 import * as gateService from '../services/gate.service';
-import { cancelCallAlert } from '../services/callAlert';
 
 interface GateState {
     // ── State ──────────────────────────────────────────────────────────────
@@ -87,7 +86,6 @@ export const useGateStore = create<GateState>((set, get) => ({
     },
 
     approveRequest: async (id: string, count?: number) => {
-        void cancelCallAlert(id);
         // Optimistic remove
         set((state) => ({
             pendingRequests: state.pendingRequests.filter((r) => r.id !== id),
@@ -103,7 +101,6 @@ export const useGateStore = create<GateState>((set, get) => ({
     },
 
     rejectRequest: async (id: string, reason?: string) => {
-        void cancelCallAlert(id);
         // Optimistic remove
         set((state) => ({
             pendingRequests: state.pendingRequests.filter((r) => r.id !== id),
