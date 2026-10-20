@@ -323,8 +323,14 @@ const EntryCard = memo(function EntryCard({
                     <Ionicons name={meta.icon} size={28} color={meta.color} />
                 </View>
                 <View style={styles.cardHeaderText}>
-                    <Text style={styles.visitorName} numberOfLines={1}>{`${entry.visitorName}${(entry.peopleCount ?? 1) > 1 ? `  ${t('inside.ofGroup', { n: (entry.peopleCount ?? 1) - (entry.peopleLeft ?? 0) })}` : ''}`}</Text>
-                    <Text style={styles.visitorDetails} numberOfLines={1}>
+                    <Text style={styles.visitorName} numberOfLines={1}>{entry.visitorName}</Text>
+                    {(entry.peopleCount ?? 1) > 1 ? (
+                        <View style={styles.groupPill}>
+                            <Ionicons name="people" size={14} color={GuardColors.t1} />
+                            <Text style={styles.groupPillText}>{t('inside.ofGroup', { n: (entry.peopleCount ?? 1) - (entry.peopleLeft ?? 0) })}</Text>
+                        </View>
+                    ) : null}
+                    <Text style={styles.visitorDetails} numberOfLines={2}>
                         {locationLabel}{typeLabel ? ` · ${typeLabel}` : ''}{entry.purpose ? ` · ${entry.purpose}` : ''}{entry.vehicleNumber ? ` · ${entry.vehicleNumber}` : ''}
                     </Text>
                 </View>
@@ -399,6 +405,8 @@ const styles = StyleSheet.create({
     typeIcon: { width: 54, height: 54, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
     cardHeaderText: { flex: 1, gap: 2 },
     visitorName: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 22, lineHeight: 30, fontWeight: '900', letterSpacing: -0.3 },
+    groupPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: GuardColors.goldPale, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+    groupPillText: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 14 },
     visitorDetails: { color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: GuardType.min + 1, lineHeight: 22, fontWeight: '600' },
     statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99 },
     statusText: { fontFamily: GuardFonts.bold, fontSize: GuardType.min, lineHeight: 20, fontWeight: '800' },
