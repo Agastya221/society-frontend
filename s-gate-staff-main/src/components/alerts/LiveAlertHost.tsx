@@ -9,6 +9,7 @@ import { api } from '../../services/api';
 import { playSingleChime, startAlertSound, stopAlertSound } from '../../services/alertSound';
 import { startRealtime, stopRealtime, type LiveAlert } from '../../services/realtime';
 import { useAuth } from '../../store/auth';
+import { useBookingsSignal } from '../../store/bookingsSignal';
 
 const SERVER_ROOT = API_URL.replace(/\/api\/v1\/?$/, '');
 const BANNER_MS = 6000;
@@ -27,6 +28,12 @@ export function LiveAlertHost() {
   const open = useCallback(() => router.push('/bookings' as never), [router]);
 
   const showAlert = useCallback(async (alert: LiveAlert): Promise<boolean> => {
+    // A new or cancelled work request: the list on the Work requests screen is out of date now
+    if (String(alert.data?.type ?? '').startsWith('STAFF_BOOKING')) useBookingsSignal.getState().bump();
+    // The request that is ringing was just cancelled: stop ringing for it
+    if (alert.data?.type === 'STAFF_BOOKING_CANCELLED') {
+      setUrgent((shown) => (shown && shown.data?.bookingId === alert.data?.bookingId ? (stopAlertSound(), null) : shown));
+    }
     if (alert.urgent) {
       setBanner(null);
       setUrgent(alert);

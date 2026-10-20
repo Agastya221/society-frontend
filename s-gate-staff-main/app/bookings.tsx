@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, T
 import { Colors, Radius } from '../src/constants/theme';
 import { api } from '../src/services/api';
 import { StaffBooking } from '../src/types/staff';
+import { useBookingsSignal } from '../src/store/bookingsSignal';
 
 // A PENDING request whose date is already over can't be worked any more; don't offer Accept.
 const isPast=(date:string)=>{const d=new Date(date);d.setHours(23,59,59,999);return d.getTime()<Date.now();};
@@ -16,7 +17,8 @@ export default function Bookings(){
   const [failed,setFailed]=useState(false);
   // Errors used to be unhandled rejections that rendered as "No work requests".
   const load=async()=>{try{const r=await api.get('/staff-app/bookings');setItems(r.data.data??[]);setFailed(false);}catch{setFailed(true);}finally{setLoading(false);}};
-  useEffect(()=>{load();},[]);
+  const signal=useBookingsSignal((s)=>s.tick);
+  useEffect(()=>{load();},[signal]);
   // Pull-to-refresh needs its own flag: onRefresh={load} never set `loading`, so the spinner vanished on release.
   const [refreshing,setRefreshing]=useState(false);
   const refresh=async()=>{setRefreshing(true);try{await load();}finally{setRefreshing(false);}};
