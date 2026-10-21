@@ -11,8 +11,10 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from '
  * at once, which looked like a grey ghost over every screen on Back. Going forward the screen
  * slides in from the right, going back it slides in from the left, so Back feels like Back.
  */
-const SLIDE_DISTANCE = 32;
-const DURATION = 240;
+// Wide enough to read as a slide, not a jump; Back runs a little shorter than forward so it never feels slow
+const SLIDE_DISTANCE = 88;
+const DURATION_FORWARD = 340;
+const DURATION_BACK = 300;
 
 // Order in which screens came to the front. Returning to the one before the current screen is "back".
 const trail: string[] = [];
@@ -39,14 +41,15 @@ export function ScreenTransition({ children }: { children: React.ReactNode }) {
     const wasEmpty = trail.length === 0;
     const direction = directionFor(routeKey);
     if (wasEmpty) return; // the very first screen of the session appears without an animation
+    const duration = direction === -1 ? DURATION_BACK : DURATION_FORWARD;
     slide.value = direction * SLIDE_DISTANCE;
     progress.value = 0;
-    slide.value = withTiming(0, { duration: DURATION, easing: Easing.out(Easing.cubic) });
-    progress.value = withTiming(1, { duration: DURATION, easing: Easing.out(Easing.cubic) });
+    slide.value = withTiming(0, { duration, easing: Easing.bezier(0.22, 1, 0.36, 1) });
+    progress.value = withTiming(1, { duration: duration * 0.8, easing: Easing.out(Easing.quad) });
   }, [focused, routeKey, slide, progress]);
 
   const style = useAnimatedStyle(() => ({
-    opacity: 0.55 + 0.45 * progress.value,
+    opacity: 0.2 + 0.8 * progress.value,
     transform: [{ translateX: slide.value }],
   }));
 
