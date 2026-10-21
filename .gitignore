@@ -1,3 +1,9 @@
 
 # Metro dev-server logs
 metro*.log
+
+# Local assistant skill folders (contain symlinks that break cloud-build uploads on Windows)
+.agents/
+.claude/skills/
+skills-lock.json
+remember.md
