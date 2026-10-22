@@ -31,7 +31,9 @@
       "expo-router",
       [
         "expo-location",
-        { "locationWhenInUsePermission": "S-Gate Guard checks that you are at the gate before you let visitors in." }
+        {
+          "locationWhenInUsePermission": "S-Gate Guard checks that you are at the gate before you let visitors in."
+        }
       ],
       [
         "expo-splash-screen",
@@ -58,7 +60,9 @@
         {
           "icon": "./src/assets/images/notification-icon.png",
           "color": "#FFB800",
-          "sounds": ["./assets/sounds/gate_alert.wav"],
+          "sounds": [
+            "./assets/sounds/gate_alert.wav"
+          ],
           "defaultChannel": "default"
         }
       ],
@@ -67,6 +71,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5b093345-c546-4ac6-8163-1b84fc2fd4b5"
+      }
+    },
+    "owner": "agastyash23"
   }
 }

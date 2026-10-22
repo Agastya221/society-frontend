@@ -35,7 +35,9 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#FFB800",
-          "sounds": ["./assets/sounds/gate_alert.wav"],
+          "sounds": [
+            "./assets/sounds/gate_alert.wav"
+          ],
           "defaultChannel": "default"
         }
       ],
@@ -44,6 +46,12 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "30318fb3-ac57-43c3-bf30-9fe07f6e10be"
+      }
+    },
+    "owner": "agastyash23"
   }
 }
