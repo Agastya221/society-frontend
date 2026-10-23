@@ -110,7 +110,7 @@ const FlatRow = memo(function FlatRow({
             <View style={[styles.statusBadge, { backgroundColor: `${statusColor}14` }]}>
                 <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
                 <Text style={[styles.statusText, { color: statusColor }]}>
-                    {statusLabel}
+                    {statusLabel.toUpperCase()}
                 </Text>
             </View>
 
@@ -528,6 +528,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 6,
+        flexShrink: 0,
     },
     statusDot: {
         width: 5,
@@ -537,7 +538,6 @@ const styles = StyleSheet.create({
     statusText: {
         fontSize: 9,
         fontFamily: SgateFonts.semibold,
-        textTransform: 'uppercase',
         letterSpacing: 0.3,
     },
 

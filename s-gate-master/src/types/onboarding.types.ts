@@ -87,6 +87,8 @@ export interface OnboardingRequestPayload {
     flatId: string;
     residentType: ResidentType;
     isLivingHere?: boolean;
+    /** Asked on the review screen when the account has no name yet, so the admin can see who is applying */
+    name?: string;
     documents: {
         type: DocumentType;
         s3Key: string;
