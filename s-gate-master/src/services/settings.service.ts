@@ -20,6 +20,18 @@ export const getSocietySettings = async (): Promise<SocietySettings> => {
     return res.data.data;
 };
 
+export interface AdminHandoffResult {
+    newAdmin: { id: string; name: string; phone: string };
+    /** true when the old admin lives in a flat here and carries on as a resident; false when he leaves the society */
+    oldAdminStaysAsResident: boolean;
+}
+
+/** The society admin hands the admin role to another number. No super admin involved. */
+export const handoffAdminRole = async (phone: string, name: string): Promise<AdminHandoffResult> => {
+    const res = await api.post('/admin/handoff', { phone, name });
+    return res.data.data;
+};
+
 export const updateSocietySettings = async (data: SocietySettingsUpdate): Promise<SocietySettings> => {
     const res = await api.patch('/admin/society/settings', data);
     return res.data.data;

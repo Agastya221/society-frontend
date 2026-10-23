@@ -19,7 +19,7 @@ import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import { SettingRow } from '@/components/ui/SettingRow';
 import { useAuthStore } from '@/store/useAuthStore';
-import { getSocietySettings, updateSocietySettings, type SocietySettings } from '@/services/settings.service';
+import { getSocietySettings, handoffAdminRole, updateSocietySettings, type SocietySettings } from '@/services/settings.service';
 import { UPI_ID_PATTERN } from '@/services/duePayments';
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -27,6 +27,7 @@ export default function SettingsScreen() {
 
     const router = useRouter();
     const { user } = useAuthStore();
+    const logout = useAuthStore(state => state.logout);
     // The admin's active society, for when the profile carries no society.
     const adminContext = useAuthStore(state =>
         state.userContexts.find(c => c.membershipId === state.selectedAdminContextId));
@@ -48,6 +49,11 @@ export default function SettingsScreen() {
     const [autoStaff, setAutoStaff]           = useState(false);
     const [autoDelivery, setAutoDelivery]     = useState(false);
     const [autoCab, setAutoCab]               = useState(false);
+
+    // Hand the admin role to someone else
+    const [handoffName, setHandoffName]       = useState('');
+    const [handoffPhone, setHandoffPhone]     = useState('');
+    const [handingOff, setHandingOff]         = useState(false);
 
     const applySettings = (data: SocietySettings) => {
         setServer(data);
@@ -122,6 +128,46 @@ export default function SettingsScreen() {
             id ? 'Residents will now pay their dues to this UPI ID.' : 'UPI payments are switched off. Residents can no longer pay from the app.',
         );
         setSavingUpi(false);
+    };
+
+    const askHandoff = () => {
+        const name = handoffName.trim();
+        const phone = handoffPhone.replace(/\D/g, '').slice(-10);
+        if (name.length < 2) {
+            AppAlert.show('Enter the name', 'Type the name of the person who will be the new admin.');
+            return;
+        }
+        if (!/^[6-9]\d{9}$/.test(phone)) {
+            AppAlert.show('Check the number', 'Enter a valid 10-digit mobile number.');
+            return;
+        }
+        AppAlert.show(
+            'Hand over the admin role?',
+            `${name} (+91 ${phone}) will become the admin of this society. You will no longer be the admin. This cannot be undone from your side.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Hand over', style: 'destructive', onPress: () => void doHandoff(name, phone) },
+            ],
+        );
+    };
+
+    const doHandoff = async (name: string, phone: string) => {
+        setHandingOff(true);
+        try {
+            const result = await handoffAdminRole(phone, name);
+            AppAlert.show(
+                'Admin role handed over',
+                `${result.newAdmin.name} is now the admin. ${result.oldAdminStaysAsResident
+                    ? 'You carry on as a resident of your flat. Sign in again to continue.'
+                    : 'You have left the admin role. Sign in again if you want to join as a resident.'}`,
+                [{ text: 'OK', onPress: () => void logout() }],
+                { cancelable: false },
+            );
+        } catch (err: any) {
+            AppAlert.show('Could not hand over', err?.response?.data?.message || 'Please try again.');
+        } finally {
+            setHandingOff(false);
+        }
     };
 
     /** Flip a toggle right away, and roll it back if the server refuses. */
@@ -298,6 +344,41 @@ export default function SettingsScreen() {
                     </View>
                 </Animated.View>
 
+                {/* ── Hand over admin role ──────────────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(280).springify()}>
+                    <Text style={styles.sectionLabel}>HAND OVER ADMIN ROLE</Text>
+                    <View style={styles.card}>
+                        <ConfigInput
+                            label="New admin's name"
+                            value={handoffName}
+                            onChangeText={setHandoffName}
+                            placeholder="Full name"
+                            autoCapitalize="words"
+                        />
+                        <ConfigInput
+                            label="New admin's mobile number"
+                            value={handoffPhone}
+                            onChangeText={setHandoffPhone}
+                            keyboardType="numeric"
+                            placeholder="10-digit number"
+                        />
+                        <TouchableOpacity
+                            style={[styles.handoffBtn, handingOff && styles.saveBtnDisabled]}
+                            onPress={askHandoff}
+                            disabled={handingOff}
+                        >
+                            {handingOff
+                                ? <ActivityIndicator size="small" color="#FFF" />
+                                : <Text style={styles.handoffBtnText}>Hand over admin role</Text>
+                            }
+                        </TouchableOpacity>
+                    </View>
+                    <Text style={styles.hint}>
+                        The new admin signs in with this number and takes over. You step down: if you live in a flat here you
+                        carry on as a resident, otherwise you leave the society.
+                    </Text>
+                </Animated.View>
+
                 {/* ── Danger Zone ───────────────────────────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(320).springify()}>
                     <Text style={styles.sectionLabel}>MORE</Text>
@@ -457,6 +538,15 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     saveBtnDisabled: { opacity: 0.5 },
+    handoffBtn: {
+        backgroundColor: SgateColors.t1,
+        borderRadius: 14,
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 4,
+    },
+    handoffBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFF' },
     saveBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Toggle card
