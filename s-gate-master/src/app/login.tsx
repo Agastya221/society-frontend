@@ -278,8 +278,8 @@ function PhoneScreen({ phone, setPhone, error, setError, isLoading, onSend }: Ph
                 <View style={S.logoBg}>
                     <Image source={SGATE_LOGO} style={S.logo} resizeMode="contain" />
                 </View>
-                <Text style={S.heroTitle}>Welcome{'\n'}Back</Text>
-                <Text style={S.heroSub}>Sign in to access your gated community.</Text>
+                <Text style={S.heroTitle}>Sign in{'\n'}or join</Text>
+                <Text style={S.heroSub}>Enter your mobile number. New here? We will set you up right after the OTP.</Text>
             </Animated.View>
 
             {/* Form card */}

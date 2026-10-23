@@ -38,7 +38,12 @@ interface Props {
  * The server only sends a push notification when this component did NOT show the alert.
  */
 export function LiveAlertHost({ onOpen }: Props) {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const loggedIn = useAuthStore((s) => s.isAuthenticated);
+  // A new resident is "inactive" until the admin approves the request. The server refuses most calls from
+  // such an account (401), and a refused call signs the person out. So live alerts and the waiting-visitor
+  // check only run once the account is set up, never during onboarding.
+  const requiresOnboarding = useAuthStore((s) => s.requiresOnboarding);
+  const isAuthenticated = loggedIn && !requiresOnboarding;
   const [urgent, setUrgent] = useState<LiveAlert | null>(null);
   const [banner, setBanner] = useState<LiveAlert | null>(null);
   const [busy, setBusy] = useState(false);
