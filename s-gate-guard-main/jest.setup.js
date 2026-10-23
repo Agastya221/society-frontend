@@ -1,3 +1,11 @@
+// ── expo-location ─────────────────────────────────────────────────────────────
+jest.mock('expo-location', () => ({
+  getForegroundPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true, canAskAgain: true })),
+  requestForegroundPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true })),
+  getCurrentPositionAsync: jest.fn(() => Promise.resolve({ coords: { latitude: 22.8, longitude: 86.2, accuracy: 10 }, timestamp: Date.now() })),
+  Accuracy: { High: 4 },
+}));
+
 // ── expo-secure-store ─────────────────────────────────────────────────────────
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(),
@@ -141,3 +149,14 @@ global.console = {
   warn: jest.fn(),
   log: jest.fn(),
 };
+
+// ── expo-audio / socket.io-client ─────────────────────────────────────────────
+// The alert ring needs the phone's audio hardware and the live connection needs a server:
+// tests get silent stand-ins.
+jest.mock('expo-audio', () => ({
+  createAudioPlayer: () => ({ play: jest.fn(), pause: jest.fn(), remove: jest.fn(), loop: false, volume: 1 }),
+  setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock('socket.io-client', () => ({
+  io: () => ({ on: jest.fn(), emit: jest.fn(), connect: jest.fn(), disconnect: jest.fn(), removeAllListeners: jest.fn(), connected: false }),
+}));

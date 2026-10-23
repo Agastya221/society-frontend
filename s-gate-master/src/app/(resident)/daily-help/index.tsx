@@ -75,8 +75,15 @@ export default function DailyHelpIndex() {
 
   return (
     <View style={s.safe}>
-      <ScreenHeader title="Daily Help" />
-      
+      <ScreenHeader
+        title="Daily Help"
+        rightAction={
+          <TouchableOpacity onPress={() => router.push('/(resident)/daily-help/my-bookings' as any)} accessibilityRole="button" accessibilityLabel="My bookings" hitSlop={8}>
+            <MaterialCommunityIcons name="calendar-check-outline" size={24} color={C.ink} />
+          </TouchableOpacity>
+        }
+      />
+
       <ScrollView contentContainerStyle={[s.content, { paddingBottom: scrollBottomPadding }]}>
         <Text style={s.sectionTitle}>All Daily Helps</Text>
         <View style={s.gridContainer}>

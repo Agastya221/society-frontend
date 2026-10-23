@@ -1,8 +1,9 @@
 import { create } from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { API_URL } from '../constants/api';
 import { useAuth } from '../store/auth';
 
-export const API_URL = 'https://society-gate-backend-gsrq.onrender.com/api/v1';
+export { API_URL };
 export const api = create({ baseURL: API_URL, timeout: 60000, headers: { 'Content-Type': 'application/json' } });
 
 api.interceptors.request.use(async (config) => {

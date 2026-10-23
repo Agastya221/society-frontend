@@ -19,13 +19,15 @@ import { ScreenHeader } from '@/components/layout/ScreenHeader';
 import { SgateColors, SgateFonts, SgateLayout, SgateTypography } from '@/constants/Sgate-theme';
 import { SettingRow } from '@/components/ui/SettingRow';
 import { useAuthStore } from '@/store/useAuthStore';
-import { getSocietySettings, updateSocietySettings, type SocietySettings } from '@/services/settings.service';
+import { getSocietySettings, handoffAdminRole, updateSocietySettings, type SocietySettings } from '@/services/settings.service';
+import { UPI_ID_PATTERN } from '@/services/duePayments';
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function SettingsScreen() {
 
     const router = useRouter();
     const { user } = useAuthStore();
+    const logout = useAuthStore(state => state.logout);
     // The admin's active society, for when the profile carries no society.
     const adminContext = useAuthStore(state =>
         state.userContexts.find(c => c.membershipId === state.selectedAdminContextId));
@@ -35,6 +37,10 @@ export default function SettingsScreen() {
     const [dueDayOfMonth, setDueDayOfMonth]   = useState('');
     const [gracePeriod, setGracePeriod]       = useState('');
     const [saving, setSaving]                 = useState(false);
+    // Where residents pay dues
+    const [upiId, setUpiId]                   = useState('');
+    const [payeeName, setPayeeName]           = useState('');
+    const [savingUpi, setSavingUpi]           = useState(false);
     const [server, setServer]                 = useState<SocietySettings | null>(null);
     /** null while loading; false when the server has no settings API yet. */
     const [available, setAvailable]           = useState<boolean | null>(null);
@@ -44,11 +50,18 @@ export default function SettingsScreen() {
     const [autoDelivery, setAutoDelivery]     = useState(false);
     const [autoCab, setAutoCab]               = useState(false);
 
+    // Hand the admin role to someone else
+    const [handoffName, setHandoffName]       = useState('');
+    const [handoffPhone, setHandoffPhone]     = useState('');
+    const [handingOff, setHandingOff]         = useState(false);
+
     const applySettings = (data: SocietySettings) => {
         setServer(data);
         setMonthlyFee(data.maintenance.monthlyFee != null ? String(data.maintenance.monthlyFee) : '');
         setDueDayOfMonth(String(data.maintenance.dueDayOfMonth));
         setGracePeriod(String(data.maintenance.gracePeriodDays));
+        setUpiId(data.payments?.upiId ?? '');
+        setPayeeName(data.payments?.payeeName ?? '');
         setAutoStaff(data.autoApproval.domesticStaff);
         setAutoDelivery(data.autoApproval.delivery);
         setAutoCab(data.autoApproval.cab);
@@ -101,6 +114,60 @@ export default function SettingsScreen() {
         await save({ maintenance: { monthlyFee: fee, dueDayOfMonth: due, gracePeriodDays: grace } },
             'Society settings updated successfully.');
         setSaving(false);
+    };
+
+    const handleSaveUpi = async () => {
+        const id = upiId.trim();
+        if (id && !UPI_ID_PATTERN.test(id)) {
+            AppAlert.show('Check the UPI ID', 'A UPI ID looks like society@okhdfcbank: letters or numbers, then @, then the bank name.');
+            return;
+        }
+        setSavingUpi(true);
+        await save(
+            { payments: { upiId: id || null, payeeName: payeeName.trim() || null } },
+            id ? 'Residents will now pay their dues to this UPI ID.' : 'UPI payments are switched off. Residents can no longer pay from the app.',
+        );
+        setSavingUpi(false);
+    };
+
+    const askHandoff = () => {
+        const name = handoffName.trim();
+        const phone = handoffPhone.replace(/\D/g, '').slice(-10);
+        if (name.length < 2) {
+            AppAlert.show('Enter the name', 'Type the name of the person who will be the new admin.');
+            return;
+        }
+        if (!/^[6-9]\d{9}$/.test(phone)) {
+            AppAlert.show('Check the number', 'Enter a valid 10-digit mobile number.');
+            return;
+        }
+        AppAlert.show(
+            'Hand over the admin role?',
+            `${name} (+91 ${phone}) will become the admin of this society. You will no longer be the admin. This cannot be undone from your side.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Hand over', style: 'destructive', onPress: () => void doHandoff(name, phone) },
+            ],
+        );
+    };
+
+    const doHandoff = async (name: string, phone: string) => {
+        setHandingOff(true);
+        try {
+            const result = await handoffAdminRole(phone, name);
+            AppAlert.show(
+                'Admin role handed over',
+                `${result.newAdmin.name} is now the admin. ${result.oldAdminStaysAsResident
+                    ? 'You carry on as a resident of your flat. Sign in again to continue.'
+                    : 'You have left the admin role. Sign in again if you want to join as a resident.'}`,
+                [{ text: 'OK', onPress: () => void logout() }],
+                { cancelable: false },
+            );
+        } catch (err: any) {
+            AppAlert.show('Could not hand over', err?.response?.data?.message || 'Please try again.');
+        } finally {
+            setHandingOff(false);
+        }
     };
 
     /** Flip a toggle right away, and roll it back if the server refuses. */
@@ -171,6 +238,40 @@ export default function SettingsScreen() {
                     <Text style={styles.hint}>Used for the next maintenance invoices.</Text>
                 </Animated.View>
 
+                {/* ── Dues payment (UPI) ───────────────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(120).springify()}>
+                    <Text style={styles.sectionLabel}>DUES PAYMENT (UPI)</Text>
+                    <View style={styles.card}>
+                        <ConfigInput
+                            label="Society UPI ID"
+                            value={upiId}
+                            onChangeText={setUpiId}
+                            placeholder="e.g. dalmaheights@okhdfcbank"
+                            autoCapitalize="none"
+                        />
+                        <ConfigInput
+                            label="Name shown in the UPI app"
+                            value={payeeName}
+                            onChangeText={setPayeeName}
+                            placeholder={societyName !== '—' ? societyName : 'Society name'}
+                        />
+                        <TouchableOpacity
+                            style={[styles.saveBtn, savingUpi && styles.saveBtnDisabled]}
+                            onPress={handleSaveUpi}
+                            disabled={savingUpi}
+                        >
+                            {savingUpi
+                                ? <ActivityIndicator size="small" color="#FFF" />
+                                : <Text style={styles.saveBtnText}>Save UPI ID</Text>
+                            }
+                        </TouchableOpacity>
+                    </View>
+                    <Text style={styles.hint}>
+                        Residents pay this UPI ID straight from their own UPI app. After paying they enter the reference
+                        number, and you confirm it from Payments. Use the society's bank account UPI ID.
+                    </Text>
+                </Animated.View>
+
                 {/* ── Auto-Approval Rules ───────────────────────────────────── */}
                 <Animated.View entering={FadeInDown.delay(160).springify()}>
                     <Text style={styles.sectionLabel}>AUTO-APPROVAL RULES</Text>
@@ -216,6 +317,24 @@ export default function SettingsScreen() {
                             onPress={() => router.push('/(admin)/gate-points')}
                         />
                         <SettingRow
+                            icon="clock-outline"
+                            title="Guard shifts"
+                            subtitle="Set shift times and who works them"
+                            onPress={() => router.push('/(admin)/guard-shifts' as any)}
+                        />
+                        <SettingRow
+                            icon="calendar-check-outline"
+                            title="Guard attendance"
+                            subtitle="Who was on duty, and for how long"
+                            onPress={() => router.push('/(admin)/guard-attendance' as any)}
+                        />
+                        <SettingRow
+                            icon="crosshairs-gps"
+                            title="Gate location"
+                            subtitle="Guards can only act from the gate"
+                            onPress={() => router.push('/(admin)/gate-location' as any)}
+                        />
+                        <SettingRow
                             icon="account-group-outline"
                             title="Guard Management"
                             subtitle="Add and manage security guards"
@@ -223,6 +342,41 @@ export default function SettingsScreen() {
                             showDivider={false}
                         />
                     </View>
+                </Animated.View>
+
+                {/* ── Hand over admin role ──────────────────────────────────── */}
+                <Animated.View entering={FadeInDown.delay(280).springify()}>
+                    <Text style={styles.sectionLabel}>HAND OVER ADMIN ROLE</Text>
+                    <View style={styles.card}>
+                        <ConfigInput
+                            label="New admin's name"
+                            value={handoffName}
+                            onChangeText={setHandoffName}
+                            placeholder="Full name"
+                            autoCapitalize="words"
+                        />
+                        <ConfigInput
+                            label="New admin's mobile number"
+                            value={handoffPhone}
+                            onChangeText={setHandoffPhone}
+                            keyboardType="numeric"
+                            placeholder="10-digit number"
+                        />
+                        <TouchableOpacity
+                            style={[styles.handoffBtn, handingOff && styles.saveBtnDisabled]}
+                            onPress={askHandoff}
+                            disabled={handingOff}
+                        >
+                            {handingOff
+                                ? <ActivityIndicator size="small" color="#FFF" />
+                                : <Text style={styles.handoffBtnText}>Hand over admin role</Text>
+                            }
+                        </TouchableOpacity>
+                    </View>
+                    <Text style={styles.hint}>
+                        The new admin signs in with this number and takes over. You step down: if you live in a flat here you
+                        carry on as a resident, otherwise you leave the society.
+                    </Text>
                 </Animated.View>
 
                 {/* ── Danger Zone ───────────────────────────────────────────── */}
@@ -257,9 +411,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     );
 }
 
-function ConfigInput({ label, value, onChangeText, keyboardType, placeholder }: {
+function ConfigInput({ label, value, onChangeText, keyboardType, placeholder, autoCapitalize }: {
     label: string; value: string; onChangeText: (t: string) => void;
-    keyboardType?: 'numeric' | 'default'; placeholder?: string;
+    keyboardType?: 'numeric' | 'default'; placeholder?: string; autoCapitalize?: 'none' | 'words';
 }) {
     return (
         <View style={styles.configInputWrap}>
@@ -271,6 +425,8 @@ function ConfigInput({ label, value, onChangeText, keyboardType, placeholder }: 
                 keyboardType={keyboardType ?? 'default'}
                 placeholder={placeholder}
                 placeholderTextColor={SgateColors.t4}
+                autoCapitalize={autoCapitalize}
+                autoCorrect={false}
             />
         </View>
     );
@@ -382,6 +538,15 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     saveBtnDisabled: { opacity: 0.5 },
+    handoffBtn: {
+        backgroundColor: SgateColors.t1,
+        borderRadius: 14,
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 4,
+    },
+    handoffBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: '#FFF' },
     saveBtnText: { fontSize: 15, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
 
     // Toggle card

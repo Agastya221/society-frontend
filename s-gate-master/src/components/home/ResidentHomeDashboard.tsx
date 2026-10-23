@@ -31,7 +31,7 @@ interface ResidentHomeDashboardProps {
     onNotificationPress: () => void;
     onSosPress: () => void;
     onNavigate: (route: string) => void;
-    onAllow: (id: string) => void;
+    onAllow: (id: string, count?: number) => void;
     onDecline: (id: string) => void;
 }
 
@@ -85,7 +85,7 @@ export default function ResidentHomeDashboard({
                     />
                 }
             >
-                <SocietyStatusCard residentName={getFirstName(user?.name)} />
+                <SocietyStatusCard residentName={getFirstName(user?.name)} waitingCount={pendingRequests.length} />
                 <AtAGlanceSection
                     waitingCount={pendingRequests.length}
                     deliveryCount={deliveryCount}

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Entry, EntryRequest, InvitePass } from '../types/api';
 import * as gateService from '../services/gate.service';
+import { cancelCallAlert } from '../services/callAlert';
 
 interface GateState {
     // ── State ──────────────────────────────────────────────────────────────
@@ -10,13 +11,17 @@ interface GateState {
     isLoading: boolean;
     /** True once the first fetch has settled; screens show skeletons only before that. */
     hasLoaded: boolean;
+    /** Bumped on every GATE_* push so open screens (Approvals) refetch at once. */
+    gatePushAt: number;
 
     // ── Actions ────────────────────────────────────────────────────────────
     fetchPendingRequests: () => Promise<void>;
     fetchEntries: (params?: gateService.GetEntriesParams) => Promise<void>;
     fetchInvitePasses: () => Promise<void>;
-    approveRequest: (id: string) => Promise<void>;
+    approveRequest: (id: string, count?: number) => Promise<void>;
     rejectRequest: (id: string, reason?: string) => Promise<void>;
+    /** A GATE_* push arrived: refresh the pending list and tell open screens. */
+    onGatePush: () => void;
     reset: () => void;
 }
 
@@ -26,6 +31,12 @@ export const useGateStore = create<GateState>((set, get) => ({
     invitePasses: [],
     isLoading: false,
     hasLoaded: false,
+    gatePushAt: 0,
+
+    onGatePush: () => {
+        set({ gatePushAt: Date.now() });
+        void get().fetchPendingRequests();
+    },
 
     reset: () =>
         set({
@@ -34,6 +45,7 @@ export const useGateStore = create<GateState>((set, get) => ({
             invitePasses: [],
             isLoading: false,
             hasLoaded: false,
+            gatePushAt: 0,
         }),
 
     fetchPendingRequests: async () => {
@@ -74,13 +86,14 @@ export const useGateStore = create<GateState>((set, get) => ({
         }
     },
 
-    approveRequest: async (id: string) => {
+    approveRequest: async (id: string, count?: number) => {
+        void cancelCallAlert(id);
         // Optimistic remove
         set((state) => ({
             pendingRequests: state.pendingRequests.filter((r) => r.id !== id),
         }));
         try {
-            await gateService.approveEntryRequest(id);
+            await gateService.approveEntryRequest(id, count);
         } catch (err) {
             console.error('approveRequest failed:', err);
             // Revert by re-fetching
@@ -90,6 +103,7 @@ export const useGateStore = create<GateState>((set, get) => ({
     },
 
     rejectRequest: async (id: string, reason?: string) => {
+        void cancelCallAlert(id);
         // Optimistic remove
         set((state) => ({
             pendingRequests: state.pendingRequests.filter((r) => r.id !== id),

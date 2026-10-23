@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
@@ -11,13 +12,11 @@ export default function AdminTabsLayout() {
         <Tabs
             tabBar={(props) => <AdminTabBar {...props} />}
             backBehavior="history"
+            // Screens swap instantly; ScreenTransition slides the new one in (the old fade left a ghost on Back)
+            screenLayout={({ children }) => <ScreenTransition>{children}</ScreenTransition>}
             screenOptions={{
                 headerShown: false,
-                animation: 'fade',
-                transitionSpec: {
-                    animation: 'timing',
-                    config: { duration: 180 },
-                },
+                animation: 'none',
                 sceneStyle: { backgroundColor: SgateColors.bg },
             }}
         >
@@ -55,11 +54,15 @@ export default function AdminTabsLayout() {
             <Tabs.Screen name="flats" options={{ href: null }} />
             <Tabs.Screen name="guards" options={{ href: null }} />
             <Tabs.Screen name="gate-points" options={{ href: null }} />
+            <Tabs.Screen name="gate-location" options={{ href: null }} />
+            <Tabs.Screen name="guard-attendance" options={{ href: null }} />
+            <Tabs.Screen name="guard-shifts" options={{ href: null }} />
             <Tabs.Screen name="gate-pass" options={{ href: null }} />
             <Tabs.Screen name="complaints" options={{ href: null }} />
             <Tabs.Screen name="approval-requests" options={{ href: null }} />
             <Tabs.Screen name="notices" options={{ href: null }} />
             <Tabs.Screen name="payments" options={{ href: null }} />
+            <Tabs.Screen name="payment-review" options={{ href: null }} />
             <Tabs.Screen name="residents" options={{ href: null }} />
             <Tabs.Screen name="settings" options={{ href: null }} />
             <Tabs.Screen name="onboarding-requests" options={{ href: null }} />

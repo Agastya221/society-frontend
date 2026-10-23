@@ -118,6 +118,8 @@ export interface CreatePreApprovedPayload {
     // DELIVERY
     companyName?: string;
     isSurprise?: boolean;
+    // CAB: the full plate (the last 4 digits are what the gate verifies)
+    vehicleNumber?: string;
     // HELP
     category?: HelpCategory;
     customCategory?: string;
@@ -247,12 +249,18 @@ export interface EntryRequest {
     visitorName: string;
     visitorPhone?: string;
     providerTag?: ProviderTag;
+    /** What the visit is for, as the guard typed or chose it (e.g. 'Meeting', 'AC repair'). */
+    purpose?: string | null;
     status: EntryRequestStatus;
     flatId: string;
     flat?: { number: string; block?: { name: string } };
     gate?: string;
     createdAt: string;
     photoKey?: string;
+    /** People who arrived together, and how many were allowed (null/absent = everyone) */
+    peopleCount?: number;
+    approvedCount?: number | null;
+    vehicleNumber?: string | null;
 }
 
 export interface PreApproval {
@@ -292,6 +300,10 @@ export interface Entry {
     createdAt: string;
     checkOutAt?: string;
     flat?: { number: string };
+    /** Group visits: people who came in together */
+    peopleCount?: number;
+    peopleLeft?: number;
+    vehicleNumber?: string | null;
 }
 
 export interface Notification {

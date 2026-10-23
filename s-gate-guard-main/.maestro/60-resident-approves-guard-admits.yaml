@@ -1,0 +1,42 @@
+# The real two-person gate flow: guard notifies A101, the resident approves (sent from the computer),
+# the waiting screen turns to "Approved at gate", the guard lets the visitor in. The visitor is then
+# checked out again so test runs leave nothing behind. Needs the tokens that run-tests.sh creates.
+appId: com.sgate.guard
+tags:
+  - needs-tokens
+---
+- startRecording: recordings/60-resident-approves-guard-admits
+- runFlow: _go-home.yaml
+- tapOn: "New visitor"
+- tapOn: "Other"
+- extendedWaitUntil:
+    visible: "A101"
+    timeout: 20000
+- tapOn: "A101"
+- tapOn: "Notify resident"
+- extendedWaitUntil:
+    visible: "Notifying resident"
+    timeout: 20000
+- runScript:
+    file: _resident-approves.js
+    env:
+      RESIDENT_TOKEN: ${RESIDENT_TOKEN}
+# The waiting screen checks every 3 s; allow for a slow server.
+- extendedWaitUntil:
+    visible: "Approved at gate"
+    timeout: 30000
+- tapOn: "Let in now"
+- extendedWaitUntil:
+    visible: "Let the visitor through"
+    timeout: 20000
+- runScript:
+    file: _checkout-visitor.js
+    env:
+      GUARD_TOKEN: ${GUARD_TOKEN}
+# The result screen returns Home by itself after 8 s, so the tap may find it already gone.
+- tapOn:
+    text: "Home"
+    optional: true
+- extendedWaitUntil:
+    visible: "Scan QR"
+    timeout: 15000

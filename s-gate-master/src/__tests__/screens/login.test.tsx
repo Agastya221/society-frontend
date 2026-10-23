@@ -39,12 +39,12 @@ describe('Login screen', () => {
   describe('Phone screen', () => {
     it('renders sign-in subtitle', () => {
       const { getByText } = render(<Login />);
-      expect(getByText('Sign in to access your gated community.')).toBeTruthy();
+      expect(getByText('Enter your mobile number. New here? We will set you up right after the OTP.')).toBeTruthy();
     });
 
-    it('renders Welcome Back headline', () => {
+    it('renders the Sign in or join headline (the same screen serves new and returning people)', () => {
       const { getByText } = render(<Login />);
-      expect(getByText('Welcome\nBack')).toBeTruthy();
+      expect(getByText('Sign in\nor join')).toBeTruthy();
     });
 
     it('renders phone number input with placeholder', () => {

@@ -35,12 +35,57 @@ export const getEntryRequests = async (params?: GetEntryRequestsParams): Promise
     return Array.isArray(data) ? data : (data?.requests ?? data?.entryRequests ?? []);
 };
 
-export const approveEntryRequest = async (id: string): Promise<void> => {
-    await api.patch(`/gate/entry-requests/${id}/approve`);
+/** `count` lets in fewer people than arrived; leave it out to allow everyone. */
+export const approveEntryRequest = async (id: string, count?: number): Promise<void> => {
+    await api.patch(`/gate/entry-requests/${id}/approve`, count ? { count } : {});
+};
+
+export interface GateRequestRow {
+    id: string;
+    type: EntryType;
+    visitorName?: string | null;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED';
+    entryId?: string | null;
+    rejectionReason?: string | null;
+    createdAt: string;
+    peopleCount?: number;
+    flat?: { number?: string; flatNumber?: string };
+}
+
+/** Gate requests from the last `days` days (denied, expired, withdrawn, still open...). */
+export const getRecentGateRequests = async (days = 30): Promise<GateRequestRow[]> => {
+    const since = encodeURIComponent(new Date(Date.now() - days * 86_400_000).toISOString());
+    const res = await api.get(`/gate/entry-requests?since=${since}&order=newest&limit=100`);
+    const data = res.data?.data;
+    const rows = Array.isArray(data) ? data : (data?.entryRequests ?? []);
+    return Array.isArray(rows) ? rows : [];
+};
+
+// ─── Always-allowed visitors ──────────────────────────────────────────────────
+export interface TrustedVisitor {
+    id: string;
+    name: string;
+    phone: string;
+    createdAt: string;
+}
+
+export const listTrustedVisitors = async (): Promise<TrustedVisitor[]> => {
+    const res = await api.get('/resident/trusted-visitors');
+    return res.data?.data ?? [];
+};
+
+export const trustVisitor = async (entryRequestId: string): Promise<TrustedVisitor> => {
+    const res = await api.post('/resident/trusted-visitors', { entryRequestId });
+    return res.data?.data;
+};
+
+export const removeTrustedVisitor = async (id: string): Promise<void> => {
+    await api.delete(`/resident/trusted-visitors/${id}`);
 };
 
 export const rejectEntryRequest = async (id: string, reason?: string): Promise<void> => {
-    await api.patch(`/gate/entry-requests/${id}/reject`, reason ? { reason } : undefined);
+    // Always send a body: the server reads `reason` from it (with no body Express 5 crashed with a 500).
+    await api.patch(`/gate/entry-requests/${id}/reject`, reason ? { reason } : {});
 };
 
 export const getEntryRequestPhoto = async (id: string): Promise<{ viewUrl: string }> => {
@@ -81,6 +126,8 @@ export interface CreateInvitePassPayload {
     timeUntil?: string;
     maxUses?: number;
     isPrivate?: boolean;
+    /** People coming on this pass (1 = just the named guest) */
+    guestCount?: number;
 }
 
 /** Strip country code, spaces, dashes — always returns a plain 10-digit number */

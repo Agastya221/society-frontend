@@ -12,9 +12,10 @@
       "supportsTablet": true
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "package": "com.sgate.staff",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -29,11 +30,28 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-notifications",
-      "expo-font"
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#FFB800",
+          "sounds": [
+            "./assets/sounds/gate_alert.wav"
+          ],
+          "defaultChannel": "default"
+        }
+      ],
+      "expo-font",
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "30318fb3-ac57-43c3-bf30-9fe07f6e10be"
+      }
+    },
+    "owner": "agastyash23"
   }
 }

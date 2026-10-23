@@ -15,7 +15,10 @@ import { useSoraFonts } from "../hooks/useFonts";
 import { useAuthStore } from "../store/useAuthStore";
 import { useOnboardingStore } from "../store/useOnboardingStore";
 import { useGateStore } from "../store/useGateStore";
+import { isGatePushType } from '@/utils/gateRequestStatus';
 import api from "../services/api";
+import { LiveAlertHost, reopenGateRequest } from '@/components/alerts/LiveAlertHost';
+import { attachCallAlertForeground, registerCallAlert } from '@/services/callAlert';
 import { AppAlertProvider, AppAlert } from "../components/ui/AppAlert";
 import { AppLoader } from "../components/ui/AppLoader";
 
@@ -30,6 +33,9 @@ const queryClient = new QueryClient({
   },
 });
 
+// Call-style gate alerts: defined here, at module scope, so the background task exists when the app is woken by a push
+registerCallAlert();
+
 // Show notifications while app is in foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -40,6 +46,26 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+// Loud channel for alerts that must catch attention (visitor at the gate, emergencies).
+// The server's push names this channel id and sound; the id is versioned because Android
+// keeps a channel's sound forever once it exists.
+export const URGENT_CHANNEL_ID = 'gate-alert-v1';
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync(URGENT_CHANNEL_ID, {
+    name: 'Gate alerts & emergencies',
+    importance: Notifications.AndroidImportance.MAX,
+    sound: 'gate_alert.wav',
+    vibrationPattern: [0, 700, 300, 700, 300, 700, 300, 700],
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    enableLights: true,
+    lightColor: '#FFB800',
+    audioAttributes: {
+      usage: Notifications.AndroidAudioUsage.ALARM,
+      contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+    },
+  }).catch(() => {});
+}
 
 const ONBOARDING_SEEN_KEY = "onboarding_seen";
 
@@ -219,12 +245,29 @@ export default function RootLayout() {
           if (current[0] === '(admin)' && current[1] === 'approval-requests') return;
           router.push('/(admin)/approval-requests' as any);
         } else if (role === 'RESIDENT' && !requiresOnboarding) {
-          if (current[0] === '(resident)' && current[1] === 'approvals') {
-            useGateStore.getState().fetchPendingRequests();
-            return;
-          }
+          // Tapping the notification pops the approval card up over whatever is open
+          reopenGateRequest(data.entryRequestId);
+          useGateStore.getState().onGatePush();
+          if (current[0] === '(resident)' && current[1] === 'approvals') return;
           router.push('/(resident)/approvals' as any);
         }
+      } else if (isGatePushType(data.type)) {
+        // GATE_APPROVED / GATE_DENIED / GATE_EXPIRED (no-show uses GATE_DENIED):
+        // the resident's Approvals screen shows how the request ended.
+        if (role === 'RESIDENT' && !requiresOnboarding) {
+          useGateStore.getState().onGatePush();
+          if (current[0] === '(resident)' && current[1] === 'approvals') return;
+          router.push('/(resident)/approvals' as any);
+        } else if (role === 'ADMIN') {
+          useGateStore.getState().onGatePush();
+        }
+      } else if (data.type === 'PAYMENT_SUBMITTED' && role === 'ADMIN') {
+        // A resident reported a UPI payment: the admin checks it against the bank statement
+        if (current[0] === '(admin)' && current[1] === 'payment-review') return;
+        router.push('/(admin)/payment-review' as any);
+      } else if ((data.type === 'PAYMENT_CONFIRMED' || data.type === 'PAYMENT_REJECTED') && data.invoiceId) {
+        // The admin answered the resident's payment: open that due
+        router.push({ pathname: '/(resident)/society-dues/[id]', params: { id: data.invoiceId } } as any);
       } else if (data.type === 'ONBOARDING_STATUS' && (role === 'ADMIN' || role === 'SUPER_ADMIN')) {
         router.push({
           pathname: '/(admin)/onboarding-requests',
@@ -255,6 +298,12 @@ export default function RootLayout() {
     [openNotificationTarget, isLoading, isAuthenticated]
   );
 
+  // The call-style gate alert: opening it (or its "Choose how many") shows the approval card in the app
+  useEffect(() => {
+    if (!isAuthenticated || isLoading) return;
+    return attachCallAlertForeground((data) => openNotificationTarget({ ...data, type: 'GATE_REQUEST' }));
+  }, [isAuthenticated, isLoading, openNotificationTarget]);
+
   // Navigate when a notification is TAPPED while the app is running/backgrounded
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
@@ -278,16 +327,17 @@ export default function RootLayout() {
     if (response) handleNotificationResponse(response);
   }, [isLoading, onboardingChecked, isAuthenticated, role, requiresOnboarding, segments, handleNotificationResponse]);
 
-  // A GATE_REQUEST arriving in the foreground must NOT navigate — the user may
-  // be mid-form. The system banner still shows (see setNotificationHandler)
-  // and tapping it routes via the response listener; here we only refresh the
-  // pending list so Home's waiting card picks the request up immediately.
+  // A gate push (GATE_REQUEST, GATE_APPROVED, GATE_DENIED, GATE_EXPIRED…)
+  // arriving in the foreground must NOT navigate — the user may be mid-form.
+  // The system banner still shows (see setNotificationHandler) and tapping it
+  // routes via the response listener; here we only refresh, so Home's waiting
+  // card and an open Approvals screen pick the change up immediately.
   useEffect(() => {
     const sub = Notifications.addNotificationReceivedListener((notification) => {
       const data = notification.request.content.data as Record<string, any>;
-      if (data?.type !== 'GATE_REQUEST' || !isAuthenticated) return;
+      if (!isGatePushType(data?.type) || !isAuthenticated) return;
       if (role === 'ADMIN' || (role === 'RESIDENT' && !requiresOnboarding)) {
-        useGateStore.getState().fetchPendingRequests();
+        useGateStore.getState().onGatePush();
       }
     });
     return () => sub.remove();
@@ -412,6 +462,7 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: "#F8F7F4" },
               }}
             />
+            <LiveAlertHost onOpen={openNotificationTarget} />
           </AppAlertProvider>
           <StatusBar style="dark" />
         </SafeAreaProvider>

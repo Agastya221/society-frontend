@@ -23,6 +23,7 @@ import { StatusPill, statusColors } from '@/components/ui/StatusPill';
 import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
 import api from '@/services/api';
 import * as billingService from '@/services/billingService';
+import { listPaymentSubmissions } from '@/services/duePayments';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type DueStatus = 'PAID' | 'PENDING' | 'OVERDUE';
@@ -63,6 +64,8 @@ export default function PaymentsScreen() {
     const [isMock, setIsMock]             = useState(false);
     const [activeFilter, setActiveFilter] = useState<FilterTab>('ALL');
     const [selectedDue, setSelectedDue]   = useState<FlatDue | null>(null);
+    // UPI payments residents reported and the admin has not confirmed yet
+    const [waitingPayments, setWaitingPayments] = useState(0);
 
     // Billing Modals
     const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -76,6 +79,7 @@ export default function PaymentsScreen() {
             const res = await api.get('/admin/dues');
             const data: FlatDue[] = res.data?.data ?? [];
             setDues(data);
+            listPaymentSubmissions('SUBMITTED').then((rows) => setWaitingPayments(rows.length)).catch(() => {});
         } catch {
             setDues([]);
         } finally {
@@ -272,6 +276,26 @@ export default function PaymentsScreen() {
                             <SummaryCard label="Overdue"   amount={totalOverdue}   color={SgateColors.red}      bg={SgateColors.redBg}    icon="alert-circle-outline" />
                         </View>
 
+
+                        <TouchableOpacity
+                            style={styles.reviewBanner}
+                            activeOpacity={0.85}
+                            onPress={() => router.push('/(admin)/payment-review' as any)}
+                        >
+                            <View style={styles.reviewIcon}>
+                                <MaterialCommunityIcons name="check-decagram" size={22} color={SgateColors.ink} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.reviewTitle}>
+                                    {waitingPayments > 0
+                                        ? `${waitingPayments} UPI payment${waitingPayments > 1 ? 's' : ''} waiting for you`
+                                        : 'Review UPI payments'}
+                                </Text>
+                                <Text style={styles.reviewSub}>Match residents' reference numbers with the bank statement</Text>
+                            </View>
+                            <MaterialCommunityIcons name="chevron-right" size={22} color={SgateColors.t2} />
+                        </TouchableOpacity>
+
                         <Text style={styles.sectionLabel}>
                             {filtered.length} {activeFilter === 'ALL' ? 'TOTAL' : activeFilter} RECORDS
                         </Text>
@@ -452,6 +476,13 @@ const styles = StyleSheet.create({
     headerTitle: { fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     headerSub: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginTop: 2 },
     headerActions: { flexDirection: 'row', gap: 8 },
+    reviewBanner: {
+        flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4, marginBottom: 12,
+        padding: 14, borderRadius: 20, backgroundColor: SgateColors.goldPale, borderWidth: 1, borderColor: '#F0D77B',
+    },
+    reviewIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: SgateColors.gold, alignItems: 'center', justifyContent: 'center' },
+    reviewTitle: { fontFamily: SgateFonts.bold, fontSize: 14, color: SgateColors.ink },
+    reviewSub: { fontFamily: SgateFonts.regular, fontSize: 12, color: SgateColors.t2, marginTop: 2 },
 
     listContent: { padding: 20, flexGrow: 1 },
 

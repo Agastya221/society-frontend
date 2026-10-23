@@ -40,6 +40,7 @@ import { GuestInviteTypeStep } from './sheet/steps/GuestInviteTypeStep';
 import { ManageGuestsStep } from './sheet/steps/ManageGuestsStep';
 import { SelectGuestsStep } from './sheet/steps/SelectGuestsStep';
 import { SuccessStep } from './sheet/steps/SuccessStep';
+import { onceScheduleIst } from '@/utils/istTime';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -384,6 +385,26 @@ const PKM = StyleSheet.create({
     featureTexts: { flex: 1 },
 });
 
+/** How many people come on this pass, the named guest included. One pass, one approval at the gate. */
+function PartyStepper({ state }: { state: FormState }) {
+    const n = state.partySize;
+    return (
+        <View>
+            <Text style={S.fieldLabel}>How many people are coming?</Text>
+            <View style={S.partyRow}>
+                <TouchableOpacity style={S.partyBtn} disabled={n <= 1} onPress={() => state.setPartySize(Math.max(1, n - 1))} accessibilityRole="button" accessibilityLabel="Fewer people">
+                    <Feather name="minus" size={20} color={n <= 1 ? SgateColors.t4 : SgateColors.t1} />
+                </TouchableOpacity>
+                <Text style={S.partyValue}>{n}</Text>
+                <TouchableOpacity style={S.partyBtn} disabled={n >= 20} onPress={() => state.setPartySize(Math.min(20, n + 1))} accessibilityRole="button" accessibilityLabel="More people">
+                    <Feather name="plus" size={20} color={SgateColors.t1} />
+                </TouchableOpacity>
+            </View>
+            <Text style={S.digitHelp}>{n > 1 ? `The guard lets all ${n} in on this one pass.` : 'Just the guest you name next.'}</Text>
+        </View>
+    );
+}
+
 function GuestOnce({ state }: { state: FormState }) {
     const prv = state.isPrivate;
     return (
@@ -413,6 +434,8 @@ function GuestOnce({ state }: { state: FormState }) {
                 <Feather name="calendar" size={18} color={SgateColors.t3} />
             </TouchableOpacity>
 
+            <PartyStepper state={state} />
+
             {/* Time + Duration */}
             <View style={S.twoCol}>
                 <View style={S.col}>
@@ -441,6 +464,17 @@ function GuestOnce({ state }: { state: FormState }) {
 function VehicleDigits({ state }: { state: FormState }) {
     return (
         <>
+            <Text style={S.fieldLabel}>Vehicle number (optional)</Text>
+            <TextInput
+                style={S.plateInput}
+                value={state.plate}
+                onChangeText={state.setPlate}
+                placeholder="JH05 AB 1234"
+                placeholderTextColor={SgateColors.t4}
+                autoCapitalize="characters"
+                maxLength={20}
+                accessibilityLabel="Vehicle number"
+            />
             <Text style={S.fieldLabel}>Last 4 digits of vehicle number</Text>
             <View style={S.digitRow}>
                 {state.digits.map((d, i) => (
@@ -611,9 +645,26 @@ function ServiceCategoryField({ state }: { state: FormState }) {
                 }}
                 title="Service Category"
             />
+            {/* The backend requires a description for OTHER (customCategory). */}
+            {state.serviceCategory === 'OTHER' ? (
+                <>
+                    <Text style={S.fieldLabel}>WHAT SERVICE?</Text>
+                    <TextInput
+                        style={[S.dropRow, { fontSize: 14, fontFamily: SgateFonts.medium, color: SgateColors.t1 }]}
+                        placeholder="e.g. AC service, Gardener"
+                        placeholderTextColor={SgateColors.t4}
+                        value={state.customCategory}
+                        onChangeText={(v) => state.setCustomCategory(v.slice(0, CUSTOM_CATEGORY_MAX))}
+                        maxLength={CUSTOM_CATEGORY_MAX}
+                    />
+                </>
+            ) : null}
         </>
     );
 }
+
+/** Same cap as the backend's customCategory (z.string().max(100)). */
+const CUSTOM_CATEGORY_MAX = 100;
 
 // ─── Service Once ────────────────────────────────────────────────────────────
 function ServiceOnce({ state }: { state: FormState }) {
@@ -651,6 +702,7 @@ function GuestFrequently({ state }: { state: FormState }) {
     const end   = addDays(start, state.validityDays);
     return (
         <View style={S.formBody}>
+            <PartyStepper state={state} />
             <Text style={S.fieldLabel}>ALLOW ENTRY FOR NEXT</Text>
             <View style={S.chipRow}>
                 {VALIDITY.map(v => (
@@ -759,6 +811,8 @@ interface FormState {
     time: Date; openTime: () => void;
     duration: string; setDuration: (v: string) => void;
     digits: string[]; onDigit: (i: number, v: string) => void;
+    plate: string; setPlate: (v: string) => void;
+    partySize: number; setPartySize: (v: number) => void;
     digitRefs: React.MutableRefObject<(TextInput | null)[]>;
     surpriseDelivery: boolean; setSurpriseDelivery: (v: boolean) => void;
     safeMode: boolean; setSafeMode: (v: boolean) => void;
@@ -769,6 +823,7 @@ interface FormState {
     timeFrom: string; setTimeFrom: (v: string) => void;
     timeUntil: string; setTimeUntil: (v: string) => void;
     serviceCategory: HelpCategory | null; setServiceCategory: (v: HelpCategory | null) => void;
+    customCategory: string; setCustomCategory: (v: string) => void;
     showPrivateInfo: boolean; setShowPrivateInfo: (v: boolean) => void;
 }
 
@@ -1477,6 +1532,8 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
     const [time,             setTime]             = useState(new Date());
     const [duration,         setDuration]         = useState('8 hours');
     const [digits,           setDigits]           = useState(['','','','']);
+    const [plate,            setPlate]            = useState('');
+    const [partySize,        setPartySize]        = useState(1);
     const [surpriseDelivery, setSurpriseDelivery] = useState(false);
     const [safeMode,         setSafeMode]         = useState(true); // default ON — Safe Pickup recommended
     const [validityDays,     setValidityDays]     = useState(30);
@@ -1486,6 +1543,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
     const [timeFrom,         setTimeFrom]         = useState('00:00 am');
     const [timeUntil,        setTimeUntil]        = useState('11:59 pm');
     const [serviceCategory,  setServiceCategory]  = useState<HelpCategory | null>(null);
+    const [customCategory,   setCustomCategory]   = useState('');
     const [submitting,       setSubmitting]       = useState(false);
     const partyInFlight = useRef(false);
 
@@ -1504,6 +1562,14 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
 
     // ── Digit refs ────────────────────────────────────────────────────────────
     const digitRefs = useRef<(TextInput | null)[]>([]);
+    /** Full plate, optional. When it ends in 4 digits they fill the verification boxes too. */
+    const onPlate = (v: string) => {
+        const clean = v.replace(/[^a-zA-Z0-9 -]/g, '').toUpperCase().slice(0, 20);
+        setPlate(clean);
+        const tail = clean.replace(/[^A-Z0-9]/g, '').slice(-4);
+        if (/^\d{4}$/.test(tail)) setDigits(tail.split(''));
+    };
+
     const onDigit   = (i: number, v: string) => {
         const s = v.replace(/\D/g, '').slice(-1);
         const nd = [...digits]; nd[i] = s; setDigits(nd);
@@ -1535,6 +1601,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
         setCompany('');
         setSafeMode(true);
         setServiceCategory(null);
+        setCustomCategory('');
         setSelectedDays('All days of Week');
         setSelectedGuestsToManage([]);
         setValidityDays(30);
@@ -1678,7 +1745,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                 const w = tab === 'once' ? buildOnceWindow() : buildFreqWindow();
                 
                 const finalType = guestMode === 'private' ? 'PRIVATE' : tab === 'once' ? 'QUICK' : 'FREQUENT';
-                setGuestSheetConfig({ type: finalType, flatId, isPrivate: guestMode === 'private' || isPrivate, validFrom: w.validFrom, validUntil: w.validUntil, maxUses: tab === 'once' ? 1 : maxUses, timeFrom: tab === 'frequently' ? parseTime(timeFrom) : undefined, timeUntil: tab === 'frequently' ? parseTime(timeUntil) : undefined, allowedDays: tab === 'frequently' ? mapDays(selectedDays) : undefined });
+                setGuestSheetConfig({ guestCount: partySize, type: finalType, flatId, isPrivate: guestMode === 'private' || isPrivate, validFrom: w.validFrom, validUntil: w.validUntil, maxUses: tab === 'once' ? 1 : maxUses, timeFrom: tab === 'frequently' ? parseTime(timeFrom) : undefined, timeUntil: tab === 'frequently' ? parseTime(timeUntil) : undefined, allowedDays: tab === 'frequently' ? mapDays(selectedDays) : undefined });
                 setInviteValidFrom(w.validFrom);
                 setInviteValidUntil(w.validUntil);
                 setStep('guests');
@@ -1694,10 +1761,9 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         type: 'CAB',
                         mode: safeMode ? 'SAFE' : 'NORMAL',
                         scheduleType: 'ONCE',
-                        date: w.validFrom.slice(0, 10),
-                        startTime: new Date(w.validFrom).toTimeString().slice(0, 5),
-                        endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
+                        ...onceScheduleIst(w),
                         vehicleLast4Digits: digs,
+                        ...(plate.trim() ? { vehicleNumber: plate.trim() } : {}),
                     });
                 } else {
                     const w = buildFreqWindow();
@@ -1712,6 +1778,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         timeTo: parseTime(timeUntil),
                         entriesPerDay: maxUses < 0 ? 10 : maxUses,
                         vehicleLast4Digits: digs,
+                        ...(plate.trim() ? { vehicleNumber: plate.trim() } : {}),
                     });
                 }
 
@@ -1722,9 +1789,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         type: 'DELIVERY',
                         mode: surpriseDelivery ? 'SURPRISE' : 'NORMAL',
                         scheduleType: 'ONCE',
-                        date: w.validFrom.slice(0, 10),
-                        startTime: new Date(w.validFrom).toTimeString().slice(0, 5),
-                        endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
+                        ...onceScheduleIst(w),
                         companyName: company || undefined,
                         isSurprise: surpriseDelivery,
                     });
@@ -1748,16 +1813,19 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
             } else {
                 // SERVICE → HELP
                 if (!serviceCategory) { AppAlert.show('Required', 'Please select a service category.'); setSubmitting(false); return; }
+                const custom = customCategory.trim();
+                if (serviceCategory === 'OTHER' && !custom) { AppAlert.show('Required', 'Describe the service (for example "AC service").'); setSubmitting(false); return; }
+                const categoryFields = serviceCategory === 'OTHER'
+                    ? { category: serviceCategory, customCategory: custom.slice(0, CUSTOM_CATEGORY_MAX) }
+                    : { category: serviceCategory };
                 if (tab === 'once') {
                     const w = buildOnceWindow();
                     result = await createEntry({
                         type: 'HELP',
                         mode: 'NORMAL',
                         scheduleType: 'ONCE',
-                        date: w.validFrom.slice(0, 10),
-                        startTime: new Date(w.validFrom).toTimeString().slice(0, 5),
-                        endTime: new Date(w.validUntil).toTimeString().slice(0, 5),
-                        category: serviceCategory,
+                        ...onceScheduleIst(w),
+                        ...categoryFields,
                     });
                 } else {
                     const w = buildFreqWindow();
@@ -1771,7 +1839,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                         timeFrom: parseTime(timeFrom),
                         timeTo: parseTime(timeUntil),
                         entriesPerDay: maxUses < 0 ? 10 : maxUses,
-                        category: serviceCategory,
+                        ...categoryFields,
                     });
                 }
             }
@@ -1840,6 +1908,7 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
                     timeFrom: guestSheetConfig?.timeFrom,
                     timeUntil: guestSheetConfig?.timeUntil,
                     allowedDays: guestSheetConfig?.allowedDays,
+                    ...(guestSheetConfig?.guestCount > 1 ? { guestCount: guestSheetConfig.guestCount } : {}),
                 };
                 const res = await createInvitePass(payload);
                 if (res.passcode) {
@@ -1865,11 +1934,12 @@ export function PreApproveSheet({ visible, onClose, onSuccess, initialType }: Pr
 
     const formState: FormState = {
         guestMode, inviteType, isPrivate, setIsPrivate, date, openDate, time, openTime,
-        duration, setDuration, digits, onDigit, digitRefs,
+        duration, setDuration, digits, onDigit, digitRefs, plate, setPlate: onPlate, partySize, setPartySize,
         surpriseDelivery, setSurpriseDelivery, safeMode, setSafeMode, validityDays, setValidityDays,
         selectedDays, setSelectedDays, entriesLabel, setEntriesLabel,
         company, setCompany, timeFrom, setTimeFrom, timeUntil, setTimeUntil,
         serviceCategory, setServiceCategory,
+        customCategory, setCustomCategory,
         showPrivateInfo, setShowPrivateInfo,
     };
 
@@ -2515,6 +2585,17 @@ const S = StyleSheet.create({
         fontSize: 20, fontFamily: SgateFonts.bold,
         color: SgateColors.t1, textAlign: 'center',
     },
+    plateInput: {
+        height: 52, borderRadius: 14, borderWidth: 1.5, borderColor: SgateColors.border,
+        backgroundColor: '#FFFFFF', paddingHorizontal: 14, marginBottom: 12,
+        fontSize: 17, fontFamily: SgateFonts.bold, color: SgateColors.t1, letterSpacing: 1,
+    },
+    partyRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 8 },
+    partyBtn: {
+        width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: SgateColors.border,
+    },
+    partyValue: { minWidth: 36, textAlign: 'center', fontSize: 22, fontFamily: SgateFonts.bold, color: SgateColors.t1 },
     digitHelp: {
         marginTop: 8, marginBottom: 8,
         fontSize: 12, lineHeight: 17, fontFamily: SgateFonts.regular,

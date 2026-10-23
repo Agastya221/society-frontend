@@ -1,4 +1,6 @@
 import { Colors } from '../src/constants/theme';
+import { AppAlertHost } from '../src/components/AppAlert';
+import { LiveAlertHost } from '../src/components/alerts/LiveAlertHost';
 import { useAuth } from '../src/store/auth';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -17,6 +19,25 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+// Loud channel for alerts that must catch attention (a new work request). The server's push names
+// this channel id and sound; the id is versioned because Android keeps a channel's sound.
+export const URGENT_CHANNEL_ID = 'gate-alert-v1';
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync(URGENT_CHANNEL_ID, {
+    name: 'Work requests & alerts',
+    importance: Notifications.AndroidImportance.MAX,
+    sound: 'gate_alert.wav',
+    vibrationPattern: [0, 700, 300, 700, 300, 700, 300, 700],
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    enableLights: true,
+    lightColor: '#FFB800',
+    audioAttributes: {
+      usage: Notifications.AndroidAudioUsage.ALARM,
+      contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+    },
+  }).catch(() => {});
+}
 
 export default function Layout() {
   const { ready, token, hydrate } = useAuth();
@@ -65,5 +86,5 @@ export default function Layout() {
     return () => { cancelled = true; };
   }, [ready, token]);
   if (!ready) return <View style={{ flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={Colors.gold} /></View>;
-  return <SafeAreaProvider><Stack screenOptions={{ animation: 'none', headerShadowVisible: false, contentStyle: { backgroundColor: Colors.bg }, headerTitleStyle: { fontWeight: '800' } }}><Stack.Protected guard={!token}><Stack.Screen name="login" options={{ headerShown: false }} /></Stack.Protected><Stack.Protected guard={!!token}><Stack.Screen name="index" options={{ headerShown: false }} /><Stack.Screen name="pass" options={{ title: 'My Gate Pass' }} /><Stack.Screen name="schedule" options={{ title: 'My Schedule' }} /><Stack.Screen name="bookings" options={{ title: 'Work Requests' }} /><Stack.Screen name="profile" options={{ title: 'My Profile' }} /></Stack.Protected></Stack><StatusBar style="dark" /></SafeAreaProvider>;
+  return <SafeAreaProvider><Stack screenOptions={{ animation: 'none', headerShadowVisible: false, contentStyle: { backgroundColor: Colors.bg }, headerTitleStyle: { fontWeight: '800' } }}><Stack.Protected guard={!token}><Stack.Screen name="login" options={{ headerShown: false }} /></Stack.Protected><Stack.Protected guard={!!token}><Stack.Screen name="index" options={{ headerShown: false }} /><Stack.Screen name="pass" options={{ title: 'My Gate Pass' }} /><Stack.Screen name="schedule" options={{ title: 'My Schedule' }} /><Stack.Screen name="bookings" options={{ title: 'Work Requests' }} /><Stack.Screen name="profile" options={{ title: 'My Profile' }} /></Stack.Protected></Stack><StatusBar style="dark" /><AppAlertHost /><LiveAlertHost /></SafeAreaProvider>;
 }

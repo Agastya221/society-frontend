@@ -1,0 +1,12 @@
+# Guard is signed in. Switch the app to English and check the whole Home screen.
+appId: com.sgate.guard
+---
+- startRecording: recordings/00-english-home
+- runFlow: _go-home.yaml
+- tapOn: "English"
+- assertVisible: "Scan QR"
+- assertVisible: "New visitor"
+- assertVisible: "Inside now"
+- assertVisible: "Waiting"
+- assertVisible: "Emergency"
+- assertVisible: "Profile"

@@ -1,0 +1,16 @@
+# Emergency: a short tap only explains; holding opens the tiles; a tile asks to confirm; Cancel sends nothing.
+appId: com.sgate.guard
+---
+- startRecording: recordings/30-emergency-needs-confirm
+- runFlow: _go-home.yaml
+- tapOn: "Emergency"
+- assertVisible: "Press and hold the button for 2 seconds"
+- longPressOn: "Emergency"
+- assertVisible: "Only press for a real emergency"
+- tapOn: "Medical"
+- assertVisible: "Send the alarm?"
+- tapOn: "Cancel"
+- assertNotVisible: "Help is coming"
+- tapOn:
+    id: "emergency-back"
+- assertVisible: "Scan QR"

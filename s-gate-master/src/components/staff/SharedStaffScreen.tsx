@@ -15,7 +15,7 @@ import { HeaderIconButton, ScreenHeader } from '@/components/layout/ScreenHeader
 import { Avatar } from '@/components/ui/Avatar';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { SgateColors, SgateFonts, SgateLayout } from '@/constants/Sgate-theme';
-import { createDomesticStaff, DomesticStaffRole, getStaffAttendance, getStaffList, StaffAttendance, StaffMember, updateDomesticStaff } from '@/services/staffService';
+import { assignStaffToFlat, AssignableFlat, createDomesticStaff, DomesticStaffRole, getAssignableFlats, getStaffAttendance, getStaffList, StaffAttendance, StaffMember, updateDomesticStaff } from '@/services/staffService';
 import { uploadImage } from '@/services/uploadService';
 
 const STAFF_ROLES: { value: DomesticStaffRole; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
@@ -54,6 +54,12 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
     const [photoUri, setPhotoUri] = useState('');
     const [photoChanged, setPhotoChanged] = useState(false);
     const [saving, setSaving] = useState(false);
+    // Directory shows only people who can still sign in; "All" brings back deactivated staff
+    const [activeOnly, setActiveOnly] = useState(true);
+    // Where the new staff member works
+    const [flats, setFlats] = useState<AssignableFlat[]>([]);
+    const [pickedFlats, setPickedFlats] = useState<string[]>([]);
+    const [flatQuery, setFlatQuery] = useState('');
 
     useEffect(() => {
         loadData();
@@ -70,7 +76,13 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
         setLoading(false);
     };
 
+    const loadFlatsOnce = () => {
+        if (flats.length === 0) getAssignableFlats().then(setFlats).catch(() => undefined);
+    };
+
     const closeForm = () => {
+        setPickedFlats([]);
+        setFlatQuery('');
         setFormVisible(false);
         setEditingStaff(null);
         setName('');
@@ -88,6 +100,8 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
         setRole('MAID');
         setPhotoUri('');
         setPhotoChanged(false);
+        setPickedFlats([]);
+        loadFlatsOnce();
         setFormVisible(true);
     };
 
@@ -99,6 +113,8 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
         setRole(item.role as DomesticStaffRole);
         setPhotoUri(item.photoUrl || '');
         setPhotoChanged(false);
+        setPickedFlats([]);
+        loadFlatsOnce();
         setFormVisible(true);
     };
 
@@ -134,8 +150,15 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                 photoUrl = await uploadImage(photoUri, { context: 'staff-photo' });
             }
             const input = { name: cleanName, phone: cleanPhone, staffType: role, ...(photoUrl ? { photoUrl } : {}) };
+            let staffId = editingStaff?.id;
             if (editingStaff) await updateDomesticStaff(editingStaff.id, input);
-            else await createDomesticStaff({ ...input, photoUrl: photoUrl! });
+            else staffId = await createDomesticStaff({ ...input, photoUrl: photoUrl! });
+            // Flats picked here are added to the ones they already serve
+            if (staffId && pickedFlats.length > 0) {
+                const results = await Promise.allSettled(pickedFlats.map((flatId) => assignStaffToFlat(staffId!, flatId)));
+                const missed = results.filter((r) => r.status === 'rejected').length;
+                if (missed > 0) AppAlert.show('Saved, but some flats were not added', `${missed} flat${missed > 1 ? 's' : ''} could not be linked. Open the staff member and try again.`);
+            }
             closeForm();
             await loadData();
             AppAlert.show('Success', editingStaff ? 'Staff details updated.' : 'Staff added and ready to sign in.');
@@ -269,6 +292,8 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
     };
 
     const filteredStaff = staff.filter(s => {
+        // Today's logs always list everyone; only the directory hides deactivated staff
+        if (activeTab === 'DIRECTORY' && activeOnly && s.status !== 'ACTIVE') return false;
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
         return s.name.toLowerCase().includes(q) || 
@@ -325,6 +350,19 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                     )}
                 </View>
             </View>
+
+            {activeTab === 'DIRECTORY' ? (
+                <View style={styles.filterRow}>
+                    {[{ label: 'Active', value: true }, { label: 'All', value: false }].map((opt) => (
+                        <Pressable key={opt.label} onPress={() => { Haptics.selectionAsync(); setActiveOnly(opt.value); }} style={[styles.filterChip, activeOnly === opt.value && styles.filterChipOn]} accessibilityRole="button">
+                            <Text style={[styles.filterChipText, activeOnly === opt.value && styles.filterChipTextOn]}>{opt.label}</Text>
+                        </Pressable>
+                    ))}
+                    {activeOnly && staff.some((s) => s.status !== 'ACTIVE') ? (
+                        <Text style={styles.filterHint}>{staff.filter((s) => s.status !== 'ACTIVE').length} inactive hidden</Text>
+                    ) : null}
+                </View>
+            ) : null}
 
             {/* Content */}
             {loading ? (
@@ -383,6 +421,30 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                                     </Pressable>
                                 ))}
                             </View>
+                            <Text style={styles.fieldLabel}>{editingStaff ? 'ADD MORE FLATS' : 'FLATS THEY WORK IN'}</Text>
+                            <TextInput style={styles.formInput} value={flatQuery} onChangeText={(v) => setFlatQuery(v.toUpperCase())} placeholder="Search a flat number" placeholderTextColor={SgateColors.t4} autoCapitalize="characters" />
+                            {pickedFlats.length > 0 ? (
+                                <View style={styles.roleGrid}>
+                                    {flats.filter((f) => pickedFlats.includes(f.id)).map((f) => (
+                                        <Pressable key={f.id} style={[styles.roleChip, styles.roleChipActive]} onPress={() => setPickedFlats((cur) => cur.filter((x) => x !== f.id))}>
+                                            <Text style={[styles.roleChipText, styles.roleChipTextActive]}>{f.block?.name ? `${f.block.name} - ` : ''}{f.flatNumber}  ✕</Text>
+                                        </Pressable>
+                                    ))}
+                                </View>
+                            ) : null}
+                            {flatQuery.trim() ? (
+                                <View style={styles.roleGrid}>
+                                    {flats
+                                        .filter((f) => !pickedFlats.includes(f.id) && !(editingStaff?.assignedFlats ?? []).includes(f.flatNumber) && f.flatNumber.toUpperCase().includes(flatQuery.trim()))
+                                        .slice(0, 12)
+                                        .map((f) => (
+                                            <Pressable key={f.id} style={styles.roleChip} onPress={() => { setPickedFlats((cur) => [...cur, f.id]); setFlatQuery(''); }}>
+                                                <Text style={styles.roleChipText}>{f.block?.name ? `${f.block.name} - ` : ''}{f.flatNumber}</Text>
+                                            </Pressable>
+                                        ))}
+                                </View>
+                            ) : null}
+                            <Text style={styles.photoHint}>{editingStaff ? 'Flats already linked stay as they are.' : 'Optional. You can also link flats later.'}</Text>
                             <View style={styles.accessNote}>
                                 <MaterialCommunityIcons name="check-decagram" size={20} color={SgateColors.green} />
                                 <Text style={styles.accessNoteText}>This number is verified automatically and can sign in to the Staff app immediately.</Text>
@@ -406,6 +468,12 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
 
 const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: SgateColors.bg },
+    filterRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingBottom: 6 },
+    filterChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 14, backgroundColor: '#F3F4F6' },
+    filterChipOn: { backgroundColor: SgateColors.gold },
+    filterChipText: { fontSize: 13, fontFamily: SgateFonts.medium, color: SgateColors.t2 },
+    filterChipTextOn: { fontFamily: SgateFonts.bold, color: SgateColors.t1 },
+    filterHint: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginLeft: 4 },
 
     // Header wrapper (contains header row + tabs as one block)
     // ── Tabs ─────────────────────────────────────────────────────

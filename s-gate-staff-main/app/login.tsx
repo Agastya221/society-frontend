@@ -1,13 +1,45 @@
 import { OTPWidget } from '@msg91comm/sendotp-react-native';
+import { AppAlert } from '../src/components/AppAlert';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius } from '../src/constants/theme';
 import { MSG91_TOKEN_AUTH, MSG91_WIDGET_ID } from '../src/constants/msg91';
 import { api } from '../src/services/api';
 import { useAuth } from '../src/store/auth';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 // RN's SafeAreaView is deprecated and ignores Android insets under edge-to-edge.
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+/** Message from the OTP widget's reply, when it gave one. */
+const widgetMessage = (reply: any, fallback: string) => {
+  const raw = typeof reply?.message === 'string' && !reply.message.startsWith('eyJ') ? reply.message.trim() : '';
+  if (!raw) return fallback;
+  // The OTP service answers in short lower-case codes ("invalid otp"); say it plainly instead.
+  if (/invalid|incorrect|wrong|mismatch/i.test(raw)) return 'That code is not right. Check the SMS and type it again.';
+  if (/expire/i.test(raw)) return 'This code has expired. Tap "Change mobile number" and send a new OTP.';
+  if (/limit|too many|exceed|attempt/i.test(raw)) return 'Too many tries. Please wait a few minutes and try again.';
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+};
+
+const isNetworkError = (error: any) =>
+  !error?.response && (error?.code === 'ERR_NETWORK' || error?.code === 'ECONNABORTED' || error?.request != null
+    || /network|internet|timeout|failed to fetch/i.test(String(error?.message ?? '')));
+
+/**
+ * What to tell the staff member when sign-in fails: the backend's own message
+ * (wrong/expired OTP, number not registered, profile inactive…) wins; with no
+ * response at all it is a connection problem.
+ */
+function loginError(error: any): { title: string; message: string } {
+  const serverMessage = error?.response?.data?.message;
+  if (typeof serverMessage === 'string' && serverMessage.trim()) {
+    const status = error.response.status;
+    return { title: status === 403 || status === 404 ? 'Account not ready' : 'Could not sign in', message: serverMessage.trim() };
+  }
+  if (isNetworkError(error)) return { title: 'No internet', message: 'Check your internet connection and try again.' };
+  if (error?.response) return { title: 'Could not sign in', message: 'Something went wrong. Please try again.' };
+  return { title: 'Could not sign in', message: error?.message || 'Please try again.' };
+}
 
 export default function Login() {
   const signIn = useAuth((s) => s.signIn);
@@ -26,7 +58,7 @@ export default function Login() {
   }, [step, loading]);
   const continueLogin = async () => {
     const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length !== 10) return Alert.alert('Enter your 10-digit mobile number');
+    if (cleaned.length !== 10) return AppAlert.show('Enter your 10-digit mobile number');
     // A second tap before `loading` re-renders would send a second OTP / verify twice
     // (the duplicate verify fails and shows "Account not ready" over a good login).
     if (busyRef.current) return;
@@ -35,19 +67,20 @@ export default function Login() {
     try {
       if (step === 'phone') {
         const sent = await OTPWidget.sendOTP({ identifier: `91${cleaned}` });
-        if (sent?.type === 'error' || sent?.success === false) throw new Error('Could not send OTP');
+        if (sent?.type === 'error' || sent?.success === false) throw new Error(widgetMessage(sent, 'Could not send OTP. Please try again.'));
         setReqId(sent?.reqId ?? sent?.message ?? ''); setStep('otp'); return;
       }
-      if (otp.length !== 6) return Alert.alert('Enter the 6-digit OTP');
+      if (otp.length !== 6) return AppAlert.show('Enter the 6-digit OTP');
       const verified = await OTPWidget.verifyOTP({ reqId, otp });
       const success = verified?.message?.toUpperCase() === 'SUCCESS' || verified?.type === 'success';
-      if (!success) throw new Error('Incorrect OTP');
+      if (!success) throw new Error(widgetMessage(verified, 'Incorrect or expired OTP. Check the code and try again.'));
       const widgetToken = typeof verified?.message === 'string' && verified.message.startsWith('eyJ') ? verified.message : verified?.reqId ?? reqId;
       const res = await api.post('/staff-app/auth/otp/verify', { widgetToken });
       const data = res.data.data;
       await signIn(data.accessToken, data.refreshToken, data.staff);
     } catch (error: any) {
-      Alert.alert('Account not ready', error.response?.data?.message ?? 'Ask your society admin to register and verify this number.');
+      const { title, message } = loginError(error);
+      AppAlert.show(title, message);
     } finally { busyRef.current = false; setLoading(false); }
   };
   return (
@@ -63,7 +96,7 @@ export default function Login() {
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           showsVerticalScrollIndicator={false}
         >
-          <View style={s.brand}><View style={s.logo}><Ionicons name="shield-checkmark" size={34} color={Colors.ink} /></View><Text style={s.brandName}>S-GATE</Text><Text style={s.brandType}>STAFF</Text></View>
+          <View style={s.brand}><Image source={require('../assets/s-gate-logo.png')} style={s.logo} resizeMode="contain" /><Text style={s.brandName}>S-GATE</Text><Text style={s.brandType}>STAFF</Text></View>
           <View style={s.copy}><Text style={s.kicker}>YOUR WORK. ONE PLACE.</Text><Text style={s.title}>{step==='phone'?'Welcome to your staff app.':'Verify your number.'}</Text><Text style={s.body}>{step==='phone'?'See your homes, timings, gate pass and new work requests.':`Enter the security code sent to +91 ${phone}.`}</Text></View>
           <View style={s.form}><Text style={s.label}>{step==='phone'?'MOBILE NUMBER':'6-DIGIT OTP'}</Text><View style={s.inputRow}>{step==='phone'&&<Text style={s.prefix}>+91</Text>}<TextInput autoFocus={step === 'otp'} value={step==='phone'?phone:otp} onChangeText={step==='phone'?setPhone:setOtp} keyboardType="number-pad" maxLength={step==='phone'?10:6} placeholder={step==='phone'?'Enter mobile number':'Enter OTP'} placeholderTextColor={Colors.soft} style={s.input} /></View>{step==='otp'&&<Pressable onPress={()=>{setStep('phone');setOtp('')}}><Text style={s.change}>Change mobile number</Text></Pressable>}<Pressable style={s.button} onPress={continueLogin} disabled={loading}>{loading ? <ActivityIndicator color={Colors.ink} /> : <><Text style={s.buttonText}>{step==='phone'?'Send OTP':'Verify and sign in'}</Text><Ionicons name="arrow-forward" size={20} color={Colors.ink} /></>}</Pressable><Text style={s.help}>Use the same number registered by your resident or society admin.</Text></View>
         </ScrollView>
@@ -73,5 +106,5 @@ export default function Login() {
 }
 const s = StyleSheet.create({
   root:{flex:1,backgroundColor:Colors.bg}, keyboardRoot:{flex:1}, content:{flexGrow:1,padding:24},
-  brand:{marginTop:24},logo:{width:62,height:62,borderRadius:20,backgroundColor:Colors.gold,alignItems:'center',justifyContent:'center',marginBottom:14},brandName:{fontSize:30,fontWeight:'900',color:Colors.ink},brandType:{fontSize:13,fontWeight:'800',letterSpacing:4,color:Colors.soft},copy:{marginTop:64},kicker:{fontSize:12,fontWeight:'900',letterSpacing:2,color:'#D39200'},title:{fontSize:39,lineHeight:44,fontWeight:'900',color:Colors.ink,marginTop:10},body:{fontSize:16,lineHeight:24,color:Colors.muted,marginTop:12},form:{marginTop:'auto',paddingTop:28,paddingBottom:24},label:{fontSize:11,fontWeight:'900',letterSpacing:1.5,color:Colors.muted,marginBottom:9},inputRow:{height:58,backgroundColor:Colors.card,borderRadius:Radius.md,borderWidth:1,borderColor:Colors.border,flexDirection:'row',alignItems:'center'},prefix:{fontSize:16,fontWeight:'800',paddingHorizontal:16,borderRightWidth:1,borderRightColor:Colors.border},input:{flex:1,fontSize:16,fontWeight:'700',paddingHorizontal:14,color:Colors.ink},change:{fontSize:12,fontWeight:'800',color:Colors.muted,marginTop:10},button:{height:58,borderRadius:Radius.md,backgroundColor:Colors.gold,marginTop:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:10},buttonText:{fontSize:16,fontWeight:'900',color:Colors.ink},help:{fontSize:12,lineHeight:18,textAlign:'center',color:Colors.soft,marginTop:14}
+  brand:{marginTop:24},logo:{width:72,height:67,marginBottom:14},brandName:{fontSize:30,fontWeight:'900',color:Colors.ink},brandType:{fontSize:13,fontWeight:'800',letterSpacing:4,color:Colors.soft},copy:{marginTop:64},kicker:{fontSize:12,fontWeight:'900',letterSpacing:2,color:'#D39200'},title:{fontSize:39,lineHeight:44,fontWeight:'900',color:Colors.ink,marginTop:10},body:{fontSize:16,lineHeight:24,color:Colors.muted,marginTop:12},form:{marginTop:'auto',paddingTop:28,paddingBottom:24},label:{fontSize:11,fontWeight:'900',letterSpacing:1.5,color:Colors.muted,marginBottom:9},inputRow:{height:58,backgroundColor:Colors.card,borderRadius:Radius.md,borderWidth:1,borderColor:Colors.border,flexDirection:'row',alignItems:'center'},prefix:{fontSize:16,fontWeight:'800',paddingHorizontal:16,borderRightWidth:1,borderRightColor:Colors.border},input:{flex:1,fontSize:16,fontWeight:'700',paddingHorizontal:14,color:Colors.ink},change:{fontSize:12,fontWeight:'800',color:Colors.muted,marginTop:10},button:{height:58,borderRadius:Radius.md,backgroundColor:Colors.gold,marginTop:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:10},buttonText:{fontSize:16,fontWeight:'900',color:Colors.ink},help:{fontSize:12,lineHeight:18,textAlign:'center',color:Colors.soft,marginTop:14}
 });

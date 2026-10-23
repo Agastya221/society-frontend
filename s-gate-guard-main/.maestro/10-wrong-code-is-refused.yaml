@@ -1,0 +1,16 @@
+# A made-up pass code must give the red "Stop" screen, typed in the big code field.
+appId: com.sgate.guard
+---
+- startRecording: recordings/10-wrong-code-is-refused
+- runFlow: _go-home.yaml
+- tapOn: "Scan QR"
+- tapOn: "No QR? Type code"
+- tapOn:
+    id: "code-input"
+- inputText: "ZZZZZZ"
+- tapOn: "Check"
+- extendedWaitUntil:
+    visible: "Stop"
+    timeout: 30000
+- tapOn: "Home"
+- assertVisible: "Scan QR"

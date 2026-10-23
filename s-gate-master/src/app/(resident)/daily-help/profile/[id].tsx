@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
+import { AppAlert } from '@/components/ui/AppAlert';
 import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, StyleSheet,
+ActivityIndicator, Linking, Pressable, ScrollView, Share, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
 import { useScrollBottomPadding } from '@/hooks/useScrollBottomPadding';
@@ -145,11 +146,11 @@ function DailyHelpProfile() {
         durationHours: selectedSlot.durationMinutes / 60,
         workType: typeLabel,
       });
-      Alert.alert('Request sent', `${helper.name} will be notified and can accept this booking.`);
+      AppAlert.show('Request sent', `${helper.name} will be notified and can accept this booking.`);
       setSlots((current) => current.filter((slot) => slot.startTime !== selectedSlot.startTime));
       setSelectedSlot(null);
     } catch (error: any) {
-      Alert.alert('Could not book', error?.response?.data?.message ?? 'This slot may no longer be available.');
+      AppAlert.show('Could not book', error?.response?.data?.message ?? 'This slot may no longer be available.');
     } finally {
       setBooking(false);
     }

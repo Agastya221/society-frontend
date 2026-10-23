@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ScreenTransition } from '@/components/ui/ScreenTransition';
 import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
 import { Tabs } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
@@ -103,13 +104,11 @@ function ResidentLayoutInner() {
       <Tabs
         tabBar={(props) => <SgateTabBar {...props} />}
         backBehavior="history"
+        // Screens swap instantly; ScreenTransition slides the new one in (the old fade left a ghost on Back)
+        screenLayout={({ children }) => <ScreenTransition>{children}</ScreenTransition>}
         screenOptions={{
           headerShown: false,
-          animation: 'fade',
-          transitionSpec: {
-            animation: 'timing',
-            config: { duration: 180 },
-          },
+          animation: 'none',
           sceneStyle: { backgroundColor: SgateColors.bg },
         }}
       >
@@ -158,6 +157,7 @@ function ResidentLayoutInner() {
         {/* ── Hidden from tab bar — still navigable ─────────────────────── */}
         <Tabs.Screen name="local-directory/index"  options={{ href: null }} />
         <Tabs.Screen name="daily-help/index"       options={{ href: null }} />
+        <Tabs.Screen name="daily-help/my-bookings" options={{ href: null }} />
         <Tabs.Screen name="elections/index"        options={{ href: null }} />
         <Tabs.Screen name="society-dues/index"     options={{ href: null }} />
         <Tabs.Screen name="communication/index"    options={{ href: null }} />
@@ -167,6 +167,7 @@ function ResidentLayoutInner() {
         <Tabs.Screen name="search-vehicle/index"   options={{ href: null }} />
         <Tabs.Screen name="visitors"    options={{ href: null }} />
         <Tabs.Screen name="approvals/index"   options={{ href: null }} />
+        <Tabs.Screen name="trusted-visitors"  options={{ href: null }} />
         <Tabs.Screen name="complaints"  options={{ href: null }} />
         <Tabs.Screen name="emergency/index"   options={{ href: null }} />
         <Tabs.Screen name="family/index"      options={{ href: null }} />

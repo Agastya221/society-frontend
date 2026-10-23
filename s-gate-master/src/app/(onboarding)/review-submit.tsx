@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -6,6 +6,7 @@ import {
     ScrollView,
     ActivityIndicator,
     StyleSheet,
+    TextInput,
 } from 'react-native';
 import { AppAlert } from '@/components/ui/AppAlert';
 import { Feather } from '@expo/vector-icons';
@@ -15,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SgateColors, SgateFonts, SgateLayout, SgateShadows } from '@/constants/Sgate-theme';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useReapplyOnboarding, useSubmitOnboarding } from '@/hooks/useOnboardingQueries';
 import { OnboardingHeader } from '@/components/onboarding/OnboardingHeader';
 import type { OnboardingRequestPayload } from '@/types/onboarding.types';
@@ -68,6 +70,11 @@ export default function ReviewSubmitScreen() {
     const sourceRequestId = useOnboardingStore((s) => s.sourceRequestId);
     const resetOnboarding = useOnboardingStore((s) => s.resetOnboarding);
 
+    // New accounts have no name yet; the admin needs one to know who is applying
+    const accountName = useAuthStore((s) => s.user?.name?.trim() ?? '');
+    const [typedName, setTypedName] = useState('');
+    const needsName = accountName.length === 0;
+
     const submitMutation = useSubmitOnboarding();
     const reapplyMutation = useReapplyOnboarding();
     const isSubmitting = submitMutation.isPending || reapplyMutation.isPending;
@@ -98,6 +105,10 @@ export default function ReviewSubmitScreen() {
             AppAlert.show('Missing Information', 'Please complete all steps before submitting.');
             return;
         }
+        if (needsName && typedName.trim().length < 2) {
+            AppAlert.show('Enter your name', 'Type your full name so the society admin knows who is applying.');
+            return;
+        }
 
         const payload: OnboardingRequestPayload = {
             societyId: selectedSociety.id,
@@ -112,6 +123,8 @@ export default function ReviewSubmitScreen() {
                 mimeType: doc.mimeType,
             })),
         };
+
+        if (needsName && !sourceRequestId) payload.name = typedName.trim();
 
         // Add isLivingHere for owners
         if (residentType === 'OWNER') {
@@ -181,6 +194,26 @@ export default function ReviewSubmitScreen() {
                 contentContainerStyle={[styles.scrollContent, { paddingBottom: 88 + insets.bottom }]}
                 showsVerticalScrollIndicator={false}
             >
+                {/* Name: only asked when the account has none yet */}
+                {needsName && !isRequestUpdate && (
+                    <Animated.View entering={FadeInDown.delay(20).springify()}>
+                        <View style={styles.summaryCard}>
+                            <Text style={styles.cardHeading}>Your name</Text>
+                            <TextInput
+                                style={styles.nameInput}
+                                value={typedName}
+                                onChangeText={setTypedName}
+                                placeholder="Full name, as on your ID"
+                                placeholderTextColor={SgateColors.t4}
+                                autoCapitalize="words"
+                                autoCorrect={false}
+                                maxLength={80}
+                            />
+                            <Text style={styles.nameHint}>The society admin sees this when reviewing your request.</Text>
+                        </View>
+                    </Animated.View>
+                )}
+
                 {/* Summary Card */}
                 <Animated.View entering={FadeInDown.delay(50).springify()}>
                     <View style={styles.summaryCard}>
@@ -326,6 +359,23 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: SgateColors.borderSoft,
         ...SgateShadows.minimal,
+    },
+    nameInput: {
+        backgroundColor: SgateColors.surface,
+        borderWidth: 1.5,
+        borderColor: SgateColors.border,
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        fontSize: 15,
+        fontFamily: SgateFonts.semibold,
+        color: SgateColors.t1,
+    },
+    nameHint: {
+        fontSize: 12,
+        fontFamily: SgateFonts.regular,
+        color: SgateColors.t4,
+        marginTop: 8,
     },
     cardHeading: {
         fontSize: 14,

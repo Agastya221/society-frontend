@@ -1,0 +1,19 @@
+# Typing a flat number: the normal keyboard, a big field, live results, then the details step.
+appId: com.sgate.guard
+---
+- startRecording: recordings/25-type-the-flat
+- runFlow: _go-home.yaml
+- tapOn: "New visitor"
+- tapOn: "Guest"
+- extendedWaitUntil:
+    visible: "Type number"
+    timeout: 20000
+- tapOn: "Type number"
+- tapOn:
+    id: "flat-input"
+- inputText: "A10"
+- extendedWaitUntil:
+    visible: "Tower A-A101"
+    timeout: 20000
+- tapOn: "Tower A-A101"
+- assertVisible: "Notify resident"

@@ -2,6 +2,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useRef } from 'react';
 import { Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { chooseHowManyToAllow, withGroup } from '@/services/groupApproval';
+import { useVisitorPhoto } from '@/hooks/useVisitorPhoto';
 import Animated, { Easing, FadeInDown, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -35,7 +37,9 @@ export function SectionHeading({ title, onViewAll }: { title: string; onViewAll?
     );
 }
 
-export function SocietyStatusCard({ residentName }: { residentName: string }) {
+export function SocietyStatusCard({ residentName, waitingCount = 0 }: { residentName: string; waitingCount?: number }) {
+    // Someone at the gate is the one thing that is not "all good": say so instead.
+    const waiting = waitingCount > 0;
     const hour = new Date().getHours();
     const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
@@ -43,12 +47,16 @@ export function SocietyStatusCard({ residentName }: { residentName: string }) {
         <View style={styles.hero}>
             <View style={styles.heroCopy}>
                 <Text style={styles.greeting} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.84}>{greeting}, {residentName} <Text style={styles.wave}>👋</Text></Text>
-                <Text style={styles.heroTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>Everything looks good</Text>
+                <Text style={styles.heroTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>
+                    {waiting ? `${waitingCount} visitor${waitingCount > 1 ? 's' : ''} at the gate` : 'Everything looks good'}
+                </Text>
                 <View style={styles.statusPill}>
-                    <View style={styles.statusCheck}>
-                        <MaterialCommunityIcons name="check" size={17} color={ResidentHomeColors.card} />
+                    <View style={[styles.statusCheck, waiting && styles.statusWait]}>
+                        <MaterialCommunityIcons name={waiting ? 'clock-outline' : 'check'} size={17} color={ResidentHomeColors.card} />
                     </View>
-                    <Text style={styles.statusText}>Society is running smoothly</Text>
+                    <Text style={[styles.statusText, waiting && styles.statusWaitText]}>
+                        {waiting ? 'Allow or decline below' : 'Society is running smoothly'}
+                    </Text>
                 </View>
             </View>
             <BuildingScene />
@@ -170,7 +178,7 @@ export function WaitingAtGateSection({
 }: {
     requests: EntryRequest[];
     isLoading: boolean;
-    onAllow: (id: string) => void;
+    onAllow: (id: string, count?: number) => void;
     onDecline: (id: string) => void;
     onViewAll: () => void;
 }) {
@@ -218,7 +226,7 @@ const CARD_GAP = 8;
 function VisitorRequestCard({ request, index, onAllow, onDecline }: {
     request: EntryRequest;
     index: number;
-    onAllow: (id: string) => void;
+    onAllow: (id: string, count?: number) => void;
     onDecline: (id: string) => void;
 }) {
     // On Allow/Decline the card fades and shrinks its own height before it is
@@ -228,18 +236,26 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
     const height = useSharedValue(-1);
     const opacity = useSharedValue(1);
     const leaving = useRef(false);
+    const photo = useVisitorPhoto(request.id, !!request.photoKey);
 
-    const collapseThen = (action: (id: string) => void) => {
+    const collapseThen = (action: (id: string, count?: number) => void, count?: number) => {
         if (leaving.current) return;
         leaving.current = true;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        if (height.value <= 0) { action(request.id); return; }
+        const run = () => (count === undefined ? action(request.id) : action(request.id, count));
+        if (height.value <= 0) { run(); return; }
         const ease = Easing.out(Easing.cubic);
         opacity.value = withTiming(0, { duration: 160, easing: ease });
         height.value = withTiming(0, { duration: 240, easing: ease }, finished => {
-            if (finished) runOnJS(action)(request.id);
+            if (finished) runOnJS(run)();
         });
     };
+
+    // A group asks how many to let in first; the card only leaves once a choice is made
+    const allow = () => chooseHowManyToAllow(
+        { name: request.visitorName, peopleCount: request.peopleCount },
+        (count) => collapseThen(onAllow, count),
+    );
 
     const collapseStyle = useAnimatedStyle(() => (
         height.value < 0 ? { opacity: opacity.value } : { opacity: opacity.value, height: height.value }
@@ -254,10 +270,10 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
             style={styles.waitingCard}
             onLayout={e => { if (!leaving.current) height.value = e.nativeEvent.layout.height + CARD_GAP; }}
         >
-            <Avatar name={request.visitorName} size={50} />
+            <Avatar name={request.visitorName} size={50} photoUrl={photo ?? undefined} />
             <View style={styles.visitorCopy}>
-                <Text style={styles.visitorName} numberOfLines={1}>{request.visitorName || 'Visitor'}</Text>
-                <Text style={styles.visitorType}>{formatVisitorType(request.type)} • {request.gate ?? 'Gate 1'}</Text>
+                <Text style={styles.visitorName} numberOfLines={1}>{withGroup(request.visitorName || 'Visitor', request.peopleCount)}</Text>
+                <Text style={styles.visitorType} numberOfLines={1}>{[formatVisitorType(request.type), request.providerTag, request.purpose, request.vehicleNumber, request.gate].filter(Boolean).join(' • ')}</Text>
                 <View style={styles.waitingTime}>
                     <MaterialCommunityIcons name="clock-outline" size={15} color={ResidentHomeColors.danger} />
                     <Text style={styles.waitingTimeText}>Waiting {timeAgo(request.createdAt)}</Text>
@@ -276,7 +292,7 @@ function VisitorRequestCard({ request, index, onAllow, onDecline }: {
                 <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel="Allow visitor"
-                    onPress={() => collapseThen(onAllow)}
+                    onPress={allow}
                     activeOpacity={0.72}
                     style={styles.allowButton}
                 >
@@ -429,6 +445,8 @@ const styles = StyleSheet.create({
     statusPill: { alignSelf: 'flex-start', marginTop: ResidentHomeSpacing.xs, minHeight: 30, borderRadius: ResidentHomeRadius.full, paddingLeft: ResidentHomeSpacing.xxs, paddingRight: ResidentHomeSpacing.sm, backgroundColor: ResidentHomeColors.card, flexDirection: 'row', alignItems: 'center', gap: 6 },
     statusCheck: { width: 22, height: 22, borderRadius: 11, backgroundColor: ResidentHomeColors.success, alignItems: 'center', justifyContent: 'center' },
     statusText: { fontSize: 10, fontFamily: SgateFonts.semibold, color: ResidentHomeColors.successText },
+    statusWait: { backgroundColor: ResidentHomeColors.orange },
+    statusWaitText: { color: ResidentHomeColors.orange },
     scene: { width: 146, height: '100%', position: 'absolute', right: 8, bottom: 0, overflow: 'hidden', opacity: 0.9 },
     sun: { position: 'absolute', top: 14, left: 58, width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFC43D' },
     buildingGroup: { position: 'absolute', left: 24, bottom: 0, flexDirection: 'row', alignItems: 'flex-end', gap: 3 },

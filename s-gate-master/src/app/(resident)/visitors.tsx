@@ -18,6 +18,8 @@ import { Avatar } from '../../components/ui/Avatar';
 
 import type { Entry, EntryType } from '../../types/api';
 import * as gateService from '../../services/gate.service';
+import type { GateRequestRow } from '../../services/gate.service';
+import { gateRequestStatus, type GateStatusTone } from '../../utils/gateRequestStatus';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -63,7 +65,13 @@ function dateLabel(iso: string): string {
 
 type SectionHeader = { kind: 'header'; title: string };
 type SectionItem = { kind: 'item'; entry: Entry };
-type ListRow = SectionHeader | SectionItem;
+/** A gate request that never became an entry: denied, withdrawn, expired, or still open */
+type SectionRequest = { kind: 'request'; request: GateRequestRow };
+type ListRow = SectionHeader | SectionItem | SectionRequest;
+
+const REQUEST_TONE: Record<GateStatusTone, string> = {
+    pending: 'text-amber-700', waiting: 'text-blue-600', entered: 'text-emerald-600', denied: 'text-red-600', ended: 'text-gray-500',
+};
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 
@@ -72,6 +80,7 @@ export default function VisitorsScreen() {
     const router = useRouter();
 
     const [entries, setEntries] = useState<Entry[]>([]);
+    const [requests, setRequests] = useState<GateRequestRow[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -85,6 +94,12 @@ export default function VisitorsScreen() {
     const fetchPage = useCallback(async (page: number, replace: boolean) => {
         try {
             const data = await gateService.getEntries({ page, limit: PAGE_SIZE });
+            // The first page also brings the requests that never led to an entry, so a denied or withdrawn visitor is not missing
+            if (page === 1) {
+                gateService.getRecentGateRequests(30)
+                    .then((rows) => setRequests(rows.filter((r) => !r.entryId)))
+                    .catch(() => undefined);
+            }
             if (replace) {
                 setEntries(data);
             } else {
@@ -134,24 +149,35 @@ export default function VisitorsScreen() {
               )
             : entries;
 
+        const matchingRequests = (q
+            ? requests.filter((r) => (r.visitorName ?? '').toLowerCase().includes(q) || (r.flat?.number ?? r.flat?.flatNumber ?? '').toLowerCase().includes(q))
+            : requests);
+
+        // Entries and the requests that never became entries, newest first
+        const merged: Array<{ at: number; row: SectionItem | SectionRequest }> = [
+            ...filtered.map((entry) => ({ at: new Date(entry.createdAt).getTime(), row: { kind: 'item', entry } as SectionItem })),
+            ...matchingRequests.map((request) => ({ at: new Date(request.createdAt).getTime(), row: { kind: 'request', request } as SectionRequest })),
+        ].sort((a, b) => b.at - a.at);
+
         const result: ListRow[] = [];
         let lastDate = '';
 
-        for (const entry of filtered) {
-            const dl = dateLabel(entry.createdAt);
+        for (const { row } of merged) {
+            const iso = row.kind === 'item' ? row.entry.createdAt : row.request.createdAt;
+            const dl = dateLabel(iso);
             if (dl !== lastDate) {
                 lastDate = dl;
                 result.push({ kind: 'header', title: dl });
             }
-            result.push({ kind: 'item', entry });
+            result.push(row);
         }
         return result;
-    }, [entries, search]);
+    }, [entries, requests, search]);
 
     // ── Key extractor ────────────────────────────────────────────────────
     const keyExtractor = useCallback(
         (row: ListRow, index: number) =>
-            row.kind === 'header' ? `hdr-${row.title}-${index}` : row.entry.id,
+            row.kind === 'header' ? `hdr-${row.title}-${index}` : row.kind === 'item' ? row.entry.id : `req-${row.request.id}`,
         [],
     );
 
@@ -160,6 +186,30 @@ export default function VisitorsScreen() {
         ({ item, index }: { item: ListRow; index: number }) => {
             if (item.kind === 'header') {
                 return <Text className="text-[11px] font-sora-bold text-gray-400 tracking-widest uppercase px-5 pt-6 pb-2">{item.title}</Text>;
+            }
+
+            if (item.kind === 'request') {
+                const r = item.request;
+                const st = gateRequestStatus(r);
+                const group = (r.peopleCount ?? 1) > 1 ? `  + ${(r.peopleCount ?? 1) - 1} more` : '';
+                return (
+                    <Animated.View entering={FadeInDown.delay(Math.min(index, 12) * 40).springify()}>
+                        <View className="flex-row items-center px-4 py-3 bg-white border-b border-gray-100">
+                            <Avatar name={r.visitorName} size={42} />
+                            <View className="flex-1 ml-3">
+                                <View className="flex-row items-center justify-between mb-1">
+                                    <Text className="flex-1 text-[15px] font-sora-semibold text-gray-900 mr-2" numberOfLines={1}>
+                                        {`${r.visitorName || 'Visitor'}${group}`}
+                                    </Text>
+                                    <Text className="text-xs font-sora-medium text-gray-500">{timeOnly(r.createdAt)}</Text>
+                                </View>
+                                <Text className={`text-[11px] font-sora-medium ${REQUEST_TONE[st.tone]}`} numberOfLines={2}>
+                                    {st.label}{st.detail ? ` · ${st.detail}` : ''}
+                                </Text>
+                            </View>
+                        </View>
+                    </Animated.View>
+                );
             }
 
             const e = item.entry;
@@ -174,7 +224,7 @@ export default function VisitorsScreen() {
                         <View className="flex-1 ml-3">
                             <View className="flex-row items-center justify-between mb-1">
                                 <Text className="flex-1 text-[15px] font-sora-semibold text-gray-900 mr-2" numberOfLines={1}>
-                                    {e.visitorName || 'Visitor'}
+                                    {`${e.visitorName || 'Visitor'}${(e.peopleCount ?? 1) > 1 ? `  + ${(e.peopleCount ?? 1) - 1} more` : ''}`}
                                 </Text>
                                 <Text className="text-xs font-sora-medium text-gray-500">
                                     {timeOnly(e.createdAt)}

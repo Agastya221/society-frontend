@@ -12,9 +12,10 @@
       "supportsTablet": true
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "package": "com.sgate.guard",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./src/assets/images/android-icon-foreground.png",
         "backgroundImage": "./src/assets/images/android-icon-background.png",
         "monochromeImage": "./src/assets/images/android-icon-monochrome.png"
@@ -29,6 +30,12 @@
     "plugins": [
       "expo-router",
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "S-Gate Guard checks that you are at the gate before you let visitors in."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./src/assets/images/splash-icon.png",
@@ -42,17 +49,34 @@
       ],
       "expo-secure-store",
       [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow S-Gate Guard to hear a visitor's name when the guard taps the microphone.",
+          "speechRecognitionPermission": "Allow S-Gate Guard to write a visitor's spoken name."
+        }
+      ],
+      [
         "expo-notifications",
         {
-          "icon": "./src/assets/images/icon.png",
-          "color": "#2563EB",
+          "icon": "./src/assets/images/notification-icon.png",
+          "color": "#FFB800",
+          "sounds": [
+            "./assets/sounds/gate_alert.wav"
+          ],
           "defaultChannel": "default"
         }
-      ]
+      ],
+      "expo-audio"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5b093345-c546-4ac6-8163-1b84fc2fd4b5"
+      }
+    },
+    "owner": "agastyash23"
   }
 }

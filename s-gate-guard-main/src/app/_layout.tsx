@@ -3,11 +3,27 @@ import * as Notifications from 'expo-notifications';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, Platform, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, View } from 'react-native';
 import 'react-native-reanimated';
 import '../global.css';
 import api from '@/services/api';
 import { GuardColors, GuardFonts } from '@/constants/theme';
+import { useLanguageStore, useT } from '@/i18n';
+import { AppAlertHost } from '@/components/gate/AppAlert';
+import { LiveAlertHost } from '@/components/alerts/LiveAlertHost';
+
+// Android measures a Text with one line-breaking strategy and draws it with another,
+// so Devanagari labels in auto-width boxes were drawn one word short ("ड्यूटी पर" showed
+// as "ड्यूटी"). The simple strategy measures and draws the same way.
+if (Platform.OS === 'android') {
+  const AnyText = Text as unknown as { render?: (props: Record<string, unknown>, ref: unknown) => unknown };
+  const originalRender = AnyText.render;
+  if (typeof originalRender === 'function') {
+    AnyText.render = function patchedRender(this: unknown, props: Record<string, unknown>, ref: unknown) {
+      return originalRender.call(this, { textBreakStrategy: 'simple', ...props }, ref);
+    };
+  }
+}
 
 // Show notifications while app is in foreground
 Notifications.setNotificationHandler({
@@ -20,9 +36,35 @@ Notifications.setNotificationHandler({
   }),
 });
 
+// Loud channel for alerts that must catch attention (resident answered, emergencies). The server's
+// push names this channel id and sound; the id is versioned because Android keeps a channel's sound.
+export const URGENT_CHANNEL_ID = 'gate-alert-v1';
+if (Platform.OS === 'android') {
+  Notifications.setNotificationChannelAsync(URGENT_CHANNEL_ID, {
+    name: 'Gate alerts & emergencies',
+    importance: Notifications.AndroidImportance.MAX,
+    sound: 'gate_alert.wav',
+    vibrationPattern: [0, 700, 300, 700, 300, 700, 300, 700],
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    enableLights: true,
+    lightColor: '#FFB800',
+    audioAttributes: {
+      usage: Notifications.AndroidAudioUsage.ALARM,
+      contentType: Notifications.AndroidAudioContentType.SONIFICATION,
+    },
+  }).catch(() => {});
+}
+
 export default function RootLayout() {
   const router = useRouter();
   const { isAuthenticated, isLoading, loadToken } = useAuthStore();
+  const t = useT();
+  const loadLang = useLanguageStore((state) => state.loadLang);
+
+  // Saved language (Hindi by default)
+  useEffect(() => {
+    loadLang();
+  }, [loadLang]);
 
   // Load stored token on app launch
   useEffect(() => {
@@ -38,7 +80,7 @@ export default function RootLayout() {
         if (status !== 'granted') return;
         const tokenData = await Notifications.getDevicePushTokenAsync();
         const fcmToken = tokenData.data as string;
-        await api.patch('/users/guard-app/fcm-token', {
+        await api.patch('/api/v1/users/guard-app/fcm-token', {
           fcmToken,
           deviceType: Platform.OS,
         });
@@ -82,7 +124,7 @@ export default function RootLayout() {
         headerStyle: { backgroundColor: GuardColors.card },
         headerTintColor: GuardColors.t1,
         headerShadowVisible: false,
-        headerTitleStyle: { fontFamily: GuardFonts.semibold, fontWeight: '700', fontSize: 17 },
+        headerTitleStyle: { fontFamily: GuardFonts.semibold, fontWeight: '800', fontSize: 22 },
       }}>
         <Stack.Protected guard={!isAuthenticated}>
           <Stack.Screen name="auth" options={{ headerShown: false }} />
@@ -93,37 +135,30 @@ export default function RootLayout() {
           name="new-entry" 
           options={{ 
             presentation: 'card', 
-            headerShown: true,
-            title: 'New Entry',
+            // The screen draws its own big header with step dots.
+            headerShown: false,
           }} 
         />
         <Stack.Screen 
           name="today-entries" 
           options={{ 
             headerShown: true,
-            title: "Today's Entries",
+            title: t('title.entries'),
           }} 
         />
         <Stack.Screen 
           name="approvals" 
           options={{ 
             headerShown: true,
-            title: 'Approval Status',
+            title: t('title.waiting'),
           }} 
         />
         <Stack.Screen 
           name="staff-scan" 
           options={{ 
             headerShown: true,
-            title: 'Staff Scan',
+            title: t('title.staffScan'),
           }} 
-        />
-        <Stack.Screen
-          name="pre-approved"
-          options={{
-            headerShown: true,
-            title: 'Pre-approved Passes',
-          }}
         />
         <Stack.Screen
           name="scan-verify"
@@ -143,12 +178,14 @@ export default function RootLayout() {
           name="profile" 
           options={{ 
             headerShown: true,
-            title: 'My Profile',
+            title: t('title.profile'),
           }}
         />
         </Stack.Protected>
       </Stack>
       <StatusBar style="dark" backgroundColor={GuardColors.card} />
+      <AppAlertHost />
+      <LiveAlertHost />
     </>
   );
 }
