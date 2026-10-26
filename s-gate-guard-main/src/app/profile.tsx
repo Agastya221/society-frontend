@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -54,6 +55,7 @@ function Row({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; lab
 
 export default function ProfileScreen() {
     const t = useT();
+    const router = useRouter();
     const { logout } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<GuardProfile | null>(null);
@@ -166,6 +168,20 @@ export default function ProfileScreen() {
                     </View>
                 )}
 
+                <TouchableOpacity
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    onPress={() => router.push('/my-attendance' as never)}
+                    style={[styles.card, styles.linkCard]}
+                >
+                    <View style={styles.rowIcon}><Ionicons name="calendar" size={24} color={GuardColors.goldDeep} /></View>
+                    <View style={styles.rowCopy}>
+                        <Text style={styles.linkTitle}>{t('attendance.link')}</Text>
+                        <Text style={styles.rowLabel}>{t('attendance.linkSub')}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={24} color={GuardColors.t3} />
+                </TouchableOpacity>
+
                 {languageCard}
                 {logoutButton}
             </ScrollView>
@@ -195,6 +211,9 @@ const styles = StyleSheet.create({
     rowCopy: { flex: 1 },
     rowLabel: { color: GuardColors.t3, fontFamily: GuardFonts.medium, fontSize: GuardType.min, lineHeight: 22, fontWeight: '600' },
     rowValue: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: GuardType.body + 2, lineHeight: 28, fontWeight: '800' },
+
+    linkCard: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+    linkTitle: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: GuardType.body + 2, lineHeight: 28, fontWeight: '800' },
 
     errorCard: { alignItems: 'center' },
     errorText: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: GuardType.button, lineHeight: 28, fontWeight: '800', textAlign: 'center' },

@@ -181,6 +181,13 @@ export default function RootLayout() {
             title: t('title.profile'),
           }}
         />
+        <Stack.Screen
+          name="my-attendance"
+          options={{
+            headerShown: true,
+            title: t('attendance.title'),
+          }}
+        />
         </Stack.Protected>
       </Stack>
       <StatusBar style="dark" backgroundColor={GuardColors.card} />

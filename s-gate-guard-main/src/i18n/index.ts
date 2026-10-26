@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import type { Lang, StringTable } from './types';
+import { attendance } from './strings/attendance';
 import { auth } from './strings/auth';
 import { common } from './strings/common';
 import { emergency } from './strings/emergency';
@@ -11,7 +12,7 @@ import { visitor } from './strings/visitor';
 import { waiting } from './strings/waiting';
 
 const LANG_KEY = 'guard_language';
-const modules = [common, home, scan, visitor, waiting, emergency, profile, auth];
+const modules = [common, home, scan, visitor, waiting, emergency, profile, auth, attendance];
 
 const tables: Record<Lang, StringTable> = { hi: {}, en: {} };
 for (const m of modules) {
