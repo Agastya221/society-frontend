@@ -97,6 +97,10 @@ export default function RootLayout() {
       const data = response.notification.request.content.data as Record<string, any>;
       if (data?.type === 'GATE_APPROVED' || data?.type === 'GATE_DENIED') {
         router.push('/approvals');
+      } else if (data?.type === 'EMERGENCY_ALERT' || data?.screen === 'EmergencyDetail') {
+        router.push('/emergencies');
+      } else if (data?.type === 'DELIVERY_OVERSTAY') {
+        router.push('/today-entries');
       }
     });
     return () => sub.remove();

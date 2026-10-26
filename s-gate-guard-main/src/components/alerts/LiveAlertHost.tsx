@@ -28,7 +28,9 @@ export function LiveAlertHost() {
   const bannerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const open = useCallback((data: Record<string, string>) => {
-    router.push((data.type === 'EMERGENCY_ALERT' || data.screen === 'EmergencyDetail' ? '/emergencies' : '/approvals') as never);
+    const emergency = data.type === 'EMERGENCY_ALERT' || data.screen === 'EmergencyDetail';
+    const delivery = data.type === 'DELIVERY_OVERSTAY';
+    router.push((emergency ? '/emergencies' : delivery ? '/today-entries' : '/approvals') as never);
   }, [router]);
 
   const showAlert = useCallback(async (alert: LiveAlert): Promise<boolean> => {

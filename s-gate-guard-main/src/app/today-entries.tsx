@@ -6,10 +6,11 @@ import api from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
-import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
+    Linking,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -126,6 +127,12 @@ export default function TodayEntriesScreen() {
     // Default view: only the people inside right now. "All today" brings back the full log and its filters.
     const [showAll, setShowAll] = useState(false);
     const [filter, setFilter] = useState<FilterType>('ALL');
+    // Cards show "inside for N min": tick once a minute so the time (and the delivery warning) keeps moving
+    const [tick, setTick] = useState(0);
+    useEffect(() => {
+        const timer = setInterval(() => setTick((x) => x + 1), 60_000);
+        return () => clearInterval(timer);
+    }, []);
 
     const fetchEntries = useCallback(async () => {
         try {
@@ -243,6 +250,32 @@ export default function TodayEntriesScreen() {
         ]);
     }, [entries, doCheckOut, t]);
 
+    // A delivery that has been inside a while: tell the flat's residents, or call them
+    const pokeFlat = useCallback(async (id: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        try {
+            await api.post(`/api/v1/guard/entries/${id}/nudge`, {});
+            AppAlert.show(t('inside.pokedTitle'), t('inside.pokedText'));
+        } catch (err: any) {
+            AppAlert.show(t('inside.pokeFailed'), err?.response?.data?.message ?? t('waiting.tryAgain'));
+        }
+    }, [t]);
+
+    const callFlat = useCallback(async (id: string) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        try {
+            const res = await api.get(`/api/v1/guard/entries/${id}/contact`);
+            const contact = res.data?.data?.contact as { name?: string; phone?: string } | null | undefined;
+            if (!contact?.phone) {
+                AppAlert.show(t('inside.noContactTitle'), t('inside.noContactText'));
+                return;
+            }
+            await Linking.openURL(`tel:${contact.phone}`);
+        } catch (err: any) {
+            AppAlert.show(t('inside.noContactTitle'), err?.response?.data?.message ?? t('waiting.tryAgain'));
+        }
+    }, [t]);
+
     const onRefresh = () => {
         setRefreshing(true);
         fetchEntries();
@@ -253,8 +286,11 @@ export default function TodayEntriesScreen() {
             entry={item}
             checkingOut={checkingOut === item.id}
             onCheckOut={handleCheckOut}
+            onPoke={pokeFlat}
+            onCall={callFlat}
+            tick={tick}
         />
-    ), [checkingOut, handleCheckOut]);
+    ), [checkingOut, handleCheckOut, pokeFlat, callFlat, tick]);
 
     return (
         <View style={styles.container}>
@@ -354,15 +390,23 @@ export default function TodayEntriesScreen() {
 }
 
 // ── Entry Card ────────────────────────────────────────────────────────────────
+/** A delivery person inside for this long is worth a question to the flat. */
+const OVERSTAY_MINUTES = 15;
+
 const EntryCard = memo(function EntryCard({
-    entry, checkingOut, onCheckOut,
+    entry, checkingOut, onCheckOut, onPoke, onCall,
 }: {
     entry: Entry; checkingOut: boolean; onCheckOut: (id: string) => void;
+    onPoke?: (id: string) => void; onCall?: (id: string) => void;
+    /** Changes every minute so the card redraws its "inside for" time */
+    tick?: number;
 }) {
     const t = useT();
     const avatarConfig = AVATAR_CONFIG[entry.type] ?? AVATAR_CONFIG.VISITOR;
 
     const isInside = entry.status === 'CHECKED_IN';
+    const minutesInside = entry.checkInTime ? Math.floor((Date.now() - new Date(entry.checkInTime).getTime()) / 60000) : 0;
+    const overstaying = isInside && entry.type === 'DELIVERY' && entry.recordKind === 'ENTRY' && minutesInside >= OVERSTAY_MINUTES;
     const isExited = entry.status === 'CHECKED_OUT';
     const isApproved = entry.status === 'APPROVED';
     const isDenied = entry.status === 'REJECTED';
@@ -448,6 +492,38 @@ const EntryCard = memo(function EntryCard({
                 ) : null}
             </View>
 
+            {/* Delivery inside for a while: ask the flat, or call them */}
+            {overstaying ? (
+                <View style={styles.overstayBox} testID={`overstay-${entry.id}`}>
+                    <View style={styles.overstayHead}>
+                        <Ionicons name="alarm-outline" size={16} color="#B45309" />
+                        <Text style={styles.overstayText}>{t('inside.overstay', { n: minutesInside })}</Text>
+                    </View>
+                    <View style={styles.overstayActions}>
+                        <TouchableOpacity
+                            testID={`poke-${entry.id}`}
+                            accessibilityRole="button"
+                            activeOpacity={0.8}
+                            onPress={() => onPoke?.(entry.id)}
+                            style={styles.overstayBtn}
+                        >
+                            <Ionicons name="notifications-outline" size={16} color="#92400E" />
+                            <Text style={styles.overstayBtnText}>{t('inside.poke')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            testID={`call-${entry.id}`}
+                            accessibilityRole="button"
+                            activeOpacity={0.8}
+                            onPress={() => onCall?.(entry.id)}
+                            style={styles.overstayBtn}
+                        >
+                            <Ionicons name="call-outline" size={16} color="#92400E" />
+                            <Text style={styles.overstayBtnText}>{t('inside.call')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            ) : null}
+
             {/* Optional Purpose or Vehicle notes */}
             {(entry.purpose || entry.vehicleNumber) ? (
                 <View style={styles.notesRow}>
@@ -502,6 +578,13 @@ const EntryCard = memo(function EntryCard({
 
 // ── Stylesheet ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+    overstayBox: { marginTop: 10, padding: 10, borderRadius: 12, backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FDE68A', gap: 8 },
+    overstayHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    overstayText: { flex: 1, color: '#92400E', fontFamily: GuardFonts.bold, fontSize: 13, fontWeight: '700' },
+    overstayActions: { flexDirection: 'row', gap: 8 },
+    overstayBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 40, borderRadius: 10, backgroundColor: '#FEF3C7', borderWidth: 1, borderColor: '#FCD34D' },
+    overstayBtnText: { color: '#92400E', fontFamily: GuardFonts.bold, fontSize: 13, fontWeight: '800' },
+
     container: {
         flex: 1,
         backgroundColor: '#F8F9FA',
