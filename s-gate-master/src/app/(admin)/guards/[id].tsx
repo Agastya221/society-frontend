@@ -75,7 +75,7 @@ export default function GuardDetailScreen() {
                     onPress: async () => {
                         setToggling(true);
                         try {
-                            await api.patch(`/auth/resident-app/users/${guard.id}/status`, { isActive: newActive });
+                            await api.patch(`/auth/resident-app/users/${guard.id}/status`, { isActive: newActive, scope: 'guard' });
                             setGuard(prev => prev ? { ...prev, isActive: newActive } : null);
                         } catch (err: any) {
                             AppAlert.show('Error', err?.response?.data?.message || 'Failed to update guard status');
