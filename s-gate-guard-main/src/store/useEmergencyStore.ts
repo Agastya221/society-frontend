@@ -20,9 +20,14 @@ interface EmergencyState {
   /** Emergencies of this society that nobody has resolved yet, as last fetched from the server */
   active: ActiveEmergency[];
   setActive: (active: ActiveEmergency[]) => void;
+  /** Whether the full emergency details sheet is open */
+  sheetOpen: boolean;
+  setSheetOpen: (open: boolean) => void;
 }
 
 export const useEmergencyStore = create<EmergencyState>((set) => ({
   active: [],
   setActive: (active) => set({ active }),
+  sheetOpen: false,
+  setSheetOpen: (sheetOpen) => set({ sheetOpen }),
 }));

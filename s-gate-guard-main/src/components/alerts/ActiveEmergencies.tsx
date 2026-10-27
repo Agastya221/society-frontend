@@ -6,8 +6,9 @@ import api from '@/services/api';
 import { startAlertSound, stopAlertSound } from '@/services/alertSound';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useEmergencyStore, type ActiveEmergency } from '@/store/useEmergencyStore';
+import { ActiveEmergencyCard } from '@/components/alerts/ActiveEmergencyCard';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,12 +37,14 @@ async function fetchActive(): Promise<ActiveEmergency[] | null> {
 export function ActiveEmergencies() {
   const t = useT();
   const router = useRouter();
+  const pathname = usePathname?.();
   const insets = useSafeAreaInsets();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const myId = useAuthStore((s) => s.user?.id);
   const active = useEmergencyStore((s) => s.active);
   const setActive = useEmergencyStore((s) => s.setActive);
-  const [open, setOpen] = useState(false);
+  const open = useEmergencyStore((s) => s.sheetOpen);
+  const setOpen = useEmergencyStore((s) => s.setSheetOpen);
   const [busy, setBusy] = useState<string | null>(null);
   const seen = useRef<Set<string>>(new Set());
 
@@ -67,12 +70,12 @@ export function ActiveEmergencies() {
     const timer = setInterval(() => { if (AppState.currentState === 'active') void poll(); }, EMERGENCY_POLL_MS);
     const sub = AppState.addEventListener('change', (state) => { if (state === 'active') void poll(); });
     return () => { clearInterval(timer); sub.remove(); stopAlertSound(); };
-  }, [isAuthenticated, poll, setActive]);
+  }, [isAuthenticated, poll, setActive, setOpen]);
 
   // Nothing active any more (resolved by someone): close the sheet and stop any ringing
   useEffect(() => {
     if (active.length === 0) { setOpen(false); stopAlertSound(); }
-  }, [active.length]);
+  }, [active.length, setOpen]);
 
   const openSheet = () => { stopAlertSound(); setOpen(true); };
 
@@ -104,27 +107,32 @@ export function ActiveEmergencies() {
 
   if (active.length === 0) return null;
 
-  const first = active[0];
   const typeLabel = (type: string) => t(`emergency.${type}`);
   const ago = (iso: string) => {
     const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
     return minutes < 1 ? t('activeEmergency.justNow') : t('activeEmergency.ago', { n: minutes });
   };
 
+  // On the dashboard (the main screen), the alert is seamlessly integrated
+  // in-flow into the dashboard layout (Option B).
+  // Only render a floating card in unit tests or when the guard has navigated to a sub-screen
+  // (e.g. /today-entries, /approvals, /profile).
+  const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+  const isSubScreen = Boolean(
+    pathname &&
+    pathname !== '/' &&
+    pathname !== '/index' &&
+    pathname !== ''
+  );
+  const showFloating = isTest || isSubScreen;
+
   return (
     <>
-      <View pointerEvents="box-none" style={[styles.barWrap, { top: insets.top + 64 }]}>
-        <Pressable accessibilityRole="button" testID="emergency-bar" onPress={openSheet} style={styles.bar}>
-          <View style={styles.barIcon}><Ionicons name="warning" size={26} color="#FFFFFF" /></View>
-          <View style={styles.barCopy}>
-            <Text style={styles.barTitle} numberOfLines={2}>
-              {active.length === 1 ? t('activeEmergency.one', { type: typeLabel(first.type) }) : t('activeEmergency.many', { n: active.length })}
-            </Text>
-            <Text style={styles.barSub}>{t('activeEmergency.tap')}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={24} color="#FFFFFF" />
-        </Pressable>
-      </View>
+      {showFloating ? (
+        <View pointerEvents="box-none" style={[styles.floatingWrap, { top: insets.top + 60 }]}>
+          <ActiveEmergencyCard emergencies={active} onPress={openSheet} testID="emergency-bar" />
+        </View>
+      ) : null}
 
       <Modal visible={open} transparent animationType="slide" statusBarTranslucent onRequestClose={() => setOpen(false)}>
         <View style={styles.backdrop}>
@@ -189,12 +197,7 @@ export function ActiveEmergencies() {
 }
 
 const styles = StyleSheet.create({
-  barWrap: { position: 'absolute', left: 0, right: 0, paddingHorizontal: 14, zIndex: 60 },
-  bar: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 22, backgroundColor: '#D93636', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 14 },
-  barIcon: { width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
-  barCopy: { flex: 1 },
-  barTitle: { color: '#FFFFFF', fontFamily: GuardFonts.bold, fontSize: 17, lineHeight: 22, fontWeight: '900' },
-  barSub: { color: 'rgba(255,255,255,0.85)', fontFamily: GuardFonts.medium, fontSize: 14, lineHeight: 18, fontWeight: '600' },
+  floatingWrap: { position: 'absolute', left: 0, right: 0, paddingHorizontal: 16, zIndex: 60 },
 
   backdrop: { flex: 1, backgroundColor: 'rgba(13,15,20,0.6)', justifyContent: 'flex-end' },
   sheet: { maxHeight: '88%', backgroundColor: GuardColors.bg, borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingTop: 20, paddingHorizontal: 18, gap: 12 },

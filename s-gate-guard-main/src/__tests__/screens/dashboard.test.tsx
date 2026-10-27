@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { render, fireEvent, act } from '@testing-library/react-native';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useEmergencyStore } from '@/store/useEmergencyStore';
 import { useLanguageStore } from '@/i18n';
 
 import GuardDashboard from '../../app/index';
@@ -48,6 +49,7 @@ describe('Guard Dashboard (index)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useLanguageStore.setState({ lang: 'en' });
+    useEmergencyStore.setState({ active: [], sheetOpen: false });
     useAuthStore.setState({
       accessToken: 'guard-token',
       refreshToken: 'guard-refresh',
@@ -214,4 +216,34 @@ describe('Guard Dashboard (index)', () => {
       }
     });
   });
+
+  // ── Active Emergency Priority Alert ──────────────────────────────────────────
+  describe('Active Emergency Priority Alert', () => {
+    it('shows the premium priority emergency card alongside the duty toggle when active', async () => {
+      (api.get as jest.Mock).mockImplementation((url: string) => {
+        if (url === '/api/v1/guard/duty') return Promise.resolve({ data: { data: { duty: null } } });
+        if (url === QUEUE_URL) return Promise.resolve({ data: { data: { waiting: [], ready: [], stopped: [], insideCount: 0 } } });
+        if (url.startsWith('/api/v1/gate/flats')) return Promise.resolve({ data: { data: { flats: [] } } });
+        return Promise.reject(new Error(`unexpected GET ${url}`));
+      });
+      useEmergencyStore.setState({
+        active: [
+          {
+            id: 'em-1',
+            type: 'HARASSMENT',
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      });
+      const { getByText, getByTestId } = await renderDashboard();
+      expect(getByText('Harassment Emergency')).toBeTruthy();
+      expect(getByText('Active • Tap to manage')).toBeTruthy();
+      expect(getByText('Off duty')).toBeTruthy();
+
+      // Tapping it opens the emergency management sheet
+      fireEvent.press(getByTestId('emergency-bar'));
+      expect(useEmergencyStore.getState().sheetOpen).toBe(true);
+    });
+  });
 });
+

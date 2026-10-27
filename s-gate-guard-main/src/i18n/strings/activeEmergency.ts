@@ -2,9 +2,11 @@ import type { Strings } from '../types';
 
 export const activeEmergency: Strings = {
   hi: {
-    'activeEmergency.one': '{type}: आपातकाल चालू है',
-    'activeEmergency.many': '{n} आपातकाल चालू हैं',
-    'activeEmergency.tap': 'देखने के लिए दबाएँ',
+    'activeEmergency.one': '{type} आपातकाल',
+    'activeEmergency.many': '{n} चालू आपातकाल',
+    'activeEmergency.liveBadge': 'चालू अलार्म',
+    'activeEmergency.manage': 'चालू • देखने के लिए दबाएँ',
+    'activeEmergency.tap': 'चालू • देखने के लिए दबाएँ',
     'activeEmergency.title': 'चालू आपातकाल',
     'activeEmergency.raisedBy': 'भेजा: {name}',
     'activeEmergency.where': 'जगह: {where}',
@@ -24,9 +26,11 @@ export const activeEmergency: Strings = {
     'activeEmergency.helpline': 'महिला हेल्पलाइन 1091',
   },
   en: {
-    'activeEmergency.one': '{type} emergency is active',
-    'activeEmergency.many': '{n} emergencies are active',
-    'activeEmergency.tap': 'Tap to open',
+    'activeEmergency.one': '{type} Emergency',
+    'activeEmergency.many': '{n} Active Emergencies',
+    'activeEmergency.liveBadge': 'LIVE ALERT',
+    'activeEmergency.manage': 'Active • Tap to manage',
+    'activeEmergency.tap': 'Active • Tap to manage',
     'activeEmergency.title': 'Active emergencies',
     'activeEmergency.raisedBy': 'Raised by {name}',
     'activeEmergency.where': 'Where: {where}',

@@ -45,7 +45,8 @@ describe('ActiveEmergencies (the bar that keeps an emergency on screen)', () => 
   it('shows an active emergency raised by someone else, and rings once for it', async () => {
     const { getByText } = await mount();
     expect(api.get).toHaveBeenCalledWith('/api/v1/guard/emergencies/active');
-    expect(getByText('Fire emergency is active')).toBeTruthy();
+    expect(getByText('Fire Emergency')).toBeTruthy();
+    expect(getByText('Active • Tap to manage')).toBeTruthy();
     expect(startAlertSound).toHaveBeenCalledTimes(1);
   });
 

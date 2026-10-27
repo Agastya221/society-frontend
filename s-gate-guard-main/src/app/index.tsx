@@ -8,14 +8,16 @@ import { fetchQueue } from '@/services/gateQueue';
 import { endDuty, fetchDuty, fetchGeofence, startDuty, type Duty, type GeofenceStatus } from '@/services/geofence';
 import { AppAlert } from '@/components/gate/AppAlert';
 import { DutyToggle } from '@/components/gate/DutyToggle';
+import { ActiveEmergencyCard } from '@/components/alerts/ActiveEmergencyCard';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useEmergencyStore } from '@/store/useEmergencyStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Animated as RNAnimated, Easing, Image, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const HOLD_MS = 2000;
@@ -63,6 +65,9 @@ export default function GuardDashboard() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const activeEmergencies = useEmergencyStore((state) => state.active);
+  const setSheetOpen = useEmergencyStore((state) => state.setSheetOpen);
+  const hasActiveEmergency = activeEmergencies.length > 0;
   const [pendingCount, setPendingCount] = useState(0);
   const [readyCount, setReadyCount] = useState(0);
   const [stoppedCount, setStoppedCount] = useState(0);
@@ -159,8 +164,14 @@ export default function GuardDashboard() {
           <LanguageSwitch compact />
         </Animated.View>
 
+        {/* Duty Toggle: On/Off Shift Toggle Row (Just below header) */}
         {duty !== undefined ? (
-          <Animated.View entering={rise(1)} style={styles.dutyCardWrap}>
+          <Animated.View
+            key="duty-toggle-row"
+            entering={rise(1)}
+            layout={LinearTransition.springify().damping(25).stiffness(300)}
+            style={styles.dutyCardWrap}
+          >
             <DutyToggle
               on={!!duty}
               busy={dutyWorking}
@@ -182,20 +193,42 @@ export default function GuardDashboard() {
           </Animated.View>
         ) : null}
 
-        <Animated.View entering={rise(1)} style={styles.chipRow}>
-          {duty === undefined ? (
-            <View style={styles.dutyChip}>
-              <LiveDot color={GuardColors.green} size={8} />
-              <Text style={styles.dutyText} numberOfLines={1}>{t('home.onDutyAt', { gate: user?.gate ?? 'Main Gate' }) + '\u00A0'}</Text>
-            </View>
-          ) : null}
-          {offline ? (
-            <View style={styles.offlineChip} accessibilityLabel={t('home.offline')}>
-              <Ionicons name="cloud-offline" size={16} color={GuardColors.red} />
-              <Text style={styles.offlineText} numberOfLines={1}>{t('home.offline') + '\u00A0'}</Text>
-            </View>
-          ) : null}
-        </Animated.View>
+        {/* System-Level Priority Alert: Active Emergency (Below duty toggle) */}
+        {hasActiveEmergency ? (
+          <Animated.View
+            key="active-emergency-card"
+            entering={FadeInDown.springify().damping(25).stiffness(300)}
+            exiting={FadeOutUp.springify().damping(25).stiffness(300)}
+            layout={LinearTransition.springify().damping(25).stiffness(300)}
+            style={styles.emergencyCardWrap}
+          >
+            <ActiveEmergencyCard
+              emergencies={activeEmergencies}
+              onPress={() => setSheetOpen(true)}
+            />
+          </Animated.View>
+        ) : null}
+
+        {duty === undefined || offline ? (
+          <Animated.View
+            entering={rise(1)}
+            layout={LinearTransition.springify().damping(25).stiffness(300)}
+            style={styles.chipRow}
+          >
+            {duty === undefined ? (
+              <View style={styles.dutyChip}>
+                <LiveDot color={GuardColors.green} size={8} />
+                <Text style={styles.dutyText} numberOfLines={1}>{t('home.onDutyAt', { gate: user?.gate ?? 'Main Gate' }) + '\u00A0'}</Text>
+              </View>
+            ) : null}
+            {offline ? (
+              <View style={styles.offlineChip} accessibilityLabel={t('home.offline')}>
+                <Ionicons name="cloud-offline" size={16} color={GuardColors.red} />
+                <Text style={styles.offlineText} numberOfLines={1}>{t('home.offline') + '\u00A0'}</Text>
+              </View>
+            ) : null}
+          </Animated.View>
+        ) : null}
 
         {stoppedCount > 0 ? (
           <Pressy accessibilityLabel={t('home.stoppedNow', { n: stoppedCount })} onPress={() => open('/approvals')} style={styles.stoppedBanner}>
@@ -214,7 +247,7 @@ export default function GuardDashboard() {
         ) : null}
 
         {/* Hero: scan */}
-        <Animated.View entering={rise(2)}>
+        <Animated.View entering={rise(2)} layout={LinearTransition.springify().damping(25).stiffness(300)}>
           <Pressy accessibilityLabel={t('home.scan')} onPress={() => open('/scan-verify')} style={[styles.hero, guardShadow('#FFB300', 3)]}>
             <LinearGradient colors={GuardGradients.gold} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 34 }]} />
             <Ionicons name="qr-code" size={210} color="rgba(255,255,255,0.22)" style={styles.heroWatermark} />
@@ -243,7 +276,7 @@ export default function GuardDashboard() {
         </Animated.View>
 
         {/* Live numbers */}
-        <Animated.View entering={rise(4)} style={styles.stats}>
+        <Animated.View entering={rise(4)} layout={LinearTransition.springify().damping(25).stiffness(300)} style={styles.stats}>
           <Pressy
             wrapStyle={styles.statWrap}
             accessibilityLabel={`${t('home.statInside')} ${insideCount}`}
@@ -271,7 +304,7 @@ export default function GuardDashboard() {
         </Animated.View>
 
         {/* Dock */}
-        <Animated.View entering={rise(5)} style={styles.dock}>
+        <Animated.View entering={rise(5)} layout={LinearTransition.springify().damping(25).stiffness(300)} style={styles.dock}>
           <EmergencyHold onTrigger={() => open('/emergencies')} />
           <Pressy wrapStyle={styles.profileWrap} accessibilityLabel={t('home.profile')} onPress={() => open('/profile')} style={styles.profile}>
             <Ionicons name="person-circle" size={30} color={GuardColors.t1} />
@@ -290,7 +323,9 @@ const styles = StyleSheet.create({
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   logo: { width: 60, height: 56 },
-  dutyCardWrap: { marginTop: 2, marginBottom: 2 },
+  dutyCardWrap: { marginTop: 10, marginBottom: 4 },
+  dutyCardWrapWithAlert: { marginTop: 12, marginBottom: 4 },
+  emergencyCardWrap: { marginTop: 10, marginBottom: 0 },
   gateChipBad: { backgroundColor: GuardColors.redBg },
   avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '900' },
