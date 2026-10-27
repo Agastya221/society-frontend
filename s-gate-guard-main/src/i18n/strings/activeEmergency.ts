@@ -18,6 +18,10 @@ export const activeEmergency: Strings = {
     'activeEmergency.screen': 'आपातकाल स्क्रीन',
     'activeEmergency.close': 'बंद करें',
     'activeEmergency.failed': 'नहीं हो पाया',
+    'activeEmergency.map': 'नक्शे में खोलें',
+    'activeEmergency.callHer': 'उन्हें फोन करें',
+    'activeEmergency.police': 'पुलिस 112',
+    'activeEmergency.helpline': 'महिला हेल्पलाइन 1091',
   },
   en: {
     'activeEmergency.one': '{type} emergency is active',
@@ -36,5 +40,9 @@ export const activeEmergency: Strings = {
     'activeEmergency.screen': 'Emergency screen',
     'activeEmergency.close': 'Close',
     'activeEmergency.failed': 'Did not go through',
+    'activeEmergency.map': 'Open in maps',
+    'activeEmergency.callHer': 'Call her',
+    'activeEmergency.police': 'Police 112',
+    'activeEmergency.helpline': 'Women helpline 1091',
   },
 };

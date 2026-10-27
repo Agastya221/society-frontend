@@ -22,6 +22,7 @@ describe('EmergenciesScreen', () => {
     jest.useFakeTimers();
     useLanguageStore.setState({ lang: 'en' });
     (api.post as jest.Mock).mockResolvedValue({ data: { success: true } });
+    (api.get as jest.Mock).mockResolvedValue({ data: { data: { blocks: [{ id: 'b1', name: 'Tower A' }, { id: 'b2', name: 'Tower B' }], commonAreas: ['Main gate', 'Parking'] } } });
   });
 
   afterEach(() => jest.useRealTimers());
@@ -29,7 +30,7 @@ describe('EmergenciesScreen', () => {
   it('shows every emergency type as a big tile', () => {
     const { getByText } = renderScreen();
     expect(getByText('Emergency SOS')).toBeTruthy();
-    for (const label of ['Medical', 'Fire', 'Security', 'Lift Stuck', 'Animal Threat', 'Theft', 'Violence', 'Accident', 'Other']) {
+    for (const label of ['Harassment', 'Medical', 'Fire', 'Security', 'Lift Stuck', 'Animal Threat', 'Theft', 'Violence', 'Accident', 'Other']) {
       expect(getByText(label)).toBeTruthy();
     }
   });
@@ -63,9 +64,67 @@ describe('EmergenciesScreen', () => {
     await act(async () => { fireEvent.press(getByText('Send alarm')); });
 
     expect(emergencyPosts()).toHaveLength(1);
-    expect(emergencyPosts()[0][1]).toEqual({ type: 'MEDICAL', description: 'Medical emergency or injury' });
+    // one location reading is taken when the alarm is sent (the test phone is at 22.8, 86.2)
+    expect(emergencyPosts()[0][1]).toEqual({ type: 'MEDICAL', description: 'Medical emergency or injury', latitude: 22.8, longitude: 86.2 });
     expect(getByText('Help is coming')).toBeTruthy();
     expect(getByText('Medical')).toBeTruthy();
+  });
+
+  it('has a private harassment alarm whose confirm text says nobody is named', () => {
+    const { getByTestId, getByText } = renderScreen();
+    fireEvent.press(getByTestId('emergency-HARASSMENT'));
+    expect(getByText(/without any names/)).toBeTruthy();
+    expect(emergencyPosts()).toHaveLength(0);
+  });
+
+  it('says the location is shared once, when sending, not live', () => {
+    const { getByText, queryByText } = renderScreen();
+    expect(getByText('Your location is shared once, when you send')).toBeTruthy();
+    expect(queryByText(/LIVE LOCATION/)).toBeNull();
+  });
+
+  it('lets the guard pick the tower where it happens, and sends it with the alarm', async () => {
+    const { getByTestId, getByText } = renderScreen();
+    fireEvent.press(getByTestId('emergency-LIFT_STUCK'));
+    await act(async () => {});
+    expect(api.get).toHaveBeenCalledWith('/api/v1/community/emergencies/places');
+    fireEvent.press(getByTestId('place-block-b2'));
+    await act(async () => { fireEvent.press(getByText('Send alarm')); });
+    expect(emergencyPosts()[0][1]).toMatchObject({ type: 'LIFT_STUCK', blockId: 'b2' });
+  });
+
+  it('lets the guard pick a common area, which is sent as the place', async () => {
+    const { getByTestId, getByText } = renderScreen();
+    fireEvent.press(getByTestId('emergency-HARASSMENT'));
+    await act(async () => {});
+    fireEvent.press(getByTestId('place-area-Parking'));
+    await act(async () => { fireEvent.press(getByText('Send alarm')); });
+    const body = emergencyPosts()[0][1];
+    expect(body).toMatchObject({ type: 'HARASSMENT', location: 'Parking' });
+    expect(body.blockId).toBeUndefined();
+  });
+
+  it('picking the same place again clears it, and picking nothing still sends the alarm', async () => {
+    const { getByTestId, getByText } = renderScreen();
+    fireEvent.press(getByTestId('emergency-FIRE'));
+    await act(async () => {});
+    fireEvent.press(getByTestId('place-block-b1'));
+    fireEvent.press(getByTestId('place-block-b1'));
+    await act(async () => { fireEvent.press(getByText('Send alarm')); });
+    const body = emergencyPosts()[0][1];
+    expect(body.type).toBe('FIRE');
+    expect(body.blockId).toBeUndefined();
+    expect(body.location).toBeUndefined();
+  });
+
+  it('still sends the alarm when the list of places cannot be loaded', async () => {
+    (api.get as jest.Mock).mockRejectedValue(new Error('offline'));
+    const { getByTestId, getByText, queryByTestId } = renderScreen();
+    fireEvent.press(getByTestId('emergency-FIRE'));
+    await act(async () => {});
+    expect(queryByTestId('place-block-b1')).toBeNull();
+    await act(async () => { fireEvent.press(getByText('Send alarm')); });
+    expect(emergencyPosts()).toHaveLength(1);
   });
 
   it('sends only one alarm on a double tap', async () => {

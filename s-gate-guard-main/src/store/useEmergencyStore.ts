@@ -5,6 +5,11 @@ export interface ActiveEmergency {
   type: string;
   description?: string | null;
   location?: string | null;
+  /** The tower picked when raising it */
+  block?: { id?: string; name?: string } | null;
+  /** One reading taken when it was raised; only guards and admins are sent it */
+  latitude?: number | null;
+  longitude?: number | null;
   createdAt: string;
   respondedAt?: string | null;
   reportedBy?: { id?: string; name?: string; phone?: string } | null;

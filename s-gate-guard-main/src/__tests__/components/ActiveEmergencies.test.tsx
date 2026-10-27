@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppState } from 'react-native';
+import { AppState, Linking } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import api from '@/services/api';
 import { AppAlert } from '@/components/gate/AppAlert';
@@ -92,6 +92,50 @@ describe('ActiveEmergencies (the bar that keeps an emergency on screen)', () => 
     await act(async () => { await buttons[0].onPress(); });
     expect(api.patch).toHaveBeenCalledWith('/api/v1/community/emergencies/e1/resolve', {});
     expect(queryByTestId('emergency-bar')).toBeNull();
+  });
+
+  it('shows the tower and place, and opens the exact pin in maps', async () => {
+    const openSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
+    (api.get as jest.Mock).mockResolvedValue({ data: { data: [{ ...FIRE, block: { id: 'b1', name: 'Tower A' }, latitude: 22.8046, longitude: 86.2029 }] } });
+    const { getByTestId, getByText } = await mount();
+    await act(async () => { fireEvent.press(getByTestId('emergency-bar')); });
+    expect(getByText('Where: Flat A101 · Tower A')).toBeTruthy();
+    await act(async () => { fireEvent.press(getByText('Open in maps')); });
+    expect(openSpy).toHaveBeenCalledWith('https://www.google.com/maps/search/?api=1&query=22.8046,86.2029');
+    openSpy.mockRestore();
+  });
+
+  it('has no map button when the phone gave no location', async () => {
+    const { getByTestId, queryByText } = await mount();
+    await act(async () => { fireEvent.press(getByTestId('emergency-bar')); });
+    expect(queryByText('Open in maps')).toBeNull();
+  });
+
+  it('can call the person who raised it', async () => {
+    const openSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
+    (api.get as jest.Mock).mockResolvedValue({ data: { data: [{ ...FIRE, reportedBy: { id: 'someone-else', name: 'Asha Rao', phone: '9000000601' } }] } });
+    const { getByTestId, getByText } = await mount();
+    await act(async () => { fireEvent.press(getByTestId('emergency-bar')); });
+    await act(async () => { fireEvent.press(getByText('Call her')); });
+    expect(openSpy).toHaveBeenCalledWith('tel:9000000601');
+    openSpy.mockRestore();
+  });
+
+  it('a harassment alarm also offers the police and the women helpline, and a regular one does not', async () => {
+    const openSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
+    (api.get as jest.Mock).mockResolvedValue({ data: { data: [{ ...FIRE, type: 'HARASSMENT' }] } });
+    const harassment = await mount();
+    await act(async () => { fireEvent.press(harassment.getByTestId('emergency-bar')); });
+    await act(async () => { fireEvent.press(harassment.getByText('Police 112')); });
+    await act(async () => { fireEvent.press(harassment.getByText('Women helpline 1091')); });
+    expect(openSpy).toHaveBeenCalledWith('tel:112');
+    expect(openSpy).toHaveBeenCalledWith('tel:1091');
+    harassment.unmount();
+    (api.get as jest.Mock).mockResolvedValue({ data: { data: [FIRE] } });
+    const fire = await mount();
+    await act(async () => { fireEvent.press(fire.getByTestId('emergency-bar')); });
+    expect(fire.queryByText('Police 112')).toBeNull();
+    openSpy.mockRestore();
   });
 
   it('keeps asking the server, so an emergency raised from another app turns up (and one resolved elsewhere goes away)', async () => {

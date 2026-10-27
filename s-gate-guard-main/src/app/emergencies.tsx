@@ -5,7 +5,7 @@ import api from '@/services/api';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Location from 'expo-location';
+import { getFreshReading } from '@/services/location';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -45,6 +45,7 @@ type EmergencyType = {
 
 // 9 categories arranged consistently with s-gate-master
 const EMERGENCIES: EmergencyType[] = [
+    { apiType: 'HARASSMENT',    icon: 'woman',                 color: '#EF4444', bg: '#FCE7F3', description: 'Woman being harassed or abused' },
     { apiType: 'MEDICAL',       icon: 'medical-services',      color: '#EF4444', bg: '#FEE2E2', description: 'Medical emergency or injury' },
     { apiType: 'FIRE',          icon: 'local-fire-department', color: '#EF4444', bg: '#FFEDD5', description: 'Fire outbreak or smoke detected' },
     { apiType: 'SECURITY',      icon: 'security',              color: '#EF4444', bg: '#FEF3C7', description: 'Security threat or breach' },
@@ -104,8 +105,9 @@ export default function EmergenciesScreen() {
     const [sent, setSent] = useState<{ type: string; time: Date } | null>(null);
     const raisingRef = useRef(false);
 
-    // Location cache
-    const locationRef = useRef<string | null>(null);
+    // The towers and common areas the guard can pick as "where it is happening" (loaded once, when first needed)
+    const [places, setPlaces] = useState<{ blocks: { id: string; name: string }[]; commonAreas: string[] } | null>(null);
+    const [pickedPlace, setPickedPlace] = useState<{ blockId?: string; location?: string } | null>(null);
 
     // Show Alerts Modal State
     const [alertsVisible, setAlertsVisible] = useState(false);
@@ -131,19 +133,24 @@ export default function EmergenciesScreen() {
         transform: [{ rotateZ: `${sirenRotate.value}deg` }],
     }));
 
-    // Warm up location coordinate
     useEffect(() => {
+        if (!confirm || places) return;
         (async () => {
             try {
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== 'granted') return;
-                const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-                locationRef.current = `${loc.coords.latitude},${loc.coords.longitude}`;
+                const res = await api.get('/api/v1/community/emergencies/places');
+                const data = res?.data?.data;
+                if (data && Array.isArray(data.blocks)) {
+                    setPlaces({ blocks: data.blocks, commonAreas: Array.isArray(data.commonAreas) ? data.commonAreas : [] });
+                }
             } catch {
-                // Location is optional
+                // Picking a place is optional: the alarm still goes without it
             }
         })();
-    }, []);
+    }, [confirm, places]);
+
+    useEffect(() => {
+        if (!confirm) setPickedPlace(null);
+    }, [confirm]);
 
     // Cooldown timer
     useEffect(() => {
@@ -178,9 +185,14 @@ export default function EmergenciesScreen() {
                 type: emergency.apiType,
                 description: emergency.description,
             };
-            if (locationRef.current) {
-                payload.location = locationRef.current;
+            // One location reading, taken now and never tracked. A phone without a fix still raises the alarm.
+            const reading = await Promise.race([getFreshReading(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000))]);
+            if (reading) {
+                payload.latitude = reading.latitude;
+                payload.longitude = reading.longitude;
             }
+            if (pickedPlace?.blockId) payload.blockId = pickedPlace.blockId;
+            if (pickedPlace?.location) payload.location = pickedPlace.location;
 
             await api.post('/api/v1/community/emergencies', payload);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -368,7 +380,7 @@ export default function EmergenciesScreen() {
                         <View style={styles.locationPill}>
                             <MaterialIcons name="my-location" size={15} color="#EF4444" />
                             <Text style={styles.locationPillText}>
-                                LIVE LOCATION WILL BE SHARED
+                                {t('emergency.sharesLocation')}
                             </Text>
                         </View>
                     </View>
@@ -397,8 +409,51 @@ export default function EmergenciesScreen() {
                                 </View>
                                 <Text style={styles.sheetTitle}>{t('emergency.confirmTitle')}</Text>
                                 <Text style={styles.sheetText}>
-                                    {t('emergency.confirmText', { type: t(`emergency.${confirm.apiType}`) })}
+                                    {confirm.apiType === 'HARASSMENT'
+                                        ? t('emergency.confirmTextPrivate')
+                                        : t('emergency.confirmText', { type: t(`emergency.${confirm.apiType}`) })}
                                 </Text>
+
+                                {places && (places.blocks.length > 0 || places.commonAreas.length > 0) ? (
+                                    <View style={styles.placeBox}>
+                                        <Text style={styles.placeTitle}>{t('emergency.where')}</Text>
+                                        <Text style={styles.placeHint}>{t('emergency.whereHint')}</Text>
+                                        <ScrollView style={styles.placeScroll} contentContainerStyle={styles.placeChips} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                                            {places.blocks.map((block) => {
+                                                const on = pickedPlace?.blockId === block.id;
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={block.id}
+                                                        testID={`place-block-${block.id}`}
+                                                        accessibilityRole="button"
+                                                        accessibilityState={{ selected: on }}
+                                                        activeOpacity={0.8}
+                                                        onPress={() => setPickedPlace(on ? null : { blockId: block.id })}
+                                                        style={[styles.placeChip, on && styles.placeChipOn]}
+                                                    >
+                                                        <Text style={[styles.placeChipText, on && styles.placeChipTextOn]}>{block.name}</Text>
+                                                    </TouchableOpacity>
+                                                );
+                                            })}
+                                            {places.commonAreas.map((area) => {
+                                                const on = pickedPlace?.location === area;
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={area}
+                                                        testID={`place-area-${area}`}
+                                                        accessibilityRole="button"
+                                                        accessibilityState={{ selected: on }}
+                                                        activeOpacity={0.8}
+                                                        onPress={() => setPickedPlace(on ? null : { location: area })}
+                                                        style={[styles.placeChip, on && styles.placeChipOn]}
+                                                    >
+                                                        <Text style={[styles.placeChipText, on && styles.placeChipTextOn]}>{area}</Text>
+                                                    </TouchableOpacity>
+                                                );
+                                            })}
+                                        </ScrollView>
+                                    </View>
+                                ) : null}
 
                                 <TouchableOpacity
                                     accessibilityRole="button"
@@ -992,6 +1047,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         ...guardShadow('#000', 3),
     },
+    placeBox: { alignSelf: 'stretch', marginTop: 4, marginBottom: 12 },
+    placeTitle: { fontSize: 14, fontWeight: '800', color: '#111827', fontFamily: GuardFonts.bold },
+    placeHint: { fontSize: 12, color: '#6B7280', marginTop: 2, marginBottom: 8, fontFamily: GuardFonts.medium },
+    placeScroll: { maxHeight: 132 },
+    placeChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    placeChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF' },
+    placeChipOn: { backgroundColor: '#FEE2E2', borderColor: '#EF4444' },
+    placeChipText: { fontSize: 14, fontWeight: '700', color: '#374151', fontFamily: GuardFonts.bold },
+    placeChipTextOn: { color: '#B91C1C' },
     sheetIconBox: {
         width: 72,
         height: 72,

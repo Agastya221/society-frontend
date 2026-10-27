@@ -9,7 +9,7 @@ import { useEmergencyStore, type ActiveEmergency } from '@/store/useEmergencySto
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** How often an open app asks the server which emergencies are still active */
@@ -132,7 +132,9 @@ export function ActiveEmergencies() {
             <Text style={styles.sheetTitle}>{t('activeEmergency.title')}</Text>
             <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
               {active.map((e) => {
-                const where = [e.flat?.flatNumber ? `${t('common.flat')} ${e.flat.flatNumber}` : null, e.location].filter(Boolean).join(' · ');
+                const where = Array.from(new Set([e.flat?.flatNumber ? `${t('common.flat')} ${e.flat.flatNumber}` : null, e.block?.name, e.location].filter(Boolean))).join(' · ');
+                const hasPin = typeof e.latitude === 'number' && typeof e.longitude === 'number';
+                const isPrivate = e.type === 'HARASSMENT';
                 return (
                   <View key={e.id} style={styles.card} testID={`emergency-${e.id}`}>
                     <View style={styles.cardHead}>
@@ -149,6 +151,23 @@ export function ActiveEmergencies() {
                       </View>
                     ) : null}
                     <View style={styles.cardActions}>
+                      {hasPin ? (
+                        <GiantButton
+                          label={t('activeEmergency.map')}
+                          icon="map"
+                          tone="light"
+                          onPress={() => void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${e.latitude},${e.longitude}`)}
+                        />
+                      ) : null}
+                      {e.reportedBy?.phone ? (
+                        <GiantButton label={t('activeEmergency.callHer')} icon="call" tone="light" onPress={() => void Linking.openURL(`tel:${e.reportedBy?.phone}`)} />
+                      ) : null}
+                      {isPrivate ? (
+                        <>
+                          <GiantButton label={t('activeEmergency.police')} icon="shield" tone="light" onPress={() => void Linking.openURL('tel:112')} />
+                          <GiantButton label={t('activeEmergency.helpline')} icon="call" tone="light" onPress={() => void Linking.openURL('tel:1091')} />
+                        </>
+                      ) : null}
                       {!e.respondedAt ? (
                         <GiantButton label={t('activeEmergency.respond')} icon="walk" tone="gold" onPress={() => void respond(e.id)} disabled={busy === e.id} />
                       ) : null}
