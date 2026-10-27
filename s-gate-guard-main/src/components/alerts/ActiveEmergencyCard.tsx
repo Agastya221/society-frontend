@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -10,8 +10,9 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { GuardFonts } from '@/constants/theme';
+import { GuardFonts, guardShadow } from '@/constants/theme';
 import { useT } from '@/i18n';
+import { Pressy } from '@/components/gate/Pressy';
 import type { ActiveEmergency } from '@/store/useEmergencyStore';
 
 export const EMERGENCY_CRIMSON = '#BE123C';
@@ -26,12 +27,8 @@ export interface ActiveEmergencyCardProps {
 
 /**
  * Ultra-modern, high-trust Active Emergency Card for S-Gate Guard.
- * Features:
- * - Fluid squircle geometry (borderRadius: 30) consistent with "Scan QR" and "New visitor"
- * - Deep multi-stop ruby gradient with watermark shield depth
- * - Frosted icon squircle with live pulsating beacon
- * - Authoritative typography hierarchy with [● LIVE ALERT] status chip
- * - Signature S-Gate circular action button with forward arrow
+ * Exact same dimensions (126px height, 30px squircle radius), 64x64 left badge,
+ * and 48x48 circular action button as the yellow "Scan QR" and black "New visitor" cards.
  */
 export function ActiveEmergencyCard({
   emergencies,
@@ -42,42 +39,24 @@ export function ActiveEmergencyCard({
 
   // Subtle slow-pulsing sheen
   const glowOpacity = useSharedValue(0.35);
-  // Live beacon pulse
-  const beaconScale = useSharedValue(1);
-  const beaconOpacity = useSharedValue(0.4);
   // Live indicator dot pulse
   const liveDotOpacity = useSharedValue(1);
 
   useEffect(() => {
     glowOpacity.value = withRepeat(
-      withTiming(0.8, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-    beaconScale.value = withRepeat(
-      withTiming(1.18, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-    beaconOpacity.value = withRepeat(
-      withTiming(0.08, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.75, { duration: 2400, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
     liveDotOpacity.value = withRepeat(
-      withTiming(0.4, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.35, { duration: 800, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
-  }, [glowOpacity, beaconScale, beaconOpacity, liveDotOpacity]);
+  }, [glowOpacity, liveDotOpacity]);
 
   const glowStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,
-  }));
-
-  const beaconStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: beaconScale.value }],
-    opacity: beaconOpacity.value,
   }));
 
   const liveDotStyle = useAnimatedStyle(() => ({
@@ -96,25 +75,32 @@ export function ActiveEmergencyCard({
 
   const subtitle = t('activeEmergency.manage');
 
+  const emergencyIcon =
+    first.type === 'FIRE'
+      ? 'flame'
+      : first.type === 'MEDICAL'
+        ? 'medkit'
+        : 'warning';
+
   const handlePress = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   };
 
   return (
-    <Pressable
+    <Pressy
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${subtitle}`}
       testID={testID}
       onPress={handlePress}
-      style={({ pressed }) => [
+      style={[
         styles.card,
-        pressed && styles.cardPressed,
+        guardShadow('#881337', 3),
       ]}
     >
-      {/* Multi-stop rich ruby crimson gradient */}
+      {/* Luminous multi-stop ruby crimson gradient */}
       <LinearGradient
-        colors={['#D91E42', EMERGENCY_CRIMSON, EMERGENCY_CRIMSON_DARK]}
+        colors={['#E11D48', EMERGENCY_CRIMSON, EMERGENCY_CRIMSON_DARK]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[StyleSheet.absoluteFill, { borderRadius: 30 }]}
@@ -122,118 +108,89 @@ export function ActiveEmergencyCard({
 
       {/* Signature tactile watermark rotated in background */}
       <Ionicons
-        name="shield"
-        size={140}
-        color="rgba(255, 255, 255, 0.08)"
+        name="warning"
+        size={160}
+        color="rgba(255, 255, 255, 0.12)"
         style={styles.watermark}
         pointerEvents="none"
       />
 
-      {/* Ambient glass sheen */}
+      {/* Ambient top-edge specular glass sheen */}
       <Animated.View
         style={[StyleSheet.absoluteFill, styles.glowLayer, glowStyle]}
         pointerEvents="none"
       >
         <LinearGradient
-          colors={['rgba(255, 255, 255, 0.22)', 'rgba(255, 255, 255, 0.04)', 'transparent']}
+          colors={['rgba(255, 255, 255, 0.28)', 'rgba(255, 255, 255, 0.05)', 'transparent']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0.8, y: 1 }}
+          end={{ x: 0.85, y: 1 }}
           style={StyleSheet.absoluteFill}
         />
       </Animated.View>
 
-      {/* Guaranteed horizontal layout row */}
-      <View style={styles.innerRow}>
-        {/* Left: Frosted Icon Badge with pulsing beacon */}
-        <View style={styles.badgeWrapper}>
-          <Animated.View style={[styles.beaconRing, beaconStyle]} pointerEvents="none" />
-          <View style={styles.badgeIcon}>
-            <Ionicons name="shield-checkmark" size={26} color="#FFFFFF" />
-          </View>
-        </View>
-
-        {/* Center: Typographic Hierarchy */}
-        <View style={styles.copy}>
-          <View style={styles.liveChip}>
-            <Animated.View style={[styles.liveDot, liveDotStyle]} />
-            <Text style={styles.liveText}>{t('activeEmergency.liveBadge')}</Text>
-          </View>
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
-          <Text style={styles.subtitle} numberOfLines={1}>
-            {subtitle}
-          </Text>
-        </View>
-
-        {/* Right: Signature S-Gate circular action button */}
-        <View style={styles.actionBtn}>
-          <Ionicons name="arrow-forward" size={22} color={EMERGENCY_CRIMSON} />
-        </View>
+      {/* Left: 64x64 Frosted Squircle Badge matching Scan QR & New Visitor */}
+      <View style={styles.badgeWrapper}>
+        <Ionicons name={emergencyIcon} size={32} color="#FFFFFF" />
       </View>
-    </Pressable>
+
+      {/* Center: Typographic Hierarchy */}
+      <View style={styles.copy}>
+        <View style={styles.liveChip}>
+          <Animated.View style={[styles.liveDot, liveDotStyle]} />
+          <Text style={styles.liveText}>{t('activeEmergency.liveBadge')}</Text>
+        </View>
+        <Text
+          style={styles.title}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.82}
+        >
+          {title}
+        </Text>
+        <Text style={styles.subtitle} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      </View>
+
+      {/* Right: Signature S-Gate circular action button (48x48) */}
+      <View style={styles.actionBtn}>
+        <Ionicons name="arrow-forward" size={22} color={EMERGENCY_CRIMSON} />
+      </View>
+    </Pressy>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: 104,
+    height: 126,
+    minHeight: 126,
     borderRadius: 30,
-    overflow: 'hidden',
-    paddingHorizontal: 18,
-    paddingVertical: 18,
     backgroundColor: EMERGENCY_CRIMSON,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    // Deep ambient ruby drop shadow
-    shadowColor: '#881337',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 8,
-    justifyContent: 'center',
-  },
-  cardPressed: {
-    opacity: 0.94,
-    transform: [{ scale: 0.99 }],
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   watermark: {
     position: 'absolute',
-    right: -16,
-    top: -24,
-    transform: [{ rotate: '-12deg' }],
+    right: -20,
+    top: -20,
+    transform: [{ rotate: '-10deg' }],
   },
   glowLayer: {
     borderRadius: 30,
   },
-  innerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-  },
   badgeWrapper: {
-    width: 58,
-    height: 58,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  beaconRing: {
-    position: 'absolute',
-    width: 62,
-    height: 62,
+    width: 64,
+    height: 64,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-  },
-  badgeIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.28)',
+    marginRight: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   copy: {
     flex: 1,
@@ -243,14 +200,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: 'rgba(0, 0, 0, 0.24)',
+    backgroundColor: 'rgba(0, 0, 0, 0.22)',
     paddingHorizontal: 8,
     paddingVertical: 2.5,
     borderRadius: 999,
     alignSelf: 'flex-start',
     marginBottom: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   liveDot: {
     width: 6,
@@ -262,22 +219,22 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     lineHeight: 13,
-    fontWeight: '800',
-    letterSpacing: 0.8,
+    fontWeight: '900',
+    letterSpacing: 1.1,
   },
   title: {
     color: '#FFFFFF',
     fontFamily: GuardFonts.bold,
-    fontSize: 20,
-    lineHeight: 26,
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: '900',
     letterSpacing: -0.4,
   },
   subtitle: {
-    color: 'rgba(255, 255, 255, 0.85)',
+    color: 'rgba(255, 255, 255, 0.88)',
     fontFamily: GuardFonts.medium,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: '600',
     marginTop: 2,
   },
@@ -288,10 +245,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 12,
+    marginLeft: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.16,
+    shadowOpacity: 0.18,
     shadowRadius: 8,
     elevation: 4,
   },

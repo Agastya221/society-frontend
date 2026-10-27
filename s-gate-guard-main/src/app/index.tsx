@@ -249,16 +249,14 @@ export default function GuardDashboard() {
         {/* Hero: scan */}
         <Animated.View entering={rise(2)} layout={LinearTransition.springify().damping(25).stiffness(300)}>
           <Pressy accessibilityLabel={t('home.scan')} onPress={() => open('/scan-verify')} style={[styles.hero, guardShadow('#FFB300', 3)]}>
-            <LinearGradient colors={GuardGradients.gold} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 34 }]} />
-            <Ionicons name="qr-code" size={210} color="rgba(255,255,255,0.22)" style={styles.heroWatermark} />
-            <View style={styles.heroIcon}><Ionicons name="qr-code-outline" size={34} color={GuardColors.black} /></View>
-            <View style={styles.heroBottom}>
-              <View style={styles.heroCopy}>
-                <Text style={styles.heroTitle}>{t('home.scan')}</Text>
-                <Text style={styles.heroSub}>{t('home.scanSub')}</Text>
-              </View>
-              <View style={styles.heroGo}><Ionicons name="arrow-forward" size={26} color={GuardColors.gold} /></View>
+            <LinearGradient colors={GuardGradients.gold} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 30 }]} />
+            <Ionicons name="qr-code" size={170} color="rgba(255,255,255,0.22)" style={styles.heroWatermark} pointerEvents="none" />
+            <View style={styles.heroIcon}><Ionicons name="qr-code-outline" size={30} color={GuardColors.black} /></View>
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroTitle}>{t('home.scan')}</Text>
+              <Text style={styles.heroSub}>{t('home.scanSub')}</Text>
             </View>
+            <View style={styles.heroGo}><Ionicons name="arrow-forward" size={22} color={GuardColors.gold} /></View>
           </Pressy>
         </Animated.View>
 
@@ -325,7 +323,7 @@ const styles = StyleSheet.create({
   logo: { width: 60, height: 56 },
   dutyCardWrap: { marginTop: 10, marginBottom: 4 },
   dutyCardWrapWithAlert: { marginTop: 12, marginBottom: 4 },
-  emergencyCardWrap: { marginTop: 10, marginBottom: 0 },
+  emergencyCardWrap: { marginTop: 10, marginBottom: 14 },
   gateChipBad: { backgroundColor: GuardColors.redBg },
   avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
   avatarText: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: 24, fontWeight: '900' },
@@ -342,19 +340,18 @@ const styles = StyleSheet.create({
   stoppedBanner: { minHeight: 72, marginBottom: 14, paddingHorizontal: 18, borderRadius: 22, backgroundColor: GuardColors.redBg, borderWidth: 2, borderColor: GuardColors.red, flexDirection: 'row', alignItems: 'center', gap: 12 },
   readyText: { flex: 1, color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 19 },
 
-  hero: { height: 216, borderRadius: 34, backgroundColor: '#FFB800', padding: 22, overflow: 'hidden', justifyContent: 'space-between' },
-  heroWatermark: { position: 'absolute', right: -34, top: -26, transform: [{ rotate: '-12deg' }] },
-  heroIcon: { width: 68, height: 68, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center' },
-  heroBottom: { flexDirection: 'row', alignItems: 'flex-end' },
-  heroCopy: { flex: 1 },
-  heroTitle: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: 32, lineHeight: 42, fontWeight: '900', letterSpacing: -0.6 },
-  heroSub: { marginTop: 2, color: 'rgba(60,40,0,0.78)', fontFamily: GuardFonts.medium, fontSize: 16, lineHeight: 23, fontWeight: '600' },
-  heroGo: { width: 56, height: 56, borderRadius: 28, backgroundColor: GuardColors.black, alignItems: 'center', justifyContent: 'center' },
+  hero: { height: 126, minHeight: 126, borderRadius: 30, backgroundColor: '#FFB800', paddingHorizontal: 20, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  heroWatermark: { position: 'absolute', right: -24, top: -24, transform: [{ rotate: '-12deg' }] },
+  heroIcon: { width: 64, height: 64, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.55)', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  heroCopy: { flex: 1, justifyContent: 'center' },
+  heroTitle: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: 26, lineHeight: 32, fontWeight: '900', letterSpacing: -0.4 },
+  heroSub: { marginTop: 2, color: 'rgba(60,40,0,0.78)', fontFamily: GuardFonts.medium, fontSize: 15, lineHeight: 20, fontWeight: '600' },
+  heroGo: { width: 48, height: 48, borderRadius: 24, backgroundColor: GuardColors.black, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
 
-  visitor: { marginTop: 14, minHeight: 124, borderRadius: 30, backgroundColor: '#161922', paddingHorizontal: 20, paddingVertical: 18, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  visitor: { marginTop: 14, height: 126, minHeight: 126, borderRadius: 30, backgroundColor: '#161922', paddingHorizontal: 20, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
   visitorIcon: { width: 64, height: 64, borderRadius: 22, backgroundColor: 'rgba(255,184,0,0.16)', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  visitorTitle: { color: '#FFFFFF', fontFamily: GuardFonts.bold, fontSize: 26, lineHeight: 34, fontWeight: '900', letterSpacing: -0.4 },
-  visitorSub: { marginTop: 2, color: 'rgba(255,255,255,0.65)', fontFamily: GuardFonts.medium, fontSize: 16, lineHeight: 22, fontWeight: '600' },
+  visitorTitle: { color: '#FFFFFF', fontFamily: GuardFonts.bold, fontSize: 26, lineHeight: 32, fontWeight: '900', letterSpacing: -0.4 },
+  visitorSub: { marginTop: 2, color: 'rgba(255,255,255,0.65)', fontFamily: GuardFonts.medium, fontSize: 15, lineHeight: 20, fontWeight: '600' },
   visitorGo: { width: 48, height: 48, borderRadius: 24, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
 
   stats: { marginTop: 14, flexDirection: 'row', gap: 14 },
