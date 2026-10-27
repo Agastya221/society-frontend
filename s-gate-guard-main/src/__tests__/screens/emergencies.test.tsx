@@ -28,8 +28,8 @@ describe('EmergenciesScreen', () => {
 
   it('shows every emergency type as a big tile', () => {
     const { getByText } = renderScreen();
-    expect(getByText('Emergency')).toBeTruthy();
-    for (const label of ['Medical', 'Fire', 'Security threat', 'Violence', 'Theft', 'Accident', 'Lift stuck', 'Animal threat', 'Other']) {
+    expect(getByText('Emergency SOS')).toBeTruthy();
+    for (const label of ['Medical', 'Fire', 'Security', 'Lift Stuck', 'Animal Threat', 'Theft', 'Violence', 'Accident', 'Other']) {
       expect(getByText(label)).toBeTruthy();
     }
   });

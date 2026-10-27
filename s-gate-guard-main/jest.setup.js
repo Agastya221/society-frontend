@@ -97,6 +97,7 @@ jest.mock('@expo/vector-icons', () => ({
   Feather: 'Feather',
   Ionicons: 'Ionicons',
   MaterialIcons: 'MaterialIcons',
+  MaterialCommunityIcons: 'MaterialCommunityIcons',
   AntDesign: 'AntDesign',
 }));
 
