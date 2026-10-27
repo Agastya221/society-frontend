@@ -140,9 +140,15 @@ export default function TodayEntriesScreen() {
     }, []);
 
     const visibleEntries = useMemo(() => {
-        if (!showAll) return entries.filter((entry) => entry.status === 'CHECKED_IN');
-        const today = entries.filter((entry) => isToday(entry.checkInTime));
-        return filter === 'ALL' ? today : today.filter((entry) => entry.type === filter);
+        if (!showAll) {
+            const inside = entries.filter((entry) => entry.status === 'CHECKED_IN');
+            return filter === 'ALL' ? inside : inside.filter((entry) => entry.type === filter);
+        }
+        const today = entries.filter((entry) => isToday(entry.checkInTime) || (entry.checkOutTime && isToday(entry.checkOutTime)));
+        // When there is no today-specific activity yet (e.g. testing / start of day),
+        // fallback to all active entries so guards can view and filter entries.
+        const source = today.length > 0 ? today : entries;
+        return filter === 'ALL' ? source : source.filter((entry) => entry.type === filter);
     }, [entries, filter, showAll]);
 
     // Refresh every time the screen is focused; the spinner only shows on the first
@@ -243,12 +249,21 @@ export default function TodayEntriesScreen() {
             {/* Filters only belong to the full list */}
             {showAll && (
                 <View style={styles.filterContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                        contentContainerStyle={styles.filterScroll}
+                    >
                         {FILTERS.map((f) => {
                             const isActive = filter === f.value;
                             return (
                                 <TouchableOpacity
                                     key={f.value}
+                                    testID={`filter-${f.value}`}
+                                    accessibilityRole="button"
+                                    accessibilityState={{ selected: isActive }}
+                                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                                     activeOpacity={0.8}
                                     onPress={() => handleFilterChange(f.value)}
                                     style={[styles.filterTab, isActive && styles.filterTabActive]}

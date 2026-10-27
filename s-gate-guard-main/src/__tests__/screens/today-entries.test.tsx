@@ -137,6 +137,29 @@ describe('TodayEntriesScreen (who is inside)', () => {
     expect(queryByText('Asha Rao')).toBeNull();
   });
 
+  it('allows filtering existing entries under "All today" even when all entries checked in on previous days', async () => {
+    const yesterday = new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString();
+    (api.get as jest.Mock).mockResolvedValue({ data: { data: {
+      entries: [
+        { id: 'v-1', visitorName: 'Old Guest', type: 'VISITOR', flat: { flatNumber: 'A101' }, status: 'CHECKED_IN', checkInTime: yesterday, checkOutTime: null },
+        { id: 'v-2', visitorName: 'Old Delivery', type: 'DELIVERY', flat: { flatNumber: 'B204' }, status: 'CHECKED_IN', checkInTime: yesterday, checkOutTime: null },
+      ],
+      staffAttendances: [],
+    } } });
+    const { getByTestId, getByText, queryByText } = await renderScreen();
+    fireEvent.press(getByTestId('view-all'));
+    expect(getByText('Old Guest')).toBeTruthy();
+    expect(getByText('Old Delivery')).toBeTruthy();
+
+    fireEvent.press(getByText('Deliveries'));
+    expect(getByText('Old Delivery')).toBeTruthy();
+    expect(queryByText('Old Guest')).toBeNull();
+
+    fireEvent.press(getByText('Guests'));
+    expect(getByText('Old Guest')).toBeTruthy();
+    expect(queryByText('Old Delivery')).toBeNull();
+  });
+
   it('says nobody is inside when the gate is empty', async () => {
     (api.get as jest.Mock).mockResolvedValue({ data: { data: { entries: [], staffAttendances: [] } } });
     const { getByText, getByTestId } = await renderScreen();
