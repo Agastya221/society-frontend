@@ -10,6 +10,7 @@ import api from '@/services/api';
 import { GuardColors, GuardFonts } from '@/constants/theme';
 import { useLanguageStore, useT } from '@/i18n';
 import { AppAlertHost } from '@/components/gate/AppAlert';
+import { ActiveEmergencies } from '@/components/alerts/ActiveEmergencies';
 import { LiveAlertHost } from '@/components/alerts/LiveAlertHost';
 
 // Android measures a Text with one line-breaking strategy and draws it with another,
@@ -197,6 +198,7 @@ export default function RootLayout() {
       <StatusBar style="dark" backgroundColor={GuardColors.card} />
       <AppAlertHost />
       <LiveAlertHost />
+      <ActiveEmergencies />
     </>
   );
 }
