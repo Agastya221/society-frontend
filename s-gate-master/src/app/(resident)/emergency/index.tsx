@@ -37,6 +37,7 @@ interface Emergency {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const TYPE_META: Record<string, { icon: React.ComponentProps<typeof MaterialIcons>['name']; bg: string; color: string; label: string }> = {
+    HARASSMENT:    { icon: 'woman',                 bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Harassment alert' },
     MEDICAL:       { icon: 'medical-services',      bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Medical' },
     FIRE:          { icon: 'local-fire-department', bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Fire' },
     SECURITY:      { icon: 'security',              bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Security' },

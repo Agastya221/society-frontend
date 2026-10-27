@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Dimensions,
+    Modal,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -41,6 +42,7 @@ type SosState = 'idle' | 'holding' | 'triggered' | 'failed';
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 const TYPE_ICONS: Record<string, MaterialIconName> = {
+    HARASSMENT: 'woman',
     MEDICAL: 'medical-services',
     FIRE: 'local-fire-department',
     SECURITY: 'security',
@@ -53,6 +55,7 @@ const TYPE_ICONS: Record<string, MaterialIconName> = {
 };
 
 const TILES = [
+    { label: 'Harassment', type: 'HARASSMENT' },
     { label: 'Medical', type: 'MEDICAL' },
     { label: 'Fire', type: 'FIRE' },
     { label: 'Security', type: 'SECURITY' },
@@ -65,6 +68,30 @@ const TILES = [
 ];
 
 const COOLDOWN_MS = 15000; // 15s cooldown
+
+/**
+ * One location reading, taken at the moment the alarm is sent (never tracked in between). The permission itself is
+ * already required by the app's start-up check; a phone that cannot give a fix still raises the alarm.
+ */
+async function takeOneReading(): Promise<{ latitude: number; longitude: number } | null> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+        const current = await Location.getForegroundPermissionsAsync();
+        if (!current.granted && !(current.canAskAgain && (await Location.requestForegroundPermissionsAsync()).granted)) return null;
+        const position = await Promise.race([
+            Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+            new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), 4000); }),
+        ]);
+        const fix = position ?? (await Location.getLastKnownPositionAsync());
+        return fix ? { latitude: fix.coords.latitude, longitude: fix.coords.longitude } : null;
+    } catch {
+        return null;
+    } finally {
+        if (timer) clearTimeout(timer);
+    }
+}
+
+type Place = { blockId?: string; location?: string };
 
 // ─── Sub-Components ──────────────────────────────────────────────────────────
 
@@ -123,7 +150,11 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
     const [lastTriggerTime, setLastTriggerTime] = useState(0);
     const [isOffline, setIsOffline] = useState(false);
     
-    const locationRef = useRef<string | null>(null);
+    // A harassment alarm asks "where?" first; it is the one alarm that is private and silent
+    const [harassmentOpen, setHarassmentOpen] = useState(false);
+    const [privateSend, setPrivateSend] = useState(false);
+    const [places, setPlaces] = useState<{ blocks: { id: string; name: string }[]; commonAreas: string[] } | null>(null);
+    const [pickedPlace, setPickedPlace] = useState<Place | null>(null);
 
     // Animations
     const sirenRotate = useSharedValue(0);
@@ -139,20 +170,26 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
             true
         );
 
-        // Warm up location
+    }, []);
+
+    useEffect(() => {
+        if (!harassmentOpen || places) return;
         (async () => {
             try {
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== 'granted') return;
-                const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-                locationRef.current = `${loc.coords.latitude},${loc.coords.longitude}`;
-            } catch { }
+                const res = await api.get('/community/emergencies/places');
+                const data = res?.data?.data;
+                if (data && Array.isArray(data.blocks)) {
+                    setPlaces({ blocks: data.blocks, commonAreas: Array.isArray(data.commonAreas) ? data.commonAreas : [] });
+                }
+            } catch {
+                // Picking a place is optional: the alarm still goes without it
+            }
         })();
-    }, []);
+    }, [harassmentOpen, places]);
 
     // ─── Interaction Handlers ────────────────────────────────────────────────
 
-    const handleSOS = useCallback(async (type: string = 'OTHER', skipHaptic: boolean = false) => {
+    const handleSOS = useCallback(async (type: string = 'OTHER', skipHaptic: boolean = false, place?: Place) => {
         const now = Date.now();
         if (now - lastTriggerTime < COOLDOWN_MS) {
             AppAlert.show('Slow Down', 'Please wait before sending another alert.');
@@ -160,6 +197,7 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
         }
 
         setState('triggered');
+        setPrivateSend(type === 'HARASSMENT');
         setLastTriggerTime(now);
         
         if (!skipHaptic) {
@@ -170,7 +208,13 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
 
         try {
             const body: any = { type };
-            if (locationRef.current) body.location = locationRef.current;
+            const reading = await takeOneReading();
+            if (reading) {
+                body.latitude = reading.latitude;
+                body.longitude = reading.longitude;
+            }
+            if (place?.blockId) body.blockId = place.blockId;
+            if (place?.location) body.location = place.location;
             
             // API Call
             const res = await api.post('/community/emergencies', body);
@@ -220,7 +264,7 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
                         <View className="flex-row items-center gap-3" style={{ marginTop: insets.top }}>
                             <ActivityIndicator color="white" size="small" />
                             <Text className="text-white font-sora-bold text-sm">
-                                {isOffline ? 'Sending when network is available...' : 'Broadcasting Emergency...'}
+                                {isOffline ? 'Sending when network is available...' : privateSend ? 'Sending...' : 'Broadcasting Emergency...'}
                             </Text>
                         </View>
                     </Animated.View>
@@ -294,7 +338,7 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
                                     icon={TYPE_ICONS[tile.type]}
                                     index={index}
                                     disabled={state === 'triggered' || isOffline}
-                                    onPress={() => handleSOS(tile.type)}
+                                    onPress={() => (tile.type === 'HARASSMENT' ? setHarassmentOpen(true) : handleSOS(tile.type))}
                                 />
                             ))}
                         </View>
@@ -305,12 +349,97 @@ export default function SharedSOSCreateScreen({ role }: SharedSOSCreateScreenPro
                         <View className="flex-row items-center bg-red-50/90 px-4 py-2.5 rounded-full border border-red-100 shadow-sm shadow-red-100/50">
                             <MaterialIcons name="my-location" size={16} color="#ef4444" />
                             <Text className="text-red-700 text-[11px] font-sora-bold ml-2 uppercase tracking-wide">
-                                Live location will be shared
+                                Your location is shared once, when you send
                             </Text>
                         </View>
                     </View>
                 </ScrollView>
             </LinearGradient>
+
+            {/* Harassment: pick where (optional), then send silently */}
+            <Modal visible={harassmentOpen} transparent animationType="slide" onRequestClose={() => setHarassmentOpen(false)}>
+                <View style={sheetStyles.backdrop}>
+                    <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setHarassmentOpen(false)} />
+                    <View style={[sheetStyles.sheet, { paddingBottom: Math.max(insets.bottom + 16, 24) }]}>
+                        <Text style={sheetStyles.title}>Harassment alarm</Text>
+                        <Text style={sheetStyles.text}>
+                            Security and the admin are told at once. The residents of the tower you pick get only a short
+                            "look out" message, without any names. Your phone stays silent.
+                        </Text>
+                        {places && (places.blocks.length > 0 || places.commonAreas.length > 0) ? (
+                            <View>
+                                <Text style={sheetStyles.where}>Where is it happening? (optional)</Text>
+                                <ScrollView style={sheetStyles.chipsScroll} contentContainerStyle={sheetStyles.chips} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                                    {places.blocks.map((block) => {
+                                        const on = pickedPlace?.blockId === block.id;
+                                        return (
+                                            <TouchableOpacity
+                                                key={block.id}
+                                                testID={`place-block-${block.id}`}
+                                                onPress={() => setPickedPlace(on ? null : { blockId: block.id })}
+                                                style={[sheetStyles.chip, on && sheetStyles.chipOn]}
+                                                accessibilityState={{ selected: on }}
+                                            >
+                                                <Text style={[sheetStyles.chipText, on && sheetStyles.chipTextOn]}>{block.name}</Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                    {places.commonAreas.map((area) => {
+                                        const on = pickedPlace?.location === area;
+                                        return (
+                                            <TouchableOpacity
+                                                key={area}
+                                                testID={`place-area-${area}`}
+                                                onPress={() => setPickedPlace(on ? null : { location: area })}
+                                                style={[sheetStyles.chip, on && sheetStyles.chipOn]}
+                                                accessibilityState={{ selected: on }}
+                                            >
+                                                <Text style={[sheetStyles.chipText, on && sheetStyles.chipTextOn]}>{area}</Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </ScrollView>
+                            </View>
+                        ) : null}
+                        <TouchableOpacity
+                            testID="harassment-send"
+                            style={sheetStyles.send}
+                            activeOpacity={0.85}
+                            onPress={() => {
+                                const place = pickedPlace ?? undefined;
+                                setHarassmentOpen(false);
+                                setPickedPlace(null);
+                                // Silent: no vibration, no sound, no haptic on her phone
+                                handleSOS('HARASSMENT', true, place);
+                            }}
+                        >
+                            <MaterialIcons name="campaign" size={22} color="#FFFFFF" />
+                            <Text style={sheetStyles.sendText}>Send silently</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity testID="harassment-cancel" onPress={() => { setHarassmentOpen(false); setPickedPlace(null); }} style={sheetStyles.cancel}>
+                            <Text style={sheetStyles.cancelText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
+
+const sheetStyles = StyleSheet.create({
+    backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+    sheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingTop: 22, paddingHorizontal: 22, gap: 12 },
+    title: { fontSize: 20, color: '#111827', fontFamily: SgateFonts.bold },
+    text: { fontSize: 14, lineHeight: 20, color: '#4B5563', fontFamily: SgateFonts.regular },
+    where: { fontSize: 13, color: '#111827', marginBottom: 8, fontFamily: SgateFonts.bold },
+    chipsScroll: { maxHeight: 140 },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF' },
+    chipOn: { backgroundColor: '#FEE2E2', borderColor: '#EF4444' },
+    chipText: { fontSize: 14, color: '#374151', fontFamily: SgateFonts.bold },
+    chipTextOn: { color: '#B91C1C' },
+    send: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#EF4444', borderRadius: 16, paddingVertical: 16 },
+    sendText: { color: '#FFFFFF', fontSize: 16, fontFamily: SgateFonts.bold },
+    cancel: { alignItems: 'center', paddingVertical: 8 },
+    cancelText: { color: '#6B7280', fontSize: 15, fontFamily: SgateFonts.bold },
+});

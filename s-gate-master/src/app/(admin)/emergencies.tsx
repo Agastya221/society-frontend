@@ -4,6 +4,7 @@ import React, { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
+    Linking,
     Modal,
 
     StyleSheet,
@@ -24,7 +25,7 @@ import api from '@/services/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type EmergencyStatus = 'TRIGGERED' | 'ACKNOWLEDGED' | 'RESOLVED' | 'FALSE_ALARM' | 'ACTIVE';
-type EmergencyType   = 'MEDICAL' | 'FIRE' | 'SECURITY' | 'LIFT_STUCK' | 'ANIMAL_THREAT' | 'OTHER';
+type EmergencyType   = 'HARASSMENT' | 'MEDICAL' | 'FIRE' | 'SECURITY' | 'LIFT_STUCK' | 'ANIMAL_THREAT' | 'THEFT' | 'VIOLENCE' | 'ACCIDENT' | 'OTHER';
 
 interface Emergency {
     id: string;
@@ -32,6 +33,10 @@ interface Emergency {
     status: EmergencyStatus;
     description: string;
     location?: string;
+    /** The tower picked when raising it, and one location reading taken at that moment */
+    block?: { name?: string } | null;
+    latitude?: number | null;
+    longitude?: number | null;
     createdAt: string;
     resolvedAt?: string;
     sender?: { name: string; flat?: string; phone?: string };
@@ -43,6 +48,7 @@ interface Emergency {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const TYPE_META: Record<string, { icon: React.ComponentProps<typeof MaterialIcons>['name']; bg: string; color: string; label: string }> = {
+    HARASSMENT:    { icon: 'woman',                 bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Harassment' },
     MEDICAL:       { icon: 'medical-services',      bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Medical' },
     FIRE:          { icon: 'local-fire-department', bg: SgateColors.redBg,    color: SgateColors.red,      label: 'Fire' },
     SECURITY:      { icon: 'security',              bg: SgateColors.goldPale, color: SgateColors.goldDeep, label: 'Security' },
@@ -163,7 +169,18 @@ export default function AdminEmergenciesScreen() {
         }
     };
 
+    /** The map pin of an alarm: the reading taken when it was raised (older alarms kept it as "lat,lng" text). */
+    const pinOf = (item: Emergency): { latitude: number; longitude: number } | null => {
+        if (typeof item.latitude === 'number' && typeof item.longitude === 'number') return { latitude: item.latitude, longitude: item.longitude };
+        const match = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/.exec(item.location ?? '');
+        return match ? { latitude: Number(match[1]), longitude: Number(match[2]) } : null;
+    };
+
     const renderItem = ({ item, index }: { item: Emergency; index: number }) => {
+        const pin = pinOf(item);
+        // Older alarms kept the reading as "lat,lng" text in the location: show the pin, not the numbers
+        const legacyCoordinateText = typeof item.latitude !== 'number' && !!pin;
+        const placeText = [item.block?.name, legacyCoordinateText ? null : item.location].filter(Boolean).join(' · ');
         const meta   = TYPE_META[item.type] ?? TYPE_META.OTHER;
         const isActive = item.status === 'TRIGGERED' || item.status === 'ACTIVE';
         const isAcknowledged = item.status === 'ACKNOWLEDGED';
@@ -198,11 +215,22 @@ export default function AdminEmergenciesScreen() {
                     )}
 
                     {/* Location */}
-                    {!!item.location && (
+                    {!!placeText && (
                         <View style={styles.locationRow}>
                             <MaterialIcons name="location-on" size={12} color={SgateColors.t3} />
-                            <Text style={styles.locationText}>{item.location}</Text>
+                            <Text style={styles.locationText}>{placeText}</Text>
                         </View>
+                    )}
+                    {pin && (
+                        <TouchableOpacity
+                            testID={`map-${item.id}`}
+                            style={styles.mapBtn}
+                            activeOpacity={0.8}
+                            onPress={() => void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${pin.latitude},${pin.longitude}`)}
+                        >
+                            <MaterialIcons name="map" size={14} color={SgateColors.blue} />
+                            <Text style={styles.mapBtnText}>Open in maps</Text>
+                        </TouchableOpacity>
                     )}
 
                     {/* Resolution note */}
@@ -415,6 +443,8 @@ const styles = StyleSheet.create({
         lineHeight: 18, marginBottom: 8,
     },
     locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
+    mapBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: SgateColors.blueBg, marginBottom: 8 },
+    mapBtnText: { fontSize: 12, fontFamily: SgateFonts.semibold, color: SgateColors.blue },
     locationText: { fontSize: 12, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
 
     resolveNoteWrap: {

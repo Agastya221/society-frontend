@@ -186,7 +186,9 @@ export default function EmergenciesScreen() {
                 description: emergency.description,
             };
             // One location reading, taken now and never tracked. A phone without a fix still raises the alarm.
-            const reading = await Promise.race([getFreshReading(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000))]);
+            let readingTimer: ReturnType<typeof setTimeout> | undefined;
+            const reading = await Promise.race([getFreshReading(), new Promise<null>((resolve) => { readingTimer = setTimeout(() => resolve(null), 4000); })]);
+            if (readingTimer) clearTimeout(readingTimer);
             if (reading) {
                 payload.latitude = reading.latitude;
                 payload.longitude = reading.longitude;

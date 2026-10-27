@@ -22,6 +22,7 @@ import api from '../../../services/api';
 // ─── Types & Constants ───────────────────────────────────────────────────────
 
 const TYPE_ICONS: Record<string, string> = {
+    HARASSMENT: 'woman-outline',
     MEDICAL: 'medkit',
     FIRE: 'flame',
     SECURITY: 'shield',
