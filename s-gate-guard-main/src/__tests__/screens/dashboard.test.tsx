@@ -164,16 +164,9 @@ describe('Guard Dashboard (index)', () => {
 
   // ── Emergency ───────────────────────────────────────────────────────────────
   describe('Emergency', () => {
-    it('only explains the hold on a short tap', async () => {
-      const { getByLabelText, getByText } = await renderDashboard();
-      fireEvent.press(getByLabelText('Emergency'));
-      expect(getByText('Press and hold the button for 2 seconds')).toBeTruthy();
-      expect(mockPush).not.toHaveBeenCalled();
-    });
-
-    it('opens the emergency screen on a long press', async () => {
+    it('opens the emergency screen on click/press', async () => {
       const { getByLabelText } = await renderDashboard();
-      fireEvent(getByLabelText('Emergency'), 'longPress');
+      fireEvent.press(getByLabelText('Emergency'));
       expect(mockPush).toHaveBeenCalledWith('/emergencies');
     });
   });

@@ -29,48 +29,31 @@ type Route = '/new-entry' | '/scan-verify' | '/today-entries' | '/approvals' | '
 const rise = (i: number) => FadeInDown.delay(i * 70).duration(420);
 
 /**
- * Emergency needs a 2 second press so it can't be set off by accident.
- * A short tap only explains what to do.
+ * Emergency button: opens the emergency SOS screen on click.
  */
 function EmergencyHold({ onTrigger }: { onTrigger: () => void }) {
   const t = useT();
-  const progress = useRef(new RNAnimated.Value(0)).current;
-  const [hint, setHint] = useState(false);
-  const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => () => { if (hintTimer.current) clearTimeout(hintTimer.current); }, []);
-
-  const showHint = () => {
-    setHint(true);
-    if (hintTimer.current) clearTimeout(hintTimer.current);
-    hintTimer.current = setTimeout(() => setHint(false), 3500);
-  };
 
   return (
     <View style={styles.emergencyCol}>
       <Pressy
+        accessibilityRole="button"
         accessibilityLabel={t('home.emergency')}
         accessibilityHint={t('home.emergencyHint')}
-        delayLongPress={HOLD_MS}
-        scaleTo={0.98}
-        onPressIn={() => {
-          progress.setValue(0);
-          RNAnimated.timing(progress, { toValue: 1, duration: HOLD_MS, easing: Easing.linear, useNativeDriver: false }).start();
+        scaleTo={0.96}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          onTrigger();
         }}
-        onPressOut={() => { progress.stopAnimation(); progress.setValue(0); }}
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); showHint(); }}
-        onLongPress={() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); setHint(false); onTrigger(); }}
         style={[styles.emergency, guardShadow('#B82424', 2)]}
       >
         <LinearGradient colors={GuardGradients.deny} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 26 }]} />
-        <RNAnimated.View style={[styles.emergencyFill, { width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
         <View style={styles.emergencyIcon}><Ionicons name="warning" size={26} color="#FFFFFF" /></View>
         <View style={styles.emergencyCopy}>
           <Text style={styles.emergencyTitle}>{t('home.emergency')}</Text>
           <Text style={styles.emergencySub}>{t('home.emergencyHold')}</Text>
         </View>
       </Pressy>
-      {hint && <Text style={styles.hint}>{t('home.emergencyHint')}</Text>}
     </View>
   );
 }
