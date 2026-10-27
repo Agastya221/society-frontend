@@ -185,14 +185,14 @@ export default function ProfileScreen() {
                 {languageCard}
                 {logoutButton}
             </ScrollView>
-            <HomeButton />
+            <HomeButton activeTab="profile" />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: GuardColors.bg },
-    scrollContent: { padding: 20, gap: 16, paddingBottom: 28 },
+    scrollContent: { padding: 20, gap: 16, paddingBottom: 110 },
     centered: { flex: 1, backgroundColor: GuardColors.bg, alignItems: 'center', justifyContent: 'center', gap: 14 },
     centeredText: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: GuardType.button, lineHeight: 28, fontWeight: '800' },
 

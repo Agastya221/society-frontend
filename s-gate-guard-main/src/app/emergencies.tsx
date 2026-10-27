@@ -1,4 +1,5 @@
 import { ResultScreen } from '@/components/gate/ResultScreen';
+import { AppBottomNav } from '@/components/navigation/BottomNavBar';
 import { GuardColors, GuardFonts, GuardSemantic, GuardTouch, guardShadow } from '@/constants/theme';
 import { useT } from '@/i18n';
 import api from '@/services/api';
@@ -285,7 +286,7 @@ export default function EmergenciesScreen() {
 
                 {/* Main Scroll Content */}
                 <ScrollView
-                    contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 24 }]}
+                    contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
                     showsVerticalScrollIndicator={false}
                     bounces={false}
                 >
@@ -663,6 +664,7 @@ export default function EmergenciesScreen() {
                     </View>
                 </Modal>
             </LinearGradient>
+            <AppBottomNav activeTab="emergency" />
         </View>
     );
 }

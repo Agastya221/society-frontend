@@ -213,7 +213,7 @@ export default function ApprovalsScreen() {
           </View>
         </View>
       </Modal>
-      <HomeButton />
+      <HomeButton activeTab="logs" />
     </View>
   );
 }

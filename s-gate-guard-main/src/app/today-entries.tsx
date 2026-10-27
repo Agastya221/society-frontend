@@ -384,7 +384,7 @@ export default function TodayEntriesScreen() {
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#D97706" />}
                 />
             )}
-            <HomeButton />
+            <HomeButton activeTab="logs" />
         </View>
     );
 }
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
     // Visitor List
     listContent: {
         padding: 16,
-        paddingBottom: 20,
+        paddingBottom: 110,
         gap: 12,
     },
     listEmpty: {

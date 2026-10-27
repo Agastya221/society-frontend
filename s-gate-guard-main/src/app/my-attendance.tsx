@@ -159,7 +159,7 @@ export default function MyAttendanceScreen() {
           </>
         )}
       </ScrollView>
-      <HomeButton />
+      <HomeButton activeTab="profile" />
     </View>
   );
 }
@@ -184,7 +184,7 @@ function Flag({ text }: { text: string }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: GuardColors.bg },
-  content: { padding: 20, gap: 16, paddingBottom: 28 },
+  content: { padding: 20, gap: 16, paddingBottom: 110 },
   centered: { alignItems: 'center', justifyContent: 'center', gap: 14, paddingVertical: 24 },
   centeredText: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: GuardType.button, lineHeight: 28, fontWeight: '800', textAlign: 'center' },
 
