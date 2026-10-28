@@ -27,6 +27,7 @@ const actions = [
   { label: 'Gate pass', detail: 'Show QR at gate', icon: 'qr-code-outline' as const, route: '/pass' as const, tint: Colors.goldPale },
   { label: 'My schedule', detail: 'Homes and timings', icon: 'calendar-outline' as const, route: '/schedule' as const, tint: Colors.bluePale },
   { label: 'Work requests', detail: 'Accept new work', icon: 'briefcase-outline' as const, route: '/bookings' as const, tint: Colors.greenPale },
+  { label: 'Tasks', detail: 'Jobs from security', icon: 'checkbox-outline' as const, route: '/tasks' as never, tint: Colors.goldPale },
   { label: 'My profile', detail: 'Details and support', icon: 'person-outline' as const, route: '/profile' as const, tint: '#F1EEFF' },
 ];
 

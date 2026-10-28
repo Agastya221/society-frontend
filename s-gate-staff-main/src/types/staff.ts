@@ -26,3 +26,15 @@ export function worksToday(workingDays?: string[] | null, date = new Date()) {
   const today = date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3).toUpperCase();
   return workingDays.some((day) => day.slice(0, 3).toUpperCase() === today);
 }
+
+/** A job given by a guard or the admin (clean the lobby...). */
+export type StaffTask = {
+  id: string;
+  title: string;
+  note?: string | null;
+  location?: string | null;
+  block?: { id: string; name: string } | null;
+  status: 'ASSIGNED' | 'ACCEPTED' | 'DONE' | 'CANCELLED';
+  createdAt: string;
+  createdBy?: { id: string; name: string; role?: string } | null;
+};

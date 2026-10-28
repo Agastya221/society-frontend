@@ -53,6 +53,7 @@ export default function Layout() {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data as Record<string, unknown>;
       if (data?.screen === 'Bookings') router.push('/bookings');
+      if (data?.screen === 'Tasks') router.push('/tasks' as never);
       if (data?.screen === 'StaffAttendance') router.push('/schedule');
     });
     return () => subscription.remove();
@@ -86,5 +87,5 @@ export default function Layout() {
     return () => { cancelled = true; };
   }, [ready, token]);
   if (!ready) return <View style={{ flex: 1, backgroundColor: Colors.bg, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={Colors.gold} /></View>;
-  return <SafeAreaProvider><Stack screenOptions={{ animation: 'none', headerShadowVisible: false, contentStyle: { backgroundColor: Colors.bg }, headerTitleStyle: { fontWeight: '800' } }}><Stack.Protected guard={!token}><Stack.Screen name="login" options={{ headerShown: false }} /></Stack.Protected><Stack.Protected guard={!!token}><Stack.Screen name="index" options={{ headerShown: false }} /><Stack.Screen name="pass" options={{ title: 'My Gate Pass' }} /><Stack.Screen name="schedule" options={{ title: 'My Schedule' }} /><Stack.Screen name="bookings" options={{ title: 'Work Requests' }} /><Stack.Screen name="profile" options={{ title: 'My Profile' }} /></Stack.Protected></Stack><StatusBar style="dark" /><AppAlertHost /><LiveAlertHost /></SafeAreaProvider>;
+  return <SafeAreaProvider><Stack screenOptions={{ animation: 'none', headerShadowVisible: false, contentStyle: { backgroundColor: Colors.bg }, headerTitleStyle: { fontWeight: '800' } }}><Stack.Protected guard={!token}><Stack.Screen name="login" options={{ headerShown: false }} /></Stack.Protected><Stack.Protected guard={!!token}><Stack.Screen name="index" options={{ headerShown: false }} /><Stack.Screen name="pass" options={{ title: 'My Gate Pass' }} /><Stack.Screen name="schedule" options={{ title: 'My Schedule' }} /><Stack.Screen name="bookings" options={{ title: 'Work Requests' }} /><Stack.Screen name="tasks" options={{ title: 'Tasks' }} /><Stack.Screen name="profile" options={{ title: 'My Profile' }} /></Stack.Protected></Stack><StatusBar style="dark" /><AppAlertHost /><LiveAlertHost /></SafeAreaProvider>;
 }

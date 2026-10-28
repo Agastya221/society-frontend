@@ -81,3 +81,35 @@ describe('Staff app LiveAlertHost: emergencies', () => {
     expect(getByText('EMERGENCY')).toBeTruthy();
   });
 });
+
+describe('Staff app LiveAlertHost: tasks', () => {
+  beforeEach(() => { jest.clearAllMocks(); handler = null; useAuth.setState({ token: 'staff-token' } as never); });
+  const newTask = { title: 'New task', body: 'Clean the lobby · Tower A', data: { type: 'STAFF_TASK_NEW', taskId: 't1' }, urgent: true };
+
+  it('a new task rings as a task, with what to do, and View task opens the Tasks list', async () => {
+    const { getByText, queryByText } = render(<LiveAlertHost />);
+    await send(newTask);
+    expect(getByText('NEW TASK')).toBeTruthy();
+    expect(getByText('Clean the lobby · Tower A')).toBeTruthy();
+    expect(queryByText('NEW WORK REQUEST')).toBeNull();
+    expect(startAlertSound).toHaveBeenCalledTimes(1);
+    await act(async () => { fireEvent.press(getByText('View task')); });
+    expect(mockPush).toHaveBeenCalledWith('/tasks');
+  });
+
+  it('when the task is cancelled the ringing stops and the screen goes', async () => {
+    const { queryByText } = render(<LiveAlertHost />);
+    await send(newTask);
+    (stopAlertSound as jest.Mock).mockClear();
+    await send({ title: 'Task cancelled', body: 'Clean the lobby', data: { type: 'STAFF_TASK_CANCELLED', taskId: 't1' }, urgent: false });
+    expect(stopAlertSound).toHaveBeenCalled();
+    expect(queryByText('NEW TASK')).toBeNull();
+  });
+
+  it('tapping a task banner opens the Tasks list, not the work requests', async () => {
+    const { getByText } = render(<LiveAlertHost />);
+    await send({ title: 'Task cancelled', body: 'Clean the lobby', data: { type: 'STAFF_TASK_CANCELLED', taskId: 'zz' }, urgent: false });
+    await act(async () => { fireEvent.press(getByText('Task cancelled')); });
+    expect(mockPush).toHaveBeenCalledWith('/tasks');
+  });
+});

@@ -10,6 +10,7 @@ import { playSingleChime, startAlertSound, stopAlertSound } from '../../services
 import { startRealtime, stopRealtime, type LiveAlert } from '../../services/realtime';
 import { useAuth } from '../../store/auth';
 import { useBookingsSignal } from '../../store/bookingsSignal';
+import { useTasksSignal } from '../../store/tasksSignal';
 
 const SERVER_ROOT = API_URL.replace(/\/api\/v1\/?$/, '');
 const BANNER_MS = 6000;
@@ -25,12 +26,18 @@ export function LiveAlertHost() {
   const [banner, setBanner] = useState<LiveAlert | null>(null);
   const bannerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const open = useCallback(() => router.push('/bookings' as never), [router]);
+  const open = useCallback((type?: string) => router.push((String(type ?? '').startsWith('STAFF_TASK') ? '/tasks' : '/bookings') as never), [router]);
   const isEmergencyKind = (type?: string) => type === 'EMERGENCY_ALERT' || type === 'EMERGENCY_ALL_CLEAR';
 
   const showAlert = useCallback(async (alert: LiveAlert): Promise<boolean> => {
     // A new or cancelled work request: the list on the Work requests screen is out of date now
     if (String(alert.data?.type ?? '').startsWith('STAFF_BOOKING')) useBookingsSignal.getState().bump();
+    // A task from security or the admin: the Tasks list is out of date now
+    if (String(alert.data?.type ?? '').startsWith('STAFF_TASK')) useTasksSignal.getState().bump();
+    // The task that is ringing was just cancelled: stop ringing for it
+    if (alert.data?.type === 'STAFF_TASK_CANCELLED') {
+      setUrgent((shown) => (shown && shown.data?.taskId === alert.data?.taskId ? (stopAlertSound(), null) : shown));
+    }
     // The request that is ringing was just cancelled: stop ringing for it
     if (alert.data?.type === 'STAFF_BOOKING_CANCELLED') {
       setUrgent((shown) => (shown && shown.data?.bookingId === alert.data?.bookingId ? (stopAlertSound(), null) : shown));
@@ -83,7 +90,7 @@ export function LiveAlertHost() {
       {banner ? (
         <SafeAreaView edges={['top']} style={s.bannerWrap} pointerEvents="box-none">
           <View>
-            <Pressable style={s.banner} onPress={() => { setBanner(null); if (!isEmergencyKind(banner.data?.type)) open(); }} accessibilityRole="button">
+            <Pressable style={s.banner} onPress={() => { setBanner(null); if (!isEmergencyKind(banner.data?.type)) open(banner.data?.type); }} accessibilityRole="button">
               <View style={s.bannerIcon}><Ionicons name="notifications" size={20} color={Colors.ink} /></View>
               <View style={s.bannerCopy}>
                 <Text style={s.bannerTitle} numberOfLines={1}>{banner.title}</Text>
@@ -105,6 +112,17 @@ export function LiveAlertHost() {
                 <Text style={s.body}>{urgent?.body}</Text>
                 <View style={s.actions}>
                   <Pressable style={[s.btn, s.emergencyOk]} onPress={close} accessibilityRole="button"><Text style={s.emergencyOkText}>OK, I understand</Text></Pressable>
+                </View>
+              </>
+            ) : urgent?.data?.type === 'STAFF_TASK_NEW' ? (
+              <>
+                <View style={s.ringIcon}><Ionicons name="checkbox" size={32} color={Colors.ink} /></View>
+                <Text style={s.kicker}>NEW TASK</Text>
+                <Text style={s.title}>{urgent?.body}</Text>
+                <Text style={s.body}>Given by security or the admin. Open it to accept or finish it.</Text>
+                <View style={s.actions}>
+                  <Pressable style={[s.btn, s.later]} onPress={close} accessibilityRole="button"><Text style={s.laterText}>Later</Text></Pressable>
+                  <Pressable style={[s.btn, s.view]} onPress={() => { close(); open('STAFF_TASK_NEW'); }} accessibilityRole="button"><Text style={s.viewText}>View task</Text></Pressable>
                 </View>
               </>
             ) : (
