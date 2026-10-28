@@ -26,6 +26,7 @@ export function LiveAlertHost() {
   const bannerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const open = useCallback(() => router.push('/bookings' as never), [router]);
+  const isEmergencyKind = (type?: string) => type === 'EMERGENCY_ALERT' || type === 'EMERGENCY_ALL_CLEAR';
 
   const showAlert = useCallback(async (alert: LiveAlert): Promise<boolean> => {
     // A new or cancelled work request: the list on the Work requests screen is out of date now
@@ -33,6 +34,11 @@ export function LiveAlertHost() {
     // The request that is ringing was just cancelled: stop ringing for it
     if (alert.data?.type === 'STAFF_BOOKING_CANCELLED') {
       setUrgent((shown) => (shown && shown.data?.bookingId === alert.data?.bookingId ? (stopAlertSound(), null) : shown));
+    }
+    // The emergency is over: stop ringing and take the emergency screen down
+    if (alert.data?.type === 'EMERGENCY_ALL_CLEAR') {
+      stopAlertSound();
+      setUrgent((shown) => (shown?.data?.type === 'EMERGENCY_ALERT' ? null : shown));
     }
     if (alert.urgent) {
       setBanner(null);
@@ -46,6 +52,9 @@ export function LiveAlertHost() {
     }
     return true;
   }, []);
+
+  // The banner's 6-second timer must not outlive the screen
+  useEffect(() => () => { if (bannerTimer.current) clearTimeout(bannerTimer.current); }, []);
 
   useEffect(() => {
     if (!token) {
@@ -74,7 +83,7 @@ export function LiveAlertHost() {
       {banner ? (
         <SafeAreaView edges={['top']} style={s.bannerWrap} pointerEvents="box-none">
           <View>
-            <Pressable style={s.banner} onPress={() => { setBanner(null); open(); }} accessibilityRole="button">
+            <Pressable style={s.banner} onPress={() => { setBanner(null); if (!isEmergencyKind(banner.data?.type)) open(); }} accessibilityRole="button">
               <View style={s.bannerIcon}><Ionicons name="notifications" size={20} color={Colors.ink} /></View>
               <View style={s.bannerCopy}>
                 <Text style={s.bannerTitle} numberOfLines={1}>{banner.title}</Text>
@@ -88,14 +97,28 @@ export function LiveAlertHost() {
       <Modal visible={!!urgent} transparent animationType="fade" statusBarTranslucent onRequestClose={close}>
         <View style={s.backdrop}>
           <View style={s.card}>
-            <View style={s.ringIcon}><Ionicons name="briefcase" size={32} color={Colors.ink} /></View>
-            <Text style={s.kicker}>NEW WORK REQUEST</Text>
-            <Text style={s.title}>{urgent?.title}</Text>
-            <Text style={s.body}>{urgent?.body}</Text>
-            <View style={s.actions}>
-              <Pressable style={[s.btn, s.later]} onPress={close} accessibilityRole="button"><Text style={s.laterText}>Later</Text></Pressable>
-              <Pressable style={[s.btn, s.view]} onPress={() => { close(); open(); }} accessibilityRole="button"><Text style={s.viewText}>View request</Text></Pressable>
-            </View>
+            {urgent?.data?.type === 'EMERGENCY_ALERT' ? (
+              <>
+                <View style={[s.ringIcon, s.emergencyIcon]}><Ionicons name="warning" size={34} color="#FFFFFF" /></View>
+                <Text style={[s.kicker, s.emergencyKicker]}>EMERGENCY</Text>
+                <Text style={s.title}>{urgent?.title}</Text>
+                <Text style={s.body}>{urgent?.body}</Text>
+                <View style={s.actions}>
+                  <Pressable style={[s.btn, s.emergencyOk]} onPress={close} accessibilityRole="button"><Text style={s.emergencyOkText}>OK, I understand</Text></Pressable>
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={s.ringIcon}><Ionicons name="briefcase" size={32} color={Colors.ink} /></View>
+                <Text style={s.kicker}>NEW WORK REQUEST</Text>
+                <Text style={s.title}>{urgent?.title}</Text>
+                <Text style={s.body}>{urgent?.body}</Text>
+                <View style={s.actions}>
+                  <Pressable style={[s.btn, s.later]} onPress={close} accessibilityRole="button"><Text style={s.laterText}>Later</Text></Pressable>
+                  <Pressable style={[s.btn, s.view]} onPress={() => { close(); open(); }} accessibilityRole="button"><Text style={s.viewText}>View request</Text></Pressable>
+                </View>
+              </>
+            )}
             <Pressable onPress={stopAlertSound} hitSlop={12} accessibilityRole="button"><Text style={s.silence}>Silence the ring</Text></Pressable>
           </View>
         </View>
@@ -120,6 +143,10 @@ const s = StyleSheet.create({
   body: { marginTop: 8, fontSize: 15, lineHeight: 22, color: Colors.muted, textAlign: 'center' },
   actions: { flexDirection: 'row', gap: 12, marginTop: 24, alignSelf: 'stretch' },
   btn: { flex: 1, minHeight: 56, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
+  emergencyIcon: { backgroundColor: '#D93636' },
+  emergencyKicker: { color: '#D93636' },
+  emergencyOk: { backgroundColor: '#D93636' },
+  emergencyOkText: { fontSize: 16, fontWeight: '900', color: '#FFFFFF' },
   later: { backgroundColor: Colors.bg },
   laterText: { fontSize: 16, fontWeight: '800', color: Colors.muted },
   view: { backgroundColor: Colors.gold },
