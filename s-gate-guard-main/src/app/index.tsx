@@ -245,16 +245,17 @@ export default function GuardDashboard() {
           </Pressy>
         ) : null}
 
-        {/* Primary Action: New Visitor Entry (Reflowed to primary position) */}
+        {/* Primary Action: New Visitor Entry (Brand Yellow) */}
         <Animated.View entering={rise(2)}>
-          <Pressy accessibilityLabel={t('home.newVisitor')} onPress={() => open('/new-entry')} style={[styles.visitor, guardShadow('#0D0F14', 3)]}>
-            <LinearGradient colors={GuardGradients.dark} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 30 }]} />
-            <View style={styles.visitorIcon}><Ionicons name="person-add" size={28} color={GuardColors.gold} /></View>
+          <Pressy accessibilityLabel={t('home.newVisitor')} onPress={() => open('/new-entry')} style={[styles.visitor, guardShadow('#FFB300', 3)]}>
+            <LinearGradient colors={GuardGradients.gold} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 30 }]} />
+            <Ionicons name="person" size={150} color="rgba(255,255,255,0.18)" style={styles.visitorWatermark} pointerEvents="none" />
+            <View style={styles.visitorIcon}><Ionicons name="person-add" size={30} color={GuardColors.black} /></View>
             <View style={styles.visitorCopy}>
               <Text style={styles.visitorTitle}>{t('home.newVisitor')}</Text>
               <Text style={styles.visitorSub}>{t('home.newVisitorSub')}</Text>
             </View>
-            <View style={styles.visitorGo}><Ionicons name="arrow-forward" size={22} color={GuardColors.black} /></View>
+            <View style={styles.visitorGo}><Ionicons name="arrow-forward" size={22} color={GuardColors.gold} /></View>
           </Pressy>
         </Animated.View>
 
@@ -328,12 +329,13 @@ const styles = StyleSheet.create({
   stoppedBanner: { minHeight: 72, marginBottom: 14, paddingHorizontal: 18, borderRadius: 22, backgroundColor: GuardColors.redBg, borderWidth: 2, borderColor: GuardColors.red, flexDirection: 'row', alignItems: 'center', gap: 12 },
   readyText: { flex: 1, color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 19 },
 
-  visitor: { marginTop: 16, height: 126, minHeight: 126, borderRadius: 30, backgroundColor: '#161922', paddingHorizontal: 20, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
-  visitorIcon: { width: 64, height: 64, borderRadius: 22, backgroundColor: 'rgba(255,184,0,0.16)', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  visitor: { marginTop: 16, height: 126, minHeight: 126, borderRadius: 30, backgroundColor: '#FFB800', paddingHorizontal: 20, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  visitorWatermark: { position: 'absolute', right: -20, top: -24, transform: [{ rotate: '-12deg' }] },
+  visitorIcon: { width: 64, height: 64, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.55)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.75)', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
   visitorCopy: { flex: 1, justifyContent: 'center' },
-  visitorTitle: { color: '#FFFFFF', fontFamily: GuardFonts.bold, fontSize: 26, lineHeight: 32, fontWeight: '900', letterSpacing: -0.4 },
-  visitorSub: { marginTop: 2, color: 'rgba(255,255,255,0.65)', fontFamily: GuardFonts.medium, fontSize: 15, lineHeight: 20, fontWeight: '600' },
-  visitorGo: { width: 48, height: 48, borderRadius: 24, backgroundColor: GuardColors.gold, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
+  visitorTitle: { color: GuardColors.black, fontFamily: GuardFonts.bold, fontSize: 26, lineHeight: 32, fontWeight: '900', letterSpacing: -0.4 },
+  visitorSub: { marginTop: 2, color: 'rgba(60,40,0,0.78)', fontFamily: GuardFonts.medium, fontSize: 15, lineHeight: 20, fontWeight: '600' },
+  visitorGo: { width: 48, height: 48, borderRadius: 24, backgroundColor: GuardColors.black, alignItems: 'center', justifyContent: 'center', marginLeft: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.16, shadowRadius: 8, elevation: 4 },
 
   stats: { marginTop: 16, flexDirection: 'row', gap: 14 },
   statWrap: { flex: 1 },
