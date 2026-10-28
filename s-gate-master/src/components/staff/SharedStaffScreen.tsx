@@ -421,6 +421,10 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                             <Text style={[styles.groupChipText, group === opt.key && styles.groupChipTextOn]}>{opt.label}</Text>
                         </Pressable>
                     ))}
+                    <Pressable testID="open-tasks" onPress={() => { Haptics.selectionAsync(); router.push('/(admin)/staff-tasks' as never); }} style={styles.tasksLink} accessibilityRole="button" accessibilityLabel="Tasks for staff">
+                        <MaterialCommunityIcons name="checkbox-marked-outline" size={16} color={SgateColors.t1} />
+                        <Text style={styles.tasksLinkText}>Tasks</Text>
+                    </Pressable>
                 </View>
             ) : null}
             {activeTab === 'DIRECTORY' && group === 'GUARDS' ? (
@@ -600,6 +604,8 @@ const styles = StyleSheet.create({
     groupRow: { flexDirection: 'row', gap: 8, paddingHorizontal: SgateLayout.screenGutter, paddingTop: 4, paddingBottom: 6 },
     groupChip: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 14, backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border },
     groupChipOn: { backgroundColor: SgateColors.goldPale, borderColor: SgateColors.gold },
+    tasksLink: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, backgroundColor: SgateColors.goldPale, borderWidth: 1, borderColor: SgateColors.gold },
+    tasksLinkText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
     groupChipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
     groupChipTextOn: { color: SgateColors.t1 },
     dutySummary: { paddingHorizontal: SgateLayout.screenGutter, fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.green, marginBottom: 2 },

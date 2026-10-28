@@ -30,7 +30,8 @@ export function LiveAlertHost() {
   const open = useCallback((data: Record<string, string>) => {
     const emergency = data.type === 'EMERGENCY_ALERT' || data.screen === 'EmergencyDetail';
     const delivery = data.type === 'DELIVERY_OVERSTAY';
-    router.push((emergency ? '/emergencies' : delivery ? '/today-entries' : '/approvals') as never);
+    const staffTask = String(data.type ?? '').startsWith('STAFF_TASK');
+    router.push((emergency ? '/emergencies' : delivery ? '/today-entries' : staffTask ? '/tasks' : '/approvals') as never);
   }, [router]);
 
   const showAlert = useCallback(async (alert: LiveAlert): Promise<boolean> => {

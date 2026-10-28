@@ -26,7 +26,7 @@ const POLL_MS = 15000;
 /** Consecutive failed queue calls before Home shows "No connection". */
 const OFFLINE_AFTER_FAILURES = 3;
 
-type Route = '/new-entry' | '/scan-verify' | '/today-entries' | '/approvals' | '/profile' | '/emergencies' | '/my-attendance';
+type Route = '/new-entry' | '/scan-verify' | '/today-entries' | '/approvals' | '/profile' | '/emergencies' | '/my-attendance' | '/tasks';
 
 /** Staggered rise-in so the screen settles instead of popping. */
 const rise = (i: number) => FadeInDown.delay(i * 70).duration(420);
@@ -135,7 +135,7 @@ export default function GuardDashboard() {
     return () => { clearInterval(timer); clearInterval(gateTimer); };
   }, [refresh, checkGate, user?.id]));
 
-  const open = (route: Route) => router.push(route);
+  const open = (route: Route) => router.push(route as never);
 
   const firstName = user?.name?.split(' ')[0] ?? 'Guard';
   const waiting = pendingCount > 0;
@@ -343,6 +343,27 @@ export default function GuardDashboard() {
               <Text style={styles.attendanceSub} numberOfLines={1}>
                 {t('attendance.linkSub')}
               </Text>
+            </View>
+            <View style={styles.attendanceArrow}>
+              <Ionicons name="chevron-forward" size={20} color={GuardColors.t3} />
+            </View>
+          </Pressy>
+        </Animated.View>
+
+        {/* Tasks for staff: hand a job like cleaning to a sweeper or gardener */}
+        <Animated.View entering={rise(5)} layout={LinearTransition.springify().damping(25).stiffness(300)}>
+          <Pressy
+            accessibilityRole="button"
+            accessibilityLabel={`${t('tasks.link')}. ${t('tasks.linkSub')}`}
+            onPress={() => open('/tasks')}
+            style={[styles.attendanceCard, guardShadow('#0D0F14', 1)]}
+          >
+            <View style={styles.attendanceIconWrap}>
+              <Ionicons name="checkbox" size={24} color={GuardColors.goldDeep} />
+            </View>
+            <View style={styles.attendanceCopy}>
+              <Text style={styles.attendanceTitle} numberOfLines={1}>{t('tasks.link')}</Text>
+              <Text style={styles.attendanceSub} numberOfLines={1}>{t('tasks.linkSub')}</Text>
             </View>
             <View style={styles.attendanceArrow}>
               <Ionicons name="chevron-forward" size={20} color={GuardColors.t3} />

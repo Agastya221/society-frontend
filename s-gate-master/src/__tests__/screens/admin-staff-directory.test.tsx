@@ -99,6 +99,12 @@ describe('Admin Staff directory: two lists, guards and other staff', () => {
     expect(getByText('Never')).toBeTruthy();
   });
 
+  it('has a Tasks button that opens the tasks for staff', async () => {
+    const { getByTestId } = await mount();
+    await act(async () => { fireEvent.press(getByTestId('open-tasks')); });
+    expect(mockPush).toHaveBeenCalledWith('/(admin)/staff-tasks');
+  });
+
   it('search finds a guard by name', async () => {
     const { getByPlaceholderText, queryByText, getByText } = await mount();
     fireEvent.changeText(getByPlaceholderText('Search by name, role, or phone...'), 'suresh');

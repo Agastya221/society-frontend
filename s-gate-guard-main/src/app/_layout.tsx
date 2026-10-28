@@ -102,6 +102,8 @@ export default function RootLayout() {
         router.push('/emergencies');
       } else if (data?.type === 'DELIVERY_OVERSTAY') {
         router.push('/today-entries');
+      } else if (String(data?.type ?? '').startsWith('STAFF_TASK')) {
+        router.push('/tasks' as never);
       }
     });
     return () => sub.remove();
@@ -184,6 +186,13 @@ export default function RootLayout() {
           options={{ 
             headerShown: true,
             title: t('title.profile'),
+          }}
+        />
+        <Stack.Screen
+          name="tasks"
+          options={{
+            headerShown: true,
+            title: t('tasks.title'),
           }}
         />
         <Stack.Screen

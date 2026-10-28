@@ -53,6 +53,7 @@ export default function AdminTabsLayout() {
             <Tabs.Screen name="all-tools" options={{ href: null }} />
             <Tabs.Screen name="flats" options={{ href: null }} />
             <Tabs.Screen name="guards" options={{ href: null }} />
+            <Tabs.Screen name="staff-tasks" options={{ href: null }} />
             <Tabs.Screen name="gate-points" options={{ href: null }} />
             <Tabs.Screen name="gate-location" options={{ href: null }} />
             <Tabs.Screen name="guard-attendance" options={{ href: null }} />
