@@ -12,6 +12,7 @@ import { ActiveEmergencyCard } from '@/components/alerts/ActiveEmergencyCard';
 import { BottomNavBar } from '@/components/navigation/BottomNavBar';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useEmergencyStore } from '@/store/useEmergencyStore';
+import { useDashboardStore } from '@/store/useDashboardStore';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -39,15 +40,21 @@ export default function GuardDashboard() {
   const activeEmergencies = useEmergencyStore((state) => state.active);
   const setSheetOpen = useEmergencyStore((state) => state.setSheetOpen);
   const hasActiveEmergency = activeEmergencies.length > 0;
-  const [pendingCount, setPendingCount] = useState(0);
-  const [readyCount, setReadyCount] = useState(0);
-  const [stoppedCount, setStoppedCount] = useState(0);
-  const [insideCount, setInsideCount] = useState(0);
-  const [offline, setOffline] = useState(false);
+
+  // Persist dashboard state in memory across screen transitions to prevent layout flash / jump
+  const pendingCount = useDashboardStore((state) => state.pendingCount);
+  const readyCount = useDashboardStore((state) => state.readyCount);
+  const stoppedCount = useDashboardStore((state) => state.stoppedCount);
+  const insideCount = useDashboardStore((state) => state.insideCount);
+  const offline = useDashboardStore((state) => state.offline);
+  const geo = useDashboardStore((state) => state.geo);
+  const duty = useDashboardStore((state) => state.duty);
+  const setCounts = useDashboardStore((state) => state.setCounts);
+  const setOffline = useDashboardStore((state) => state.setOffline);
+  const setGeo = useDashboardStore((state) => state.setGeo);
+  const setDuty = useDashboardStore((state) => state.setDuty);
+
   const [refreshing, setRefreshing] = useState(false);
-  const [geo, setGeo] = useState<GeofenceStatus | null>(null);
-  // undefined = unknown (older server), null = off duty, object = on duty
-  const [duty, setDuty] = useState<Duty | null | undefined>(undefined);
   const dutyBusy = useRef(false);
   const [dutyWorking, setDutyWorking] = useState(false);
   const failures = useRef(0);
@@ -60,10 +67,12 @@ export default function GuardDashboard() {
     inFlight.current = true;
     try {
       const queue = await fetchQueue();
-      setPendingCount(queue.waiting.length);
-      setReadyCount(queue.ready.length);
-      setStoppedCount(queue.stopped.length);
-      setInsideCount(queue.insideCount);
+      setCounts({
+        pendingCount: queue.waiting.length,
+        readyCount: queue.ready.length,
+        stoppedCount: queue.stopped.length,
+        insideCount: queue.insideCount,
+      });
       failures.current = 0;
       setOffline(false);
     } catch {
@@ -72,7 +81,7 @@ export default function GuardDashboard() {
     } finally {
       inFlight.current = false;
     }
-  }, []);
+  }, [setCounts, setOffline]);
 
   const onPull = useCallback(async () => {
     setRefreshing(true);
@@ -88,7 +97,7 @@ export default function GuardDashboard() {
   const checkGate = useCallback(async () => {
     try { setGeo(await fetchGeofence()); } catch { /* offline: the chip above already says so */ }
     try { setDuty(await fetchDuty()); } catch { /* keep what we last knew */ }
-  }, []);
+  }, [setGeo, setDuty]);
 
   const toggleDuty = useCallback(() => {
     if (dutyBusy.current || duty === undefined) return;

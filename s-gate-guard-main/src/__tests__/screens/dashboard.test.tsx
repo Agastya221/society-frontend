@@ -4,6 +4,7 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useEmergencyStore } from '@/store/useEmergencyStore';
+import { useDashboardStore } from '@/store/useDashboardStore';
 import { useLanguageStore } from '@/i18n';
 
 import GuardDashboard from '../../app/index';
@@ -50,6 +51,7 @@ describe('Guard Dashboard (index)', () => {
     jest.clearAllMocks();
     useLanguageStore.setState({ lang: 'en' });
     useEmergencyStore.setState({ active: [], sheetOpen: false });
+    useDashboardStore.getState().reset();
     useAuthStore.setState({
       accessToken: 'guard-token',
       refreshToken: 'guard-refresh',

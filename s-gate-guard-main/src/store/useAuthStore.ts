@@ -2,6 +2,7 @@ import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 import { User } from '../types/auth';
 import { BASE_URL } from '../constants/api';
+import { useDashboardStore } from './useDashboardStore';
 
 const TOKEN_KEY         = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -126,6 +127,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             await SecureStore.deleteItemAsync(TOKEN_KEY);
             await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
             await SecureStore.deleteItemAsync(USER_KEY);
+        } catch {}
+
+        try {
+            useDashboardStore.getState().reset();
         } catch {}
 
         set({ accessToken: null, refreshToken: null, user: null, isAuthenticated: false, isLoading: false });
