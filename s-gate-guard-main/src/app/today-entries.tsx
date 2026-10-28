@@ -1,6 +1,6 @@
 import { HomeButton } from '@/components/gate/HomeButton';
 import { ScreenEmpty, ScreenLoading } from '@/components/ScreenState';
-import { GuardFonts } from '@/constants/theme';
+import { GuardColors, GuardFonts } from '@/constants/theme';
 import { useT } from '@/i18n';
 import api from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -614,41 +614,42 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     switchBtnActive: {
-        backgroundColor: '#FFFFFF',
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.08,
-        shadowRadius: 3,
-        elevation: 2,
+        backgroundColor: GuardColors.gold,
+        shadowColor: '#FFB800',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 3,
     },
     switchText: {
         color: '#64748B',
         fontFamily: GuardFonts.medium,
         fontSize: 13,
-        fontWeight: '500',
+        fontWeight: '600',
     },
     switchTextActive: {
-        color: '#0F172A',
+        color: GuardColors.black,
         fontFamily: GuardFonts.bold,
-        fontWeight: '600',
+        fontWeight: '800',
     },
     switchBadge: {
         backgroundColor: '#E2E8F0',
-        paddingHorizontal: 6,
-        paddingVertical: 1,
+        paddingHorizontal: 7,
+        paddingVertical: 1.5,
         borderRadius: 99,
         marginLeft: 2,
     },
     switchBadgeActive: {
-        backgroundColor: '#FEF3C7',
+        backgroundColor: 'rgba(13, 15, 20, 0.15)',
     },
     switchBadgeText: {
         fontSize: 11,
-        fontWeight: '600',
+        fontWeight: '700',
         color: '#64748B',
     },
     switchBadgeTextActive: {
-        color: '#B45309',
+        color: GuardColors.black,
+        fontWeight: '900',
     },
 
     // Category Filter Chips
@@ -661,8 +662,8 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     filterTab: {
-        height: 32,
-        paddingHorizontal: 14,
+        height: 34,
+        paddingHorizontal: 15,
         borderRadius: 999,
         backgroundColor: '#FFFFFF',
         borderWidth: 1,
@@ -671,19 +672,24 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     filterTabActive: {
-        backgroundColor: '#0F172A',
-        borderColor: '#0F172A',
+        backgroundColor: GuardColors.gold,
+        borderColor: GuardColors.goldDeep,
+        shadowColor: '#FFB800',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.22,
+        shadowRadius: 4,
+        elevation: 2,
     },
     filterText: {
         color: '#64748B',
         fontFamily: GuardFonts.medium,
-        fontSize: 12,
-        fontWeight: '500',
+        fontSize: 13,
+        fontWeight: '600',
     },
     filterTextActive: {
-        color: '#FFFFFF',
+        color: GuardColors.black,
         fontFamily: GuardFonts.bold,
-        fontWeight: '600',
+        fontWeight: '800',
     },
 
     // Visitor List

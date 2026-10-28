@@ -1189,7 +1189,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F1F5F9',
     },
     modalFilterTabActive: {
-        backgroundColor: '#0F172A',
+        backgroundColor: GuardColors.gold,
     },
     modalFilterText: {
         fontSize: 12,
@@ -1197,7 +1197,8 @@ const styles = StyleSheet.create({
         color: '#64748B',
     },
     modalFilterTextActive: {
-        color: '#FFFFFF',
+        color: GuardColors.black,
+        fontWeight: '800',
     },
     modalCentered: {
         flex: 1,
