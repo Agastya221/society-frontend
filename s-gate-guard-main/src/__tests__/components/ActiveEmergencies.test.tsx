@@ -117,7 +117,7 @@ describe('ActiveEmergencies (the bar that keeps an emergency on screen)', () => 
     (api.get as jest.Mock).mockResolvedValue({ data: { data: [{ ...FIRE, reportedBy: { id: 'someone-else', name: 'Asha Rao', phone: '9000000601' } }] } });
     const { getByTestId, getByText } = await mount();
     await act(async () => { fireEvent.press(getByTestId('emergency-bar')); });
-    await act(async () => { fireEvent.press(getByText('Call her')); });
+    await act(async () => { fireEvent.press(getByText('Call resident')); });
     expect(openSpy).toHaveBeenCalledWith('tel:9000000601');
     openSpy.mockRestore();
   });

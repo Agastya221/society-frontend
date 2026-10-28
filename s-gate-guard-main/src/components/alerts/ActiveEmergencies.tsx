@@ -168,7 +168,7 @@ export function ActiveEmergencies() {
                         />
                       ) : null}
                       {e.reportedBy?.phone ? (
-                        <GiantButton label={t('activeEmergency.callHer')} icon="call" tone="light" onPress={() => void Linking.openURL(`tel:${e.reportedBy?.phone}`)} />
+                        <GiantButton label={t('activeEmergency.callResident')} icon="call" tone="light" onPress={() => void Linking.openURL(`tel:${e.reportedBy?.phone}`)} />
                       ) : null}
                       {isPrivate ? (
                         <>
