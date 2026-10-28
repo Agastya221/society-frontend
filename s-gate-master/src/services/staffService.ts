@@ -19,6 +19,15 @@ export interface StaffMember {
     source?: 'USER' | 'DOMESTIC';
     isVerified?: boolean;
     createdAt: string;
+    email?: string | null;
+    // Guards: the shift they work, whether they are on duty now and at which gate, and their last sign-in
+    shift?: { name: string; startTime: string; endTime: string; graceMinutes: number } | null;
+    dutyNow?: { since: string; gate: string | null } | null;
+    lastLogin?: string | null;
+    // Other staff: the days they work and whether they are inside the society now
+    workingDays?: string[];
+    insideNow?: boolean;
+    lastCheckIn?: string | null;
 }
 
 export interface StaffInput {

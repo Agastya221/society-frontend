@@ -6,7 +6,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSheetBottomClearance } from '@/hooks/useSheetBottomClearance';
@@ -56,6 +56,9 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
     const [saving, setSaving] = useState(false);
     // Directory shows only people who can still sign in; "All" brings back deactivated staff
     const [activeOnly, setActiveOnly] = useState(true);
+    // The directory has two lists: the guards, and everyone else who works in the society
+    const [group, setGroup] = useState<'GUARDS' | 'STAFF'>('GUARDS');
+    const [profileGuard, setProfileGuard] = useState<StaffMember | null>(null);
     // Where the new staff member works
     const [flats, setFlats] = useState<AssignableFlat[]>([]);
     const [pickedFlats, setPickedFlats] = useState<string[]>([]);
@@ -215,6 +218,7 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                                 Agency: {item.agencyName}
                             </Text>
                         )}
+                        {item.insideNow ? <Text style={styles.insideText}>Inside the society now</Text> : null}
                     </View>
                     <View style={[styles.statusBadge, item.status === 'ACTIVE' ? styles.statusActive : styles.statusInactive]}>
                         <Text style={[styles.statusText, item.status === 'ACTIVE' ? styles.statusTextActive : styles.statusTextInactive]}>
@@ -247,6 +251,52 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
             </TouchableOpacity>
         </Animated.View>
     );
+
+    const formatDay = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+    const formatSeen = (iso?: string | null) => (iso ? new Date(iso).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Never');
+
+    const renderGuardCard = ({ item, index }: { item: StaffMember; index: number }) => {
+        const inactive = item.status !== 'ACTIVE';
+        const onDuty = !inactive && !!item.dutyNow;
+        return (
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 50).springify()}>
+                <TouchableOpacity testID={`guard-${item.id}`} style={styles.card} activeOpacity={0.8} onPress={() => setProfileGuard(item)}>
+                    <View style={styles.cardHeader}>
+                        <Avatar name={item.name} photoUrl={item.photoUrl} size={46} />
+                        <View style={styles.cardInfo}>
+                            <Text style={styles.staffName} numberOfLines={1}>{item.name}</Text>
+                            <View style={styles.roleWrap}>
+                                <Text style={styles.staffRole}>Security guard</Text>
+                                {item.phone ? (<><View style={styles.roleDot} /><Text style={styles.staffPhone}>{item.phone}</Text></>) : null}
+                            </View>
+                        </View>
+                        <View style={[styles.statusBadge, onDuty ? styles.statusActive : styles.statusInactive]}>
+                            <Text style={[styles.statusText, onDuty ? styles.statusTextActive : styles.statusTextInactive]}>
+                                {inactive ? 'Inactive' : onDuty ? 'On duty' : 'Off duty'}
+                            </Text>
+                        </View>
+                        <MaterialCommunityIcons name="chevron-right" size={18} color={SgateColors.t4} />
+                    </View>
+                    <View style={styles.cardMetrics}>
+                        <View style={styles.metric}>
+                            <MaterialCommunityIcons name="clock-outline" size={13} color={SgateColors.t3} />
+                            <Text style={styles.metricText}>{item.shift ? `${item.shift.name} · ${item.shift.startTime}–${item.shift.endTime}` : 'No shift'}</Text>
+                        </View>
+                        <View style={styles.metric}>
+                            <MaterialCommunityIcons name="gate" size={13} color={SgateColors.t3} />
+                            <Text style={styles.metricText}>{onDuty ? (item.dutyNow?.gate ? `At ${item.dutyNow.gate}` : 'On duty') : 'Not at a gate'}</Text>
+                        </View>
+                        {onDuty && item.dutyNow ? (
+                            <View style={styles.metric}>
+                                <MaterialCommunityIcons name="timer-outline" size={13} color={SgateColors.t3} />
+                                <Text style={styles.metricText}>Since {formatTime(item.dutyNow.since)}</Text>
+                            </View>
+                        ) : null}
+                    </View>
+                </TouchableOpacity>
+            </Animated.View>
+        );
+    };
 
     const renderAttendanceCard = ({ item, index }: { item: StaffMember; index: number }) => {
         const record = attendance.find(a => a.staffId === item.id);
@@ -294,12 +344,18 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
     const filteredStaff = staff.filter(s => {
         // Today's logs always list everyone; only the directory hides deactivated staff
         if (activeTab === 'DIRECTORY' && activeOnly && s.status !== 'ACTIVE') return false;
+        if (activeTab === 'DIRECTORY' && (group === 'GUARDS') !== (s.source === 'USER')) return false;
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
         return s.name.toLowerCase().includes(q) || 
                s.role.toLowerCase().includes(q) || 
                (s.phone && s.phone.includes(q));
     });
+
+    const inList = (s: StaffMember) => !activeOnly || s.status === 'ACTIVE';
+    const guardCount = staff.filter((s) => s.source === 'USER' && inList(s)).length;
+    const otherCount = staff.filter((s) => s.source !== 'USER' && inList(s)).length;
+    const onDutyCount = staff.filter((s) => s.source === 'USER' && s.status === 'ACTIVE' && !!s.dutyNow).length;
 
     return (
         <View style={styles.safe}>
@@ -352,6 +408,26 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
             </View>
 
             {activeTab === 'DIRECTORY' ? (
+                <View style={styles.groupRow}>
+                    {([{ key: 'GUARDS', label: `Guards (${guardCount})` }, { key: 'STAFF', label: `Other staff (${otherCount})` }] as const).map((opt) => (
+                        <Pressable
+                            key={opt.key}
+                            testID={`group-${opt.key}`}
+                            onPress={() => { Haptics.selectionAsync(); setGroup(opt.key); }}
+                            style={[styles.groupChip, group === opt.key && styles.groupChipOn]}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: group === opt.key }}
+                        >
+                            <Text style={[styles.groupChipText, group === opt.key && styles.groupChipTextOn]}>{opt.label}</Text>
+                        </Pressable>
+                    ))}
+                </View>
+            ) : null}
+            {activeTab === 'DIRECTORY' && group === 'GUARDS' ? (
+                <Text style={styles.dutySummary}>{onDutyCount} on duty now</Text>
+            ) : null}
+
+            {activeTab === 'DIRECTORY' ? (
                 <View style={styles.filterRow}>
                     {[{ label: 'Active', value: true }, { label: 'All', value: false }].map((opt) => (
                         <Pressable key={opt.label} onPress={() => { Haptics.selectionAsync(); setActiveOnly(opt.value); }} style={[styles.filterChip, activeOnly === opt.value && styles.filterChipOn]} accessibilityRole="button">
@@ -373,12 +449,66 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.list}
                     showsVerticalScrollIndicator={false}
-                    renderItem={activeTab === 'DIRECTORY' ? renderStaffCard : renderAttendanceCard}
+                    renderItem={activeTab === 'DIRECTORY' ? (group === 'GUARDS' ? renderGuardCard : renderStaffCard) : renderAttendanceCard}
                     ListEmptyComponent={
-                        <EmptyState iconName="account-group-outline" title="No staff records found" />
+                        <EmptyState iconName="account-group-outline" title={activeTab === 'DIRECTORY' && group === 'GUARDS' ? 'No guards found' : 'No staff records found'} />
                     }
                 />
             )}
+
+            {/* A guard's profile */}
+            <Modal visible={!!profileGuard} animationType="fade" transparent onRequestClose={() => setProfileGuard(null)}>
+                <View style={styles.modalOverlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setProfileGuard(null)} />
+                    {profileGuard ? (
+                        <View style={[styles.formSheet, { paddingBottom: sheetClearance }]}>
+                            <View style={styles.sheetHandle} />
+                            <View style={styles.profileTop}>
+                                <Avatar name={profileGuard.name} photoUrl={profileGuard.photoUrl} size={76} />
+                                <Text style={styles.profileName}>{profileGuard.name}</Text>
+                                <Text style={styles.profileRole}>Security guard</Text>
+                                <View style={[styles.statusBadge, profileGuard.status === 'ACTIVE' && profileGuard.dutyNow ? styles.statusActive : styles.statusInactive]}>
+                                    <Text style={[styles.statusText, profileGuard.status === 'ACTIVE' && profileGuard.dutyNow ? styles.statusTextActive : styles.statusTextInactive]}>
+                                        {profileGuard.status !== 'ACTIVE' ? 'Inactive' : profileGuard.dutyNow ? `On duty${profileGuard.dutyNow.gate ? ` at ${profileGuard.dutyNow.gate}` : ''}` : 'Off duty'}
+                                    </Text>
+                                </View>
+                            </View>
+                            <View style={styles.profileRows}>
+                                {([
+                                    ['Phone', profileGuard.phone || '—'],
+                                    ['Email', profileGuard.email || '—'],
+                                    ['Shift', profileGuard.shift ? `${profileGuard.shift.name}, ${profileGuard.shift.startTime} to ${profileGuard.shift.endTime} (${profileGuard.shift.graceMinutes} min grace)` : 'No shift assigned'],
+                                    ['Gate', profileGuard.dutyNow ? (profileGuard.dutyNow.gate ?? 'On duty, gate not known') : 'Not on duty'],
+                                    ['On duty since', profileGuard.dutyNow ? formatSeen(profileGuard.dutyNow.since) : '—'],
+                                    ['Added', formatDay(profileGuard.createdAt)],
+                                    ['Last signed in', formatSeen(profileGuard.lastLogin)],
+                                ] as const).map(([label, value]) => (
+                                    <View key={label} style={styles.profileRow}>
+                                        <Text style={styles.profileLabel}>{label}</Text>
+                                        <Text style={styles.profileValue}>{value}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                            <View style={styles.profileActions}>
+                                {profileGuard.phone ? (
+                                    <Pressable testID="guard-call" style={styles.profileBtn} onPress={() => void Linking.openURL(`tel:${profileGuard.phone}`)} accessibilityRole="button">
+                                        <MaterialCommunityIcons name="phone-outline" size={16} color={SgateColors.t1} />
+                                        <Text style={styles.profileBtnText}>Call</Text>
+                                    </Pressable>
+                                ) : null}
+                                <Pressable testID="guard-shifts" style={styles.profileBtn} onPress={() => { setProfileGuard(null); router.push('/(admin)/guard-shifts' as never); }} accessibilityRole="button">
+                                    <MaterialCommunityIcons name="clock-outline" size={16} color={SgateColors.t1} />
+                                    <Text style={styles.profileBtnText}>Shifts</Text>
+                                </Pressable>
+                                <Pressable testID="guard-attendance" style={styles.profileBtn} onPress={() => { setProfileGuard(null); router.push('/(admin)/guard-attendance' as never); }} accessibilityRole="button">
+                                    <MaterialCommunityIcons name="calendar-check-outline" size={16} color={SgateColors.t1} />
+                                    <Text style={styles.profileBtnText}>Attendance</Text>
+                                </Pressable>
+                            </View>
+                        </View>
+                    ) : null}
+                </View>
+            </Modal>
 
             <Modal visible={formVisible} animationType="fade" transparent onRequestClose={closeForm}>
                 <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -467,6 +597,23 @@ export default function SharedStaffScreen({ isTab = false }: { isTab?: boolean }
 }
 
 const styles = StyleSheet.create({
+    groupRow: { flexDirection: 'row', gap: 8, paddingHorizontal: SgateLayout.screenGutter, paddingTop: 4, paddingBottom: 6 },
+    groupChip: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 14, backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border },
+    groupChipOn: { backgroundColor: SgateColors.goldPale, borderColor: SgateColors.gold },
+    groupChipText: { fontSize: 13, fontFamily: SgateFonts.semibold, color: SgateColors.t3 },
+    groupChipTextOn: { color: SgateColors.t1 },
+    dutySummary: { paddingHorizontal: SgateLayout.screenGutter, fontSize: 12, fontFamily: SgateFonts.medium, color: SgateColors.green, marginBottom: 2 },
+    insideText: { fontSize: 11, fontFamily: SgateFonts.medium, color: SgateColors.green, marginTop: 2 },
+    profileTop: { alignItems: 'center', gap: 4, paddingBottom: 12 },
+    profileName: { fontSize: 20, fontFamily: SgateFonts.bold, color: SgateColors.t1, marginTop: 8 },
+    profileRole: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3, marginBottom: 6 },
+    profileRows: { gap: 2, paddingHorizontal: 4 },
+    profileRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: SgateColors.borderSoft },
+    profileLabel: { fontSize: 13, fontFamily: SgateFonts.regular, color: SgateColors.t3 },
+    profileValue: { flex: 1, textAlign: 'right', fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
+    profileActions: { flexDirection: 'row', gap: 10, paddingTop: 16 },
+    profileBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 12, borderRadius: 14, backgroundColor: SgateColors.surface, borderWidth: 1, borderColor: SgateColors.border },
+    profileBtnText: { fontSize: 14, fontFamily: SgateFonts.semibold, color: SgateColors.t1 },
     safe: { flex: 1, backgroundColor: SgateColors.bg },
     filterRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, paddingBottom: 6 },
     filterChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 14, backgroundColor: '#F3F4F6' },
