@@ -26,7 +26,7 @@ const POLL_MS = 15000;
 /** Consecutive failed queue calls before Home shows "No connection". */
 const OFFLINE_AFTER_FAILURES = 3;
 
-type Route = '/new-entry' | '/scan-verify' | '/today-entries' | '/approvals' | '/profile' | '/emergencies';
+type Route = '/new-entry' | '/scan-verify' | '/today-entries' | '/approvals' | '/profile' | '/emergencies' | '/my-attendance';
 
 /** Staggered rise-in so the screen settles instead of popping. */
 const rise = (i: number) => FadeInDown.delay(i * 70).duration(420);
@@ -259,31 +259,94 @@ export default function GuardDashboard() {
           </Pressy>
         </Animated.View>
 
-        {/* Live numbers: Inside now & Waiting (16px spacing) */}
+        {/* Live numbers: Inside now & Waiting (Redesigned with top action badges) */}
         <Animated.View entering={rise(3)} layout={LinearTransition.springify().damping(25).stiffness(300)} style={styles.stats}>
           <Pressy
             wrapStyle={styles.statWrap}
             accessibilityLabel={`${t('home.statInside')} ${insideCount}`}
             onPress={() => open('/today-entries')}
-            style={styles.stat}
+            style={[styles.stat, guardShadow('#0D0F14', 1)]}
           >
-            <View style={[styles.statIcon, { backgroundColor: GuardColors.blueBg }]}><Ionicons name="people" size={24} color={GuardColors.blue} /></View>
-            <Text style={styles.statNumber}>{insideCount}</Text>
-            <Text style={styles.statLabel}>{t('home.statInside')}</Text>
+            <View style={styles.statTop}>
+              <View style={[styles.statIcon, { backgroundColor: '#EFF6FF' }]}>
+                <Ionicons name="people" size={22} color="#2563EB" />
+              </View>
+              <View style={styles.statArrow}>
+                <Ionicons name="arrow-forward" size={14} color={GuardColors.t3} />
+              </View>
+            </View>
+            <View style={styles.statBody}>
+              <Text style={styles.statNumber}>{insideCount}</Text>
+              <Text style={styles.statLabel} numberOfLines={1}>{t('home.statInside')}</Text>
+            </View>
           </Pressy>
+
           <Pressy
             wrapStyle={styles.statWrap}
             accessibilityLabel={`${t('home.statWaiting')} ${pendingCount}`}
             onPress={() => open('/approvals')}
-            style={[styles.stat, waiting && styles.statAlert]}
+            style={[styles.stat, waiting && styles.statAlert, guardShadow(waiting ? '#D97706' : '#0D0F14', 1)]}
           >
-            {waiting && <LinearGradient colors={GuardGradients.wait} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 28 }]} />}
+            {waiting ? (
+              <LinearGradient
+                colors={GuardGradients.wait}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[StyleSheet.absoluteFill, { borderRadius: 24 }]}
+              />
+            ) : null}
             <View style={styles.statTop}>
-              <View style={[styles.statIcon, { backgroundColor: waiting ? 'rgba(255,255,255,0.55)' : GuardColors.goldPale }]}><Ionicons name="time" size={24} color={GuardColors.goldDeep} /></View>
-              {waiting && <LiveDot color={GuardSemantic.deny} size={8} />}
+              <View style={[styles.statIcon, { backgroundColor: waiting ? 'rgba(255,255,255,0.65)' : GuardColors.goldPale }]}>
+                <Ionicons name="time" size={22} color={waiting ? GuardColors.black : GuardColors.goldDeep} />
+              </View>
+              {waiting ? (
+                <View style={styles.statWaitBadge}>
+                  <LiveDot color={GuardSemantic.deny} size={7} />
+                  <Ionicons name="arrow-forward" size={13} color={GuardColors.black} />
+                </View>
+              ) : (
+                <View style={styles.statArrow}>
+                  <Ionicons name="arrow-forward" size={14} color={GuardColors.t3} />
+                </View>
+              )}
             </View>
-            <Text style={styles.statNumber}>{pendingCount}</Text>
-            <Text style={styles.statLabel}>{waiting ? t('home.waitingNow') : t('home.statWaiting')}</Text>
+            <View style={styles.statBody}>
+              <Text style={[styles.statNumber, waiting && { color: GuardColors.black }]}>{pendingCount}</Text>
+              <Text style={[styles.statLabel, waiting && { color: GuardColors.black, fontWeight: '800' }]} numberOfLines={1}>
+                {waiting ? t('home.waitingNow') : t('home.statWaiting')}
+              </Text>
+            </View>
+          </Pressy>
+        </Animated.View>
+
+        {/* Guard Attendance & Shift History Action Card */}
+        <Animated.View entering={rise(4)} layout={LinearTransition.springify().damping(25).stiffness(300)}>
+          <Pressy
+            accessibilityRole="button"
+            accessibilityLabel={`${t('attendance.link')}. ${t('attendance.linkSub')}`}
+            onPress={() => open('/my-attendance')}
+            style={[styles.attendanceCard, guardShadow('#0D0F14', 1)]}
+          >
+            <View style={styles.attendanceIconWrap}>
+              <Ionicons name="calendar" size={24} color={GuardColors.goldDeep} />
+            </View>
+            <View style={styles.attendanceCopy}>
+              <View style={styles.attendanceTitleRow}>
+                <Text style={styles.attendanceTitle} numberOfLines={1}>{t('attendance.link')}</Text>
+                {duty ? (
+                  <View style={styles.dutyBadge}>
+                    <LiveDot color={GuardColors.green} size={6} />
+                    <Text style={styles.dutyBadgeText}>{t('attendance.onDutyNow') + '\u00A0'}</Text>
+                  </View>
+                ) : null}
+              </View>
+              <Text style={styles.attendanceSub} numberOfLines={1}>
+                {t('attendance.linkSub')}
+              </Text>
+            </View>
+            <View style={styles.attendanceArrow}>
+              <Ionicons name="chevron-forward" size={20} color={GuardColors.t3} />
+            </View>
           </Pressy>
         </Animated.View>
       </ScrollView>
@@ -339,10 +402,53 @@ const styles = StyleSheet.create({
 
   stats: { marginTop: 16, flexDirection: 'row', gap: 14 },
   statWrap: { flex: 1 },
-  stat: { minHeight: 148, borderRadius: 28, backgroundColor: GuardColors.card, borderWidth: 1, borderColor: GuardColors.border, padding: 18, justifyContent: 'space-between' },
-  statAlert: { backgroundColor: '#FFC933' },
+  stat: {
+    minHeight: 130,
+    borderRadius: 24,
+    backgroundColor: GuardColors.card,
+    borderWidth: 1.5,
+    borderColor: GuardColors.borderSoft,
+    padding: 16,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  statAlert: {
+    borderColor: 'rgba(255, 184, 0, 0.4)',
+  },
   statTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  statIcon: { width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  statNumber: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 46, lineHeight: 54, fontWeight: '900', letterSpacing: -1.5 },
-  statLabel: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: 16, lineHeight: 22, fontWeight: '700' },
+  statIcon: { width: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  statArrow: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#F4F3F0', alignItems: 'center', justifyContent: 'center' },
+  statWaitBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255, 255, 255, 0.65)', borderRadius: 12, paddingHorizontal: 7, paddingVertical: 4 },
+  statBody: { marginTop: 8 },
+  statNumber: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 36, lineHeight: 42, fontWeight: '900', letterSpacing: -1 },
+  statLabel: { color: GuardColors.t2, fontFamily: GuardFonts.bold, fontSize: 15, lineHeight: 20, fontWeight: '700', marginTop: 2 },
+
+  attendanceCard: {
+    marginTop: 14,
+    minHeight: 80,
+    borderRadius: 24,
+    backgroundColor: GuardColors.card,
+    borderWidth: 1.5,
+    borderColor: GuardColors.borderSoft,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  attendanceIconWrap: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: GuardColors.goldPale,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  attendanceCopy: { flex: 1, justifyContent: 'center' },
+  attendanceTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  attendanceTitle: { color: GuardColors.t1, fontFamily: GuardFonts.bold, fontSize: 17, lineHeight: 22, fontWeight: '800' },
+  attendanceSub: { marginTop: 2, color: GuardColors.t2, fontFamily: GuardFonts.medium, fontSize: 13, lineHeight: 18, fontWeight: '600' },
+  dutyBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: GuardColors.greenBg, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 },
+  dutyBadgeText: { color: GuardColors.green, fontFamily: GuardFonts.bold, fontSize: 11, fontWeight: '800' },
+  attendanceArrow: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F4F3F0', alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
 });

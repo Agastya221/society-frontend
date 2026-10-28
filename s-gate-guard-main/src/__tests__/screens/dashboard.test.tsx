@@ -113,6 +113,7 @@ describe('Guard Dashboard (index)', () => {
       ['Inside now', '/today-entries'],
       ['Waiting', '/approvals'],
       ['Profile', '/profile'],
+      ['My shift & attendance', '/my-attendance'],
     ])('pressing "%s" pushes %s', async (label, route) => {
       const { getByText } = await renderDashboard();
       fireEvent.press(getByText(label));
