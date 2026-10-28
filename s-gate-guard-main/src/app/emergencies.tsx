@@ -1,5 +1,7 @@
 import { ResultScreen } from '@/components/gate/ResultScreen';
 import { AppBottomNav } from '@/components/navigation/BottomNavBar';
+import { ActiveEmergencyCard } from '@/components/alerts/ActiveEmergencyCard';
+import { useEmergencyStore } from '@/store/useEmergencyStore';
 import { GuardColors, GuardFonts, GuardSemantic, GuardTouch, guardShadow } from '@/constants/theme';
 import { useT } from '@/i18n';
 import api from '@/services/api';
@@ -99,6 +101,8 @@ export default function EmergenciesScreen() {
     const t = useT();
     const insets = useSafeAreaInsets();
     const router = useRouter();
+    const activeEmergencies = useEmergencyStore((state) => state.active);
+    const setSheetOpen = useEmergencyStore((state) => state.setSheetOpen);
 
     const [raising, setRaising] = useState<string | null>(null);
     const [cooldown, setCooldown] = useState(0);
@@ -290,6 +294,16 @@ export default function EmergenciesScreen() {
                     showsVerticalScrollIndicator={false}
                     bounces={false}
                 >
+                    {/* Active Emergency Card (Only shown when active emergencies exist) */}
+                    {activeEmergencies.length > 0 ? (
+                        <View style={styles.emergencyCardWrap}>
+                            <ActiveEmergencyCard
+                                emergencies={activeEmergencies}
+                                onPress={() => setSheetOpen(true)}
+                            />
+                        </View>
+                    ) : null}
+
                     {/* Header Section with Animated Siren */}
                     <View style={styles.headerSection}>
                         <Animated.View style={[sirenStyle, styles.sirenWrap]}>
@@ -832,6 +846,12 @@ const styles = StyleSheet.create({
     scrollContent: {
         flexGrow: 1,
         alignItems: 'center',
+    },
+    emergencyCardWrap: {
+        width: '100%',
+        paddingHorizontal: 12,
+        marginBottom: 16,
+        marginTop: 4,
     },
 
     // Header & Siren

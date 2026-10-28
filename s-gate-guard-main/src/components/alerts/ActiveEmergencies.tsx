@@ -48,6 +48,8 @@ export function ActiveEmergencies() {
   const [busy, setBusy] = useState<string | null>(null);
   const seen = useRef<Set<string>>(new Set());
 
+  const isInitialMount = useRef(true);
+
   const poll = useCallback(async () => {
     const list = await fetchActive();
     if (!list) return;
@@ -57,7 +59,13 @@ export function ActiveEmergencies() {
     // Ring for a new emergency somebody else raised (your own does not ring on your own phone)
     const rings = fresh.some((e) => e.reportedBy?.id !== myId && Date.now() - new Date(e.createdAt).getTime() < RING_IF_NEWER_THAN_MS);
     if (rings) void startAlertSound();
-  }, [myId, setActive]);
+
+    // When a new emergency alert is received while the app is active, pop up the alert modal over any screen
+    if (!isInitialMount.current && rings) {
+      setOpen(true);
+    }
+    isInitialMount.current = false;
+  }, [myId, setActive, setOpen]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -113,18 +121,10 @@ export function ActiveEmergencies() {
     return minutes < 1 ? t('activeEmergency.justNow') : t('activeEmergency.ago', { n: minutes });
   };
 
-  // On the dashboard (the main screen), the alert is seamlessly integrated
-  // in-flow into the dashboard layout (Option B).
-  // Only render a floating card in unit tests or when the guard has navigated to a sub-screen
-  // (e.g. /today-entries, /approvals, /profile).
+  // The active emergency card is only visible on the Home screen and Emergency screen.
+  // We only render a floating card in unit tests (where ActiveEmergencies is mounted alone).
   const isTest = typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
-  const isSubScreen = Boolean(
-    pathname &&
-    pathname !== '/' &&
-    pathname !== '/index' &&
-    pathname !== ''
-  );
-  const showFloating = isTest || isSubScreen;
+  const showFloating = isTest;
 
   return (
     <>

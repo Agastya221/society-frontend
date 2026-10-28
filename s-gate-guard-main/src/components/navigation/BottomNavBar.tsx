@@ -1,10 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { usePathname, useRouter } from 'expo-router';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withDelay,
+  Easing,
+  cancelAnimation,
+} from 'react-native-reanimated';
 import { GuardColors, GuardFonts, guardShadow } from '@/constants/theme';
 import { useT } from '@/i18n';
 import { Pressy } from '@/components/gate/Pressy';
@@ -131,6 +141,38 @@ export function BottomNavBar({
   const activeEmergencies = useEmergencyStore((state) => state.active);
   const hasEmergency = activeEmergencies.length > 0;
 
+  // Shake animation for the Emergency tab icon when an emergency is active
+  const shake = useSharedValue(0);
+
+  useEffect(() => {
+    if (hasEmergency) {
+      shake.value = withRepeat(
+        withSequence(
+          withTiming(-14, { duration: 60, easing: Easing.linear }),
+          withTiming(14, { duration: 60, easing: Easing.linear }),
+          withTiming(-12, { duration: 60, easing: Easing.linear }),
+          withTiming(12, { duration: 60, easing: Easing.linear }),
+          withTiming(-8, { duration: 60, easing: Easing.linear }),
+          withTiming(8, { duration: 60, easing: Easing.linear }),
+          withTiming(0, { duration: 60, easing: Easing.linear }),
+          withDelay(1200, withTiming(0, { duration: 50 }))
+        ),
+        -1,
+        false
+      );
+    } else {
+      cancelAnimation(shake);
+      shake.value = 0;
+    }
+    return () => {
+      cancelAnimation(shake);
+    };
+  }, [hasEmergency, shake]);
+
+  const shakeStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${shake.value}deg` }],
+  }));
+
   const handlePress = (tab: NavTab, action: () => void) => {
     if (tab === 'scan') {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -178,14 +220,14 @@ export function BottomNavBar({
         onPress={() => handlePress('emergency', onEmergency)}
         style={styles.tabItem}
       >
-        <View style={styles.iconWrap}>
+        <Animated.View style={[styles.iconWrap, shakeStyle]}>
           <Ionicons
             name={hasEmergency ? 'warning' : 'warning-outline'}
             size={24}
             color={hasEmergency ? GuardColors.red : activeTab === 'emergency' ? activeColor : inactiveColor}
           />
           {hasEmergency ? <View style={styles.emergencyDot} /> : null}
-        </View>
+        </Animated.View>
         <Text
           style={[
             styles.tabLabel,

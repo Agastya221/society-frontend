@@ -34,7 +34,8 @@ export function LiveAlertHost() {
   }, [router]);
 
   const showAlert = useCallback(async (alert: LiveAlert): Promise<boolean> => {
-    if (alert.urgent) {
+    const isEmergency = alert.data?.type === 'EMERGENCY_ALERT' || alert.data?.screen === 'EmergencyDetail';
+    if (alert.urgent || isEmergency) {
       setBanner(null);
       setUrgent(alert);
       await startAlertSound();
